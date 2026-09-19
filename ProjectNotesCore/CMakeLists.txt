@@ -37,6 +37,7 @@ set(CORE_SOURCES
     ../databaseupgrade_v1_0_0.cpp ../databaseupgrade_v1_0_0.h
     ../databaseupgrade_v1_2_0.cpp ../databaseupgrade_v1_2_0.h
     ../databaseupgrade_v5_0_0.cpp ../databaseupgrade_v5_0_0.h
+    ../databaseupgrade_v6_2_0.cpp ../databaseupgrade_v6_2_0.h
 
     # Data models
     ../actionitemprojectnotesmodel.cpp  ../actionitemprojectnotesmodel.h
@@ -53,6 +54,7 @@ set(CORE_SOURCES
     ../projectteammembersmodel.cpp ../projectteammembersmodel.h
     ../searchresultsmodel.cpp ../searchresultsmodel.h
     ../statusreportitemsmodel.cpp ../statusreportitemsmodel.h
+    ../projectemailaudiencesmodel.cpp ../projectemailaudiencesmodel.h
     ../teamsmodel.cpp       ../teamsmodel.h
     ../trackeritemcommentsmodel.cpp ../trackeritemcommentsmodel.h
     ../trackeritemsmodel.cpp ../trackeritemsmodel.h

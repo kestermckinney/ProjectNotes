@@ -169,6 +169,10 @@ bool RecipientSelectionModel::addManual(QString displayName, QString address, Re
         role < RecipientRole::To || role > RecipientRole::Bcc)
         return false;
     const QString key = trimmed.toCaseFolded();
+    for (const AudienceExclusion &exclusion : m_exclusions)
+        if (exclusion.reason == QLatin1String("project-manager-excluded")
+            && exclusion.person.email.trimmed().toCaseFolded() == key)
+            return false;
     for (const Entry &entry : m_entries)
         if (entry.person.email.trimmed().toCaseFolded() == key)
             return false;

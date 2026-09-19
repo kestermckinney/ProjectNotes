@@ -66,28 +66,6 @@ bool isMigratedBundledReportAction(const Plugin *plugin, const PluginMenu &menu)
             && function == QLatin1String("menu_export_tracker_items"));
 }
 
-std::optional<PN::Comm::PeopleSource> peopleSourceFromStableString(const QString &value)
-{
-    using PN::Comm::PeopleSource;
-    if (value == QLatin1String("project-team")) return PeopleSource::ProjectTeam;
-    if (value == QLatin1String("meeting-attendees")) return PeopleSource::MeetingAttendees;
-    if (value == QLatin1String("status-recipients")) return PeopleSource::StatusRecipients;
-    if (value == QLatin1String("current-selection")) return PeopleSource::CurrentSelection;
-    if (value == QLatin1String("chosen-people")) return PeopleSource::ChosenPeople;
-    return std::nullopt;
-}
-
-std::optional<PN::Comm::CompanyFilter> companyFilterFromStableString(const QString &value)
-{
-    using PN::Comm::CompanyFilter;
-    if (value == QLatin1String("all")) return CompanyFilter::All;
-    if (value == QLatin1String("managing-company")) return CompanyFilter::ManagingCompany;
-    if (value == QLatin1String("project-client")) return CompanyFilter::ProjectClient;
-    if (value == QLatin1String("except-project-client")) return CompanyFilter::ExceptProjectClient;
-    if (value == QLatin1String("selected-companies")) return CompanyFilter::SelectedCompanies;
-    return std::nullopt;
-}
-
 } // namespace
 
 #include "sqlitesyncpro.h"
@@ -790,7 +768,8 @@ bool DesktopAppController::prepareMeetingNotesReportReviewWithOptions(const QStr
         PN::Comm::AudienceRule audienceRule;
         audienceRule.source = PN::Comm::PeopleSource::ProjectTeam;
         audienceRule.companyFilter = PN::Comm::CompanyFilter::All;
-        audienceRule.excludeProjectManager = false;
+        audienceRule.includeUnknownCompany = true;
+        audienceRule.excludeProjectManager = true;
         self->m_recipientSelectionModel->setAudience(PN::Comm::resolveAudience(result.snapshot, audienceRule));
         PN::Comm::EmailPreparation prepared = *preparation;
         prepared.displayPdf = displayPdf;
@@ -801,7 +780,7 @@ bool DesktopAppController::prepareMeetingNotesReportReviewWithOptions(const QStr
         prepared.addressLater = recipients.addressLaterExplicitlyChosen;
         self->stageRequestedGeneratedAttachmentAsync(std::move(prepared),
             [self, snapshot = result.snapshot, source = request.source, internalReport,
-             recipientValidation = recipients.validation]
+             audienceRule, recipientValidation = recipients.validation]
             (std::optional<PN::Comm::EmailPreparation> staged, PN::Comm::ValidationResult validation) mutable {
                 if (!self) return;
                 if (!staged) { self->m_communicationsController->setReviewValidation(std::move(validation)); return; }
@@ -809,6 +788,7 @@ bool DesktopAppController::prepareMeetingNotesReportReviewWithOptions(const QStr
                 self->m_meetingNotesReportSnapshot = snapshot;
                 self->m_meetingNotesReportSource = source;
                 self->m_reviewAudienceSnapshot = snapshot;
+                self->m_reviewAudienceRule = audienceRule;
                 self->m_meetingNotesReportInternal = internalReport;
                 self->m_communicationsController->setPreparation(std::move(*staged));
                 self->updateRecipientInternalReportContext();
@@ -969,7 +949,8 @@ bool DesktopAppController::restoreProjectReportDefaultAudience()
     PN::Comm::AudienceRule rule;
     rule.source = PN::Comm::PeopleSource::ProjectTeam;
     rule.companyFilter = PN::Comm::CompanyFilter::All;
-    rule.excludeProjectManager = false;
+    rule.includeUnknownCompany = true;
+    rule.excludeProjectManager = true;
     PN::Comm::AudienceResolution audience = PN::Comm::resolveAudience(*m_projectReportSnapshot, rule);
     for (const PN::Comm::SnapshotPerson &person : audience.people)
         if (!person.receivesStatus)
@@ -980,123 +961,23 @@ bool DesktopAppController::restoreProjectReportDefaultAudience()
     return true;
 }
 
-bool DesktopAppController::applyReviewAudienceRule(const QString& peopleSource,
-                                                    const QString& companyFilter,
-                                                    bool includeUnknownCompany,
-                                                    bool excludeProjectManager)
-{
-    return applyReviewAudienceRuleWithCompanies(peopleSource, companyFilter, {},
-                                                includeUnknownCompany, excludeProjectManager);
-}
-
-bool DesktopAppController::applyReviewAudienceRuleWithCompanies(const QString& peopleSource,
-                                                                 const QString& companyFilter,
-                                                                 const QStringList& companyIds,
-                                                                 bool includeUnknownCompany,
-                                                                 bool excludeProjectManager)
-{
-    return applyReviewAudienceRuleAdvanced(peopleSource, companyFilter, companyIds, {},
-                                           includeUnknownCompany, excludeProjectManager);
-}
-
-bool DesktopAppController::applyReviewAudienceRuleAdvanced(const QString& peopleSource,
-                                                           const QString& companyFilter,
-                                                           const QStringList& companyIds,
-                                                           const QStringList& chosenPersonIds,
-                                                           bool includeUnknownCompany,
-                                                           bool excludeProjectManager)
-{
-    if (!m_reviewAudienceSnapshot || m_communicationsController->busy())
-        return false;
-    const auto source = peopleSourceFromStableString(peopleSource);
-    const auto company = companyFilterFromStableString(companyFilter);
-    if (!source || !company) {
-        PN::Comm::ValidationResult validation;
-        validation.addError(QStringLiteral("audience-rule-invalid"), QStringLiteral("audience"),
-                            tr("Choose a supported audience source and company filter."));
-        m_communicationsController->setReviewValidation(std::move(validation));
-        return false;
-    }
-    PN::Comm::AudienceRule rule;
-    rule.source = *source;
-    rule.companyFilter = *company;
-    rule.companyIds = companyIds;
-    rule.chosenPersonIds = chosenPersonIds;
-    rule.includeUnknownCompany = includeUnknownCompany;
-    rule.excludeProjectManager = excludeProjectManager;
-    m_recipientSelectionModel->setAudience(PN::Comm::resolveAudience(*m_reviewAudienceSnapshot, rule));
-    updateRecipientInternalReportContext();
-    m_reviewAudienceRule = rule;
-    return true;
-}
-
-QVariantList DesktopAppController::reviewAudiencePeople() const
-{
-    QVariantList result;
-    if (!m_reviewAudienceSnapshot)
-        return result;
-    for (const PN::Comm::SnapshotPerson &person : m_reviewAudienceSnapshot->people) {
-        if (person.id.trimmed().isEmpty())
-            continue;
-        result.append(QVariantMap{{QStringLiteral("id"), person.id},
-                                  {QStringLiteral("name"), person.name},
-                                  {QStringLiteral("address"), person.email},
-                                  {QStringLiteral("companyName"), person.companyName}});
-    }
-    return result;
-}
-
-QVariantList DesktopAppController::reviewAudienceCompanies() const
-{
-    QVariantList result;
-    if (!m_reviewAudienceSnapshot)
-        return result;
-    struct Company { QString id; QString name; int people = 0; };
-    QHash<QString, Company> companies;
-    for (const PN::Comm::SnapshotPerson &person : m_reviewAudienceSnapshot->people) {
-        const QString id = person.companyId.trimmed();
-        if (id.isEmpty())
-            continue;
-        Company &company = companies[id];
-        company.id = id;
-        if (company.name.isEmpty()) company.name = person.companyName.trimmed();
-        ++company.people;
-    }
-    QList<Company> ordered = companies.values();
-    std::sort(ordered.begin(), ordered.end(), [](const Company &left, const Company &right) {
-        return left.name.localeAwareCompare(right.name) < 0;
-    });
-    for (const Company &company : ordered)
-        result.append(QVariantMap{{QStringLiteral("id"), company.id},
-                                  {QStringLiteral("name"), company.name.isEmpty() ? company.id : company.name},
-                                  {QStringLiteral("peopleCount"), company.people}});
-    return result;
-}
-
 QVariantList DesktopAppController::reviewAudiencePresets() const
 {
     QVariantList result;
     if (!m_reviewAudienceSnapshot || !m_communicationsController)
         return result;
     const auto &source = m_communicationsController->preparation().source;
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
-    const PN::Comm::AudiencePresetStore store(settings, source.databaseKey);
-    const auto globalDefault = store.defaultFor(source.workflow);
+    const PN::Comm::AudiencePresetStore store;
     const auto projectDefault = store.defaultFor(source.workflow, source.projectId);
-    for (const PN::Comm::AudiencePreset &preset : store.presets()) {
-        if (preset.workflow != source.workflow
-            || (!preset.projectId.isEmpty() && preset.projectId != source.projectId))
-            continue;
+    for (const PN::Comm::AudiencePreset &preset : store.presets(source.projectId, source.workflow)) {
         result.append(QVariantMap{{QStringLiteral("id"), preset.id},
                                   {QStringLiteral("name"), preset.name},
-                                  {QStringLiteral("projectScoped"), !preset.projectId.isEmpty()},
-                                  {QStringLiteral("globalDefault"), globalDefault && globalDefault->id == preset.id},
                                   {QStringLiteral("projectDefault"), projectDefault && projectDefault->id == preset.id}});
     }
     return result;
 }
 
-bool DesktopAppController::saveReviewAudiencePreset(const QString &name, bool projectScoped)
+bool DesktopAppController::saveReviewAudiencePreset(const QString &name)
 {
     if (!m_reviewAudienceSnapshot || !m_reviewAudienceRule || !m_communicationsController)
         return false;
@@ -1106,12 +987,11 @@ bool DesktopAppController::saveReviewAudiencePreset(const QString &name, bool pr
     PN::Comm::AudiencePreset preset;
     preset.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
     preset.name = name.trimmed();
-    preset.projectId = projectScoped ? source.projectId : QString();
+    preset.projectId = source.projectId;
     preset.workflow = source.workflow;
     preset.rule = *m_reviewAudienceRule;
     preset.overrides = m_recipientSelectionModel->overrides();
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
-    return PN::Comm::AudiencePresetStore(settings, source.databaseKey).save(std::move(preset)).ok();
+    return PN::Comm::AudiencePresetStore().save(std::move(preset)).ok();
 }
 
 bool DesktopAppController::applyReviewAudiencePreset(const QString &presetId)
@@ -1119,11 +999,9 @@ bool DesktopAppController::applyReviewAudiencePreset(const QString &presetId)
     if (!m_reviewAudienceSnapshot || !m_communicationsController || presetId.trimmed().isEmpty())
         return false;
     const auto &source = m_communicationsController->preparation().source;
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
-    const PN::Comm::AudiencePresetStore store(settings, source.databaseKey);
-    for (const PN::Comm::AudiencePreset &preset : store.presets()) {
-        if (preset.id != presetId || preset.workflow != source.workflow
-            || (!preset.projectId.isEmpty() && preset.projectId != source.projectId))
+    const PN::Comm::AudiencePresetStore store;
+    for (const PN::Comm::AudiencePreset &preset : store.presets(source.projectId, source.workflow)) {
+        if (preset.id != presetId)
             continue;
         m_recipientSelectionModel->setAudience(PN::Comm::resolveAudience(*m_reviewAudienceSnapshot, preset.rule));
         updateRecipientInternalReportContext();
@@ -1134,14 +1012,12 @@ bool DesktopAppController::applyReviewAudiencePreset(const QString &presetId)
     return false;
 }
 
-bool DesktopAppController::setReviewAudiencePresetDefault(const QString &presetId, bool projectScoped)
+bool DesktopAppController::setReviewAudiencePresetDefault(const QString &presetId)
 {
     if (!m_reviewAudienceSnapshot || !m_communicationsController || presetId.trimmed().isEmpty())
         return false;
     const auto &source = m_communicationsController->preparation().source;
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
-    return PN::Comm::AudiencePresetStore(settings, source.databaseKey)
-        .setDefault(presetId, source.workflow, projectScoped ? source.projectId : QString()).ok();
+    return PN::Comm::AudiencePresetStore().setDefault(presetId, source.workflow, source.projectId).ok();
 }
 
 std::optional<PN::Comm::CommunicationTemplate>
@@ -1161,8 +1037,7 @@ bool DesktopAppController::applyDefaultReviewAudiencePreset()
     if (!m_reviewAudienceSnapshot || !m_communicationsController)
         return false;
     const auto &source = m_communicationsController->preparation().source;
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
-    const auto preset = PN::Comm::AudiencePresetStore(settings, source.databaseKey)
+    const auto preset = PN::Comm::AudiencePresetStore()
         .defaultFor(source.workflow, source.projectId);
     if (!preset)
         return false;

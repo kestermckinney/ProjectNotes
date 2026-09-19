@@ -117,7 +117,7 @@ std::optional<ProjectReportReview> ProjectReportPreparationFactory::createStatus
     // The report dialog may offer every member of this project, but starts
     // with only members who opted in to status reports selected.
     AudienceRule audienceRule; audienceRule.source = PeopleSource::ProjectTeam;
-    audienceRule.companyFilter = CompanyFilter::All; audienceRule.excludeProjectManager = false;
+    audienceRule.companyFilter = CompanyFilter::All; audienceRule.excludeProjectManager = true;
     AudienceResolution audience = resolveAudience(snapshot, audienceRule);
     for (const SnapshotPerson &person : audience.people)
         if (!person.receivesStatus)
@@ -149,7 +149,7 @@ std::optional<ProjectReportReview> ProjectReportPreparationFactory::createTracke
     if (!applyContentTemplate(&*document, snapshot, Workflow::TrackerItemsReport, options, contentTemplate, &validation))
         return std::nullopt;
     AudienceRule audienceRule; audienceRule.source = PeopleSource::ProjectTeam;
-    audienceRule.companyFilter = CompanyFilter::All; audienceRule.excludeProjectManager = false;
+    audienceRule.companyFilter = CompanyFilter::All; audienceRule.excludeProjectManager = true;
     AudienceResolution audience = resolveAudience(snapshot, audienceRule);
     for (const SnapshotPerson &person : audience.people)
         if (!person.receivesStatus)

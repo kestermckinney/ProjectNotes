@@ -33,8 +33,6 @@ Dialog {
     property string pendingPreparationKey: ""
     property string pendingSaveUrl: ""
     property string pendingSaveFormat: ""
-    property var companyChoices: []
-    property var selectedCompanyIds: []
 
     readonly property var office365: DesktopAppController.office365SettingsModel
     readonly property bool graphSelected: DesktopAppController.preferredEmailBackend === "graph"
@@ -157,28 +155,6 @@ Dialog {
         if (delivery === "email" && projectId !== "" && reportDate.text !== "")
             prepare(emailMode)
     }
-    function defaultPeopleSource() { return "project-team" }
-    function refreshCompanies() {
-        companyChoices = DesktopAppController.reviewAudienceCompanies()
-        selectedCompanyIds = []
-    }
-    function setCompanySelected(companyId, selected) {
-        var ids = selectedCompanyIds.slice()
-        var index = ids.indexOf(companyId)
-        if (selected && index < 0) ids.push(companyId)
-        else if (!selected && index >= 0) ids.splice(index, 1)
-        selectedCompanyIds = ids
-    }
-    function applyDefaultAudience() {
-        if (projectReport)
-            DesktopAppController.restoreProjectReportDefaultAudience()
-        else
-            DesktopAppController.applyReviewAudienceRule(defaultPeopleSource(), "all", false, false)
-    }
-    function applySpecificCompanies() {
-        DesktopAppController.applyReviewAudienceRuleWithCompanies(defaultPeopleSource(), "selected-companies",
-                                                                   selectedCompanyIds, false, false)
-    }
     function defaultReportFileStem() {
         var date = (reportDate.text || "").split("/")
         var datePart = date.length === 3 ? date[2] + date[0] + date[1] : "Report"
@@ -236,7 +212,6 @@ Dialog {
     onWorkflowChanged: {
         preparedKey = ""
         pendingPreparationKey = ""
-        selectedCompanyIds = []
         Qt.callLater(dialog.prepareEmailReport)
     }
     onDeliveryChanged: Qt.callLater(dialog.prepareEmailReport)
@@ -258,7 +233,6 @@ Dialog {
             if (dialog.controller && dialog.controller.stageName === "reviewing" && dialog.pendingPreparationKey !== "") {
                 dialog.preparedKey = dialog.pendingPreparationKey
                 dialog.pendingPreparationKey = ""
-                dialog.refreshCompanies()
             }
             dialog.savePendingReport()
         }
@@ -398,32 +372,6 @@ Dialog {
                             visible: dialog.delivery === "email"; Layout.fillWidth: true; spacing: 9
                             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
                             Label { text: qsTr("Send to"); color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
-                            RowLayout {
-                                Layout.fillWidth: true; spacing: 8
-                                ChoiceCard {
-                                    Layout.fillWidth: true; implicitHeight: 58; chosen: !specificCompanies.checked
-                                    iconName: "groups"; heading: qsTr("Default audience"); detail: qsTr("Use this report’s normal distribution.")
-                                    onSelected: { specificCompanies.checked = false; dialog.applyDefaultAudience() }
-                                }
-                                ChoiceCard {
-                                    Layout.fillWidth: true; implicitHeight: 58; chosen: specificCompanies.checked
-                                    iconName: "business"; heading: qsTr("Specific companies"); detail: qsTr("Limit the default audience by company.")
-                                    onSelected: specificCompanies.checked = true
-                                }
-                            }
-                            CheckBox { id: specificCompanies; visible: false }
-                            Flow {
-                                visible: specificCompanies.checked; Layout.fillWidth: true; spacing: 7
-                                Repeater {
-                                    model: dialog.companyChoices
-                                    delegate: CompactCheckBox {
-                                        required property var modelData
-                                        text: qsTr("%1 (%2)").arg(modelData.name).arg(modelData.peopleCount)
-                                        checked: dialog.selectedCompanyIds.indexOf(modelData.id) >= 0
-                                        onToggled: { dialog.setCompanySelected(modelData.id, checked); dialog.applySpecificCompanies() }
-                                    }
-                                }
-                            }
                             Label {
                                 visible: !dialog.prepared
                                 Layout.fillWidth: true
@@ -436,7 +384,6 @@ Dialog {
                                 recipientModel: dialog.recipientModel
                                 reviewController: dialog.controller
                                 audienceController: dialog.projectReport ? null : DesktopAppController
-                                defaultPeopleSource: dialog.defaultPeopleSource()
                                 compact: true
                                 fixedAudience: dialog.projectReport
                             }

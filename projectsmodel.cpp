@@ -107,6 +107,7 @@ ProjectsModel::ProjectsModel(DatabaseObjects* dbo) : SqlQueryModel(dbo)
     addRelatedTable("project_locations", "project_id", "id", "Project Location", DBExportable);
     addRelatedTable("project_people", "project_id", "id", "Project People", DBExportable);
     addRelatedTable("status_report_items", "project_id", "id", "Status Report Item", DBExportable);
+    addRelatedTable("project_email_audiences", "project_id", "id", "Project Email Audience", DBExportable);
 
     QStringList key1 = {"project_number"};
 
@@ -355,6 +356,23 @@ const QModelIndex ProjectsModel::copyRecord(QModelIndex index)
                 insert.exec();
 
                 getDBOs()->pushRowChange("project_people", pid, KeyColumnChange::Insert);
+            }
+        }
+        DB_UNLOCK;
+
+        // Copy project-scoped saved audiences with fresh row IDs.
+        DB_LOCK;
+        QSqlQuery audienceQuery(getDBOs()->getDb());
+        audienceQuery.prepare("SELECT workflow,audience_name,people_source,company_filter,selected_company_ids_json,selected_person_ids_json,recipient_distribution_json,is_default,settings_version FROM project_email_audiences WHERE project_id=? AND deleted=0");
+        audienceQuery.addBindValue(oldid);
+        if (audienceQuery.exec()) {
+            QSqlQuery insert(getDBOs()->getDb());
+            insert.prepare("INSERT INTO project_email_audiences(id,project_id,workflow,audience_name,people_source,company_filter,selected_company_ids_json,selected_person_ids_json,recipient_distribution_json,is_default,settings_version,updateddate) VALUES(?,?,?,?,?,?,?,?,?,?,?,CAST(strftime('%s','now') AS INTEGER))");
+            while (audienceQuery.next()) {
+                const QString id = QUuid::createUuid().toString();
+                insert.bindValue(0, id); insert.bindValue(1, newid);
+                for (int column = 0; column < 9; ++column) insert.bindValue(column + 2, audienceQuery.value(column));
+                if (insert.exec()) getDBOs()->pushRowChange("project_email_audiences", id, KeyColumnChange::Insert);
             }
         }
         DB_UNLOCK;

@@ -10,6 +10,7 @@
 #include "peoplemodel.h"
 #include "teamsmodel.h"
 #include "statusreportitemsmodel.h"
+#include "projectemailaudiencesmodel.h"
 #include "projectteammembersmodel.h"
 #include "projectlocationsmodel.h"
 #include "projectnotesmodel.h"

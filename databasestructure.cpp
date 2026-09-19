@@ -10,6 +10,7 @@
 #include "databaseupgrade_v1_0_0.h"
 #include "databaseupgrade_v1_2_0.h"
 #include "databaseupgrade_v5_0_0.h"
+#include "databaseupgrade_v6_2_0.h"
 
 bool DatabaseStructure::CreateDatabase()
 {
@@ -58,6 +59,10 @@ bool DatabaseStructure::UpgradeDatabase()
 
         if (currentversion == "4.1.0" || currentversion == "1.2.0" || currentversion == "1.0.0")
             db_UpgradeStep_v5_0_0();
+
+        // Idempotent so every supported pre-6.2 database receives the new table,
+        // including databases whose earlier release had no schema migration.
+        db_UpgradeStep_v6_2_0();
 
         // Update version to target (only update current_version, never modify id)
         global_DBObjects.execute(QString("update application_version set current_version = '%1';")

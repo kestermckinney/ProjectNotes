@@ -141,7 +141,7 @@ int main(int argc, char* argv[])
     QApplication::setApplicationName("projectnotes");
 #endif
     QApplication::setApplicationDisplayName("Project Notes");
-    QApplication::setApplicationVersion("6.0.0");
+    QApplication::setApplicationVersion("6.2.0");
 
     // --developer-profile PROFILENAME: use a separate data directory (same
     // behavior as the Widgets app), so the QML app can open the same dev DB.

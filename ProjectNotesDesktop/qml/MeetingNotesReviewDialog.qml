@@ -72,7 +72,7 @@ Dialog {
                 Label {
                     Layout.fillWidth: true
                     text: dialog.reviewing
-                        ? qsTr("Attendees are selected as To recipients. Other team members are unchecked and default to Cc. The project manager is excluded.")
+                        ? qsTr("Attendees are selected as To recipients. Other team members are unchecked and default to Cc.")
                         : qsTr("Preparing the current saved meeting note…")
                     color: Theme.text2; wrapMode: Text.Wrap
                 }

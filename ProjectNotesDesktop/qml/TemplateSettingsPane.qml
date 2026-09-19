@@ -322,11 +322,6 @@ ColumnLayout {
         color: Theme.red
         wrapMode: Text.WordWrap
     }
-    RowLayout {
-        Button { primary: true; text: qsTr("Save template"); enabled: pane.templateModel !== null; onClicked: pane.templateModel.save() }
-        Item { Layout.fillWidth: true }
-    }
-
     // Qt Quick Dialogs uses the platform's standard message dialog where one
     // is available, rather than leaving a validation message easy to miss in
     // the page chrome.

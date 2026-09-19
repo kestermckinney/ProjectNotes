@@ -244,6 +244,7 @@ void AudienceResolverTest::preservesResolutionOrderWhileGroupingAudience()
 
     RecipientSelectionModel model;
     model.setAudience(audience);
+    QVERIFY(!model.addManual(QStringLiteral("Manager duplicate"), QStringLiteral("MANAGER@example.test")));
     model.setInternalReportContext(true, QStringLiteral("ours"));
     QCOMPARE(model.internalAudienceWarning(),
              QStringLiteral("This internal report has 2 selected recipient(s) outside the managing company."));

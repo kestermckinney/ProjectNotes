@@ -195,31 +195,10 @@ public:
     // Restores the fixed project-team report audience and its workflow default
     // selections (status-report recipients are selected by default).
     Q_INVOKABLE bool restoreProjectReportDefaultAudience();
-    // Rebuilds the review-local audience from the immutable snapshot.  QML
-    // passes stable strings so it does not need to duplicate resolver rules.
-    Q_INVOKABLE bool applyReviewAudienceRule(const QString& peopleSource,
-                                             const QString& companyFilter,
-                                             bool includeUnknownCompany,
-                                             bool excludeProjectManager);
-    Q_INVOKABLE bool applyReviewAudienceRuleWithCompanies(const QString& peopleSource,
-                                                          const QString& companyFilter,
-                                                          const QStringList& companyIds,
-                                                          bool includeUnknownCompany,
-                                                          bool excludeProjectManager);
-    Q_INVOKABLE bool applyReviewAudienceRuleAdvanced(const QString& peopleSource,
-                                                     const QString& companyFilter,
-                                                     const QStringList& companyIds,
-                                                     const QStringList& chosenPersonIds,
-                                                     bool includeUnknownCompany,
-                                                     bool excludeProjectManager);
-    // QML receives stable IDs, display labels, and source-snapshot counts;
-    // it never decides company eligibility itself.
-    Q_INVOKABLE QVariantList reviewAudienceCompanies() const;
-    Q_INVOKABLE QVariantList reviewAudiencePeople() const;
     Q_INVOKABLE QVariantList reviewAudiencePresets() const;
-    Q_INVOKABLE bool saveReviewAudiencePreset(const QString& name, bool projectScoped);
+    Q_INVOKABLE bool saveReviewAudiencePreset(const QString& name);
     Q_INVOKABLE bool applyReviewAudiencePreset(const QString& presetId);
-    Q_INVOKABLE bool setReviewAudiencePresetDefault(const QString& presetId, bool projectScoped);
+    Q_INVOKABLE bool setReviewAudiencePresetDefault(const QString& presetId);
     Q_INVOKABLE bool handoffPreparedReview();
     // Copies a manifest-owned generated report only after the user has chosen
     // an explicit destination. It never launches a client or exports a user
@@ -695,7 +674,7 @@ public:
     Q_INVOKABLE QString duplicateRecordInTable(const QString& table, const QString& recordId);
 
     // ── Help ▸ maintenance actions (mirror the Widgets Help menu) ────────────
-    Q_INVOKABLE QString appVersion() const;   // "6.0.0"
+    Q_INVOKABLE QString appVersion() const;   // "6.2.0"
     // Compile-time build timestamp ("Aug  7 2026 14:32:10"), same __DATE__/
     // __TIME__ source as the Widgets AboutDialog's BUILDV.
     Q_INVOKABLE QString buildTimestamp() const;

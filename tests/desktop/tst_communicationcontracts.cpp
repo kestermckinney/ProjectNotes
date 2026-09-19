@@ -175,6 +175,7 @@ void CommunicationContractsTest::cleanupTestCase()
 void CommunicationContractsTest::init()
 {
     QVERIFY(global_DBObjects.saveParameter(QString::fromLatin1(kTemplateSettingKey), QString()));
+    QVERIFY(QSqlQuery(global_DBObjects.getDb()).exec(QStringLiteral("DELETE FROM project_email_audiences")));
 }
 
 void CommunicationContractsTest::stableEnumRoundTrips()
@@ -993,15 +994,14 @@ void CommunicationContractsTest::preparesStatusAndTrackerReportsFromSnapshot()
     QVERIFY(status->preparation.document.emailFragment.contains("Build")); QVERIFY(status->preparation.document.emailFragment.contains("Risk"));
     QVERIFY(!status->preparation.document.emailFragment.contains("Resolved risk"));
     QVERIFY(!status->preparation.document.emailFragment.contains("Internal risk"));
-    QCOMPARE(status->audience.people.size(), 2);
-    QCOMPARE(status->audience.initialOverrides.size(), 1);
-    QCOMPARE(status->audience.initialOverrides.constFirst().personId, QStringLiteral("manager"));
+    QCOMPARE(status->audience.people.size(), 1);
+    QCOMPARE(status->audience.initialOverrides.size(), 0);
     RecipientSelectionModel statusRecipients;
     statusRecipients.setAudience(status->audience);
-    QCOMPARE(statusRecipients.rowCount(), 2);
+    QCOMPARE(statusRecipients.rowCount(), 1);
     QCOMPARE(statusRecipients.selectedRecipientCount(), 1);
     QCOMPARE(statusRecipients.data(statusRecipients.index(0), RecipientSelectionModel::SelectedRole).toBool(),
-             false);
+             true);
     QCOMPARE(status->preparation.recipients.size(), 1);
     QCOMPARE(status->preparation.recipients.constFirst().address,QStringLiteral("status@example.test"));
 
@@ -1031,7 +1031,7 @@ void CommunicationContractsTest::preparesStatusAndTrackerReportsFromSnapshot()
     QVERIFY(tracker->preparation.retainHtml);
     QVERIFY(tracker->preparation.displayPdf);
     QVERIFY(tracker->preparation.document.emailFragment.contains("Task"));
-    QCOMPARE(tracker->audience.people.size(), 2);
+    QCOMPARE(tracker->audience.people.size(), 1);
     QCOMPARE(tracker->preparation.recipients.size(), 1);
     QCOMPARE(tracker->preparation.recipients.constFirst().address, QStringLiteral("status@example.test"));
 }
@@ -1265,18 +1265,22 @@ void CommunicationContractsTest::serializesEmailHandoffsAndRejectsStaleCompletio
 
 void CommunicationContractsTest::scopesAudiencePresetsByDatabaseAndProject()
 {
-    QTemporaryDir directory; QVERIFY(directory.isValid()); QSettings settings(directory.filePath("audiences.ini"), QSettings::IniFormat);
-    AudiencePresetStore store(settings, "database-a"); AudiencePreset preset{"team", "Team", {}, Workflow::StatusReport};
+    AudiencePresetStore store; AudiencePreset preset{"team", "Team", "p", Workflow::StatusReport};
     preset.rule.source=PeopleSource::StatusRecipients; preset.rule.companyFilter=CompanyFilter::ManagingCompany; preset.overrides={{"person", false, RecipientRole::To}};
-    QVERIFY(store.save(preset).ok()); QVERIFY(store.setDefault("team", Workflow::StatusReport).ok());
-    QVERIFY(store.defaultFor(Workflow::StatusReport).has_value());
-    AudiencePreset project=preset; project.id="project-team"; project.name="Project Team"; project.projectId="p";
-    QVERIFY(store.save(project).ok()); QVERIFY(store.setDefault("project-team", Workflow::StatusReport, "p").ok());
-    QVERIFY(!store.setDefault("project-team", Workflow::StatusReport).ok());
-    QVERIFY(!store.setDefault("project-team", Workflow::StatusReport, "other").ok());
-    QCOMPARE(store.defaultFor(Workflow::StatusReport, "p")->id, QStringLiteral("project-team"));
-    QCOMPARE(store.defaultFor(Workflow::StatusReport, "other")->id, QStringLiteral("team"));
-    AudiencePresetStore other(settings, "database-b"); QVERIFY(!other.defaultFor(Workflow::StatusReport).has_value());
+    QVERIFY(store.save(preset).ok());
+    const auto saved=store.presets("p", Workflow::StatusReport); QCOMPARE(saved.size(), 1); QCOMPARE(saved.constFirst().name, QStringLiteral("Team"));
+    QCOMPARE(saved.constFirst().rule.source, PeopleSource::ProjectTeam);
+    QVERIFY(saved.constFirst().rule.chosenPersonIds.isEmpty());
+    QCOMPARE(saved.constFirst().rule.companyFilter, CompanyFilter::All);
+    QVERIFY(saved.constFirst().rule.companyIds.isEmpty());
+    QVERIFY(saved.constFirst().rule.includeUnknownCompany);
+    QVERIFY(store.setDefault(saved.constFirst().id, Workflow::StatusReport, "p").ok());
+    QCOMPARE(store.defaultFor(Workflow::StatusReport, "p")->name, QStringLiteral("Team"));
+    QVERIFY(!store.defaultFor(Workflow::StatusReport, "other").has_value());
+    AudiencePreset replacement=preset; replacement.id="ignored-new-id"; replacement.rule.companyFilter=CompanyFilter::All;
+    QVERIFY(store.save(replacement).ok());
+    QCOMPARE(store.presets("p", Workflow::StatusReport).size(), 1);
+    QCOMPARE(store.presets("p", Workflow::StatusReport).constFirst().rule.companyFilter, CompanyFilter::All);
 }
 
 void CommunicationContractsTest::buildsStatusReportWithEvmAndEscapedIssues()

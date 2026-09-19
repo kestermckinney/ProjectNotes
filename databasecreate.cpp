@@ -332,6 +332,29 @@ void db_CreateNewDatabase()
         CREATE UNIQUE INDEX idx_status_report_items_desc_proj ON status_report_items (task_description, project_id) WHERE deleted = 0;
     )");
 
+    // Named, project-scoped recipient audiences for native email/report workflows.
+    global_DBObjects.execute(R"(
+        CREATE TABLE project_email_audiences (
+            id                          TEXT PRIMARY KEY NOT NULL,
+            project_id                  TEXT NOT NULL,
+            workflow                    TEXT NOT NULL,
+            audience_name               TEXT NOT NULL,
+            people_source               TEXT NOT NULL,
+            company_filter              TEXT NOT NULL,
+            selected_company_ids_json   TEXT NOT NULL DEFAULT '[]',
+            selected_person_ids_json    TEXT NOT NULL DEFAULT '[]',
+            recipient_distribution_json TEXT NOT NULL DEFAULT '[]',
+            is_default                  INTEGER NOT NULL DEFAULT 0,
+            settings_version            INTEGER NOT NULL DEFAULT 1,
+            updateddate                 INTEGER,
+            syncdate                    INTEGER,
+            deleted                     INTEGER NOT NULL DEFAULT 0
+        );
+    )");
+    global_DBObjects.execute(R"(CREATE INDEX idx_project_email_audiences_project ON project_email_audiences(project_id, workflow, deleted);)");
+    global_DBObjects.execute(R"(CREATE UNIQUE INDEX idx_project_email_audiences_name ON project_email_audiences(project_id, workflow, audience_name COLLATE NOCASE) WHERE deleted = 0;)");
+    global_DBObjects.execute(R"(CREATE UNIQUE INDEX idx_project_email_audiences_default ON project_email_audiences(project_id, workflow) WHERE deleted = 0 AND is_default = 1;)");
+
     // Triggers — on data changes: stamp updateddate and clear syncdate so the row is queued for sync.
     // WHEN NEW.syncdate IS OLD.syncdate: skip if the UPDATE is only writing syncdate itself
     // (i.e. SqliteSyncPro marking the row as synced), so syncdate is not immediately reset to NULL.
@@ -439,6 +462,16 @@ void db_CreateNewDatabase()
         WHEN NEW.syncdate IS OLD.syncdate
         BEGIN
             UPDATE status_report_items SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
+            WHERE id = NEW.id;
+        END;
+    )");
+
+    global_DBObjects.execute(R"(
+        CREATE TRIGGER trg_project_email_audiences_updated AFTER UPDATE ON project_email_audiences
+        WHEN NEW.syncdate IS OLD.syncdate
+        BEGIN
+            UPDATE project_email_audiences
+            SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
             WHERE id = NEW.id;
         END;
     )");
