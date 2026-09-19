@@ -9,7 +9,7 @@
 namespace PN::Comm {
 
 // The template context every workflow shares: project, client, manager and
-// managing-company fields plus report.type. The editor offers each of these
+// managing-company fields, report.type and current.date. The editor offers each of these
 // fields for every workflow, so each one must resolve (to an empty string when
 // the snapshot has no value) or the whole review fails to prepare. Factories
 // add their workflow-specific meeting.* and report.* fields on top.

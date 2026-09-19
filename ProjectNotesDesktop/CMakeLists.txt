@@ -115,6 +115,8 @@ set(DESKTOP_QML_FILES
     qml/MeetingNotesReviewDialog.qml
     qml/MeetingNotesReportReviewDialog.qml
     qml/TemplateSettingsPane.qml
+    qml/MeetingTemplateSettingsPane.qml
+    qml/ThemedMessageDialog.qml
     qml/pages/ProjectsListPage.qml
     qml/pages/ProjectDetailPage.qml
     qml/pages/ProjectNoteDetailPage.qml

@@ -37,6 +37,7 @@
 #include "ProjectNotesIntegrations/Office365Service.h"
 #include "ProjectNotesIntegrations/QtNetworkHttpTransport.h"
 #include "ProjectNotesIntegrations/TemplateEditorModel.h"
+#include "ProjectNotesIntegrations/MeetingTemplateEditorModel.h"
 #include "Office365SettingsModel.h"
 
 #include <QDesktopServices>
@@ -178,6 +179,7 @@ DesktopAppController::DesktopAppController(QObject* parent)
     m_recipientSelectionModel = std::make_unique<PN::Comm::RecipientSelectionModel>();
     m_templateEditorModel = std::make_unique<PN::Comm::TemplateEditorModel>(
         QStringLiteral("ProjectNotes") + s_developerProfile);
+    m_meetingTemplateEditorModel = std::make_unique<PN::Comm::MeetingTemplateEditorModel>();
     m_office365SettingsModel = std::make_unique<Office365SettingsModel>(
         m_fileFinder, m_office365Service, this);
     m_webEngineRenderer = new PN::Comm::WebEngineReportRenderer(this);
@@ -428,6 +430,7 @@ bool DesktopAppController::openOrCreateDatabase()
     m_communicationRepository = std::make_unique<PN::Comm::AsyncSqliteCommunicationRepository>(
         dbPath, &db_rwlock, ++m_communicationDatabaseGeneration);
     m_templateEditorModel->setDatabaseKey(dbPath);
+    m_meetingTemplateEditorModel->setDatabaseKey(dbPath);
 
     m_databaseOpen = true;
     emit databaseReady();
@@ -458,6 +461,9 @@ QObject* DesktopAppController::recipientSelectionModel() const
 
 QObject* DesktopAppController::templateEditorModel() const
 { return m_templateEditorModel.get(); }
+
+QObject* DesktopAppController::meetingTemplateEditorModel() const
+{ return m_meetingTemplateEditorModel.get(); }
 
 QObject* DesktopAppController::office365SettingsModel() const
 { return m_office365SettingsModel.get(); }

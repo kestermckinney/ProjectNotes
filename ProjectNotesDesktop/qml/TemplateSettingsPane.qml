@@ -3,7 +3,6 @@
 
 import QtQuick
 import QtQuick.Controls.Basic
-import QtQuick.Dialogs
 import QtQuick.Layouts
 import ProjectNotesDesktop
 
@@ -168,7 +167,7 @@ ColumnLayout {
         const valid = pane.templateModel.validateDraft()
         if (saved && valid)
             return true
-        templateValidationDialog.text = pane.templateModel.diagnostic !== ""
+        templateValidationDialog.message = pane.templateModel.diagnostic !== ""
                 ? pane.templateModel.diagnostic
                 : qsTr("The template could not be saved or validated.")
         templateValidationDialog.open()
@@ -322,12 +321,10 @@ ColumnLayout {
         color: Theme.red
         wrapMode: Text.WordWrap
     }
-    // Qt Quick Dialogs uses the platform's standard message dialog where one
-    // is available, rather than leaving a validation message easy to miss in
-    // the page chrome.
-    MessageDialog {
+    // A modal dialog, rather than only the inline diagnostic, so a validation
+    // message that blocks navigation is not easy to miss.
+    ThemedMessageDialog {
         id: templateValidationDialog
         title: qsTr("Email template needs attention")
-        buttons: MessageDialog.Ok
     }
 }

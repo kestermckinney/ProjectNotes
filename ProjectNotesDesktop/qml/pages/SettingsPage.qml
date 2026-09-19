@@ -18,6 +18,7 @@ Item {
     readonly property var _office365: DesktopAppController.office365SettingsModel
     property int currentTab: 0
     readonly property int emailTemplatesTabIndex: 3
+    readonly property int meetingTemplatesTabIndex: 4
     Component.onCompleted: {
         _clients = DesktopAppController.clientList()
         _people  = DesktopAppController.peopleList()
@@ -36,7 +37,7 @@ Item {
         // Closing the application must be held at this same commit point too.
         // saveAndValidate() records incomplete drafts, then returns false so
         // the shell can abort navigation/close and let the user correct them.
-        return emailTemplates.saveAndValidate()
+        return emailTemplates.saveAndValidate() && meetingTemplates.saveAndValidate()
     }
 
     function _clientNames() { return _clients.map(function(c){ return c.name }) }
@@ -48,6 +49,9 @@ Item {
             return true
         if (page.currentTab === page.emailTemplatesTabIndex
                 && !emailTemplates.saveAndValidate())
+            return false
+        if (page.currentTab === page.meetingTemplatesTabIndex
+                && !meetingTemplates.saveAndValidate())
             return false
         page.currentTab = index
         return true
@@ -78,6 +82,7 @@ Item {
                     { key: "cloudSync", label: qsTr("Cloud Sync") },
                     { key: "office365", label: qsTr("Office 365 Integration") },
                     { key: "emailTemplates", label: qsTr("Email Templates") },
+                    { key: "meetingTemplates", label: qsTr("Meeting Templates") },
                     { key: "fileFinder", label: qsTr("File Finder") },
                     { key: "projectFolders", label: qsTr("Project Folders") },
                     { key: "preferences", label: qsTr("Preferences") },
@@ -376,6 +381,15 @@ Item {
                     id: emailTemplates
                     Layout.fillWidth: true
                     templateModel: DesktopAppController.templateEditorModel
+                }
+            }
+
+            SettingsTab {
+                // Meeting Templates
+                MeetingTemplateSettingsPane {
+                    id: meetingTemplates
+                    Layout.fillWidth: true
+                    templateModel: DesktopAppController.meetingTemplateEditorModel
                 }
             }
 

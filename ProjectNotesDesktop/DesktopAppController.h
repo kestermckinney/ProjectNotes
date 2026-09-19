@@ -42,6 +42,7 @@ class CommunicationsController;
 class EmailService;
 class RecipientSelectionModel;
 class TemplateEditorModel;
+class MeetingTemplateEditorModel;
 class Office365Service;
 class QtNetworkHttpTransport;
 class GraphEmailBackend;
@@ -85,6 +86,7 @@ class DesktopAppController : public QObject
     Q_PROPERTY(QObject* communicationsController READ communicationsController CONSTANT)
     Q_PROPERTY(QObject* recipientSelectionModel READ recipientSelectionModel CONSTANT)
     Q_PROPERTY(QObject* templateEditorModel READ templateEditorModel CONSTANT)
+    Q_PROPERTY(QObject* meetingTemplateEditorModel READ meetingTemplateEditorModel CONSTANT)
     Q_PROPERTY(QObject* office365SettingsModel READ office365SettingsModel CONSTANT)
     Q_PROPERTY(QString preferredEmailBackend READ preferredEmailBackend WRITE setPreferredEmailBackend NOTIFY emailSettingsChanged)
     Q_PROPERTY(QString thunderbirdExecutable READ thunderbirdExecutable WRITE setThunderbirdExecutable NOTIFY emailSettingsChanged)
@@ -160,6 +162,7 @@ public:
     QObject* communicationsController() const;
     QObject* recipientSelectionModel() const;
     QObject* templateEditorModel() const;
+    QObject* meetingTemplateEditorModel() const;
     QObject* office365SettingsModel() const;
     QString preferredEmailBackend() const;
     void setPreferredEmailBackend(const QString &backend);
@@ -834,6 +837,7 @@ private:
     std::unique_ptr<PN::Comm::CommunicationsController> m_communicationsController;
     std::unique_ptr<PN::Comm::RecipientSelectionModel> m_recipientSelectionModel;
     std::unique_ptr<PN::Comm::TemplateEditorModel> m_templateEditorModel;
+    std::unique_ptr<PN::Comm::MeetingTemplateEditorModel> m_meetingTemplateEditorModel;
     std::unique_ptr<Office365SettingsModel> m_office365SettingsModel;
     PN::Comm::WebEngineReportRenderer *m_webEngineRenderer = nullptr;
     // Bound to the currently open database only. It owns worker threads, so it

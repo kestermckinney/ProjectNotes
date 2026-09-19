@@ -23,6 +23,10 @@ add_library(ProjectNotesIntegrations STATIC
     CommunicationTemplateStore.cpp
     TemplateEditorModel.h
     TemplateEditorModel.cpp
+    MeetingTemplateStore.h
+    MeetingTemplateStore.cpp
+    MeetingTemplateEditorModel.h
+    MeetingTemplateEditorModel.cpp
     TemplateApplication.h
     TemplateApplication.cpp
 )

@@ -28,6 +28,7 @@
 #include "ProjectNotesIntegrations/ComputedFieldService.h"
 #include "ProjectNotesIntegrations/CommunicationTemplateStore.h"
 #include "ProjectNotesIntegrations/TemplateEditorModel.h"
+#include "ProjectNotesIntegrations/MeetingTemplateEditorModel.h"
 #include "ProjectNotesIntegrations/TemplateApplication.h"
 #include "ProjectNotesIntegrations/MicrosoftOAuthManager.h"
 #include "ProjectNotesIntegrations/Office365Service.h"
@@ -121,6 +122,8 @@ private slots:
     void exposesBundledTemplateForEveryNativeWorkflow();
     void switchingTemplateDatabaseDiscardsPriorSelection();
     void editsTemplatesWithoutQmlEvaluation();
+    void storesUserDefinedMeetingTypes();
+    void editsMeetingTypesWithoutQmlEvaluation();
     void appliesTemplateAroundProtectedNativeContent();
     void buildsContextSpecificMeetingNotes();
     void createsMeetingNotesReviewFromSnapshot();
@@ -178,6 +181,7 @@ void CommunicationContractsTest::cleanupTestCase()
 void CommunicationContractsTest::init()
 {
     QVERIFY(global_DBObjects.saveParameter(QString::fromLatin1(kTemplateSettingKey), QString()));
+    QVERIFY(global_DBObjects.saveParameter(MeetingTemplateStore::storageKey(), QString()));
     QVERIFY(QSqlQuery(global_DBObjects.getDb()).exec(QStringLiteral("DELETE FROM project_email_audiences")));
 }
 
@@ -717,6 +721,109 @@ void CommunicationContractsTest::editsTemplatesWithoutQmlEvaluation()
     TemplateEditorModel isolated(organization, QStringLiteral("database-b"));
     isolated.setWorkflow(QStringLiteral("status-report"));
     QCOMPARE(isolated.templates().size(), 1);
+}
+
+void CommunicationContractsTest::storesUserDefinedMeetingTypes()
+{
+    MeetingTemplateStore store;
+    QVERIFY(store.templates().isEmpty());
+    MeetingTemplate kickoff{QStringLiteral("meeting-a"), QStringLiteral("Internal Kickoff"), 90,
+                            QStringLiteral("{{ project.number }} Kickoff"), QStringLiteral("<p>Agenda</p>")};
+    QVERIFY(store.save(kickoff).ok());
+    QVERIFY(store.save({QStringLiteral("meeting-b"), QStringLiteral("Customer Status"), 0,
+                        QStringLiteral("Status")}).ok());
+    QVERIFY(!store.save({QStringLiteral("meeting-c"), QString()}).ok());
+    QVERIFY(!store.save({QStringLiteral("meeting-c"), QStringLiteral("Bad"), 60,
+                         QStringLiteral("Subject\r\nBcc: injected@example.test")}).ok());
+
+    QList<MeetingTemplate> stored = store.templates();
+    QCOMPARE(stored.size(), 2);
+    QCOMPARE(stored.at(0).durationMinutes, 90);
+    // An invalid duration falls back to the default when stored.
+    QCOMPARE(stored.at(1).durationMinutes, 60);
+
+    kickoff.name = QStringLiteral("Internal Kickoff (renamed)");
+    QVERIFY(store.save(kickoff).ok());
+    stored = store.templates();
+    QCOMPARE(stored.size(), 2);
+    QCOMPARE(stored.at(0).name, QStringLiteral("Internal Kickoff (renamed)"));
+
+    QVERIFY(store.remove(QStringLiteral("meeting-b")).ok());
+    QCOMPARE(store.templates().size(), 1);
+
+    QVERIFY(global_DBObjects.saveParameter(MeetingTemplateStore::storageKey(), QStringLiteral("{not-an-array}")));
+    ValidationResult validation;
+    QVERIFY(store.templates(&validation).isEmpty());
+    QCOMPARE(validation.issues.constFirst().code, QStringLiteral("template-store-corrupt"));
+    // A corrupt value is never overwritten by a later save.
+    QCOMPARE(store.save(kickoff).issues.constFirst().code, QStringLiteral("template-store-corrupt"));
+}
+
+void CommunicationContractsTest::editsMeetingTypesWithoutQmlEvaluation()
+{
+    MeetingTemplateEditorModel editor;
+    editor.setDatabaseKey(m_templateDatabasePath);
+    QVERIFY(editor.templates().isEmpty());
+    QVERIFY(!editor.hasDraft());
+    QVERIFY(editor.save());
+    QVERIFY(editor.validateDraft());
+
+    // A new meeting type left blank is discarded instead of stored nameless.
+    editor.beginNew();
+    QVERIFY(editor.hasDraft());
+    QCOMPARE(editor.templates().size(), 1);
+    QVERIFY(editor.save());
+    QVERIFY(!editor.hasDraft());
+    QVERIFY(editor.templates().isEmpty());
+
+    editor.beginNew();
+    editor.setDraftName(QStringLiteral("Customer Status"));
+    editor.setDraftDurationMinutes(30);
+    editor.setDraftSubject(QStringLiteral("{{ project.number }} {{ project.name }} Status"));
+    editor.setDraftRichAgenda(QStringLiteral("<p>Review "));
+    QVERIFY(editor.appendField(QStringLiteral("client.name"), QStringLiteral("richAgenda")));
+    QVERIFY(!editor.appendField(QStringLiteral("meeting.date"), QStringLiteral("richAgenda")));
+    QVERIFY(editor.appendField(QStringLiteral("current.date"), QStringLiteral("plainAgenda")));
+    QVERIFY(!editor.appendField(QStringLiteral("content.body"), QStringLiteral("plainAgenda")));
+    QVERIFY(editor.validateDraft());
+    QVERIFY(editor.save());
+    const QString statusId = editor.selectedTemplateId();
+    QVERIFY(statusId.startsWith(QStringLiteral("meeting-")));
+
+    // Fields that belong to notes or reports are not meeting fields.
+    for (const QString &field : {QStringLiteral("meeting.date"), QStringLiteral("report.date"),
+                                 QStringLiteral("report.internal"), QStringLiteral("content.body")}) {
+        editor.setDraftSubject(QStringLiteral("{{ %1 }}").arg(field));
+        QVERIFY2(!editor.validateDraft(), qPrintable(field));
+    }
+    editor.setDraftSubject(QStringLiteral("{{ project.name }} Status"));
+    QVERIFY(editor.save());
+
+    QVERIFY(editor.duplicateSelected());
+    QCOMPARE(editor.templates().size(), 2);
+    QVERIFY(editor.selectedTemplateId() != statusId);
+    QCOMPARE(editor.draftName(), QStringLiteral("Customer Status (copy)"));
+    QCOMPARE(editor.draftDurationMinutes(), 30);
+
+    // An incomplete named draft is kept for repair but still reported.
+    editor.setDraftSubject(QString());
+    QVERIFY(editor.save());
+    QVERIFY(!editor.validateDraft());
+    QVERIFY(editor.diagnostic() != QString());
+
+    MeetingTemplateEditorModel reopened;
+    reopened.setDatabaseKey(m_templateDatabasePath);
+    QCOMPARE(reopened.templates().size(), 2);
+    QVERIFY(reopened.selectTemplate(statusId));
+    QCOMPARE(reopened.draftRichAgenda(), QStringLiteral("<p>Review {{ client.name }}"));
+    QCOMPARE(reopened.draftPlainAgenda(), QStringLiteral("{{ current.date }}"));
+    const auto persisted = reopened.templateById(statusId);
+    QVERIFY(persisted);
+    QCOMPARE(persisted->durationMinutes, 30);
+
+    QVERIFY(reopened.deleteSelected());
+    QCOMPARE(reopened.templates().size(), 1);
+    QVERIFY(!reopened.templateById(statusId));
 }
 
 void CommunicationContractsTest::appliesTemplateAroundProtectedNativeContent()
@@ -1817,6 +1924,9 @@ void CommunicationContractsTest::resolvesEveryOfferedTemplateField()
         QVERIFY2(subject->contains("[preferences.managerName=Dana]"), qPrintable(*subject));
         QVERIFY2(subject->contains("[report.internal=No]"), qPrintable(*subject));
     }
+    snapshot.loadedAt = QDateTime(QDate(2026, 9, 19), QTime(12, 0));
+    for (Workflow workflow : workflows)
+        QVERIFY2(subjectFor(workflow)->contains("[current.date=09/19/2026]"), qPrintable(toStableString(workflow)));
     QVERIFY(subjectFor(Workflow::SendMeetingNotes)->contains("[meeting.title=Kickoff]"));
     QVERIFY(subjectFor(Workflow::SendMeetingNotes)->contains("[report.type=Meeting Notes]"));
     QVERIFY(subjectFor(Workflow::MeetingNotesReport)->contains("[report.date=09/02/2026]"));

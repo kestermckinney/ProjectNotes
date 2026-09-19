@@ -65,6 +65,9 @@ wrapper around the native report content. The generated content block is kept
 protected so a template cannot accidentally omit or duplicate the report.
 Templates are scoped to the active Project Notes profile and database.
 
+Right-click a subject or body to insert a field. **current.date** inserts the
+date the email is prepared, written as MM/DD/YYYY.
+
 A template may retain a reference to one global saved audience preset for its
 workflow. It is only a reusable suggestion: saving or choosing that reference
 never changes recipients. Apply the preset from a review, where the
@@ -101,6 +104,28 @@ this project. Each report keeps its own default, and a single audience can be
 the default for several reports. The dropdown marks the current report's
 default. Without a default, Status Report and Tracker Items Report start with
 the team members marked to receive status reports.
+
+## Meeting templates
+
+**Settings > Meeting Templates** holds your meeting types. Email templates cover
+a fixed set of reports. Meeting types are yours to define: add as many as you
+need with **New**, copy one with **Duplicate**, or remove one with **Delete**.
+
+Each meeting type has a name, a default duration, an invitation subject and
+an agenda. The agenda has a formatted version and an optional plain-text
+version for calendar clients that cannot show formatting.
+
+Subjects and agendas can insert project number, project name, client name,
+the preference fields for project manager and managing company, and
+**current.date**, the date the meeting is scheduled, written as MM/DD/YYYY. Right-click a
+subject or agenda to insert one. Meeting-note and report fields such as
+`meeting.date` are not available, because a meeting is scheduled from a project
+rather than from one note or report.
+
+Meeting types are stored in the open database, next to the email templates.
+Leaving the tab saves your changes. A new meeting type left completely blank is
+discarded. Meeting types defined in the legacy **Meeting and Email Types**
+plugin setting are not imported.
 
 ## Email-client availability
 

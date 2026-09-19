@@ -100,6 +100,57 @@ private slots:
         assertClean("Email Templates selected first");
     }
 
+    void test_00c_meetingTemplatesTabEditsClean()
+    {
+        nav("selectSection", "settings");
+        QQuickWindow* window = qobject_cast<QQuickWindow*>(root);
+        QVERIFY(window);
+        QQuickItem* settings = findVisualChild(window->contentItem(), QStringLiteral("settingsPage"));
+        QQuickItem* pages = findVisualChild(window->contentItem(), QStringLiteral("settingsPages"));
+        QVERIFY(settings);
+        QVERIFY(pages);
+        QVariant selected;
+        QVERIFY(QMetaObject::invokeMethod(settings, "selectTab", Q_RETURN_ARG(QVariant, selected),
+                                          Q_ARG(QVariant, 4)));
+        QVERIFY(selected.toBool());
+        QTRY_COMPARE_WITH_TIMEOUT(pages->property("currentIndex").toInt(), 4, 1000);
+        assertClean("Meeting Templates selected");
+
+        // Showing the editor for a new, blank meeting type must bind cleanly,
+        // and leaving the tab discards it rather than blocking navigation.
+        QObject* model = c->meetingTemplateEditorModel();
+        QVERIFY(model);
+        QVERIFY(QMetaObject::invokeMethod(model, "beginNew"));
+        QTRY_VERIFY_WITH_TIMEOUT(model->property("hasDraft").toBool(), 1000);
+        assertClean("new meeting type editor");
+        QVERIFY(QMetaObject::invokeMethod(settings, "selectTab", Q_RETURN_ARG(QVariant, selected),
+                                          Q_ARG(QVariant, 0)));
+        QVERIFY(selected.toBool());
+        QVERIFY(!model->property("hasDraft").toBool());
+        assertClean("blank meeting type discarded");
+
+        // A named draft with no subject is kept but blocks leaving the tab
+        // behind the themed validation dialog.
+        QVERIFY(QMetaObject::invokeMethod(settings, "selectTab", Q_RETURN_ARG(QVariant, selected),
+                                          Q_ARG(QVariant, 4)));
+        QVERIFY(QMetaObject::invokeMethod(model, "beginNew"));
+        model->setProperty("draftName", QStringLiteral("Smoke meeting"));
+        QVERIFY(QMetaObject::invokeMethod(settings, "selectTab", Q_RETURN_ARG(QVariant, selected),
+                                          Q_ARG(QVariant, 0)));
+        QVERIFY(!selected.toBool());
+        QObject* dialog = root->findChild<QObject*>(QStringLiteral("meetingValidationDialog"));
+        QVERIFY(dialog);
+        QTRY_VERIFY_WITH_TIMEOUT(dialog->property("visible").toBool(), 1000);
+        QVERIFY(!dialog->property("message").toString().isEmpty());
+        assertClean("meeting validation dialog");
+        QVERIFY(QMetaObject::invokeMethod(dialog, "close"));
+        QVERIFY(QMetaObject::invokeMethod(model, "deleteSelected"));
+        QVERIFY(QMetaObject::invokeMethod(settings, "selectTab", Q_RETURN_ARG(QVariant, selected),
+                                          Q_ARG(QVariant, 0)));
+        QVERIFY(selected.toBool());
+        assertClean("meeting type deleted");
+    }
+
     // Visit every primary section of the shell.
     void test_01_sections()
     {
@@ -144,8 +195,8 @@ private slots:
         QQuickItem* pages = findVisualChild(window->contentItem(), QStringLiteral("settingsPages"));
         QVERIFY(tabList);
         QVERIFY(pages);
-        QCOMPARE(tabList->property("count").toInt(), 9);
-        QCOMPARE(pages->property("count").toInt(), 9);
+        QCOMPARE(tabList->property("count").toInt(), 10);
+        QCOMPARE(pages->property("count").toInt(), 10);
         assertClean("settings category tabs");
     }
 
