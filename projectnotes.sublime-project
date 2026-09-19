@@ -3,7 +3,7 @@
 		{
 			"path": ".",
 			"file_exclude_patterns": ["*.sublime-workspace", ".gitattributes", "*.pro.user", ".gitignore", "CMakeLists.txt.user*", ".*", "*.flatpak"],
-			"folder_exclude_patterns": ["build", "__pycache__", ".*", ".flatpak-builder", "flatpak-build", "flatpak-build-remotehost", "graphify-out", "flatpak-repo"],
+			"folder_exclude_patterns": ["build", "__pycache__", ".*", ".flatpak-builder", "flatpak-build", "flatpak-build-remotehost", "graphify-out", "flatpak-repo", "build-qmltests"],
 			"binary_file_patterns": ["*.so", "*.so.*", "*.a", "*.o", "*.pack", "*.idx", "*.db", "*.dll", "*.dylib", "*.exe", "*.png", "*.jpg", "*.ico", "*.zip", "*.tar", "*.gz", "*.AppImage", "*.flatpak"],
 			"index_exclude_patterns": ["packaging/linux/.flatpak-builder/*", "packaging/linux/flatpak-build/*", "*.db"]
 		}
