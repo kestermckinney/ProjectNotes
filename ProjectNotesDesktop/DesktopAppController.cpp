@@ -1693,6 +1693,23 @@ bool DesktopAppController::exportRecordXml(const QString& tableName, const QStri
 
 // ── Preferences ──────────────────────────────────────────────────────────────
 
+bool DesktopAppController::viewReportAfterSave() const
+{
+    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    settings.setFallbacksEnabled(false);
+    return settings.value(QStringLiteral("Reports/ViewAfterSave"), true).toBool();
+}
+
+void DesktopAppController::setViewReportAfterSave(bool enabled)
+{
+    if (viewReportAfterSave() == enabled)
+        return;
+    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    settings.setFallbacksEnabled(false);
+    settings.setValue(QStringLiteral("Reports/ViewAfterSave"), enabled);
+    emit viewReportAfterSaveChanged();
+}
+
 QString DesktopAppController::managingCompanyId() const
 { return global_DBObjects.getManagingCompany(); }
 void DesktopAppController::setManagingCompanyId(const QString& clientId)

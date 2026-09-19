@@ -29,7 +29,6 @@ Dialog {
     property string delivery: "save"
     property string emailMode: "inline-html"
     property bool internalReport: false
-    property bool openAfterSave: false
     property string preparedKey: ""
     property string pendingPreparationKey: ""
     property string pendingSaveUrl: ""
@@ -208,8 +207,11 @@ Dialog {
         var destination = pendingSaveUrl
         pendingSaveUrl = ""
         pendingSaveFormat = ""
-        if (DesktopAppController.saveReviewGeneratedAttachment(name, destination) && openAfterSave)
-            Qt.openUrlExternally(destination)
+        if (DesktopAppController.saveReviewGeneratedAttachment(name, destination)) {
+            dialog.close()
+            if (DesktopAppController.viewReportAfterSave)
+                Qt.openUrlExternally(destination)
+        }
     }
     function deliverySummary() {
         var report = workflowLabel(workflow)
@@ -248,6 +250,11 @@ Dialog {
     Connections {
         target: dialog.controller
         function onStateChanged() {
+            if (dialog.visible && dialog.delivery === "email" && dialog.controller
+                    && dialog.controller.stageName === "completed") {
+                dialog.close()
+                return
+            }
             if (dialog.controller && dialog.controller.stageName === "reviewing" && dialog.pendingPreparationKey !== "") {
                 dialog.preparedKey = dialog.pendingPreparationKey
                 dialog.pendingPreparationKey = ""

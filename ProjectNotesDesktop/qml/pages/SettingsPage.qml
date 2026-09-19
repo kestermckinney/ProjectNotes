@@ -1034,7 +1034,12 @@ Item {
                 // Preferences
                 SettingsSection {
                 title: "Preferences"
-                subtitle: "Defaults applied to new projects and status reports."
+                subtitle: "Defaults applied to new projects and reports."
+                SettingsCheck {
+                    label: qsTr("View report after save")
+                    checked: DesktopAppController.viewReportAfterSave
+                    onToggledValue: (v) => DesktopAppController.viewReportAfterSave = v
+                }
                 GridLayout {
                     Layout.fillWidth: true
                     columns: 2

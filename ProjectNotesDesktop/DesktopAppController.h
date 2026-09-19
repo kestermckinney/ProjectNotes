@@ -61,6 +61,8 @@ class DesktopAppController : public QObject
 {
     Q_OBJECT
 
+    Q_PROPERTY(bool viewReportAfterSave READ viewReportAfterSave WRITE setViewReportAfterSave NOTIFY viewReportAfterSaveChanged)
+
     Q_PROPERTY(QAbstractItemModel* projectsListModel     READ projectsListModel     NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* projectNotesModel     READ projectNotesModel     NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* meetingAttendeesModel READ meetingAttendeesModel NOTIFY databaseReady)
@@ -293,6 +295,8 @@ public:
                                      const QString& fileUrlOrPath);
 
     // ── Preferences (managing company / project manager, by id) ──────────────
+    bool viewReportAfterSave() const;
+    void setViewReportAfterSave(bool enabled);
     Q_INVOKABLE QString managingCompanyId() const;
     Q_INVOKABLE void    setManagingCompanyId(const QString& clientId);
     Q_INVOKABLE QString projectManagerId() const;
@@ -802,6 +806,7 @@ public:
     QString supabaseConnectionInfo() const;
 
 signals:
+    void viewReportAfterSaveChanged();
     void emailSettingsChanged();
     void databaseReady();
     void errorOccurred(const QString& title, const QString& message);
