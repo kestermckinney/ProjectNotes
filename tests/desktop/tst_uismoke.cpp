@@ -83,6 +83,23 @@ private slots:
         assertClean("initial load of Main.qml");
     }
 
+    void test_00b_emailTemplatesCanBeFirstSettingsCategorySelected()
+    {
+        nav("selectSection", "settings");
+        QQuickWindow* window = qobject_cast<QQuickWindow*>(root);
+        QVERIFY(window);
+        QQuickItem* settings = findVisualChild(window->contentItem(), QStringLiteral("settingsPage"));
+        QQuickItem* pages = findVisualChild(window->contentItem(), QStringLiteral("settingsPages"));
+        QVERIFY(settings);
+        QVERIFY(pages);
+        QVariant selected;
+        QVERIFY(QMetaObject::invokeMethod(settings, "selectTab", Q_RETURN_ARG(QVariant, selected),
+                                          Q_ARG(QVariant, 3)));
+        QVERIFY(selected.toBool());
+        QTRY_COMPARE_WITH_TIMEOUT(pages->property("currentIndex").toInt(), 3, 1000);
+        assertClean("Email Templates selected first");
+    }
+
     // Visit every primary section of the shell.
     void test_01_sections()
     {

@@ -22,6 +22,7 @@ class TemplateEditorModel final : public QObject {
     Q_PROPERTY(QString workflow READ workflow WRITE setWorkflow NOTIFY changed)
     Q_PROPERTY(QVariantList templates READ templates NOTIFY changed)
     Q_PROPERTY(QStringList availableFields READ availableFields NOTIFY changed)
+    Q_PROPERTY(QStringList availableBodyFields READ availableBodyFields NOTIFY changed)
     Q_PROPERTY(QString selectedTemplateId READ selectedTemplateId NOTIFY changed)
     Q_PROPERTY(QString draftName READ draftName WRITE setDraftName NOTIFY changed)
     Q_PROPERTY(QString draftSubject READ draftSubject WRITE setDraftSubject NOTIFY changed)
@@ -35,6 +36,7 @@ public:
     void setWorkflow(const QString &workflow);
     QVariantList templates() const;
     QStringList availableFields() const;
+    QStringList availableBodyFields() const;
     QString selectedTemplateId() const { return m_selectedId; }
     QString draftName() const { return m_draft.name; }
     QString draftSubject() const { return m_draft.subject; }

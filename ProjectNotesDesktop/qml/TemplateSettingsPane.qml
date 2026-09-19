@@ -87,6 +87,60 @@ ColumnLayout {
         }
     }
 
+    // Match FormField's application-wide text-input treatment while keeping
+    // direct access to the editor for template-token insertion.
+    component TemplateTextField: TextField {
+        id: control
+        property bool spellCheckEnabled: false
+        property var insertFields: []
+        signal insertFieldRequested(string path)
+        implicitHeight: 30
+        leftPadding: 9
+        rightPadding: 9
+        verticalAlignment: Text.AlignVCenter
+        color: Theme.text
+        placeholderTextColor: Theme.text3
+        font.pixelSize: Theme.fontBody
+        selectByMouse: true
+        background: Rectangle {
+            radius: Theme.radiusSm
+            color: Theme.surface
+            border.color: control.activeFocus ? Theme.accent : Theme.border
+        }
+        SpellCheckField {
+            target: control
+            spellCheckEnabled: control.spellCheckEnabled
+            insertFields: control.insertFields
+            onInsertFieldRequested: (path) => control.insertFieldRequested(path)
+        }
+    }
+
+    component TemplateTextArea: TextArea {
+        id: control
+        property bool spellCheckEnabled: false
+        property var insertFields: []
+        signal insertFieldRequested(string path)
+        leftPadding: 9
+        rightPadding: 9
+        topPadding: 7
+        bottomPadding: 7
+        color: Theme.text
+        placeholderTextColor: Theme.text3
+        font.pixelSize: Theme.fontBody
+        selectByMouse: true
+        background: Rectangle {
+            radius: Theme.radiusSm
+            color: Theme.surface
+            border.color: control.activeFocus ? Theme.accent : Theme.border
+        }
+        SpellCheckField {
+            target: control
+            spellCheckEnabled: control.spellCheckEnabled
+            insertFields: control.insertFields
+            onInsertFieldRequested: (path) => control.insertFieldRequested(path)
+        }
+    }
+
     function insertField(editor, path, target) {
         if (!pane.templateModel || !editor)
             return
@@ -148,7 +202,7 @@ ColumnLayout {
         }
         Item { Layout.fillWidth: true }
     }
-    TextField {
+    TemplateTextField {
         Layout.fillWidth: true
         visible: DesktopAppController.preferredEmailBackend === "thunderbird"
         placeholderText: qsTr("Thunderbird executable path")
@@ -215,23 +269,22 @@ ColumnLayout {
                 wrapMode: Text.WordWrap
             }
             Label { text: qsTr("Template name"); color: Theme.text2 }
-            TextField {
+            TemplateTextField {
                 Layout.fillWidth: true
                 text: pane.templateModel ? pane.templateModel.draftName : ""
                 enabled: pane.templateModel !== null
                 onTextEdited: pane.templateModel.draftName = text
             }
             Label { text: qsTr("Subject"); color: Theme.text2 }
-            TextField {
+            TemplateTextField {
                 id: subject
                 Layout.fillWidth: true
                 text: pane.templateModel ? pane.templateModel.draftSubject : ""
                 enabled: pane.templateModel !== null
+                spellCheckEnabled: true
+                insertFields: pane.templateModel ? pane.templateModel.availableFields : []
                 onTextEdited: pane.templateModel.draftSubject = text
-                SpellCheckField {
-                    insertFields: pane.templateModel ? pane.templateModel.availableFields : []
-                    onInsertFieldRequested: (path) => pane.insertField(subject, path, "subject")
-                }
+                onInsertFieldRequested: (path) => pane.insertField(subject, path, "subject")
             }
         }
     }
@@ -244,12 +297,12 @@ ColumnLayout {
         placeholderText: qsTr("Rich HTML template prose")
         value: pane.templateModel ? pane.templateModel.draftRichBody : ""
         editingEnabled: pane.templateModel !== null
-        insertFields: pane.templateModel ? pane.templateModel.availableFields : []
+        insertFields: pane.templateModel ? pane.templateModel.availableBodyFields : []
         onValueEdited: if (pane.templateModel) pane.templateModel.draftRichBody = value
         onInsertFieldRequested: (path) => pane.insertField(richBody.editor, path, "richBody")
     }
     Label { text: qsTr("Plain-text body (optional)"); color: Theme.text2 }
-    TextArea {
+    TemplateTextArea {
         id: plainBody
         Layout.fillWidth: true
         Layout.preferredHeight: 90
@@ -257,11 +310,10 @@ ColumnLayout {
         placeholderText: qsTr("Plain-text alternative")
         text: pane.templateModel ? pane.templateModel.draftPlainBody : ""
         enabled: pane.templateModel !== null
+        spellCheckEnabled: true
+        insertFields: pane.templateModel ? pane.templateModel.availableBodyFields : []
         onTextChanged: if (activeFocus && pane.templateModel) pane.templateModel.draftPlainBody = text
-        SpellCheckField {
-            insertFields: pane.templateModel ? pane.templateModel.availableFields : []
-            onInsertFieldRequested: (path) => pane.insertField(plainBody, path, "plainBody")
-        }
+        onInsertFieldRequested: (path) => pane.insertField(plainBody, path, "plainBody")
     }
     Label {
         Layout.fillWidth: true

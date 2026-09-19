@@ -10,6 +10,7 @@ import ProjectNotesDesktop
 // Settings screen: category tabs on the left, selected settings on the right.
 Item {
     id: page
+    objectName: "settingsPage"
 
     property var _clients: []
     property var _people: []
@@ -42,6 +43,15 @@ Item {
     function _peopleNames() { return _people.map(function(p){ return p.name }) }
     function _idForName(list, n) { for (var i=0;i<list.length;i++) if (list[i].name===n) return list[i].id; return "" }
     function _nameForId(list, id){ for (var i=0;i<list.length;i++) if (list[i].id===id) return list[i].name; return "" }
+    function selectTab(index) {
+        if (index === page.currentTab)
+            return true
+        if (page.currentTab === page.emailTemplatesTabIndex
+                && !emailTemplates.saveAndValidate())
+            return false
+        page.currentTab = index
+        return true
+    }
 
     RowLayout {
         anchors.fill: parent
@@ -76,6 +86,7 @@ Item {
                 ]
 
                 delegate: Rectangle {
+                    id: tabDelegate
                     required property var modelData
                     required property int index
                     objectName: "settingsTab_" + modelData.key
@@ -100,14 +111,7 @@ Item {
                     HoverHandler { id: tabHover }
                     TapHandler {
                         gesturePolicy: TapHandler.ReleaseWithinBounds
-                        onTapped: {
-                            if (parent.index === page.currentTab)
-                                return
-                            if (page.currentTab === page.emailTemplatesTabIndex
-                                    && !emailTemplates.saveAndValidate())
-                                return
-                            page.currentTab = parent.index
-                        }
+                        onTapped: page.selectTab(tabDelegate.index)
                     }
                 }
             }

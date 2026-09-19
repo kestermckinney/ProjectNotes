@@ -23,6 +23,9 @@ Item {
 
     // The editor to check. Defaults to the parent (the usual inline placement).
     property Item target: parent
+    // Some fields (paths, identifiers, names) need the standard editing menu
+    // without spelling suggestions or squiggles.
+    property bool spellCheckEnabled: true
     // Shared full-field dialog; if null the "Check Spelling…" item is hidden.
     property var  dialog: null
     // Optional literal fields supplied by a host editor.  Keeping this on the
@@ -59,12 +62,13 @@ Item {
     SpellCheck {
         id: spell
         editor: root.target
-        enabled: true
+        enabled: root.spellCheckEnabled
     }
 
     // The visible red squiggle (Qt Quick won't draw it via QTextCharFormat).
     SpellSquiggle {
         anchors.fill: parent
+        visible: root.spellCheckEnabled
         spell: spell
         editor: root.target
     }
@@ -77,7 +81,7 @@ Item {
             if (!root.target)
                 return
             var pos = root.target.positionAt(ep.position.x, ep.position.y)
-            var w = spell.wordAt(pos)
+            var w = root.spellCheckEnabled ? spell.wordAt(pos) : ""
             root._pos = pos
             root._word = w
             root._bad = (w !== "" && spell.isMisspelled(w))

@@ -96,6 +96,13 @@ QVariantList TemplateEditorModel::templates() const
 
 QStringList TemplateEditorModel::availableFields() const { return templateFieldPaths(m_workflow); }
 
+QStringList TemplateEditorModel::availableBodyFields() const
+{
+    QStringList fields = availableFields();
+    fields.append(QStringLiteral("content.body"));
+    return fields;
+}
+
 void TemplateEditorModel::setDraftName(const QString &value) { if (m_draft.name != value) { m_draft.name = value; emit changed(); } }
 void TemplateEditorModel::setDraftSubject(const QString &value) { if (m_draft.subject != value) { m_draft.subject = value; emit changed(); } }
 void TemplateEditorModel::setDraftRichBody(const QString &value) { if (m_draft.body != value) { m_draft.body = value; emit changed(); } }
@@ -256,7 +263,9 @@ bool TemplateEditorModel::save()
 
 bool TemplateEditorModel::appendField(const QString &path, const QString &target)
 {
-    if (!templateFieldIsApplicable(path, currentWorkflow())) return false;
+    const bool bodyTarget = target == QStringLiteral("richBody") || target == QStringLiteral("plainBody");
+    if (!templateFieldIsApplicable(path, currentWorkflow())
+        && !(bodyTarget && path == QStringLiteral("content.body"))) return false;
     const QString token = QStringLiteral("{{ %1 }}").arg(path);
     if (target == QStringLiteral("subject")) m_draft.subject += token;
     else if (target == QStringLiteral("richBody")) m_draft.body += token;

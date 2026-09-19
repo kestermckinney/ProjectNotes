@@ -686,6 +686,11 @@ void CommunicationContractsTest::editsTemplatesWithoutQmlEvaluation()
     QCOMPARE(editor.templates().size(), 1);
     QCOMPARE(editor.templates().constFirst().toMap().value(QStringLiteral("id")).toString(),
              QStringLiteral("status-report-native-v1"));
+    QVERIFY(editor.availableBodyFields().contains(QStringLiteral("content.body")));
+    QVERIFY(!editor.availableFields().contains(QStringLiteral("content.body")));
+    QVERIFY(editor.appendField(QStringLiteral("content.body"), QStringLiteral("richBody")));
+    QVERIFY(editor.appendField(QStringLiteral("content.body"), QStringLiteral("plainBody")));
+    QVERIFY(!editor.appendField(QStringLiteral("content.body"), QStringLiteral("subject")));
     editor.beginNew();
     editor.setDraftName(QStringLiteral("Status prose"));
     editor.setDraftSubject(QStringLiteral("{{ project.name }} status"));
