@@ -3,6 +3,10 @@
 
 #include "CommunicationsController.h"
 
+#include "CommunicationDiagnostics.h"
+
+#include <QCoreApplication>
+
 #include <QPointer>
 #include <QRegularExpression>
 
@@ -41,7 +45,15 @@ QString CommunicationsController::stageName() const
 QString CommunicationsController::diagnostic() const
 {
     if (m_issues.issues.isEmpty()) return {};
-    return m_issues.issues.constFirst().displayText;
+    const ValidationIssue &issue = m_issues.issues.constFirst();
+    // Backends report a stable code with no prose. Showing the empty string
+    // left the dialog in a failed state with nothing explaining why, so fall
+    // back to the shared message table and finally to the bare code.
+    if (!issue.displayText.isEmpty()) return issue.displayText;
+    const QString mapped = diagnosticDisplayText(issue.code);
+    if (!mapped.isEmpty()) return mapped;
+    return QCoreApplication::translate("PN::Comm", "The email could not be prepared (%1).")
+        .arg(issue.code);
 }
 
 bool CommunicationsController::setPreparation(EmailPreparation preparation)

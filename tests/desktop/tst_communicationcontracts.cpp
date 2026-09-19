@@ -22,6 +22,7 @@
 #include "ProjectNotesEmail/ReportService.h"
 #include "ProjectNotesEmail/EmailContentBuilder.h"
 #include "ProjectNotesEmail/CommunicationsController.h"
+#include "ProjectNotesEmail/CommunicationDiagnostics.h"
 #include "ProjectNotesIntegrations/TemplateParser.h"
 #include "ProjectNotesIntegrations/ComputedFieldRunner.h"
 #include "ProjectNotesIntegrations/ComputedFieldService.h"
@@ -145,6 +146,7 @@ private slots:
     void uploadsLargeGraphAttachmentInUnauthenticatedChunks();
     void cancelsGraphUploadBeforeFirstChunk();
     void coordinatesPreparationHandoffAndNoEmail();
+    void reportsUserFacingTextForEveryHandoffFailure();
 
 private:
     std::unique_ptr<QTemporaryDir> m_templateDatabaseDirectory;
@@ -1030,7 +1032,17 @@ void CommunicationContractsTest::encodesAndBoundsMailtoRequests()
     QVERIFY(url->toEncoded().contains("body=First%20line%0ASecond%20%26%20line"));
     request.html = "<p>not mailto</p>"; QVERIFY(!MailtoEmailBackend::buildUrl(request).has_value());
     request.html.clear(); request.subject = "bad\r\nBcc:x@example.test"; QVERIFY(!MailtoEmailBackend::buildUrl(request).has_value());
-    request.subject.clear(); request.plainText = QString(2000, 'x'); QVERIFY(!MailtoEmailBackend::buildUrl(request).has_value());
+    // Express the bound in terms of the platform's own cap: it is deliberately
+    // larger away from Windows, so a hardcoded length would stop testing a limit.
+    request.subject.clear();
+    request.plainText = QString(MailtoEmailBackend::maximumEncodedLength + 1, 'x');
+    ValidationResult tooLong;
+    QVERIFY(!MailtoEmailBackend::buildUrl(request, &tooLong).has_value());
+    QCOMPARE(tooLong.issues.constFirst().code, QStringLiteral("mailto-url-too-long"));
+    // A body that fits must still be accepted, so the cap cannot silently
+    // collapse to something tiny.
+    request.plainText = QString(MailtoEmailBackend::maximumEncodedLength / 2, 'x');
+    QVERIFY(MailtoEmailBackend::buildUrl(request).has_value());
     QUrl launched; int launches = 0; MailtoEmailBackend backend([&launched, &launches](const QUrl &value) { launched = value; ++launches; return true; });
     request.plainText = "ok"; bool complete = false; backend.handoff(request, [&complete](EmailHandoffResult result) { complete = true; QCOMPARE(result.certainty, OutcomeCertainty::Uncertain); });
     QVERIFY(complete); QVERIFY(!launched.isEmpty());
@@ -1597,6 +1609,58 @@ void CommunicationContractsTest::cancelsGraphUploadBeforeFirstChunk()
     QCOMPARE(errorCode, QStringLiteral("operation-cancelled"));
     QCOMPARE(certainty, OutcomeCertainty::Uncertain);
     QCOMPARE(graphTransport.requests.size(), 2);
+}
+
+void CommunicationContractsTest::reportsUserFacingTextForEveryHandoffFailure()
+{
+    // Backends report a machine code and an empty displayText. The review
+    // dialog only shows its diagnostic label when the text is non-empty, so an
+    // unmapped code used to fail the handoff with nothing on screen.
+    const QStringList codes = {
+        QStringLiteral("mailto-url-too-long"), QStringLiteral("mailto-unsupported-content"),
+        QStringLiteral("mailto-header-injection"), QStringLiteral("mailto-launch-failed"),
+        QStringLiteral("mailto-launch-already-attempted"),
+        QStringLiteral("thunderbird-unavailable"), QStringLiteral("thunderbird-launch-failed"),
+        QStringLiteral("thunderbird-body-unavailable"),
+        QStringLiteral("thunderbird-path-not-operation-owned"),
+        QStringLiteral("graph-service-unavailable"), QStringLiteral("graph-draft-create-failed"),
+        QStringLiteral("graph-draft-id-missing"), QStringLiteral("graph-upload-session-failed"),
+        QStringLiteral("graph-upload-chunk-failed"), QStringLiteral("graph-attachment-upload-failed"),
+        QStringLiteral("attachment-integrity-mismatch"), QStringLiteral("attachment-read-failed"),
+        QStringLiteral("attachment-unreadable"), QStringLiteral("attachment-unavailable"),
+        QStringLiteral("email-backend-unavailable"), QStringLiteral("email-operation-busy"),
+        QStringLiteral("operation-cancelled"), QStringLiteral("operation-id-required"),
+        QStringLiteral("email-subject-required"), QStringLiteral("email-body-required"),
+        QStringLiteral("email-header-injection"), QStringLiteral("email-attachment-required"),
+        QStringLiteral("recipient-required"), QStringLiteral("recipient-address-invalid"),
+        QStringLiteral("recipient-address-duplicate"), QStringLiteral("recipient-role-invalid"),
+        QStringLiteral("report-workflow-mismatch")};
+    for (const QString &code : codes)
+        QVERIFY2(!diagnosticDisplayText(code).isEmpty(), qPrintable(code));
+
+    // An unmapped code must still reach the user rather than showing nothing.
+    EmailService service;
+    CommunicationsController controller(&service);
+    EmailPreparation preparation;
+    preparation.operationId = QUuid::createUuid();
+    preparation.source = {"db", 1, "p", {}, Workflow::StatusReport};
+    preparation.document.workflow = Workflow::StatusReport;
+    preparation.document.defaultSubject = QStringLiteral("Report");
+    preparation.document.emailFragment = QStringLiteral("<p>body</p>");
+    preparation.document.plainText = QStringLiteral("body");
+    QVERIFY(controller.setPreparation(preparation));
+    ValidationResult unmapped;
+    unmapped.addError(QStringLiteral("totally-unknown-code"), QStringLiteral("handoff"));
+    controller.setReviewValidation(unmapped);
+    QVERIFY(!controller.diagnostic().isEmpty());
+    QVERIFY(controller.diagnostic().contains(QStringLiteral("totally-unknown-code")));
+
+    // A backend-supplied message still wins over the table.
+    ValidationResult explicitText;
+    explicitText.addError(QStringLiteral("mailto-url-too-long"), QStringLiteral("handoff"),
+                          QStringLiteral("Backend said so."));
+    controller.setReviewValidation(explicitText);
+    QCOMPARE(controller.diagnostic(), QStringLiteral("Backend said so."));
 }
 
 void CommunicationContractsTest::coordinatesPreparationHandoffAndNoEmail()
