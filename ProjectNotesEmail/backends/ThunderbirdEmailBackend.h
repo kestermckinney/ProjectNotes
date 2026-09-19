@@ -4,12 +4,13 @@
 #pragma once
 
 #include "ProjectNotesEmail/EmailBackend.h"
+#include "ThunderbirdLauncher.h"
 
 namespace PN::Comm {
 
 class ThunderbirdEmailBackend final : public EmailBackend {
 public:
-    using ProcessLauncher = std::function<bool(const QString &, const QStringList &)>;
+    using ProcessLauncher = ThunderbirdLauncher::ProcessLauncher;
     using ExecutableProbe = std::function<bool(const QString &)>;
     ThunderbirdEmailBackend(QString executable, ProcessLauncher launcher = {});
     static std::optional<QStringList> composeArguments(const EmailRequest &request, const QString &bodyFile,
@@ -27,9 +28,7 @@ public:
     void setBodyFile(const QUuid &operationId, QString path, QString operationDirectory);
 
 private:
-    QString m_program;
-    QStringList m_commandArguments;
-    ProcessLauncher m_launcher;
+    ThunderbirdLauncher m_launcher;
     struct StagedBodyFile { QString path; QString operationDirectory; };
     QHash<QUuid, StagedBodyFile> m_bodyFiles;
     QSet<QUuid> m_cancelled;

@@ -77,16 +77,17 @@ QString Office365SettingsModel::accountLabel() const
 void Office365SettingsModel::startSignIn()
 {
     // Keep this identical to the formerly separate draft-consent action: it
-    // requests only the Graph capabilities needed to create a draft, never
-    // Mail.Send. File Finder requests its own scopes when that feature is used.
-    requestEmailDraftConsent();
+    // requests only the Graph capabilities needed to create email drafts and
+    // draft meetings, never Mail.Send. File Finder requests its own scopes when
+    // that feature is used.
+    requestCommunicationsConsent();
 }
 
-void Office365SettingsModel::requestEmailDraftConsent()
+void Office365SettingsModel::requestCommunicationsConsent()
 {
     if (!m_service)
         return;
-    m_service->requestEmailDraftConsent();
+    m_service->requestCommunicationsConsent();
     m_service->startSignIn();
 }
 

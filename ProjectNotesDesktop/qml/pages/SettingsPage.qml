@@ -367,7 +367,7 @@ Item {
 
                     Text {
                         Layout.fillWidth: true
-                        text: qsTr("Signing in requests Outlook draft creation. It never requests permission to send mail or manage calendars.")
+                        text: qsTr("Signing in requests permission to create Outlook email drafts and draft calendar events. It never requests permission to send mail.")
                         color: Theme.text3
                         font.pixelSize: Theme.fontSm
                         wrapMode: Text.WordWrap
@@ -1077,6 +1077,66 @@ Item {
                     }
                 }
             }
+
+                SettingsSection {
+                    id: integrationSection
+                    title: qsTr("Email and Scheduling Integration")
+                    subtitle: qsTr("Choose how Project Notes hands emails and meeting invitations to you for review. Nothing is sent until you send it yourself.")
+                    readonly property var backends: [
+                        { value: "mailto", label: qsTr("Default apps (plain-text email, calendar file)") },
+                        { value: "thunderbird", label: qsTr("Thunderbird") },
+                        { value: "graph", label: qsTr("Microsoft 365 drafts") }
+                    ]
+                    function labelFor(value) {
+                        for (var i = 0; i < backends.length; ++i)
+                            if (backends[i].value === value) return backends[i].label
+                        return backends[0].label
+                    }
+                    function valueFor(label) {
+                        for (var i = 0; i < backends.length; ++i)
+                            if (backends[i].label === label) return backends[i].value
+                        return backends[0].value
+                    }
+                    ComboField {
+                        Layout.preferredWidth: 360
+                        Layout.fillWidth: false
+                        label: qsTr("Integration")
+                        options: integrationSection.backends.map(function(backend) { return backend.label })
+                        value: integrationSection.labelFor(DesktopAppController.preferredEmailBackend)
+                        onActivated: (v) => DesktopAppController.preferredEmailBackend = integrationSection.valueFor(v)
+                    }
+                    FormField {
+                        visible: DesktopAppController.preferredEmailBackend === "thunderbird"
+                        Layout.fillWidth: true
+                        label: qsTr("Thunderbird executable")
+                        placeholder: qsTr("Path or command, such as flatpak run org.mozilla.Thunderbird")
+                        text: DesktopAppController.thunderbirdExecutable
+                        onEditingFinished: DesktopAppController.thunderbirdExecutable = text
+                    }
+                    Text {
+                        Layout.fillWidth: true
+                        wrapMode: Text.WordWrap
+                        color: Theme.text3
+                        font.pixelSize: Theme.fontSm
+                        text: {
+                            switch (DesktopAppController.preferredEmailBackend) {
+                            case "graph":
+                                return qsTr("Emails become drafts in your Microsoft 365 mailbox, and meetings become draft events in your Microsoft 365 calendar. Both open in Outlook for review. Sign in under Office 365 Integration first.")
+                            case "thunderbird":
+                                return qsTr("Emails open in a Thunderbird compose window with any attachments. Meetings are passed to Thunderbird as a calendar file to import, then you send the invitations from the event.")
+                            default:
+                                return qsTr("Emails open in your default mail app as plain text, without attachments. Meetings open in your default calendar app as a calendar (.ics) file.")
+                            }
+                        }
+                    }
+                    Text {
+                        Layout.fillWidth: true
+                        wrapMode: Text.WordWrap
+                        color: Theme.text3
+                        font.pixelSize: Theme.fontSm
+                        text: qsTr("Temporary email attachments and calendar files are kept in the application cache and removed when Project Notes closes.")
+                    }
+                }
 
             }
 

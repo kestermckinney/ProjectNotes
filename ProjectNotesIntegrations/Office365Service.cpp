@@ -118,12 +118,15 @@ void Office365Service::requestFileFinderConsent()
     }
 }
 
-void Office365Service::requestEmailDraftConsent()
+void Office365Service::requestCommunicationsConsent()
 {
     if (m_oauth) {
         m_oauth->setRequestedScopes({QStringLiteral("offline_access"),
                                      QStringLiteral("User.Read"),
-                                     QStringLiteral("Mail.ReadWrite")});
+                                     QStringLiteral("Mail.ReadWrite"),
+                                     // Scheduled meetings are created as draft
+                                     // events in the signed-in calendar.
+                                     QStringLiteral("Calendars.ReadWrite")});
     }
 }
 

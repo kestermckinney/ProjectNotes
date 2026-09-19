@@ -1623,6 +1623,7 @@ Item {
             { label: qsTr("Status"), value: "status-report" },
             { label: qsTr("Tracker Items"), value: "tracker-items-report" }
         ]
+        canScheduleMeeting: true
         onNewRequested: page.newRequested()
         onDeleteRequested: page.deleteRequested()
         onDuplicateRequested: {
@@ -1644,6 +1645,12 @@ Item {
                 meetingNotesReportReview.open()
             }
         }
+        onScheduleMeetingRequested: {
+            if (page._saveNow()) {
+                scheduleMeeting.projectId = page.projectId
+                scheduleMeeting.open()
+            }
+        }
     }
 
     // "Move To Folder" for the project itself, opened from selfMenu above.
@@ -1656,6 +1663,8 @@ Item {
         recipientModel: DesktopAppController.recipientSelectionModel
         templateModel: DesktopAppController.templateEditorModel
     }
+
+    ScheduleMeetingDialog { id: scheduleMeeting }
 
     // Shared full-field spell-check dialog (opened by fields / right-click).
     SpellCheckDialog { id: spellDialog }

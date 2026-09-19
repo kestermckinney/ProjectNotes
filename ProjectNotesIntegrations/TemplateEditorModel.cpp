@@ -52,6 +52,7 @@ QString nativeTemplateId(Workflow workflow)
     case Workflow::MeetingNotesReport: return QStringLiteral("meeting-notes-report-native-v1");
     case Workflow::StatusReport: return QStringLiteral("status-report-native-v1");
     case Workflow::TrackerItemsReport: return QStringLiteral("tracker-items-report-native-v1");
+    case Workflow::ScheduleMeeting: break; // Meeting types have their own store.
     }
     return {};
 }

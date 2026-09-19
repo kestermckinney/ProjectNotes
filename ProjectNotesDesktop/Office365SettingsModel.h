@@ -42,7 +42,7 @@ public:
     QString accountLabel() const;
 
     Q_INVOKABLE void startSignIn();
-    Q_INVOKABLE void requestEmailDraftConsent();
+    Q_INVOKABLE void requestCommunicationsConsent();
     Q_INVOKABLE void signOut();
 
 signals:

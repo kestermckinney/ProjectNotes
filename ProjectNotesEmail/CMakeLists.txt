@@ -8,6 +8,8 @@ add_library(ProjectNotesEmail STATIC
     EmailSettingsStore.h
     ArtifactStore.cpp
     ArtifactStore.h
+    TransientCacheCleaner.cpp
+    TransientCacheCleaner.h
     SnapshotTypes.h
     RecipientAudienceResolver.h
     RecipientAudienceResolver.cpp
@@ -47,6 +49,8 @@ add_library(ProjectNotesEmail STATIC
     backends/MailtoEmailBackend.cpp
     backends/GraphEmailBackend.h
     backends/GraphEmailBackend.cpp
+    backends/ThunderbirdLauncher.h
+    backends/ThunderbirdLauncher.cpp
     backends/ThunderbirdEmailBackend.h
     backends/ThunderbirdEmailBackend.cpp
     backends/OutlookHelperProtocol.h

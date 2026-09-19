@@ -114,6 +114,7 @@ set(DESKTOP_QML_FILES
     qml/RecipientSelectionPane.qml
     qml/MeetingNotesReviewDialog.qml
     qml/MeetingNotesReportReviewDialog.qml
+    qml/ScheduleMeetingDialog.qml
     qml/TemplateSettingsPane.qml
     qml/MeetingTemplateSettingsPane.qml
     qml/ThemedMessageDialog.qml
@@ -180,6 +181,7 @@ target_link_libraries(ProjectNotes PRIVATE
     ProjectNotesFileFinder
     ProjectNotesEmail
     ProjectNotesEmailRendering
+    ProjectNotesMeetings
 )
 
 # Platform credential backend used by the plugin secret API (credentialstore).

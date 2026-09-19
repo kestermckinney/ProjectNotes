@@ -1905,6 +1905,8 @@ void CommunicationContractsTest::resolvesEveryOfferedTemplateField()
             if (!review) return std::nullopt;
             return review->preparation.document.defaultSubject;
         }
+        case Workflow::ScheduleMeeting:
+            break;
         }
         return std::nullopt;
     };

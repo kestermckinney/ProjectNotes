@@ -333,13 +333,25 @@ For Graph, keep preparation local with **no calendar POST/PATCH** until a no-inv
 
 When calendar integration is approved, request `Calendars.ReadWrite` only for that feature; evaluate whether mailbox time-zone lookup needs additional consent, rather than importing the Python helper's broad scope list. Reuse the shared account but keep mail/calendar capability checks separate. Retain exact event IDs/results for recovery, use documented duplicate-prevention facilities where available, and handle unknown create outcomes without blind retry. Do not delete or update a user-edited event as cleanup.
 
+### Approved native scheduling (2026-09-19)
+
+The maintainer approved these routes, replacing the "no calendar POST" hold above for the native Schedule Meeting action:
+
+- **Default apps**: write an RFC 5545 `.ics` file (METHOD:PUBLISH, UTC times) into the operation's staging directory and open it with the desktop's default calendar app. It is a manual fallback, not an organizer draft, and gives no response tracking.
+- **Thunderbird**: stage the same `.ics` file and launch the configured Thunderbird command with it, so Thunderbird offers to import it into a calendar.
+- **Microsoft 365**: `POST /me/events` with `isDraft: true`, matching the Python plug-in, then open the returned Outlook `webLink`. `Calendars.ReadWrite` is added to the Office 365 consent bundle. The invitation risk described above is accepted by the maintainer's decision and must still be verified with a test mailbox and throwaway attendee before release.
+
+One preference (Settings > Preferences > Email and Scheduling Integration) selects the route for both email and meetings. Saved audiences are shared: Required attendees are stored as To and Optional as Cc in `project_email_audiences`, and `default_workflows_json` may hold `schedule-meeting`. Older builds that read that value treat the preset as corrupt, so mixed-version sync can hide such an audience in the older build.
+
 ### Scheduling exit gates
 
 Before removing any scheduling plugin path, establish fixtures for every configured meeting type and context, subject/agenda formatting, audience migration, required/optional attendees, attachments, date/time-zone conversion, midnight and DST boundaries, and meeting-window focus attempts. Verify invitation behavior in an explicitly authorized controlled calendar environment, including failures and ambiguous responses; automated tests use mocks and send no invitations. Record whether each adapter offers an unsent composer or an explicitly authorized scheduling action. Replace/remove only the migrated scheduling entries and now-unused helpers, retaining remaining contact/task/email integrations. The Graph sending-contract decision is a prerequisite for this phase, not a blocker to the native email/report implementation.
 
 ## Attachment lifetime
 
-Stage generated files in operation-specific directories with restricted permissions. Use a manifest and distinguish app-generated files from user originals. Keep files after external handoff because most adapters cannot tell when the mail client has copied them. Do not delete on dialog close or at app exit. Release files only when copying is confirmed, or offer explicit cleanup of older staged operations with a warning that open drafts may still reference them; do not promise safe automatic age-based deletion. Graph uploads can release staging once complete, unless retained for a pending retry. Never remove user source files.
+Stage generated files in operation-specific directories with restricted permissions. Use a manifest and distinguish app-generated files from user originals. Keep files after external handoff while Project Notes is running, because most adapters cannot tell when the mail client has copied them, and do not delete them on dialog close.
+
+Decision (2026-09-19): the maintainer chose to clear temporary files when the application closes. `TransientCacheCleaner` removes the whole `communications/staging` tree (email artifacts, rendered reports, meeting `.ics` files) plus the plug-ins' generated report HTML and iCloud contact downloads from the top level of the cache folder. It runs at quit and again at startup to clear what a crash left behind. Everything else in the cache is kept, notably the plug-ins' Microsoft 365 and IFS token caches and `projectnotes_saved_state.json`. The user guide warns that a compose window still open at quit may lose an unsent attachment. Never remove user source files.
 
 ## Delivery sequence and acceptance gates
 

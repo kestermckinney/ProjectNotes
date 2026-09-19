@@ -127,25 +127,66 @@ Leaving the tab saves your changes. A new meeting type left completely blank is
 discarded. Meeting types defined in the legacy **Meeting and Email Types**
 plugin setting are not imported.
 
-## Email-client availability
+## Scheduling a meeting
 
-The Email Templates page records a preferred backend: the default plain-text
-client, Thunderbird, or a Microsoft 365 draft. A preference is not proof that
-the corresponding client is installed, signed in, or available. Client focus
-after a handoff is only an attempt; it is never a delivery confirmation.
+Right-click a project, or open the project's own menu, and choose **Schedule
+Meeting…**. Pick a meeting type from **Settings > Meeting Templates**. Project
+Notes fills in its subject and agenda from the project, proposes the next whole
+hour as the start time and uses the type's duration. Pick the attendees, then
+click **Open Invite**. The invite opens straight away in your calendar app, with
+no confirmation box in between. Change the date, time, duration, location,
+subject or agenda there.
 
-The packaged Qt WebEngine runtime and local mail-client dispatch are still
-being certified on supported platform packages. The local-client routes remain
-unavailable until that work is complete. The review and save-generated-file
-actions remain safe to use without an email account.
+Attendees come from the project team, just as report recipients do. Each person
+is **Required** or **Optional**. The saved audiences are the same ones the
+reports use: an audience saved here appears in the Generate Report review, and
+the reverse. Required is stored as To and Optional as Cc, so a report's Bcc
+recipients load as Optional. **Set as meeting default** loads that audience
+automatically the next time you schedule a meeting for the project.
 
-Microsoft 365 is the currently available draft route. **Create Microsoft 365
-draft** appears only after you explicitly enable its separate mail-draft
-capability and Project Notes verifies the signed-in account identity. The
-action creates a draft only; it never sends email or creates a calendar item.
-After a successful draft, **Open draft in Outlook** is an optional user click.
-The existing Office 365 File Finder sign-in remains separate and continues to
-use only its file-discovery capabilities.
+The organizer is the project manager chosen in **Settings > Preferences**, when
+that person has an email address. The organizer is never also listed as an
+attendee.
+
+What happens next depends on your Email and Scheduling Integration:
+
+- **Default apps** writes a calendar file (.ics) and opens it in your default
+  calendar app. Save the event there and send the invitations.
+- **Thunderbird** passes the calendar file to Thunderbird, which offers to
+  import it into one of its calendars. Open the event to send the invitations.
+- **Microsoft 365 drafts** creates a draft event in your Microsoft 365 calendar
+  and opens it in Outlook on the web, where you review it and send the
+  invitations. This needs calendar permission, so sign out and sign in again
+  under **Office 365 Integration** if you signed in before this feature existed.
+
+Microsoft does not document that a draft event with attendees is held back from
+them. Try the Microsoft 365 route with a test meeting before relying on it.
+
+## Email and Scheduling Integration
+
+**Settings > Preferences > Email and Scheduling Integration** chooses one route
+for both emails and meeting invitations: default apps (a plain-text email and a
+calendar file), Thunderbird, or Microsoft 365 drafts. For Thunderbird, enter
+its executable path or a command such as `flatpak run org.mozilla.Thunderbird`.
+
+A preference is not proof that the client is installed, signed in, or
+available. Client focus after a handoff is only an attempt; it is never a
+delivery confirmation. Project Notes never sends an email or an invitation
+itself. You send it from the client.
+
+Microsoft 365 creates drafts only after you sign in under **Office 365
+Integration** and Project Notes verifies the account. Signing in requests
+permission to create email drafts and draft calendar events. It never requests
+permission to send mail.
+
+## Temporary files
+
+Staged attachments, rendered reports, calendar files and the report files the
+export plugins write are kept in the application cache folder. Project Notes
+removes them when it closes, and again at the next start if it did not close
+normally. Plugin sign-in caches and saved plugin state in the same folder are
+kept. Send or save anything you still need from an open compose window before
+you close Project Notes, because an attachment it points to may be gone.
 
 ## Legacy plugin help
 
@@ -156,5 +197,6 @@ installations and custom workflows. Project Notes will not remove those bundled
 plugins, user plugins, or user settings until a future upgrade has passed the
 explicit removal gate.
 
-Scheduling/calendar plugins are outside the native email work. Project Notes
-does not create or update calendar invitations through the native review path.
+The legacy **Schedule Meeting** plugin entries remain alongside the native
+**Schedule Meeting…** action until their meeting types have been moved to
+**Settings > Meeting Templates**.

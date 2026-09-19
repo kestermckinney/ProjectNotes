@@ -33,6 +33,8 @@ Popup {
     // present they appear in a Reports flyout alongside the record actions.
     property var    reportItems: []
     readonly property bool canReport: reportItems.length > 0
+    // Optional project action that opens the Schedule Meeting review.
+    property bool   canScheduleMeeting: false
     // Quick Filter: pre-filled column-filter shortcuts for the row this menu
     // was opened for — set by the page (from the clicked row's own field
     // values) just before calling openAt(). Each entry: {icon, label, field,
@@ -93,6 +95,7 @@ Popup {
     signal sortRequested(real sx, real sy)
     signal refreshRequested()
     signal reportRequested(string value)
+    signal scheduleMeetingRequested()
     // Navigation signals for jumping to related records
     signal goToPersonRequested(string personId)
     signal goToClientRequested(string clientId)
@@ -454,6 +457,9 @@ Popup {
                 menu._activateReports()
             }
         }
+        MenuRow { icon: "event"; label: qsTr("Schedule Meeting…"); visible: menu.canScheduleMeeting
+                   onActivated: menu._fire(menu.scheduleMeetingRequested)
+                   onHoveredChanged: menu._rowHover("", hovered) }
 
         // Plugin menus for this table (dataexport == model table), like the
         // Widgets right-click, collapsed into a single "Plugins" trigger row

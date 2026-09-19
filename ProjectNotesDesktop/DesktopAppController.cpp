@@ -30,10 +30,16 @@
 #include "ProjectNotesEmail/RecipientAudienceResolver.h"
 #include "ProjectNotesEmail/AudiencePresetStore.h"
 #include "ProjectNotesEmail/EmailSettingsStore.h"
+#include "ProjectNotesEmail/TransientCacheCleaner.h"
 #include "ProjectNotesEmail/backends/GraphEmailBackend.h"
 #include "ProjectNotesEmail/backends/MailtoEmailBackend.h"
 #include "ProjectNotesEmail/backends/ThunderbirdEmailBackend.h"
 #include "ProjectNotesEmailRendering/WebEngineReportRenderer.h"
+#include "ProjectNotesMeetings/MeetingService.h"
+#include "ProjectNotesMeetings/backends/GraphMeetingBackend.h"
+#include "ProjectNotesMeetings/backends/IcsFileMeetingBackend.h"
+#include "ProjectNotesMeetings/backends/ThunderbirdMeetingBackend.h"
+#include "ProjectNotesIntegrations/MeetingTemplateStore.h"
 #include "ProjectNotesIntegrations/Office365Service.h"
 #include "ProjectNotesIntegrations/QtNetworkHttpTransport.h"
 #include "ProjectNotesIntegrations/TemplateEditorModel.h"
@@ -118,6 +124,7 @@ PN::Comm::AudienceRule projectTeamAudienceRule()
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QStandardPaths>
+#include <QTextDocument>
 #include <QTextStream>
 #include <QThread>
 #include <QTimer>
@@ -154,12 +161,16 @@ DesktopAppController::DesktopAppController(QObject* parent)
     m_emailService->registerBackend(PN::Comm::BackendId::Graph, m_graphEmailBackend.get());
     m_mailtoEmailBackend = std::make_unique<PN::Comm::MailtoEmailBackend>();
     m_emailService->registerBackend(PN::Comm::BackendId::Mailto, m_mailtoEmailBackend.get());
+    // Meetings use the same Email and Scheduling preference as email.  The
+    // plain-text choice opens an .ics file in the default calendar app.
+    m_meetingService = std::make_unique<PN::Comm::MeetingService>();
+    m_icsMeetingBackend = std::make_unique<PN::Comm::IcsFileMeetingBackend>(
+        PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile));
+    m_meetingService->registerBackend(PN::Comm::BackendId::Mailto, m_icsMeetingBackend.get());
+    m_graphMeetingBackend = std::make_unique<PN::Comm::GraphMeetingBackend>(m_office365Service);
+    m_meetingService->registerBackend(PN::Comm::BackendId::Graph, m_graphMeetingBackend.get());
     QSettings emailSettings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
-    const QString thunderbirdCommand = PN::Comm::EmailSettingsStore(emailSettings).thunderbirdPath();
-    if (!thunderbirdCommand.isEmpty()) {
-        m_thunderbirdEmailBackend = std::make_unique<PN::Comm::ThunderbirdEmailBackend>(thunderbirdCommand);
-        m_emailService->registerBackend(PN::Comm::BackendId::Thunderbird, m_thunderbirdEmailBackend.get());
-    }
+    registerThunderbirdBackends(PN::Comm::EmailSettingsStore(emailSettings).thunderbirdPath());
     m_communicationsController = std::make_unique<PN::Comm::CommunicationsController>(m_emailService.get());
     connect(m_communicationsController.get(), &PN::Comm::CommunicationsController::sourceRevalidationCancelled,
             this, [this] {
@@ -183,10 +194,14 @@ DesktopAppController::DesktopAppController(QObject* parent)
     m_office365SettingsModel = std::make_unique<Office365SettingsModel>(
         m_fileFinder, m_office365Service, this);
     m_webEngineRenderer = new PN::Comm::WebEngineReportRenderer(this);
+    // A previous session that crashed never reached its quit-time cleanup.
+    // Only one instance runs at a time (RunGuard), so nothing in the cache is
+    // in use yet.
+    cleanupTransientCache();
     // This controller is a QML singleton and may outlive the QML engine, so
     // normal process shutdown—not just destruction—is the cleanup boundary.
     connect(qApp, &QCoreApplication::aboutToQuit, this,
-            [this] { cleanupTransientReports(); });
+            [this] { cleanupTransientCache(); });
 #ifdef QT_DEBUG
     connect(m_fileFinder, &FileFinderService::diagnostic, this,
             [](const QString &message) { QLog_Debug(DEBUGLOG, message); });
@@ -251,7 +266,7 @@ QString DesktopAppController::dataLocation()
 
 DesktopAppController::~DesktopAppController()
 {
-    cleanupTransientReports();
+    cleanupTransientCache();
 
     // Join its read-only worker before closing the shared database connection.
     m_communicationRepository.reset();
@@ -274,14 +289,34 @@ DesktopAppController::~DesktopAppController()
         global_DBObjects.closeDatabase();
 }
 
-void DesktopAppController::cleanupTransientReports()
+void DesktopAppController::cleanupTransientCache()
 {
-    // Rendered reports and staged attachments are transient cache data.  A
-    // cleanup call is idempotent, which also makes the destructor safe after
-    // the aboutToQuit handler has already run.
+    // Rendered reports, staged attachments, meeting .ics files and plug-in
+    // report output are transient cache data.  A cleanup call is idempotent,
+    // which also makes the destructor safe after the aboutToQuit handler has
+    // already run.
     if (m_webEngineRenderer && !m_pendingPdfRender.isNull())
         m_webEngineRenderer->cancel(m_pendingPdfRender);
-    PN::Comm::ArtifactStore(PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile)).cleanupAll();
+    const QStringList failed =
+        PN::Comm::TransientCacheCleaner(PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile)).clean();
+    for (const QString &path : failed)
+        QLog_Warning(CONSOLELOG, QStringLiteral("Could not remove temporary file %1").arg(path));
+}
+
+void DesktopAppController::registerThunderbirdBackends(const QString &command)
+{
+    // A command is parsed by ThunderbirdLauncher and launched without a shell.
+    m_emailService->registerBackend(PN::Comm::BackendId::Thunderbird, nullptr);
+    m_meetingService->registerBackend(PN::Comm::BackendId::Thunderbird, nullptr);
+    m_thunderbirdEmailBackend.reset();
+    m_thunderbirdMeetingBackend.reset();
+    if (command.trimmed().isEmpty())
+        return;
+    m_thunderbirdEmailBackend = std::make_unique<PN::Comm::ThunderbirdEmailBackend>(command.trimmed());
+    m_emailService->registerBackend(PN::Comm::BackendId::Thunderbird, m_thunderbirdEmailBackend.get());
+    m_thunderbirdMeetingBackend = std::make_unique<PN::Comm::ThunderbirdMeetingBackend>(
+        PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile), command.trimmed());
+    m_meetingService->registerBackend(PN::Comm::BackendId::Thunderbird, m_thunderbirdMeetingBackend.get());
 }
 
 // ── Small proxy helpers ──────────────────────────────────────────────────────
@@ -493,14 +528,8 @@ void DesktopAppController::setThunderbirdExecutable(const QString &path)
 {
     QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
     PN::Comm::EmailSettingsStore(settings).setThunderbirdPath(path.trimmed());
-    // Recreate the adapter so subsequent reviews use the newly saved command.
-    // A command is parsed by ThunderbirdEmailBackend and launched without a shell.
-    m_thunderbirdEmailBackend.reset();
-    m_emailService->registerBackend(PN::Comm::BackendId::Thunderbird, nullptr);
-    if (!path.trimmed().isEmpty()) {
-        m_thunderbirdEmailBackend = std::make_unique<PN::Comm::ThunderbirdEmailBackend>(path.trimmed());
-        m_emailService->registerBackend(PN::Comm::BackendId::Thunderbird, m_thunderbirdEmailBackend.get());
-    }
+    // Recreate the adapters so subsequent reviews use the newly saved command.
+    registerThunderbirdBackends(path);
     emit emailSettingsChanged();
 }
 
@@ -670,6 +699,7 @@ bool DesktopAppController::prepareMeetingNotesReview(const QString& projectId, c
     m_meetingNotesSource.reset();
     m_reviewAudienceSnapshot.reset();
     m_reviewAudienceRule.reset();
+    m_meetingReview.reset();
     setAppliedReviewAudiencePreset({});
 
     QPointer<DesktopAppController> self(this);
@@ -756,6 +786,7 @@ bool DesktopAppController::prepareMeetingNotesReportReviewWithOptions(const QStr
     m_meetingNotesReportSource.reset();
     m_reviewAudienceSnapshot.reset();
     m_reviewAudienceRule.reset();
+    m_meetingReview.reset();
     setAppliedReviewAudiencePreset({});
 
     QPointer<DesktopAppController> self(this);
@@ -894,6 +925,7 @@ bool DesktopAppController::prepareProjectReportReview(const QString &projectId, 
     m_projectReportOptions.reset();
     m_reviewAudienceSnapshot.reset();
     m_reviewAudienceRule.reset();
+    m_meetingReview.reset();
     setAppliedReviewAudiencePreset({});
     QPointer<DesktopAppController> self(this);
     m_communicationRepository->loadSnapshot(request, [self, request, date, internalReport, workflow, emailMode, retainHtml, displayPdf,
@@ -982,7 +1014,7 @@ QVariantList DesktopAppController::reviewAudiencePresets() const
     QVariantList result;
     if (!m_reviewAudienceSnapshot || !m_communicationsController)
         return result;
-    const auto &source = m_communicationsController->preparation().source;
+    const PN::Comm::SourceContext source = activeReviewSource();
     const PN::Comm::AudiencePresetStore store;
     // Saved audiences belong to the project, so every report lists them all;
     // only the default is specific to the report being reviewed.
@@ -999,7 +1031,7 @@ bool DesktopAppController::saveReviewAudiencePreset(const QString &name)
 {
     if (!m_reviewAudienceSnapshot || !m_reviewAudienceRule || !m_communicationsController)
         return false;
-    const auto &source = m_communicationsController->preparation().source;
+    const PN::Comm::SourceContext source = activeReviewSource();
     if (source.projectId.isEmpty() || name.trimmed().isEmpty())
         return false;
     PN::Comm::AudiencePreset preset;
@@ -1022,7 +1054,7 @@ bool DesktopAppController::applyReviewAudiencePreset(const QString &presetId)
 {
     if (!m_reviewAudienceSnapshot || !m_communicationsController || presetId.trimmed().isEmpty())
         return false;
-    const auto &source = m_communicationsController->preparation().source;
+    const PN::Comm::SourceContext source = activeReviewSource();
     const PN::Comm::AudiencePresetStore store;
     for (const PN::Comm::AudiencePreset &preset : store.presets(source.projectId)) {
         if (preset.id != presetId)
@@ -1041,7 +1073,7 @@ bool DesktopAppController::setReviewAudiencePresetDefault(const QString &presetI
 {
     if (!m_reviewAudienceSnapshot || !m_communicationsController || presetId.trimmed().isEmpty())
         return false;
-    const auto &source = m_communicationsController->preparation().source;
+    const PN::Comm::SourceContext source = activeReviewSource();
     return PN::Comm::AudiencePresetStore().setDefault(presetId, source.workflow, source.projectId).ok();
 }
 
@@ -1061,7 +1093,7 @@ bool DesktopAppController::applyDefaultReviewAudiencePreset()
 {
     if (!m_reviewAudienceSnapshot || !m_communicationsController)
         return false;
-    const auto &source = m_communicationsController->preparation().source;
+    const PN::Comm::SourceContext source = activeReviewSource();
     const auto preset = PN::Comm::AudiencePresetStore()
         .defaultFor(source.workflow, source.projectId);
     if (!preset)
@@ -1087,7 +1119,7 @@ void DesktopAppController::updateRecipientInternalReportContext()
     if (!m_recipientSelectionModel)
         return;
     bool internalReport = false;
-    if (m_communicationsController) {
+    if (m_communicationsController && !m_meetingReview) {
         switch (m_communicationsController->preparation().source.workflow) {
         case PN::Comm::Workflow::MeetingNotesReport:
             internalReport = m_meetingNotesReportInternal;
@@ -1097,6 +1129,7 @@ void DesktopAppController::updateRecipientInternalReportContext()
             internalReport = m_projectReportOptions && m_projectReportOptions->internalReport;
             break;
         case PN::Comm::Workflow::SendMeetingNotes:
+        case PN::Comm::Workflow::ScheduleMeeting:
             break;
         }
     }
@@ -1180,6 +1213,309 @@ bool DesktopAppController::handoffPreparedReview()
             recipients.recipients, recipients.addressLaterExplicitlyChosen);
     });
     return true;
+}
+
+PN::Comm::SourceContext DesktopAppController::activeReviewSource() const
+{
+    if (m_meetingReview)
+        return m_meetingReview->source;
+    return m_communicationsController ? m_communicationsController->preparation().source
+                                      : PN::Comm::SourceContext{};
+}
+
+QVariantList DesktopAppController::meetingTemplateChoices() const
+{
+    QVariantList result;
+    if (!m_databaseOpen)
+        return result;
+    for (const PN::Comm::MeetingTemplate &meetingType : PN::Comm::MeetingTemplateStore().templates())
+        result.append(QVariantMap{{QStringLiteral("id"), meetingType.id},
+                                  {QStringLiteral("name"), meetingType.name},
+                                  {QStringLiteral("durationMinutes"), meetingType.durationMinutes}});
+    return result;
+}
+
+bool DesktopAppController::prepareMeetingReview(const QString &projectId, const QString &templateId)
+{
+    if (!m_databaseOpen || !m_communicationRepository || projectId.trimmed().isEmpty() || m_meetingHandoffBusy)
+        return false;
+    std::optional<PN::Comm::MeetingTemplate> meetingType;
+    for (const PN::Comm::MeetingTemplate &candidate : PN::Comm::MeetingTemplateStore().templates())
+        if (candidate.id == templateId)
+            meetingType = candidate;
+    if (!meetingType) {
+        emit errorOccurred(tr("Cannot Schedule Meeting"),
+                           tr("The meeting type no longer exists. Choose another in Settings > Meeting Templates."));
+        return false;
+    }
+
+    PN::Comm::SnapshotRequest request;
+    request.operationId = QUuid::createUuid();
+    request.source = {global_DBObjects.getDatabaseFile(), m_communicationDatabaseGeneration,
+                      projectId, {}, PN::Comm::Workflow::ScheduleMeeting};
+    request.managingCompanyId = managingCompanyId();
+    request.projectManagerId = projectManagerId();
+    request.capturedAt = QDateTime::currentDateTimeUtc();
+    m_pendingMeetingReview = request.operationId;
+    m_meetingReview.reset();
+    m_reviewAudienceSnapshot.reset();
+    m_reviewAudienceRule.reset();
+    setAppliedReviewAudiencePreset({});
+    emit meetingReviewChanged();
+
+    QPointer<DesktopAppController> self(this);
+    m_communicationRepository->loadSnapshot(request, [self, request, meetingType = *meetingType](PN::Comm::SnapshotResult result) {
+        if (!self || self->m_pendingMeetingReview != result.operationId)
+            return;
+        self->m_pendingMeetingReview = {};
+        if (!result.error.code.isEmpty()) {
+            emit self->errorOccurred(self->tr("Cannot Schedule Meeting"),
+                                     result.error.displayText.isEmpty() ? result.error.code : result.error.displayText);
+            return;
+        }
+        // Meetings follow the Email and Scheduling Integration preference.
+        QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+        const PN::Comm::BackendId backend = PN::Comm::EmailSettingsStore(settings).preferredBackend();
+        PN::Comm::ValidationResult validation;
+        const auto prepared = PN::Comm::MeetingPreparationFactory::create(
+            result.snapshot, request.source, meetingType, backend, QDateTime::currentDateTime(), &validation);
+        if (!prepared) {
+            emit self->errorOccurred(self->tr("Cannot Schedule Meeting"),
+                                     self->tr("The meeting type \"%1\" could not be applied to this project. "
+                                              "Check its subject and agenda fields in Settings > Meeting Templates.")
+                                         .arg(meetingType.name));
+            return;
+        }
+        // A meeting starts from the same project-team audience as the reports,
+        // then loads the audience saved as the meeting default, if any.
+        const PN::Comm::AudienceRule rule = projectTeamAudienceRule();
+        self->m_meetingReview = *prepared;
+        self->m_reviewAudienceSnapshot = result.snapshot;
+        self->m_reviewAudienceRule = rule;
+        self->m_recipientSelectionModel->setAudience(PN::Comm::resolveAudience(result.snapshot, rule));
+        self->updateRecipientInternalReportContext();
+        // The attendee pane lists saved audiences when this signal arrives, so
+        // send it even when there is no meeting default to load.
+        if (!self->applyDefaultReviewAudiencePreset())
+            self->setAppliedReviewAudiencePreset({});
+        emit self->meetingReviewChanged();
+    });
+    return true;
+}
+
+QVariantMap DesktopAppController::meetingReview() const
+{
+    if (!m_meetingReview)
+        return {{QStringLiteral("ready"), false}, {QStringLiteral("loading"), !m_pendingMeetingReview.isNull()}};
+    const PN::Comm::MeetingPreparation &review = *m_meetingReview;
+    const QDateTime start = review.start.toLocalTime();
+    QString backendLabel;
+    switch (review.backend) {
+    case PN::Comm::BackendId::Graph: backendLabel = tr("Microsoft 365"); break;
+    case PN::Comm::BackendId::Thunderbird: backendLabel = tr("Thunderbird"); break;
+    case PN::Comm::BackendId::Mailto: backendLabel = tr("Default calendar app"); break;
+    default: backendLabel = PN::Comm::toStableString(review.backend); break;
+    }
+    const QString agenda = !review.htmlAgenda.isEmpty() ? review.htmlAgenda
+                                                         : review.plainAgenda.toHtmlEscaped().replace(u'\n', QStringLiteral("<br>"));
+    return {{QStringLiteral("ready"), true},
+            {QStringLiteral("loading"), false},
+            {QStringLiteral("templateName"), review.templateName},
+            {QStringLiteral("subject"), review.subject},
+            {QStringLiteral("agendaHtml"), agenda},
+            {QStringLiteral("location"), review.location},
+            {QStringLiteral("date"), start.date().toString(QStringLiteral("MM/dd/yyyy"))},
+            {QStringLiteral("time"), start.time().toString(QStringLiteral("h:mm AP"))},
+            {QStringLiteral("durationMinutes"), review.durationMinutes},
+            {QStringLiteral("timeZone"), start.timeZoneAbbreviation()},
+            {QStringLiteral("backend"), PN::Comm::toStableString(review.backend)},
+            {QStringLiteral("backendLabel"), backendLabel},
+            {QStringLiteral("organizer"), review.organizerAddress.isEmpty()
+                                              ? review.organizerName
+                                              : QStringLiteral("%1 <%2>").arg(review.organizerName, review.organizerAddress)}};
+}
+
+bool DesktopAppController::handoffPreparedMeeting(const QString &subject, const QString &agendaHtml,
+                                                  const QString &location, const QString &date,
+                                                  const QString &time, int durationMinutes)
+{
+    if (m_meetingHandoffBusy || !m_meetingReview || !m_reviewAudienceSnapshot
+        || !m_communicationRepository || !m_databaseOpen)
+        return false;
+    const auto reject = [this](const QString &message) {
+        emit meetingHandoffFinished(false, message);
+        return false;
+    };
+    const QDate day = QDate::fromString(date.trimmed(), QStringLiteral("MM/dd/yyyy"));
+    // The review shows 12-hour time; a typed 24-hour time is accepted too.
+    QTime startTime;
+    const QString typedTime = time.trimmed().toUpper();
+    for (const QString &format : {QStringLiteral("h:mm AP"), QStringLiteral("h:mmAP"), QStringLiteral("h AP"),
+                                  QStringLiteral("hAP"), QStringLiteral("H:mm")}) {
+        startTime = QTime::fromString(typedTime, format);
+        if (startTime.isValid())
+            break;
+    }
+    if (!day.isValid() || !startTime.isValid())
+        return reject(tr("Choose a valid date and start time, such as 9:00 AM."));
+    if (durationMinutes <= 0 || durationMinutes > 24 * 60)
+        return reject(tr("Choose a duration between 1 minute and 24 hours."));
+    if (subject.trimmed().isEmpty())
+        return reject(meetingErrorText(QStringLiteral("meeting-subject-required")));
+    if (m_meetingReview->source.databaseGeneration != m_communicationDatabaseGeneration)
+        return reject(tr("The selected database changed. Close this review and schedule the meeting again."));
+
+    PN::Comm::MeetingPreparation &review = *m_meetingReview;
+    review.subject = subject.simplified();
+    review.location = location.simplified();
+    review.start = QDateTime(day, startTime);
+    review.durationMinutes = durationMinutes;
+    QTextDocument agenda;
+    agenda.setHtml(agendaHtml);
+    review.plainAgenda = agenda.toPlainText().trimmed();
+    review.htmlAgenda = review.plainAgenda.isEmpty() ? QString() : agendaHtml;
+    // Every attempt is a new operation: a retried handoff must not collide
+    // with the staged files, or the provider event, of an earlier attempt.
+    review.operationId = QUuid::createUuid();
+    if (review.backend == PN::Comm::BackendId::Graph) {
+        const PN::Comm::Office365Account account = m_office365Service ? m_office365Service->account()
+                                                                      : PN::Comm::Office365Account{};
+        if (!account.authenticated)
+            return reject(meetingErrorText(QStringLiteral("office365-not-authenticated")));
+        review.accountKey = account.label;
+        review.accountGeneration = account.generation;
+    }
+
+    PN::Comm::SnapshotRequest request;
+    request.operationId = QUuid::createUuid();
+    request.source = review.source;
+    request.managingCompanyId = managingCompanyId();
+    request.projectManagerId = projectManagerId();
+    request.capturedAt = QDateTime::currentDateTimeUtc();
+    const QByteArray expectedFingerprint = m_reviewAudienceSnapshot->fingerprint;
+    m_pendingMeetingRevalidation = request.operationId;
+    m_meetingHandoffBusy = true;
+    emit meetingReviewChanged();
+
+    QPointer<DesktopAppController> self(this);
+    m_communicationRepository->loadSnapshot(request, [self, expectedFingerprint](PN::Comm::SnapshotResult result) {
+        if (!self || self->m_pendingMeetingRevalidation != result.operationId)
+            return;
+        self->m_pendingMeetingRevalidation = {};
+        PN::Comm::MeetingHandoffResult failure;
+        if (!self->m_meetingReview) {
+            failure.error.code = QStringLiteral("operation-cancelled");
+            self->finishMeetingHandoff(failure);
+            return;
+        }
+        failure.operationId = self->m_meetingReview->operationId;
+        if (!result.error.code.isEmpty()) {
+            failure.error = {result.error.code, result.error.displayText};
+            self->finishMeetingHandoff(failure);
+            return;
+        }
+        if (result.snapshot.fingerprint != expectedFingerprint) {
+            failure.error.code = QStringLiteral("review-source-changed");
+            self->finishMeetingHandoff(failure);
+            return;
+        }
+        const PN::Comm::RecipientResolution recipients = self->m_recipientSelectionModel->resolve();
+        if (!recipients.validation.ok()) {
+            for (const PN::Comm::ValidationIssue &issue : recipients.validation.issues)
+                if (issue.severity == PN::Comm::IssueSeverity::Error) {
+                    failure.error.code = issue.code;
+                    break;
+                }
+            self->finishMeetingHandoff(failure);
+            return;
+        }
+        const PN::Comm::MeetingRequest meeting =
+            PN::Comm::MeetingPreparationFactory::request(*self->m_meetingReview, recipients.recipients);
+        self->m_meetingService->handoff(meeting, [self](PN::Comm::MeetingHandoffResult outcome) {
+            if (self)
+                self->finishMeetingHandoff(outcome);
+        });
+    });
+    return true;
+}
+
+void DesktopAppController::finishMeetingHandoff(const PN::Comm::MeetingHandoffResult &result)
+{
+    m_meetingHandoffBusy = false;
+    emit meetingReviewChanged();
+    if (!result.error.code.isEmpty()) {
+        const bool unknownOutcome = result.certainty == PN::Comm::OutcomeCertainty::Uncertain
+            || result.error.certainty == PN::Comm::OutcomeCertainty::Uncertain;
+        emit meetingHandoffFinished(false, unknownOutcome
+            ? tr("Microsoft 365 may have created the meeting before the connection failed. "
+                 "Check your Outlook calendar before trying again.")
+            : meetingErrorText(result.error.code, result.error.displayText));
+        return;
+    }
+#ifdef QT_DEBUG
+    if (!result.presentationUrl.isEmpty() || !result.providerWebLink.isEmpty())
+        QLog_Debug(DEBUGLOG, QStringLiteral("Schedule Meeting: event id %1; provider webLink %2; opening %3")
+                                 .arg(result.eventIdentity,
+                                      result.providerWebLink.toString(QUrl::FullyEncoded),
+                                      result.presentationUrl.toString(QUrl::FullyEncoded)));
+#endif
+    // The invite opens in the calendar app without a confirmation box; only a
+    // draft the browser could not open needs telling.
+    if (result.presentationUrl.isValid() && !QDesktopServices::openUrl(result.presentationUrl)) {
+        const QString message = tr("The draft meeting was created in your Microsoft 365 calendar, but the browser "
+                                   "could not open it. Open your Outlook calendar to review it and send the invitations.");
+        emit meetingHandoffFinished(true, message);
+        emit infoOccurred(tr("Schedule Meeting"), message);
+        return;
+    }
+    emit meetingHandoffFinished(true, QString());
+}
+
+void DesktopAppController::closeMeetingReview()
+{
+    if (m_communicationRepository && !m_pendingMeetingReview.isNull())
+        m_communicationRepository->cancel(m_pendingMeetingReview);
+    m_pendingMeetingReview = {};
+    if (!m_pendingMeetingRevalidation.isNull()) {
+        if (m_communicationRepository)
+            m_communicationRepository->cancel(m_pendingMeetingRevalidation);
+        m_pendingMeetingRevalidation = {};
+        m_meetingHandoffBusy = false;
+    }
+    // A handoff already with its backend finishes on its own and reports back.
+    m_meetingReview.reset();
+    emit meetingReviewChanged();
+}
+
+QString DesktopAppController::meetingErrorText(const QString &code, const QString &fallback) const
+{
+    static const QHash<QString, const char *> messages = {
+        {QStringLiteral("meeting-subject-required"), QT_TR_NOOP("Enter a meeting subject.")},
+        {QStringLiteral("meeting-subject-invalid"), QT_TR_NOOP("The subject cannot contain line breaks.")},
+        {QStringLiteral("meeting-location-invalid"), QT_TR_NOOP("The location cannot contain line breaks.")},
+        {QStringLiteral("meeting-time-required"), QT_TR_NOOP("Choose a valid start time and duration.")},
+        {QStringLiteral("meeting-end-before-start"), QT_TR_NOOP("Choose a valid start time and duration.")},
+        {QStringLiteral("recipient-address-invalid"), QT_TR_NOOP("One of the selected attendees has an invalid email address. Correct it on the People page or clear that attendee.")},
+        {QStringLiteral("recipient-role-conflict"), QT_TR_NOOP("The same email address is selected more than once with different roles.")},
+        {QStringLiteral("company-setup-required"), QT_TR_NOOP("Set the managing company in Settings > Preferences before using this audience.")},
+        {QStringLiteral("organizer-address-invalid"), QT_TR_NOOP("The project manager's email address is not valid. Correct it on the People page.")},
+        {QStringLiteral("review-source-changed"), QT_TR_NOOP("The project data changed. Close this review and schedule the meeting again.")},
+        {QStringLiteral("meeting-operation-busy"), QT_TR_NOOP("Another meeting is still being scheduled.")},
+        {QStringLiteral("meeting-backend-unavailable"), QT_TR_NOOP("The selected Email and Scheduling Integration cannot schedule meetings. Choose another in Settings > Preferences.")},
+        {QStringLiteral("thunderbird-unavailable"), QT_TR_NOOP("Thunderbird was not found. Check its path in Settings > Preferences > Email and Scheduling Integration.")},
+        {QStringLiteral("thunderbird-launch-failed"), QT_TR_NOOP("Thunderbird could not be started.")},
+        {QStringLiteral("calendar-open-failed"), QT_TR_NOOP("The meeting file was created, but no calendar app opened it. Set a default app for .ics files, or choose another Email and Scheduling Integration.")},
+        {QStringLiteral("office365-not-authenticated"), QT_TR_NOOP("Sign in to Microsoft 365 in Settings > Office 365 Integration, then try again.")},
+        {QStringLiteral("account-generation-changed"), QT_TR_NOOP("The Microsoft 365 account changed. Try again.")},
+        {QStringLiteral("graph-calendar-consent-required"), QT_TR_NOOP("Microsoft 365 did not allow calendar access. Sign out and sign in again in Settings > Office 365 Integration to grant calendar permission.")},
+        {QStringLiteral("operation-cancelled"), QT_TR_NOOP("Scheduling was cancelled.")},
+    };
+    const auto message = messages.constFind(code);
+    if (message != messages.cend())
+        return tr(*message);
+    if (!fallback.isEmpty())
+        return fallback;
+    return tr("The meeting could not be scheduled (%1).").arg(code);
 }
 
 bool DesktopAppController::saveReviewGeneratedAttachment(const QString &displayName,

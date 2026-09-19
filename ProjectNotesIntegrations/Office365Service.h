@@ -53,7 +53,7 @@ public:
     [[nodiscard]] QUrl verificationUrl() const;
     void restoreSession();
     void requestFileFinderConsent();
-    void requestEmailDraftConsent();
+    void requestCommunicationsConsent();
     void startSignIn();
     void signOut();
     // Internal File Finder capability. It is intentionally not a Q_PROPERTY or

@@ -256,6 +256,7 @@ add_subdirectory(ProjectNotesFileFinder EXCLUDE_FROM_ALL)
 if(NOT ANDROID AND NOT IOS)
     add_subdirectory(ProjectNotesEmail)
     add_subdirectory(ProjectNotesEmailRendering)
+    add_subdirectory(ProjectNotesMeetings)
 endif()
 
 # ── QML desktop frontend (UI overhaul, Phase 1) ──────────────────────────────

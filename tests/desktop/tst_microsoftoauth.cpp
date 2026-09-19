@@ -202,7 +202,7 @@ void MicrosoftOAuthManagerTest::emailDraftConsentPreservesFileFinderSession()
     QVERIFY(service.account().grantedScopes.contains(
         QStringLiteral("https://graph.microsoft.com/Files.Read.All")));
 
-    service.requestEmailDraftConsent();
+    service.requestCommunicationsConsent();
     QVERIFY(service.account().authenticated);
     QVERIFY(service.account().grantedScopes.contains(
         QStringLiteral("https://graph.microsoft.com/Files.Read.All")));
@@ -216,7 +216,7 @@ void MicrosoftOAuthManagerTest::emailDraftConsentPreservesFileFinderSession()
     QVERIFY(consentBody.contains("User.Read"));
     QVERIFY(consentBody.contains("Mail.ReadWrite"));
     QVERIFY(!consentBody.contains("Mail.Send"));
-    QVERIFY(!consentBody.contains("Calendars"));
+    QVERIFY(consentBody.contains("Calendars.ReadWrite"));
     QVERIFY(!consentBody.contains("Files.Read"));
     QVERIFY(!consentBody.contains("Team.Read"));
 

@@ -13,6 +13,7 @@ QString reportTypeName(Workflow workflow)
     case Workflow::MeetingNotesReport: return QStringLiteral("Meeting Notes Report");
     case Workflow::StatusReport: return QStringLiteral("Status Report");
     case Workflow::TrackerItemsReport: return QStringLiteral("Tracker Items Report");
+    case Workflow::ScheduleMeeting: return QStringLiteral("Meeting");
     }
     return {};
 }

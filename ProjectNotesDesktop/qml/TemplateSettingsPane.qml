@@ -180,43 +180,6 @@ ColumnLayout {
         font.pixelSize: Theme.fontXl
         font.weight: Font.DemiBold
     }
-    RowLayout {
-        Layout.fillWidth: true
-        Label { text: qsTr("Preferred email backend"); color: Theme.text2 }
-        TemplateComboBox {
-            Layout.preferredWidth: 250
-            model: [
-                { value: "mailto", label: qsTr("Default client (plain text)") },
-                { value: "thunderbird", label: qsTr("Thunderbird") },
-                { value: "graph", label: qsTr("Microsoft 365 draft") }
-            ]
-            textRole: "label"
-            valueRole: "value"
-            currentIndex: {
-                for (let i = 0; i < model.length; ++i)
-                    if (model[i].value === DesktopAppController.preferredEmailBackend) return i
-                return 0
-            }
-            onActivated: DesktopAppController.preferredEmailBackend = currentValue
-        }
-        Item { Layout.fillWidth: true }
-    }
-    TemplateTextField {
-        Layout.fillWidth: true
-        visible: DesktopAppController.preferredEmailBackend === "thunderbird"
-        placeholderText: qsTr("Thunderbird executable path")
-        text: DesktopAppController.thunderbirdExecutable
-        onEditingFinished: DesktopAppController.thunderbirdExecutable = text
-    }
-    Label {
-        Layout.fillWidth: true
-        text: DesktopAppController.preferredEmailBackend === "graph"
-            ? qsTr("Microsoft 365 can create a draft after separate draft consent and verified account identity. It never sends email automatically.")
-            : qsTr("This preference is retained here. Its review action appears only when the selected adapter supports the prepared content.")
-        color: Theme.text3
-        font.pixelSize: Theme.fontSm
-        wrapMode: Text.WordWrap
-    }
     Label {
         Layout.fillWidth: true
         text: qsTr("Templates are stored for this database and this Project Notes profile. Fields are inserted literally and are resolved only when a workflow has its real context.")

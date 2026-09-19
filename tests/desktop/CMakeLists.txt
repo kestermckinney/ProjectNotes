@@ -115,6 +115,7 @@ target_link_libraries(tst_qmldesktop PRIVATE
     ProjectNotesFileFinder
     ProjectNotesEmail
     ProjectNotesEmailRendering
+    ProjectNotesMeetings
 )
 
 if(UNIX AND NOT APPLE AND NOT ANDROID)
@@ -203,7 +204,7 @@ target_link_libraries(tst_communicationrepository PRIVATE Qt6::Core Qt6::Sql Qt6
 add_test(NAME communicationrepository COMMAND tst_communicationrepository)
 
 add_executable(tst_microsoftoauth tst_microsoftoauth.cpp)
-target_link_libraries(tst_microsoftoauth PRIVATE Qt6::Core Qt6::Network Qt6::Test ProjectNotesIntegrations)
+target_link_libraries(tst_microsoftoauth PRIVATE Qt6::Core Qt6::Network Qt6::Test ProjectNotesIntegrations ProjectNotesCore)
 add_test(NAME microsoftoauth COMMAND tst_microsoftoauth)
 
 add_executable(tst_httptransport tst_httptransport.cpp)
@@ -235,3 +236,10 @@ add_executable(tst_richtextpolicy tst_richtextpolicy.cpp)
 target_link_libraries(tst_richtextpolicy PRIVATE Qt6::Core Qt6::Gui Qt6::Test ProjectNotesEmailRendering)
 add_test(NAME richtextpolicy COMMAND tst_richtextpolicy)
 set_tests_properties(richtextpolicy PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# Native meeting scheduling: iCalendar output, preparation, the calendar file,
+# Thunderbird and Graph backends, and the temporary-cache cleaner. Every
+# launcher, opener and account is a fake; no calendar or invitation is used.
+add_executable(tst_meetings tst_meetings.cpp)
+target_link_libraries(tst_meetings PRIVATE Qt6::Core Qt6::Gui Qt6::Test ProjectNotesMeetings ProjectNotesIntegrations ProjectNotesCore)
+add_test(NAME meetings COMMAND tst_meetings)

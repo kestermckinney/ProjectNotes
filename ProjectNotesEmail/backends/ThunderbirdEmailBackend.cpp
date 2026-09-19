@@ -2,11 +2,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "ThunderbirdEmailBackend.h"
+#include "ThunderbirdLauncher.h"
 
 #include <QDir>
 #include <QFileInfo>
-#include <QProcess>
-#include <QStandardPaths>
 #include <QUrl>
 
 namespace PN::Comm {
@@ -16,53 +15,11 @@ QString quote(const QString &value) {
     return QStringLiteral("'") + result + QStringLiteral("'");
 }
 bool invalid(const QString &value) { return value.contains('\r') || value.contains('\n'); }
-bool isFlatpakLauncher(const QString &program, const QStringList &arguments)
-{
-    return QFileInfo(program).fileName() == QLatin1String("flatpak")
-        && !arguments.isEmpty() && arguments.constFirst() == QLatin1String("run");
-}
-bool isOperationOwnedFile(const QString &path, const QString &operationDirectory)
-{
-    const QFileInfo rootInfo(operationDirectory);
-    const QFileInfo fileInfo(path);
-    if (!rootInfo.isAbsolute() || !rootInfo.isDir() || !fileInfo.isAbsolute()
-        || !fileInfo.isFile() || !fileInfo.isReadable())
-        return false;
-    const QString root = rootInfo.canonicalFilePath();
-    const QString file = fileInfo.canonicalFilePath();
-    if (root.isEmpty() || file.isEmpty())
-        return false;
-    const QString prefix = QDir::cleanPath(root) + QLatin1Char('/');
-#ifdef Q_OS_WIN
-    return QDir::cleanPath(file).startsWith(prefix, Qt::CaseInsensitive);
-#else
-    return QDir::cleanPath(file).startsWith(prefix, Qt::CaseSensitive);
-#endif
-}
 }
 
 ThunderbirdEmailBackend::ThunderbirdEmailBackend(QString executable, ProcessLauncher launcher)
-    : m_launcher(std::move(launcher))
+    : m_launcher(std::move(executable), std::move(launcher))
 {
-    // A direct path (including one with spaces) remains a single program.  For
-    // commands such as "flatpak run org.mozilla.Thunderbird", split only the
-    // command syntax and pass every part directly to QProcess; never use a
-    // shell to interpret the setting.
-    const QString configured = executable.trimmed();
-    if (QFileInfo(configured).isFile()) {
-        m_program = configured;
-    } else {
-        const QStringList command = QProcess::splitCommand(configured);
-        if (!command.isEmpty()) {
-            m_program = QStandardPaths::findExecutable(command.constFirst());
-            if (m_program.isEmpty())
-                m_program = command.constFirst();
-            m_commandArguments = command.sliced(1);
-        }
-    }
-    if (!m_launcher) m_launcher = [](const QString &program, const QStringList &arguments) {
-        return QProcess::startDetached(program, arguments);
-    };
 }
 
 QString ThunderbirdEmailBackend::resolveExecutable(const QString &configuredPath,
@@ -135,20 +92,16 @@ void ThunderbirdEmailBackend::handoff(EmailRequest request, Completion completio
 {
     EmailHandoffResult result; result.operationId = request.operationId;
     if (m_cancelled.remove(request.operationId)) { result.error = {"operation-cancelled", {}, RetryKind::None, OutcomeCertainty::Certain}; completion(result); return; }
-    if (!QFileInfo(m_program).isFile() || !QFileInfo(m_program).isExecutable()) { result.error = {"thunderbird-unavailable", {}, RetryKind::ReviewAndRetry, OutcomeCertainty::Certain}; completion(result); return; }
+    if (!m_launcher.available()) { result.error = {"thunderbird-unavailable", {}, RetryKind::ReviewAndRetry, OutcomeCertainty::Certain}; completion(result); return; }
     const StagedBodyFile body = m_bodyFiles.take(request.operationId);
     ValidationResult validation;
     const auto arguments = composeArguments(request, body.path, body.operationDirectory, &validation);
     if (!arguments) { result.error = {validation.issues.constFirst().code, {}, RetryKind::ReviewAndRetry, OutcomeCertainty::Certain}; completion(result); return; }
-    QStringList launchArguments = m_commandArguments;
-    if (isFlatpakLauncher(m_program, launchArguments)) {
-        QDir stagingDirectory(body.operationDirectory);
-        if (stagingDirectory.cdUp())
-            launchArguments.insert(1, QStringLiteral("--filesystem=%1:ro")
-                                          .arg(stagingDirectory.absolutePath()));
-    }
-    launchArguments.append(*arguments);
-    if (!m_launcher(m_program, launchArguments)) { result.error = {"thunderbird-launch-failed", {}, RetryKind::RetryPresentation, OutcomeCertainty::Certain}; completion(result); return; }
+    // A Flatpak Thunderbird needs read access to the staging root holding
+    // this operation's body and attachments.
+    QDir stagingDirectory(body.operationDirectory);
+    const QString readable = stagingDirectory.cdUp() ? stagingDirectory.absolutePath() : QString();
+    if (!m_launcher.launch(*arguments, readable)) { result.error = {"thunderbird-launch-failed", {}, RetryKind::RetryPresentation, OutcomeCertainty::Certain}; completion(result); return; }
     result.certainty = OutcomeCertainty::Uncertain; completion(result);
 }
 

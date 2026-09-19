@@ -18,6 +18,7 @@
 #include "ProjectNotesEmail/EmailContentBuilder.h"
 #include "ProjectNotesEmail/RecipientAudienceResolver.h"
 #include "ProjectNotesEmail/SnapshotTypes.h"
+#include "ProjectNotesMeetings/MeetingPreparationFactory.h"
 #include "ProjectNotesIntegrations/CommunicationTemplateStore.h"
 
 #include <initializer_list>
@@ -48,6 +49,10 @@ class QtNetworkHttpTransport;
 class GraphEmailBackend;
 class MailtoEmailBackend;
 class ThunderbirdEmailBackend;
+class MeetingService;
+class IcsFileMeetingBackend;
+class ThunderbirdMeetingBackend;
+class GraphMeetingBackend;
 }
 
 // DesktopAppController — the QML bridge for the desktop app.
@@ -91,6 +96,8 @@ class DesktopAppController : public QObject
     Q_PROPERTY(QString preferredEmailBackend READ preferredEmailBackend WRITE setPreferredEmailBackend NOTIFY emailSettingsChanged)
     Q_PROPERTY(QString thunderbirdExecutable READ thunderbirdExecutable WRITE setThunderbirdExecutable NOTIFY emailSettingsChanged)
     Q_PROPERTY(bool databaseOpen READ databaseOpen NOTIFY databaseReady)
+    // True while a reviewed meeting is being handed to its calendar backend.
+    Q_PROPERTY(bool meetingHandoffBusy READ meetingHandoffBusy NOTIFY meetingReviewChanged)
 
     // View options (two-way bindable from the Settings screen).
     Q_PROPERTY(bool showClosedProjects READ showClosedProjects WRITE setShowClosedProjects NOTIFY viewOptionsChanged)
@@ -211,6 +218,27 @@ public:
     // Called after the native Save As picker confirms an overwrite and before
     // report preparation begins, so publication never races an old file.
     Q_INVOKABLE bool removeExistingReportSaveFile(const QString& destination);
+
+    // ── Schedule Meeting ─────────────────────────────────────────────────────
+    // Meeting types from Settings > Meeting Templates: [{id, name, durationMinutes}].
+    Q_INVOKABLE QVariantList meetingTemplateChoices() const;
+    // Loads the project snapshot and renders the meeting type into a review.
+    // The result arrives through meetingReviewChanged(); nothing is scheduled.
+    // The review shares RecipientSelectionModel and the project's saved
+    // audiences with the report reviews.
+    Q_INVOKABLE bool prepareMeetingReview(const QString& projectId, const QString& templateId);
+    // The prepared review as {ready, templateName, subject, agendaHtml,
+    // location, date (MM/dd/yyyy), time (HH:mm), durationMinutes, timeZone,
+    // backend, backendLabel, organizer}.
+    Q_INVOKABLE QVariantMap meetingReview() const;
+    // Applies the dialog's edits, revalidates the project data and hands the
+    // meeting to the selected Email and Scheduling backend.  The outcome is
+    // reported through meetingHandoffFinished().
+    Q_INVOKABLE bool handoffPreparedMeeting(const QString& subject, const QString& agendaHtml,
+                                            const QString& location, const QString& date,
+                                            const QString& time, int durationMinutes);
+    Q_INVOKABLE void closeMeetingReview();
+    bool meetingHandoffBusy() const { return m_meetingHandoffBusy; }
 
     // ── Models ───────────────────────────────────────────────────────────────
     QAbstractItemModel* projectsListModel() const;
@@ -752,6 +780,8 @@ signals:
     void viewReportAfterSaveChanged();
     void reviewAudiencePresetChanged();
     void emailSettingsChanged();
+    void meetingReviewChanged();
+    void meetingHandoffFinished(bool succeeded, const QString& message);
     void databaseReady();
     void errorOccurred(const QString& title, const QString& message);
     // A non-error informational result (e.g. Send Logs to Support outcome).
@@ -797,6 +827,12 @@ private slots:
 
 private:
     bool applyDefaultReviewAudiencePreset();
+    // The project and workflow whose saved audiences the review pane shows:
+    // the open meeting review, or else the email/report review.
+    PN::Comm::SourceContext activeReviewSource() const;
+    void registerThunderbirdBackends(const QString& command);
+    void finishMeetingHandoff(const PN::Comm::MeetingHandoffResult& result);
+    QString meetingErrorText(const QString& code, const QString& fallback = {}) const;
     void setAppliedReviewAudiencePreset(const QString& presetId);
     void updateRecipientInternalReportContext();
     // Resolves the template a workflow's review should start from. Report and
@@ -834,6 +870,10 @@ private:
     std::unique_ptr<PN::Comm::GraphEmailBackend> m_graphEmailBackend;
     std::unique_ptr<PN::Comm::MailtoEmailBackend> m_mailtoEmailBackend;
     std::unique_ptr<PN::Comm::ThunderbirdEmailBackend> m_thunderbirdEmailBackend;
+    std::unique_ptr<PN::Comm::MeetingService> m_meetingService;
+    std::unique_ptr<PN::Comm::IcsFileMeetingBackend> m_icsMeetingBackend;
+    std::unique_ptr<PN::Comm::ThunderbirdMeetingBackend> m_thunderbirdMeetingBackend;
+    std::unique_ptr<PN::Comm::GraphMeetingBackend> m_graphMeetingBackend;
     std::unique_ptr<PN::Comm::CommunicationsController> m_communicationsController;
     std::unique_ptr<PN::Comm::RecipientSelectionModel> m_recipientSelectionModel;
     std::unique_ptr<PN::Comm::TemplateEditorModel> m_templateEditorModel;
@@ -864,6 +904,12 @@ private:
     std::optional<PN::Comm::CommunicationSnapshot> m_projectReportSnapshot;
     std::optional<PN::Comm::SourceContext> m_projectReportSource;
     std::optional<PN::Comm::ReportOptions> m_projectReportOptions;
+    // The open Schedule Meeting review. While it is set, the review pane's
+    // saved-audience actions apply to the meeting rather than a report.
+    std::optional<PN::Comm::MeetingPreparation> m_meetingReview;
+    QUuid m_pendingMeetingReview;
+    QUuid m_pendingMeetingRevalidation;
+    bool m_meetingHandoffBusy = false;
     bool prepareProjectReportReview(const QString &projectId, const QString &reportingDate,
                                     bool internalReport, PN::Comm::Workflow workflow,
                                     PN::Comm::EmailMode emailMode,
@@ -875,7 +921,10 @@ private:
     void stageRequestedGeneratedAttachmentAsync(PN::Comm::EmailPreparation preparation,
                                                 std::function<void(std::optional<PN::Comm::EmailPreparation>,
                                                                    PN::Comm::ValidationResult)> completion);
-    void cleanupTransientReports();
+    // Removes the temporary files kept in the cache folder (staged email and
+    // meeting files, rendered reports, plug-in report output).  Runs at startup
+    // to clear a crash's leftovers and again when the application quits.
+    void cleanupTransientCache();
 
     // ── Sidebar folder snapshots (see folderProjects/sidebarRev) ─────────────
     QHash<QString, QVariantList> m_folderSnapshot;   // folderId ("" = all) -> rows

@@ -26,6 +26,14 @@ ColumnLayout {
     // A workflow may supply a fixed, preselected distribution while still
     // allowing its recipients to be reviewed individually.
     property bool recipientListOnly: false
+    // Schedule Meeting reuses the saved audiences, but shows calendar
+    // attendance.  Required is stored as To and Optional as Cc, so an audience
+    // saved here or in a report works in both places.
+    property bool meetingMode: false
+    readonly property var roleLabels: meetingMode ? [qsTr("Required"), qsTr("Optional"), qsTr("Optional")]
+                                                  : [qsTr("To"), qsTr("Cc"), qsTr("Bcc")]
+    readonly property var roleOptions: meetingMode ? [qsTr("Required"), qsTr("Optional")]
+                                                   : [qsTr("To"), qsTr("Cc"), qsTr("Bcc")]
     spacing: 8
 
     component StandardCheckBox: CheckBox {
@@ -55,21 +63,26 @@ ColumnLayout {
         }
     }
 
-    Label { text: qsTr("Recipients"); color: Theme.text; font.pixelSize: Theme.fontLg; font.weight: Font.DemiBold }
+    Label { text: pane.meetingMode ? qsTr("Attendees") : qsTr("Recipients"); color: Theme.text; font.pixelSize: Theme.fontLg; font.weight: Font.DemiBold }
     Label {
-        text: pane.recipientModel
-            ? qsTr("%1 of %2 recipient(s) selected").arg(pane.recipientModel.selectedRecipientCount).arg(pane.recipientModel.recipientCount)
-            : qsTr("No recipients loaded")
+        text: !pane.recipientModel
+            ? (pane.meetingMode ? qsTr("No attendees loaded") : qsTr("No recipients loaded"))
+            : pane.meetingMode
+            ? qsTr("%1 of %2 attendee(s) selected").arg(pane.recipientModel.selectedRecipientCount).arg(pane.recipientModel.recipientCount)
+            : qsTr("%1 of %2 recipient(s) selected").arg(pane.recipientModel.selectedRecipientCount).arg(pane.recipientModel.recipientCount)
         color: Theme.text2
     }
     Label {
         visible: pane.recipientModel !== null
-        text: pane.recipientModel
-            ? qsTr("To: %1  ·  Cc: %2  ·  Bcc: %3")
+        text: !pane.recipientModel ? ""
+            : pane.meetingMode
+            ? qsTr("Required: %1  ·  Optional: %2")
+                  .arg(pane.recipientModel.toRecipientCount)
+                  .arg(pane.recipientModel.ccRecipientCount + pane.recipientModel.bccRecipientCount)
+            : qsTr("To: %1  ·  Cc: %2  ·  Bcc: %3")
                   .arg(pane.recipientModel.toRecipientCount)
                   .arg(pane.recipientModel.ccRecipientCount)
                   .arg(pane.recipientModel.bccRecipientCount)
-            : ""
         color: Theme.text3
         font.pixelSize: Theme.fontSm
     }
@@ -133,7 +146,9 @@ ColumnLayout {
         // this report loads automatically is marked in the list, and whichever
         // audience is loaded into the review is shown as selected.
         function label(preset) {
-            return preset.reportDefault ? qsTr("%1 (report default)").arg(preset.name) : preset.name
+            if (!preset.reportDefault) return preset.name
+            return pane.meetingMode ? qsTr("%1 (meeting default)").arg(preset.name)
+                                    : qsTr("%1 (report default)").arg(preset.name)
         }
         function refresh(selectId, selectName) {
             presetChoice.selectedId = ""
@@ -172,7 +187,7 @@ ColumnLayout {
             }
         }
         Button {
-            text: qsTr("Set as report default")
+            text: pane.meetingMode ? qsTr("Set as meeting default") : qsTr("Set as report default")
             enabled: presetChoice.selectedId !== ""
             onClicked: {
                 var chosenId = presetChoice.selectedId
@@ -199,7 +214,7 @@ ColumnLayout {
     FormField {
         id: recipientSearch
         Layout.fillWidth: true
-        placeholder: qsTr("Search selected audience")
+        placeholder: pane.meetingMode ? qsTr("Search attendees") : qsTr("Search selected audience")
         visible: !pane.recipientListOnly
     }
     ListView {
@@ -244,12 +259,13 @@ ColumnLayout {
             }
             ComboField {
                 visible: !pane.recipientListOnly
-                Layout.preferredWidth: 82
+                Layout.preferredWidth: pane.meetingMode ? 110 : 82
                 Layout.fillWidth: false
-                options: [qsTr("To"), qsTr("Cc"), qsTr("Bcc")]
-                value: options[recipientRow.recipient.recipientRole]
+                options: pane.roleOptions
+                value: pane.roleLabels[recipientRow.recipient.recipientRole]
                 enabled: recipientRow.recipient.selected
-                Accessible.name: qsTr("Recipient role for %1").arg(recipientRow.recipient.name)
+                Accessible.name: pane.meetingMode ? qsTr("Attendance for %1").arg(recipientRow.recipient.name)
+                                                  : qsTr("Recipient role for %1").arg(recipientRow.recipient.name)
                 onActivated: function(value) {
                     if (pane.recipientModel)
                         pane.recipientModel.setRecipientRoleValue(recipientRow.recipient.personId,
@@ -258,7 +274,7 @@ ColumnLayout {
             }
             Label {
                 visible: pane.recipientListOnly
-                text: [qsTr("To"), qsTr("Cc"), qsTr("Bcc")][model.recipientRole]
+                text: pane.roleLabels[model.recipientRole]
                 color: Theme.text2
             }
         }
@@ -266,7 +282,7 @@ ColumnLayout {
 
     Button {
         visible: !pane.recipientListOnly
-        text: qsTr("Reset recipients")
+        text: pane.meetingMode ? qsTr("Reset attendees") : qsTr("Reset recipients")
         enabled: pane.recipientModel !== null
         onClicked: if (pane.recipientModel) pane.recipientModel.reset()
     }

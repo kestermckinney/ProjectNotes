@@ -53,6 +53,7 @@ Rectangle {
             { label: qsTr("Status"), value: "status-report" },
             { label: qsTr("Tracker Items"), value: "tracker-items-report" }
         ]
+        canScheduleMeeting: true
         onOpenRequested:   sidebar.projectActivated(sidebar._ctxId)
         onNewRequested: {
             var r = DesktopAppController.addProject()
@@ -75,6 +76,10 @@ Rectangle {
             meetingNotesReportReview.workflow = workflow
             meetingNotesReportReview.open()
         }
+        onScheduleMeetingRequested: {
+            scheduleMeeting.projectId = sidebar._ctxId
+            scheduleMeeting.open()
+        }
     }
 
     MoveToFolderDialog { id: moveToFolderDialog }
@@ -86,6 +91,8 @@ Rectangle {
         recipientModel: DesktopAppController.recipientSelectionModel
         templateModel: DesktopAppController.templateEditorModel
     }
+
+    ScheduleMeetingDialog { id: scheduleMeeting }
 
     // Called by a FolderGroup row (right-click or kebab) to open the shared menu
     // for a given project at scene coordinates.

@@ -49,6 +49,7 @@ QString toStableString(Workflow value)
     case Workflow::TrackerItemsReport: return QStringLiteral("tracker-items-report");
     case Workflow::StatusReport: return QStringLiteral("status-report");
     case Workflow::MeetingNotesReport: return QStringLiteral("meeting-notes-report");
+    case Workflow::ScheduleMeeting: return QStringLiteral("schedule-meeting");
     }
     return {};
 }
@@ -91,7 +92,8 @@ std::optional<Workflow> workflowFromStableString(const QString &value)
     return enumFromString<Workflow>(value, {{"send-meeting-notes", Workflow::SendMeetingNotes},
                                              {"tracker-items-report", Workflow::TrackerItemsReport},
                                              {"status-report", Workflow::StatusReport},
-                                             {"meeting-notes-report", Workflow::MeetingNotesReport}});
+                                             {"meeting-notes-report", Workflow::MeetingNotesReport},
+                                             {"schedule-meeting", Workflow::ScheduleMeeting}});
 }
 
 std::optional<EmailMode> emailModeFromStableString(const QString &value)

@@ -19,6 +19,7 @@
 #include <QVariant>
 
 #include "DesktopAppController.h"
+#include "ProjectNotesIntegrations/MeetingTemplateStore.h"
 
 class UiSmokeTest : public QObject
 {
@@ -293,6 +294,41 @@ private slots:
                 QVERIFY(QMetaObject::invokeMethod(about, "close"));
             }
         }
+    }
+
+    // Schedule Meeting: the review loads a meeting type against a real
+    // project and binds its fields and attendee pane without QML warnings.
+    // Closing it releases the review. Nothing is handed to a calendar.
+    void test_08_scheduleMeetingDialog()
+    {
+        PN::Comm::MeetingTemplate meetingType;
+        meetingType.id = QStringLiteral("smoke-meeting");
+        meetingType.name = QStringLiteral("Smoke Meeting");
+        meetingType.subject = QStringLiteral("{{ project.number }} smoke");
+        meetingType.agenda = QStringLiteral("<p>Agenda for {{ project.name }}</p>");
+        QVERIFY(PN::Comm::MeetingTemplateStore().save(meetingType).ok());
+        QVERIFY(!c->meetingTemplateChoices().isEmpty());
+
+        const QString pid = firstId(c->projectsListModel());
+        QVERIFY2(!pid.isEmpty(), "no seeded project to schedule from");
+        clearWarnings();
+        nav("selectSection", "projects");
+        const QList<QObject*> dialogs = root->findChildren<QObject*>(QStringLiteral("scheduleMeetingDialog"));
+        QVERIFY(!dialogs.isEmpty());
+        QObject* dialog = dialogs.constFirst();
+        dialog->setProperty("projectId", pid);
+        dialog->setProperty("templateId", meetingType.id);
+        QVERIFY(QMetaObject::invokeMethod(dialog, "open"));
+        QTRY_VERIFY_WITH_TIMEOUT(dialog->property("ready").toBool(), 5000);
+        const QVariantMap review = c->meetingReview();
+        QVERIFY(review.value(QStringLiteral("subject")).toString().endsWith(QStringLiteral(" smoke")));
+        QCOMPARE(review.value(QStringLiteral("durationMinutes")).toInt(), 60);
+        assertClean("schedule meeting dialog");
+
+        QVERIFY(QMetaObject::invokeMethod(dialog, "close"));
+        QTRY_VERIFY_WITH_TIMEOUT(!c->meetingReview().value(QStringLiteral("ready")).toBool(), 1000);
+        QVERIFY(PN::Comm::MeetingTemplateStore().remove(meetingType.id).ok());
+        assertClean("schedule meeting dialog closed");
     }
 
     void cleanupTestCase()

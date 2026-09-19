@@ -50,6 +50,7 @@ Item {
             { label: qsTr("Status"), value: "status-report" },
             { label: qsTr("Tracker Items"), value: "tracker-items-report" }
         ]
+        canScheduleMeeting: true
         onOpenRequested:   page.projectActivated(page._ctxId)
         onNewRequested: {
             var r = DesktopAppController.addProject()
@@ -70,6 +71,10 @@ Item {
             meetingNotesReportReview.workflow = workflow
             meetingNotesReportReview.open()
         }
+        onScheduleMeetingRequested: {
+            scheduleMeeting.projectId = page._ctxId
+            scheduleMeeting.open()
+        }
     }
 
     MoveToFolderDialog { id: moveToFolderDialog }
@@ -81,6 +86,8 @@ Item {
         recipientModel: DesktopAppController.recipientSelectionModel
         templateModel: DesktopAppController.templateEditorModel
     }
+
+    ScheduleMeetingDialog { id: scheduleMeeting }
 
     // Virtualized list — only visible cards (plus cacheBuffer) are instantiated,
     // and reuseItems recycles delegates while scrolling.

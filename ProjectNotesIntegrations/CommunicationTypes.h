@@ -11,7 +11,9 @@
 
 namespace PN::Comm {
 
-enum class Workflow { SendMeetingNotes, TrackerItemsReport, StatusReport, MeetingNotesReport };
+// ScheduleMeeting is not an email workflow: it identifies meeting invitations
+// so they can share project audiences and staging with the email workflows.
+enum class Workflow { SendMeetingNotes, TrackerItemsReport, StatusReport, MeetingNotesReport, ScheduleMeeting };
 enum class EmailMode { InlineHtml, HtmlAttachment, PdfAttachment, None };
 enum class BackendId { Graph, Mailto, OutlookClassic, Thunderbird, MacMail };
 enum class RecipientRole { To, Cc, Bcc };
