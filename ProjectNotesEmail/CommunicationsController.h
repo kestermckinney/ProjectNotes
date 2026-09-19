@@ -44,6 +44,7 @@ public:
     // may dispatch while this guard is active.
     bool beginSourceRevalidation();
     bool handoffAfterSourceRevalidation();
+    bool handoffAfterSourceRevalidation(QList<EmailAddress> recipients, bool addressLater);
     void failSourceRevalidation(ValidationResult validation);
     Q_INVOKABLE bool handoff();
     Q_INVOKABLE void cancel();

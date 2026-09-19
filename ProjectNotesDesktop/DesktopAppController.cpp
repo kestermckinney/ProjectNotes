@@ -1409,11 +1409,22 @@ bool DesktopAppController::handoffPreparedReview()
     if (m_communicationsController->busy() || !m_databaseOpen || !m_communicationRepository
         || !m_reviewAudienceSnapshot || !m_pendingHandoffRevalidation.isNull())
         return false;
-    std::optional<PN::Comm::EmailPreparation> *review = m_meetingNotesReview
-        ? &m_meetingNotesReview : m_projectReportReview ? &m_projectReportReview : nullptr;
-    if (!review)
-        return false;
     const PN::Comm::EmailPreparation current = m_communicationsController->preparation();
+    std::optional<PN::Comm::EmailPreparation> *review = nullptr;
+    switch (current.source.workflow) {
+    case PN::Comm::Workflow::SendMeetingNotes: review = &m_meetingNotesReview; break;
+    case PN::Comm::Workflow::MeetingNotesReport: review = &m_meetingNotesReportReview; break;
+    case PN::Comm::Workflow::StatusReport:
+    case PN::Comm::Workflow::TrackerItemsReport: review = &m_projectReportReview; break;
+    default: break;
+    }
+    if (!review || !review->has_value()) {
+        PN::Comm::ValidationResult validation;
+        validation.addError(QStringLiteral("report-review-required"), QStringLiteral("source"),
+                            tr("Prepare the report again before creating the email draft."));
+        m_communicationsController->setReviewValidation(std::move(validation));
+        return false;
+    }
     if (current.source.databaseGeneration != m_communicationDatabaseGeneration) {
         PN::Comm::ValidationResult validation;
         validation.addError(QStringLiteral("database-generation-changed"), QStringLiteral("source"),
@@ -1465,7 +1476,8 @@ bool DesktopAppController::handoffPreparedReview()
         prepared.recipients = recipients.recipients;
         prepared.addressLater = recipients.addressLaterExplicitlyChosen;
         *review = prepared;
-        self->m_communicationsController->handoffAfterSourceRevalidation();
+        self->m_communicationsController->handoffAfterSourceRevalidation(
+            recipients.recipients, recipients.addressLaterExplicitlyChosen);
     });
     return true;
 }

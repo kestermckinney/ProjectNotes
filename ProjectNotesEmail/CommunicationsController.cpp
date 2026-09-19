@@ -132,6 +132,17 @@ bool CommunicationsController::handoffAfterSourceRevalidation()
     return startHandoff(true);
 }
 
+bool CommunicationsController::handoffAfterSourceRevalidation(QList<EmailAddress> recipients, bool addressLater)
+{
+    if (!m_busy || m_stage != PreparationStage::RevalidatingSource || !m_emailService)
+        return false;
+    // Freeze the final selection in the same preparation that owns the edited
+    // subject/body, generated attachments, and preview revision.
+    m_preparation.recipients = std::move(recipients);
+    m_preparation.addressLater = addressLater;
+    return startHandoff(true);
+}
+
 void CommunicationsController::failSourceRevalidation(ValidationResult validation)
 {
     if (m_stage != PreparationStage::RevalidatingSource)

@@ -872,10 +872,28 @@ void CommunicationContractsTest::buildsProjectWideMeetingNotesReport()
     input.snapshot.notes = {{"external", "External", "<p>Public</p>", QDateTime(QDate(2026, 9, 10), {}), false},
                             {"internal", "Internal", "<p>Private</p>", QDateTime(QDate(2026, 9, 11), {}), true},
                             {"future", "Future", "<p>Later</p>", QDateTime(QDate(2026, 9, 13), {}), false}};
+    const QString noteHtml = "<p class='cell-value' style='color:#123456'>Public<br><b>Formatted notes</b></p>";
+    input.snapshot.notes[0].html = noteHtml;
+    input.snapshot.actionItems = {{"external", "Follow <up>", "Alice", "Assigned", "09/20/2026"}};
     input.reportingDate = QDate(2026, 9, 12);
     ValidationResult validation; auto external = MeetingNotesReportBuilder::build(input, &validation);
     QVERIFY(validation.ok()); QVERIFY(external.has_value()); QVERIFY(external->htmlDocument.contains("Public"));
     QVERIFY(!external->htmlDocument.contains("Private")); QVERIFY(!external->htmlDocument.contains("Later"));
+    const QString email = external->emailFragment;
+    QVERIFY(!email.contains("<style>"));
+    QVERIFY(email.contains("font-family:Calibri,Arial,sans-serif"));
+    QVERIFY(email.contains("border-collapse:collapse;width:100%"));
+    QVERIFY(email.contains("border:1px solid #808080;padding:3px 6px"));
+    QVERIFY(email.contains("background-color:#DCE6F1"));
+    QVERIFY(email.contains("background-color:#EEECE1"));
+    QVERIFY(email.contains("font-size:13pt;color:#1F497D"));
+    QVERIFY(email.contains("font-size:11pt;font-weight:bold;color:#1F497D"));
+    QVERIFY(email.contains("width:55%"));
+    QVERIFY(email.contains("background-color:#DCE6F1;text-align:center"));
+    QVERIFY(email.contains("Follow &lt;up&gt;"));
+    QVERIFY(email.contains(noteHtml)); // Do not rewrite user-authored classes/styles.
+    QVERIFY(!email.contains("Private"));
+    QVERIFY(!email.contains("Later"));
     QCOMPARE(external->fileStem, QStringLiteral("P-1 Meeting Minutes"));
     input.internalReport = true; const auto internal = MeetingNotesReportBuilder::build(input);
     QVERIFY(internal->htmlDocument.contains("Private"));
@@ -1231,10 +1249,30 @@ void CommunicationContractsTest::buildsFilteredAndSortedTrackerReport()
                  {"1","High",{}, {}, {}, {}, "High","New","09/19/2026",{}, {}, {},"Tracker",false},
                  {"3","Hidden",{}, {}, {}, {}, "High","Resolved","09/25/2026",{}, {}, {},"Tracker",false},
                  {"4","Internal",{}, {}, {}, {}, "High","Assigned","09/21/2026",{}, {}, {},"Action",true}};
+    input.items[0].description = "First line\nSecond <line>";
     ValidationResult validation; const auto document=TrackerItemsReportBuilder::build(input,&validation);
     QVERIFY(validation.ok()); QVERIFY(document.has_value()); QVERIFY(document->htmlDocument.contains("Medium &lt;item&gt;"));
     QVERIFY(!document->htmlDocument.contains("Hidden")); QVERIFY(!document->htmlDocument.contains("Internal"));
     QVERIFY(document->htmlDocument.indexOf(">High<") < document->htmlDocument.indexOf("Medium &lt;item&gt;"));
+    // Inline mail must be self-contained: the standalone document's stylesheet
+    // is not passed to EmailContentBuilder or the mail backend.
+    const QString email = document->emailFragment;
+    QVERIFY(!email.contains("<style>"));
+    QVERIFY(email.contains("background-color:#1F497D;color:#FFFFFF"));
+    QVERIFY(email.contains("background-color:#DCE6F1"));
+    QVERIFY(email.contains("background-color:#EEECE1"));
+    QVERIFY(email.contains("font-family:Calibri,Arial,sans-serif"));
+    QVERIFY(email.contains("border-collapse:collapse;width:100%;table-layout:fixed"));
+    QVERIFY(email.contains("class='col-comments' width='21%'"));
+    QVERIFY(email.contains("style='color:#C00000;font-weight:bold;'"));
+    QVERIFY(email.contains("First line<br>Second &lt;line&gt;"));
+    QVERIFY(!email.contains("Hidden"));
+    QVERIFY(!email.contains("class='col-int'"));
+    input.options.internalReport = true;
+    const auto internal = TrackerItemsReportBuilder::build(input);
+    QVERIFY(internal.has_value());
+    QVERIFY(internal->emailFragment.contains("class='col-int' width='3%'"));
+    QVERIFY(internal->emailFragment.contains("colspan='13' bgcolor='#1F497D' style="));
     QCOMPARE(document->defaultSubject,QStringLiteral("P-1 North - Tracker Items 09/15/2026"));
     QCOMPARE(document->pdfLayout.pageSize().id(), QPageSize::Letter);
     QCOMPARE(document->pdfLayout.orientation(), QPageLayout::Landscape);
@@ -1572,7 +1610,8 @@ void CommunicationContractsTest::coordinatesPreparationHandoffAndNoEmail()
     const quint64 revision = controller.previewRevision();
     QVERIFY(controller.setSubject(QStringLiteral("Edited draft")));
     QVERIFY(controller.beginSourceRevalidation());
-    QVERIFY(controller.handoffAfterSourceRevalidation());
+    QVERIFY(controller.handoffAfterSourceRevalidation(
+        {{"Final recipient", "final@example.test", RecipientRole::Cc}}, false));
     QVERIFY(controller.busy());
     QVERIFY(!controller.appendAttachment({QUuid::createUuid(), QStringLiteral("/staged/late.txt"),
                                           QStringLiteral("late.txt"), QStringLiteral("text/plain"), 1, {}, false}));
@@ -1580,6 +1619,10 @@ void CommunicationContractsTest::coordinatesPreparationHandoffAndNoEmail()
     QCOMPARE(controller.stageName(), QStringLiteral("preparing-backend"));
     QCOMPARE(backend.requestSeen.previewRevision, revision);
     QCOMPARE(backend.requestSeen.subject, QStringLiteral("Edited draft"));
+    QCOMPARE(backend.requestSeen.recipients.size(), 1);
+    QCOMPARE(backend.requestSeen.recipients.first().address, QStringLiteral("final@example.test"));
+    QCOMPARE(backend.requestSeen.recipients.first().role, RecipientRole::Cc);
+    QVERIFY(!backend.requestSeen.addressLaterExplicitlyChosen);
     QVERIFY(!controller.setPreparation(preparation));
     backend.finish({backend.requestSeen.operationId, OutcomeCertainty::Certain, "draft",
                     QUrl(QStringLiteral("https://outlook.office.com/draft")), {}});
