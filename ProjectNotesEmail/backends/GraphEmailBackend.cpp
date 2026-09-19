@@ -124,7 +124,14 @@ void GraphEmailBackend::handoff(EmailRequest request, Completion completion)
         const QString draftId = draftObject.value("id").toString();
         if (draftId.isEmpty()) { result.error = {"graph-draft-id-missing", {}, RetryKind::ReviewAndRetry, OutcomeCertainty::Certain}; completion(result); return; }
         const QUrl returnedPresentationUrl(draftObject.value("webLink").toString());
-        const QUrl presentationUrl = isAllowedPresentationUrl(returnedPresentationUrl) ? returnedPresentationUrl : QUrl{};
+        QUrl presentationUrl;
+        if (isAllowedPresentationUrl(returnedPresentationUrl)) {
+            // Graph's webLink can open the read view even for drafts. Open the
+            // existing draft in OWA's composer so the user can edit and send it.
+            presentationUrl = QUrl(QStringLiteral("https://") + returnedPresentationUrl.host()
+                                   + QStringLiteral("/mail/deeplink/compose/")
+                                   + QString::fromLatin1(QUrl::toPercentEncoding(draftId)));
+        }
         auto upload = std::make_shared<std::function<void(qsizetype)>>();
         *upload = [this, request, completion = std::move(completion), draftId, presentationUrl, upload](qsizetype index) mutable {
             EmailHandoffResult next; next.operationId = request.operationId; next.draftIdentity = draftId; next.presentationUrl = presentationUrl;

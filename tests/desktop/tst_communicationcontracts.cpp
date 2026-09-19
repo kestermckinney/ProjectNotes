@@ -137,6 +137,7 @@ private slots:
     void buildsFilteredAndSortedTrackerReport();
     void dispatchesAllNativeReportBuilders();
     void preparesImmutableRequestsForEachEmailMode();
+    void createsGraphDraftWithoutSend_data();
     void createsGraphDraftWithoutSend();
     void retainsUncertainOutcomeForLostGraphDraftResponse();
     void rejectsModifiedGraphAttachmentBeforeDraftCreation();
@@ -1315,12 +1316,26 @@ void CommunicationContractsTest::preparesImmutableRequestsForEachEmailMode()
     input.mode=EmailMode::None; auto none=EmailContentBuilder::prepare(input); QVERIFY(none.validation.ok()); QVERIFY(none.noEmail); QVERIFY(!none.request.has_value());
 }
 
+void CommunicationContractsTest::createsGraphDraftWithoutSend_data()
+{
+    QTest::addColumn<QString>("webLink");
+    QTest::addColumn<QByteArray>("composeUrl");
+    QTest::newRow("office") << QStringLiteral("https://outlook.office.com/owa/?ItemID=old&viewmodel=ReadMessageItem")
+        << QByteArray("https://outlook.office.com/mail/deeplink/compose/draft%2Fid%2B%3D%3F%23%25");
+    QTest::newRow("office365") << QStringLiteral("https://outlook.office365.com/owa/?ItemID=old")
+        << QByteArray("https://outlook.office365.com/mail/deeplink/compose/draft%2Fid%2B%3D%3F%23%25");
+    QTest::newRow("untrusted") << QStringLiteral("https://outlook.office.com.evil.test/draft") << QByteArray();
+    QTest::newRow("missing") << QString() << QByteArray();
+}
+
 void CommunicationContractsTest::createsGraphDraftWithoutSend()
 {
+    QFETCH(QString, webLink);
+    QFETCH(QByteArray, composeUrl);
     ScriptedHttpTransport transport;
     transport.responses = {
         {{}, 200, {}, QJsonDocument(QJsonObject{{"access_token", "token"}, {"expires_in", 3600}, {"scope", "offline_access"}}).toJson(QJsonDocument::Compact), {}},
-        {{}, 201, {}, QJsonDocument(QJsonObject{{"id", "draft-id"}, {"webLink", "https://outlook.office.com/draft-id"}}).toJson(QJsonDocument::Compact), {}}
+        {{}, 201, {}, QJsonDocument(QJsonObject{{"id", "draft/id+=?#%"}, {"webLink", webLink}}).toJson(QJsonDocument::Compact), {}}
     };
     MicrosoftOAuthManager oauth;
     oauth.setHttpTransport(&transport);
@@ -1339,10 +1354,10 @@ void CommunicationContractsTest::createsGraphDraftWithoutSend()
     request.html = "<p>body</p>";
     request.recipients = {{"To", "to@example.test", RecipientRole::To}};
     bool complete = false;
-    backend.handoff(request, [&complete](EmailHandoffResult result) {
+    backend.handoff(request, [&complete, &composeUrl](EmailHandoffResult result) {
         QCOMPARE(result.certainty, OutcomeCertainty::Certain);
-        QCOMPARE(result.draftIdentity, QStringLiteral("draft-id"));
-    QCOMPARE(result.presentationUrl, QUrl(QStringLiteral("https://outlook.office.com/draft-id")));
+        QCOMPARE(result.draftIdentity, QStringLiteral("draft/id+=?#%"));
+        QCOMPARE(result.presentationUrl.toEncoded(), composeUrl);
         QVERIFY(result.error.code.isEmpty());
         complete = true;
     });
