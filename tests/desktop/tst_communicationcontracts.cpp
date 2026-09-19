@@ -777,6 +777,7 @@ void CommunicationContractsTest::buildsContextSpecificMeetingNotes()
     QVERIFY(document->emailFragment.contains("background-color:#e7e6e6;"));
     QVERIFY(document->emailFragment.contains("bgcolor='#d9e1f2'"));
     QVERIFY(document->emailFragment.contains("background-color:#d9e1f2;"));
+    QCOMPARE(document->plainText, QStringLiteral("Discussed scope\n\nAction Items:\nDraft  Assigned To: Alice  Due By: 09/20/2026\n\nAttendees:\nAlice"));
     const QRegularExpression cells(QStringLiteral("<(?:th|td)\\b[^>]*>"));
     auto matches = cells.globalMatch(document->emailFragment);
     while (matches.hasNext())
@@ -1322,7 +1323,10 @@ void CommunicationContractsTest::preparesImmutableRequestsForEachEmailMode()
 {
     EmailPreparation input; input.operationId=QUuid::createUuid(); input.source={"db",1,"p",{},Workflow::StatusReport}; input.accountKey="Ada <ada@example.test>"; input.accountGeneration=42; input.document.workflow=Workflow::StatusReport;
     input.document.defaultSubject="Report"; input.document.emailFragment="<p>HTML</p>"; input.document.plainText="HTML"; input.recipients={{"One","one@example.test",RecipientRole::To}};
-    auto inlineResult=EmailContentBuilder::prepare(input); QVERIFY(inlineResult.validation.ok()); QVERIFY(inlineResult.request.has_value()); QCOMPARE(inlineResult.request->html,QStringLiteral("<p>HTML</p>")); QCOMPARE(inlineResult.request->accountKey,input.accountKey); QCOMPARE(inlineResult.request->accountGeneration,input.accountGeneration);
+    auto inlineResult=EmailContentBuilder::prepare(input); QVERIFY(inlineResult.validation.ok()); QVERIFY(inlineResult.request.has_value()); QVERIFY(inlineResult.request->html.isEmpty()); QCOMPARE(inlineResult.request->plainText,QStringLiteral("HTML")); QCOMPARE(inlineResult.request->accountKey,input.accountKey); QCOMPARE(inlineResult.request->accountGeneration,input.accountGeneration);
+    input.backend=BackendId::Graph; inlineResult=EmailContentBuilder::prepare(input); QVERIFY(inlineResult.validation.ok()); QCOMPARE(inlineResult.request->html,QStringLiteral("<p>HTML</p>"));
+    input.mode=EmailMode::PdfAttachment; input.backend=BackendId::Mailto; input.attachments.clear(); auto mailtoReport=EmailContentBuilder::prepare(input); QVERIFY(mailtoReport.validation.ok()); QVERIFY(mailtoReport.request->attachments.isEmpty()); QVERIFY(mailtoReport.request->html.isEmpty());
+    input.mode=EmailMode::InlineHtml; input.backend=BackendId::Graph;
     input.document.defaultSubject = QStringLiteral(" \t ");
     const auto missingSubject = EmailContentBuilder::prepare(input);
     QVERIFY(!missingSubject.validation.ok());

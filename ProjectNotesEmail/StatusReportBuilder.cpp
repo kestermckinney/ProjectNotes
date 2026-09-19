@@ -2,6 +2,7 @@
 
 #include <QPageSize>
 #include <QRegularExpression>
+#include <QTextDocument>
 #include <algorithm>
 
 namespace PN::Comm {
@@ -42,7 +43,7 @@ std::optional<ReportDocument> StatusReportBuilder::build(const StatusReportInput
     // Keep the plugin's stylesheet with that fragment so it survives both paths.
     report.emailFragment = "<style>" + QString::fromLatin1(styles) + "</style>" + fragment;
     report.htmlDocument = "<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=780'></head><body>" + report.emailFragment + "</body></html>";
-    QString plain = fragment; plain.remove(QRegularExpression("<[^>]*>")); report.plainText = plain.simplified();
+    QTextDocument plainDocument; plainDocument.setHtml(fragment); report.plainText = plainDocument.toPlainText();
     report.defaultSubject = in.projectNumber + " " + in.projectName + " - Status Report " + date;
     report.fileStem = in.projectNumber + " Status Report" + (in.internalReport ? " Internal" : "");
     report.pdfLayout = QPageLayout(QPageSize(QPageSize::Letter), QPageLayout::Portrait, QMarginsF(20, 20, 20, 20), QPageLayout::Millimeter);

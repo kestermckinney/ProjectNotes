@@ -5,6 +5,7 @@
 
 #include <QPageSize>
 #include <QRegularExpression>
+#include <QTextDocument>
 
 namespace PN::Comm {
 namespace {
@@ -15,6 +16,13 @@ QString body(const QString &html) {
     const auto match = expression.match(html); return match.hasMatch() ? match.captured(1) : html;
 }
 QString plain(const QString &html) { QString value = html; value.remove(QRegularExpression("<[^>]*>")); return value.simplified(); }
+QString mobilePlain(const QString &html)
+{
+    if (html.isEmpty() || !html.contains('<')) return html;
+    QTextDocument document;
+    document.setHtml(html);
+    return document.toPlainText();
+}
 
 // Email clients receive the fragment without the exported document's head.
 // Style only our markup, before interpolating any user-authored note HTML.
@@ -64,10 +72,20 @@ std::optional<ReportDocument> MeetingNotesEmailBuilder::build(const MeetingNotes
         "<tr><th colspan='4'>Action Items</th></tr><tr><th>Item</th><th>Assigned To</th><th>Status</th><th>Due</th></tr>%6</table>"))
         .arg(escape(input.snapshot.projectNumber + QStringLiteral(" ") + input.snapshot.projectName),
              escape(note->title), escape(date), escape(attendees.join(", ")), body(note->html), actions);
+    QString mobileText = mobilePlain(note->html);
+    QStringList actionText;
+    for (const MeetingActionItem &item : items) {
+        QString entry = item.name;
+        if (!item.assignedTo.isEmpty()) entry += QStringLiteral("  Assigned To: ") + item.assignedTo;
+        if (!item.dueDate.isEmpty()) entry += QStringLiteral("  Due By: ") + item.dueDate;
+        actionText.append(entry);
+    }
+    if (!actionText.isEmpty()) mobileText += QStringLiteral("\n\nAction Items:\n") + actionText.join(QStringLiteral("\n"));
+    if (!attendees.isEmpty()) mobileText += QStringLiteral("\n\nAttendees:\n") + attendees.join(QStringLiteral("\r\n"));
     ReportDocument report; report.workflow = Workflow::SendMeetingNotes; report.emailFragment = fragment;
     report.htmlDocument = QStringLiteral("<!doctype html><html><head><meta charset='utf-8'><style>"
         "body{font-family:Calibri,sans-serif}</style></head><body>%1</body></html>").arg(fragment);
-    report.plainText = plain(fragment); report.defaultSubject = QStringLiteral("%1 %2 - %3 %4 Notes")
+    report.plainText = mobileText; report.defaultSubject = QStringLiteral("%1 %2 - %3 %4 Notes")
         .arg(input.snapshot.projectNumber, input.snapshot.projectName, date, note->title).simplified();
     report.fileStem = QStringLiteral("Meeting Notes"); report.pdfLayout = QPageLayout(QPageSize(QPageSize::A4), QPageLayout::Portrait, {});
     return report;
