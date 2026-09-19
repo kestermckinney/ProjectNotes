@@ -206,7 +206,7 @@ Popup {
             return menu._mapLeaf(it)
         })
         onItemActivated: (i) => menu._act(menu._openRawItems[i].action)
-        onGroupHoverChanged: (i, hovered) => {
+        onRowHoverChanged: (i, hovered) => {
             if (hovered) { pluginSubOpenDelay.pendingIndex = i; pluginSubOpenDelay.restart() }
             else if (pluginSubOpenDelay.pendingIndex === i) pluginSubOpenDelay.stop()
         }
@@ -227,7 +227,11 @@ Popup {
     }
     function _activatePluginSub(idx) {
         var raw = menu._openRawItems[idx]
-        if (!raw || !raw.group) return
+        if (!raw || !raw.group) {
+            // Hovering a leaf row drops the nested submenu of another row.
+            pluginSubFlyout.close(); menu.pluginSubIndex = -1
+            return
+        }
         menu.pluginSubIndex = idx
         pluginSubFlyout.openBeside(flyout.rowItemAt(idx))
     }
