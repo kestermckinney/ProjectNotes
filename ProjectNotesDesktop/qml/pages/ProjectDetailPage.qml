@@ -1619,9 +1619,9 @@ Item {
         canOpen: false
         canMoveTo: true
         reportItems: [
-            { label: qsTr("Meeting Notes"), value: "meeting-notes-report" },
-            { label: qsTr("Status"), value: "status-report" },
-            { label: qsTr("Tracker Items"), value: "tracker-items-report" }
+            { label: qsTr("Meeting Notes…"), value: "meeting-notes-report" },
+            { label: qsTr("Status…"), value: "status-report" },
+            { label: qsTr("Tracker Items…"), value: "tracker-items-report" }
         ]
         canScheduleMeeting: true
         onNewRequested: page.newRequested()

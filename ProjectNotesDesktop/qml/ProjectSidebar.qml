@@ -49,9 +49,9 @@ Rectangle {
         recordId: sidebar._ctxId
         canMoveTo: true
         reportItems: [
-            { label: qsTr("Meeting Notes"), value: "meeting-notes-report" },
-            { label: qsTr("Status"), value: "status-report" },
-            { label: qsTr("Tracker Items"), value: "tracker-items-report" }
+            { label: qsTr("Meeting Notes…"), value: "meeting-notes-report" },
+            { label: qsTr("Status…"), value: "status-report" },
+            { label: qsTr("Tracker Items…"), value: "tracker-items-report" }
         ]
         canScheduleMeeting: true
         onOpenRequested:   sidebar.projectActivated(sidebar._ctxId)
