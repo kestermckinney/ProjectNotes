@@ -3,6 +3,8 @@
 
 #include "MeetingNotesPreparationFactory.h"
 
+#include "CommunicationTemplateContext.h"
+
 #include "ProjectNotesIntegrations/TemplateApplication.h"
 
 #include <algorithm>
@@ -41,16 +43,19 @@ std::optional<MeetingNotesReview> MeetingNotesPreparationFactory::create(
         const auto note = std::find_if(snapshot.notes.cbegin(), snapshot.notes.cend(), [&source](const SnapshotNote &value) {
             return value.id == source.noteIds.constFirst();
         });
-        TemplateContext context;
-        context.workflow = Workflow::SendMeetingNotes;
-        context.values.insert(QStringLiteral("project.number"), snapshot.projectNumber);
-        context.values.insert(QStringLiteral("project.name"), snapshot.projectName);
-        const auto manager = std::find_if(snapshot.people.cbegin(), snapshot.people.cend(), [&snapshot](const SnapshotPerson &person) {
-            return person.id == snapshot.projectManagerId;
-        });
-        if (manager != snapshot.people.cend() && !manager->name.trimmed().isEmpty())
-            context.values.insert(QStringLiteral("preferences.managerName"), manager->name);
+        TemplateContext context = communicationTemplateContext(snapshot, Workflow::SendMeetingNotes);
+        // The manager may not be on this project's team, so prefer the name
+        // resolved at snapshot time and fall back to the team roster.
+        if (context.values.value(QStringLiteral("preferences.managerName")).isEmpty()) {
+            const auto manager = std::find_if(snapshot.people.cbegin(), snapshot.people.cend(), [&snapshot](const SnapshotPerson &person) {
+                return person.id == snapshot.projectManagerId;
+            });
+            if (manager != snapshot.people.cend())
+                context.values.insert(QStringLiteral("preferences.managerName"), manager->name);
+        }
         context.values.insert(QStringLiteral("meeting.title"), note == snapshot.notes.cend() ? QString() : note->title);
+        context.values.insert(QStringLiteral("report.internal"),
+                              templateBoolean(note != snapshot.notes.cend() && note->internal));
         context.values.insert(QStringLiteral("meeting.date"), note == snapshot.notes.cend() || !note->date.isValid()
                               ? QString() : note->date.date().toString(QStringLiteral("MM/dd/yyyy")));
         const TemplateApplicationResult applied = TemplateApplication::apply(

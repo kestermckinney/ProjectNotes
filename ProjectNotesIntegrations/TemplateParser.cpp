@@ -7,7 +7,8 @@ const QList<TemplateField> &templateFieldCatalog()
     static const QList<TemplateField> fields = {
         {"project.number"}, {"project.name"}, {"client.name"},
         {"preferences.managerName"}, {"preferences.managingCompanyName"},
-        {"meeting.title"},
+        // Only Send Meeting Notes has a single meeting; reports span many.
+        {"meeting.title", TemplateFieldType::Text, {Workflow::SendMeetingNotes}},
         {"meeting.date", TemplateFieldType::Date,
          {Workflow::SendMeetingNotes, Workflow::MeetingNotesReport}, true},
         {"report.date", TemplateFieldType::Date,

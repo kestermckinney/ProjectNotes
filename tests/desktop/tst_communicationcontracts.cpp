@@ -147,6 +147,7 @@ private slots:
     void cancelsGraphUploadBeforeFirstChunk();
     void coordinatesPreparationHandoffAndNoEmail();
     void reportsUserFacingTextForEveryHandoffFailure();
+    void resolvesEveryOfferedTemplateField();
 
 private:
     std::unique_ptr<QTemporaryDir> m_templateDatabaseDirectory;
@@ -871,7 +872,17 @@ void CommunicationContractsTest::createsMeetingNotesReviewFromSnapshot()
     QVERIFY(templated->preparation.document.emailFragment.contains(QStringLiteral("Prepared for North")));
     QVERIFY(templated->preparation.document.emailFragment.contains(QStringLiteral("Kickoff")));
 
-    templateValue.body = QStringLiteral("<p>{{ client.name }}</p>{{ content.body }}");
+    // client.name is offered by the editor, so it must resolve rather than
+    // fail the review; the snapshot supplies the name.
+    snapshot.clientName = QStringLiteral("Acme");
+    templateValue.body = QStringLiteral("<p>For {{ client.name }}</p>{{ content.body }}");
+    const auto withClient = MeetingNotesPreparationFactory::create(snapshot, source, BackendId::Mailto,
+                                                                     EmailMode::InlineHtml, &templateValue);
+    QVERIFY(withClient.has_value());
+    QVERIFY(withClient->preparation.document.emailFragment.contains(QStringLiteral("For Acme")));
+
+    // A field that does not apply to this workflow is still rejected.
+    templateValue.body = QStringLiteral("<p>{{ report.date }}</p>{{ content.body }}");
     ValidationResult unavailableTemplate;
     QVERIFY(!MeetingNotesPreparationFactory::create(snapshot, source, BackendId::Mailto,
                                                      EmailMode::InlineHtml, &templateValue,
@@ -1661,6 +1672,90 @@ void CommunicationContractsTest::reportsUserFacingTextForEveryHandoffFailure()
                           QStringLiteral("Backend said so."));
     controller.setReviewValidation(explicitText);
     QCOMPARE(controller.diagnostic(), QStringLiteral("Backend said so."));
+}
+
+void CommunicationContractsTest::resolvesEveryOfferedTemplateField()
+{
+    // The editor offers templateFieldPaths(workflow) for insertion. Any offered
+    // field a factory does not supply fails template-field-unresolved and the
+    // review never prepares, so drive every workflow's real factory with a
+    // template that uses every offered field.
+    CommunicationSnapshot snapshot;
+    snapshot.projectId = "project"; snapshot.projectNumber = "P-7"; snapshot.projectName = "North";
+    snapshot.databaseGeneration = 3; snapshot.projectManagerId = "manager";
+    snapshot.statusReportPeriod = "Weekly"; snapshot.budget = "100"; snapshot.actual = "25";
+    snapshot.bcwp = "30"; snapshot.bcws = "35"; snapshot.bac = "100";
+    snapshot.people = {{"manager", "Manager", "manager@example.test", {}, {}, true, false, true}};
+    snapshot.notes = {{"note", "Kickoff", "<p>Body</p>", QDateTime(QDate(2026, 9, 1), QTime(9, 0)), false,
+                       {"manager"}}};
+    snapshot.statusItems = {{"In Progress", "Build"}};
+    snapshot.trackerItems = {{"001", "Risk", "Manager", "09/01/2026", "Description", "Manager", "High", "New",
+                              "09/20/2026", "09/01/2026", {}, {}, "Tracker", false}};
+
+    const auto everyField = [](Workflow workflow) {
+        QStringList tokens;
+        for (const QString &path : templateFieldPaths(workflow))
+            tokens.append(QStringLiteral("[%1={{ %1 }}]").arg(path));
+        return CommunicationTemplate{"all-fields", "All fields", workflow, tokens.join(' '),
+                                     QStringLiteral("{{ content.body }}")};
+    };
+    const auto subjectFor = [&snapshot, &everyField](Workflow workflow) -> std::optional<QString> {
+        const CommunicationTemplate value = everyField(workflow);
+        switch (workflow) {
+        case Workflow::SendMeetingNotes: {
+            const auto review = MeetingNotesPreparationFactory::create(
+                snapshot, {"db", 3, "project", {"note"}, workflow}, BackendId::Mailto,
+                EmailMode::InlineHtml, &value);
+            if (!review) return std::nullopt;
+            return review->preparation.document.defaultSubject;
+        }
+        case Workflow::MeetingNotesReport: {
+            const auto preparation = MeetingNotesReportPreparationFactory::create(
+                snapshot, {"db", 3, "project", {}, workflow}, QDate(2026, 9, 2), false, BackendId::Mailto,
+                EmailMode::InlineHtml, false, nullptr, &value);
+            if (!preparation) return std::nullopt;
+            return preparation->document.defaultSubject;
+        }
+        case Workflow::StatusReport:
+        case Workflow::TrackerItemsReport: {
+            const SourceContext source{"db", 3, "project", {}, workflow};
+            const ReportOptions options = defaultReportOptions(workflow, QDate(2026, 9, 15));
+            const auto review = workflow == Workflow::StatusReport
+                ? ProjectReportPreparationFactory::createStatus(snapshot, source, options, BackendId::Mailto, &value)
+                : ProjectReportPreparationFactory::createTracker(snapshot, source, options, BackendId::Mailto, &value);
+            if (!review) return std::nullopt;
+            return review->preparation.document.defaultSubject;
+        }
+        }
+        return std::nullopt;
+    };
+
+    const QList<Workflow> workflows = {Workflow::SendMeetingNotes, Workflow::MeetingNotesReport,
+                                       Workflow::StatusReport, Workflow::TrackerItemsReport};
+    // Names absent (no client, no manager configured): must still prepare.
+    for (Workflow workflow : workflows)
+        QVERIFY2(subjectFor(workflow).has_value(), qPrintable(toStableString(workflow)));
+
+    snapshot.clientName = "Acme"; snapshot.managingCompanyName = "Our Co"; snapshot.projectManagerName = "Dana";
+    for (Workflow workflow : workflows) {
+        const auto subject = subjectFor(workflow);
+        QVERIFY2(subject.has_value(), qPrintable(toStableString(workflow)));
+        QVERIFY2(subject->contains("[client.name=Acme]"), qPrintable(*subject));
+        QVERIFY2(subject->contains("[preferences.managingCompanyName=Our Co]"), qPrintable(*subject));
+        QVERIFY2(subject->contains("[preferences.managerName=Dana]"), qPrintable(*subject));
+        QVERIFY2(subject->contains("[report.internal=No]"), qPrintable(*subject));
+    }
+    QVERIFY(subjectFor(Workflow::SendMeetingNotes)->contains("[meeting.title=Kickoff]"));
+    QVERIFY(subjectFor(Workflow::SendMeetingNotes)->contains("[report.type=Meeting Notes]"));
+    QVERIFY(subjectFor(Workflow::MeetingNotesReport)->contains("[report.date=09/02/2026]"));
+    QVERIFY(subjectFor(Workflow::MeetingNotesReport)->contains("[report.type=Meeting Notes Report]"));
+    QVERIFY(subjectFor(Workflow::StatusReport)->contains("[report.type=Status Report]"));
+    QVERIFY(subjectFor(Workflow::TrackerItemsReport)->contains("[report.type=Tracker Items Report]"));
+
+    // A single meeting's title has no meaning in a multi-meeting report.
+    QVERIFY(templateFieldPaths(Workflow::SendMeetingNotes).contains("meeting.title"));
+    QVERIFY(!templateFieldPaths(Workflow::StatusReport).contains("meeting.title"));
+    QVERIFY(!templateFieldPaths(Workflow::MeetingNotesReport).contains("meeting.title"));
 }
 
 void CommunicationContractsTest::coordinatesPreparationHandoffAndNoEmail()

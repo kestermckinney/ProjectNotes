@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include "MeetingNotesReportPreparationFactory.h"
 
+#include "CommunicationTemplateContext.h"
+
 #include "ProjectNotesIntegrations/TemplateApplication.h"
 
 namespace PN::Comm {
@@ -17,11 +19,11 @@ std::optional<EmailPreparation> MeetingNotesReportPreparationFactory::create(
     auto document = MeetingNotesReportBuilder::build({snapshot, reportingDate, internalReport}, &validation);
     if (!document || !validation.ok()) { if (failureValidation) *failureValidation = validation; return std::nullopt; }
     if (contentTemplate) {
-        TemplateContext context;
-        context.workflow = Workflow::MeetingNotesReport;
-        context.values.insert(QStringLiteral("project.number"), snapshot.projectNumber);
-        context.values.insert(QStringLiteral("project.name"), snapshot.projectName);
-        context.values.insert(QStringLiteral("meeting.date"), reportingDate.toString(QStringLiteral("MM/dd/yyyy")));
+        TemplateContext context = communicationTemplateContext(snapshot, Workflow::MeetingNotesReport);
+        const QString date = reportingDate.toString(QStringLiteral("MM/dd/yyyy"));
+        context.values.insert(QStringLiteral("meeting.date"), date);
+        context.values.insert(QStringLiteral("report.date"), date);
+        context.values.insert(QStringLiteral("report.internal"), templateBoolean(internalReport));
         const TemplateApplicationResult applied = TemplateApplication::apply(
             *contentTemplate, context, document->emailFragment, document->plainText);
         validation.issues += applied.validation.issues;

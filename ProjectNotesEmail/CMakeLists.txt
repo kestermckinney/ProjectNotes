@@ -21,6 +21,8 @@ add_library(ProjectNotesEmail STATIC
     CommunicationRepository.cpp
     CommunicationDiagnostics.h
     CommunicationDiagnostics.cpp
+    CommunicationTemplateContext.h
+    CommunicationTemplateContext.cpp
     MeetingNotesEmailBuilder.h
     MeetingNotesEmailBuilder.cpp
     MeetingNotesPreparationFactory.h

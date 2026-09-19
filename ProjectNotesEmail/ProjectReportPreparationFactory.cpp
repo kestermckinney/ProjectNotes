@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include "ProjectReportPreparationFactory.h"
 
+#include "CommunicationTemplateContext.h"
 #include "ProjectNotesIntegrations/TemplateApplication.h"
 
 namespace PN::Comm {
@@ -61,15 +62,9 @@ bool applyContentTemplate(ReportDocument *document, const CommunicationSnapshot 
         validation->addError(QStringLiteral("template-workflow-mismatch"), QStringLiteral("template"));
         return false;
     }
-    TemplateContext context;
-    context.workflow = workflow;
-    context.values.insert(QStringLiteral("project.number"), snapshot.projectNumber);
-    context.values.insert(QStringLiteral("project.name"), snapshot.projectName);
+    TemplateContext context = communicationTemplateContext(snapshot, workflow);
     context.values.insert(QStringLiteral("report.date"), options.reportingDate.toString(QStringLiteral("MM/dd/yyyy")));
-    context.values.insert(QStringLiteral("report.internal"), options.internalReport ? QStringLiteral("Yes") : QStringLiteral("No"));
-    context.values.insert(QStringLiteral("report.type"),
-                          workflow == Workflow::StatusReport ? QStringLiteral("Status Report")
-                                                             : QStringLiteral("Tracker Items Report"));
+    context.values.insert(QStringLiteral("report.internal"), templateBoolean(options.internalReport));
     const TemplateApplicationResult applied = TemplateApplication::apply(
         *contentTemplate, context, document->emailFragment, document->plainText);
     validation->issues += applied.validation.issues;

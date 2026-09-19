@@ -56,6 +56,7 @@ void CommunicationRepositoryTest::createDatabase()
     QVERIFY(q.exec("INSERT INTO people VALUES('a','Alice','a@example.test','client',0)"));
     QVERIFY(q.exec("INSERT INTO people VALUES('b','Bob','b@example.test','gone',0)"));
     QVERIFY(q.exec("INSERT INTO clients VALUES('client','Client',0)"));
+    QVERIFY(q.exec("INSERT INTO clients VALUES('ours','Our Company',0)"));
     QVERIFY(q.exec("INSERT INTO project_people VALUES('1','p','a',1,0)"));
     QVERIFY(q.exec("INSERT INTO project_people VALUES('2','p','b',0,0)"));
     QVERIFY(q.exec("INSERT INTO project_notes VALUES('n','p','Meeting',1758000000,'<p>notes</p>',0,0)"));
@@ -78,6 +79,19 @@ void CommunicationRepositoryTest::loadsTypedSnapshotWithoutUiFilters()
     QCOMPARE(result.snapshot.people.at(1).companyName,QString()); QVERIFY(!result.snapshot.fingerprint.isEmpty());
     QCOMPARE(result.snapshot.managingCompanyId, QStringLiteral("ours"));
     QCOMPARE(result.snapshot.projectManagerId, QStringLiteral("a"));
+    // Template fields need names, resolved once at snapshot time.
+    QCOMPARE(result.snapshot.clientName, QStringLiteral("Client"));
+    QCOMPARE(result.snapshot.managingCompanyName, QStringLiteral("Our Company"));
+    QCOMPARE(result.snapshot.projectManagerName, QStringLiteral("Alice"));
+    // An unknown ID leaves the name empty instead of failing the snapshot.
+    SnapshotRequest unknown = request;
+    unknown.operationId = QUuid::createUuid();
+    unknown.managingCompanyId = QStringLiteral("missing");
+    unknown.projectManagerId = QString();
+    const auto unresolved = loader.load(unknown);
+    QVERIFY(unresolved.error.code.isEmpty());
+    QCOMPARE(unresolved.snapshot.managingCompanyName, QString());
+    QCOMPARE(unresolved.snapshot.projectManagerName, QString());
     QCOMPARE(result.snapshot.projectFolderPath, QStringLiteral("/synthetic/project"));
     QCOMPARE(result.snapshot.notes.size(), 1);
     QCOMPARE(result.snapshot.statusReportPeriod, QStringLiteral("Weekly"));

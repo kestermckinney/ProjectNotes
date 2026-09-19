@@ -22,6 +22,7 @@ QByteArray canonicalFingerprint(const CommunicationSnapshot &snapshot)
     stream.setVersion(QDataStream::Qt_6_5);
     stream << snapshot.projectId << snapshot.projectNumber << snapshot.projectName
            << snapshot.clientCompanyId << snapshot.managingCompanyId << snapshot.projectManagerId
+           << snapshot.clientName << snapshot.managingCompanyName << snapshot.projectManagerName
            << snapshot.projectFolderPath
            << snapshot.statusReportPeriod << snapshot.budget << snapshot.actual << snapshot.bcwp << snapshot.bcws << snapshot.bac
            << snapshot.databaseGeneration << snapshot.currentSelectionIds
@@ -76,6 +77,22 @@ SnapshotResult SqliteSnapshotLoader::load(const SnapshotRequest &request) const
             if (!project.exec() || !project.next()) result.error = {QStringLiteral("project-not-found"), project.lastError().text()};
             else {
                 result.snapshot.projectId=project.value(0).toString(); result.snapshot.projectNumber=project.value(1).toString(); result.snapshot.projectName=project.value(2).toString(); result.snapshot.clientCompanyId=project.value(3).toString(); result.snapshot.statusReportPeriod=project.value(4).toString(); result.snapshot.budget=project.value(5).toString(); result.snapshot.actual=project.value(6).toString(); result.snapshot.bcwp=project.value(7).toString(); result.snapshot.bcws=project.value(8).toString(); result.snapshot.bac=project.value(9).toString(); result.snapshot.managingCompanyId=request.managingCompanyId; result.snapshot.projectManagerId=request.projectManagerId; result.snapshot.databaseGeneration=request.source.databaseGeneration; result.snapshot.loadedAt=request.capturedAt;
+                // Template fields need names, not IDs. Each lookup tolerates a
+                // missing or deleted row by leaving the name empty.
+                const auto lookupName = [&db](const QString &sql, const QString &id) {
+                    if (id.trimmed().isEmpty()) return QString();
+                    QSqlQuery query(db);
+                    query.prepare(sql);
+                    query.addBindValue(id);
+                    return query.exec() && query.next() ? query.value(0).toString() : QString();
+                };
+                const QString clientNameSql =
+                    QStringLiteral("SELECT client_name FROM clients WHERE id=? AND deleted=0");
+                result.snapshot.clientName = lookupName(clientNameSql, result.snapshot.clientCompanyId);
+                result.snapshot.managingCompanyName = lookupName(clientNameSql, result.snapshot.managingCompanyId);
+                result.snapshot.projectManagerName = lookupName(
+                    QStringLiteral("SELECT name FROM people WHERE id=? AND deleted=0"),
+                    result.snapshot.projectManagerId);
                 QSqlQuery projectFolder(db);
                 projectFolder.prepare(QStringLiteral(
                     "SELECT full_path FROM project_locations "
