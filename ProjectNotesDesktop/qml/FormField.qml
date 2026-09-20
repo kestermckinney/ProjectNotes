@@ -55,13 +55,10 @@ ColumnLayout {
             onTextEdited: root.edited(text)
             onEditingFinished: root.editingFinished()
 
-            Loader {
-                active: root.spellCheck
-                anchors.fill: parent
-                sourceComponent: SpellCheckField {
-                    target: field
-                    dialog: root.spellDialog
-                }
+            SpellCheckField {
+                target: field
+                spellCheckEnabled: root.spellCheck
+                dialog: root.spellDialog
             }
         }
     }

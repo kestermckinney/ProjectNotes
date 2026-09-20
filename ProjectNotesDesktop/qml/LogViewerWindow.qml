@@ -253,6 +253,8 @@ Window {
                                 win._registerEditor(model.filePath, logText, flick)
                             Component.onDestruction:
                                 win._unregisterEditor(model.filePath)
+                            // Read-only: the menu offers Copy and Select All.
+                            SpellCheckField { spellCheckEnabled: false }
                         }
                     }
                 }

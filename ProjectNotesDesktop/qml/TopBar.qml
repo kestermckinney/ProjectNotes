@@ -293,6 +293,7 @@ Rectangle {
                     placeholderTextColor: Theme.text3
                     background: null
                     font.pixelSize: Theme.fontBody
+                    SpellCheckField { spellCheckEnabled: false }
                     onTextEdited: bar.searchEdited(text)
                     // Esc clears the field while it has focus. With nothing to
                     // clear the key falls through to whatever else wants it

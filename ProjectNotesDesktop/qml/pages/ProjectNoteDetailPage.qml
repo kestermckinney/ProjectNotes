@@ -404,6 +404,7 @@ Item {
                                                 cursorPosition = 0
                                             }
                                             onEditingFinished: ai._saveName()
+                                            SpellCheckField { dialog: spellDialog }
                                         }
                                         Text {
                                             text: {
@@ -652,6 +653,7 @@ Item {
                         verticalAlignment: Text.AlignVCenter
                         selectByMouse: true
                         onTextChanged: peoplePicker._filter = text
+                        SpellCheckField { spellCheckEnabled: false }
                     }
                 }
             }

@@ -445,6 +445,7 @@ Popup {
             font.pixelSize: Theme.fontBody
             selectByMouse: true
             onTextEdited: fi.edited(text)
+            SpellCheckField { spellCheckEnabled: false }
         }
     }
 

@@ -106,6 +106,7 @@ ColumnLayout {
         }
 
         contentItem: TextField {
+            id: comboEditor
             leftPadding: 9
             rightPadding: 26
             text: combo.editable ? combo.editText : combo.displayText
@@ -126,6 +127,15 @@ ColumnLayout {
                 combo._filter = text
                 if (!combo.popup.visible)
                     combo.popup.open()
+            }
+            // Only an editable combo has text of its own to cut and paste; on a
+            // fixed list the box is a label, so it keeps the list's own clicks.
+            Loader {
+                active: combo.editable
+                anchors.fill: parent
+                // The Loader, not the field, is this item's parent, so the
+                // editor is named rather than defaulted.
+                sourceComponent: SpellCheckField { target: comboEditor; spellCheckEnabled: false }
             }
         }
         background: Rectangle {

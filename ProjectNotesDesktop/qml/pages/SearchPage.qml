@@ -122,6 +122,7 @@ Item {
                     background: null
                     font.pixelSize: Theme.fontLg
                     selectByMouse: true
+                    SpellCheckField { spellCheckEnabled: false }
                     onTextChanged: {
                         if (text === "") {
                             searchDebounce.stop()

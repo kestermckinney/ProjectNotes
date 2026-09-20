@@ -1293,6 +1293,7 @@ Item {
                         background: null
                         verticalAlignment: Text.AlignVCenter
                         selectByMouse: true
+                        SpellCheckField { spellCheckEnabled: false }
                         onTextChanged: teamPicker._filter = text
                     }
                 }
@@ -1485,6 +1486,7 @@ Item {
                     topPadding: 0; bottomPadding: 0
                     verticalAlignment: Text.AlignVCenter
                     font.pixelSize: Theme.fontSm
+                    SpellCheckField { spellCheckEnabled: false }
                     onTextEdited: DesktopAppController.setQuickSearch(bar.searchModel, text)
                     // Esc clears the field while it has focus; with nothing to
                     // clear the key falls through to whoever else wants it.
@@ -1704,6 +1706,7 @@ Item {
                 placeholderTextColor: Theme.text3
                 color: Theme.text; background: null; font.pixelSize: Theme.fontBody
                 onEditingFinished: lf.commit(text)
+                SpellCheckField { spellCheckEnabled: false }
             }
         }
     }

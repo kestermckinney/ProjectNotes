@@ -932,6 +932,7 @@ Item {
                             font.pixelSize: Theme.fontBody
                             verticalAlignment: Text.AlignVCenter
                             onAccepted: page._createFolder()
+                            SpellCheckField { spellCheckEnabled: false }
                         }
                     }
 
@@ -1273,6 +1274,7 @@ Item {
                 echoMode: sf.password ? TextInput.PasswordEchoOnEdit : TextInput.Normal
                 Component.onCompleted: text = sf.value
                 onEditingFinished: sf.committed(text)
+                SpellCheckField { spellCheckEnabled: false }
             }
         }
     }
@@ -1300,6 +1302,7 @@ Item {
                 text = value
         }
         onEditingFinished: committedValue(text)
+        SpellCheckField { spellCheckEnabled: false }
     }
 
     FileDialog {

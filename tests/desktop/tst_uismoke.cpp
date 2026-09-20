@@ -12,6 +12,8 @@
 #include <QQmlApplicationEngine>
 #include <QQmlError>
 #include <QQuickItem>
+#include <QQmlContext>
+#include <QQmlProperty>
 #include <QQuickTextDocument>
 #include <QQuickWindow>
 #include <QTextBlock>
@@ -331,6 +333,58 @@ private slots:
         assertClean("schedule meeting dialog closed");
     }
 
+    // Every text-editing surface carries the shared text context menu
+    // (SpellCheckField), so right-click offers the same Cut/Copy/Paste/Select
+    // All everywhere instead of falling back to whatever the control does on
+    // its own. Scans what the earlier tests have already built: every page,
+    // the settings panes, the help viewer and the dialogs they opened.
+    void test_09_textEditorsCarryTheStandardContextMenu()
+    {
+        nav("selectSection", "projects");
+        nav("handleMenuAction", "preferences");
+        nav("selectSection", "search");
+        nav("openHelp", "index.md");
+
+        QStringList missing;
+        QStringList doubled;
+        int scanned = 0;
+        for (QQuickItem* item : root->findChildren<QQuickItem*>()) {
+            if (!isTextEditor(item))
+                continue;
+            // A fixed-list ComboField disables its box so the whole control
+            // opens the list; there is no text of its own to act on.
+            if (!item->isEnabled())
+                continue;
+            ++scanned;
+            bool hasMenu = false;
+            for (QQuickItem* child : item->findChildren<QQuickItem*>()) {
+                if (child->property("spellCheckEnabled").isValid()) {
+                    hasMenu = true;
+                    break;
+                }
+            }
+            if (hasMenu) {
+                // Qt's own deferred context menu must be cleared, or it would
+                // take over from the second right-click on.
+                const QQmlProperty builtIn(item, QStringLiteral("ContextMenu.menu"), qmlContext(item));
+                if (builtIn.isValid() && builtIn.read().value<QObject*>() != nullptr)
+                    doubled.append(describe(item));
+                continue;
+            }
+            missing.append(describe(item));
+        }
+        missing.removeDuplicates();
+        doubled.removeDuplicates();
+        // A scan that reached nothing would pass while proving nothing.
+        QVERIFY2(scanned >= 10, qPrintable(QStringLiteral("only %1 text editors reached").arg(scanned)));
+        QVERIFY2(missing.isEmpty(),
+                 qPrintable(QStringLiteral("text editors without the shared context menu: %1")
+                                .arg(missing.join(QStringLiteral(", ")))));
+        QVERIFY2(doubled.isEmpty(),
+                 qPrintable(QStringLiteral("text editors that kept Qt's own context menu too: %1")
+                                .arg(doubled.join(QStringLiteral(", ")))));
+    }
+
     void cleanupTestCase()
     {
         delete engine;   // tear the window down before the app object goes away
@@ -338,6 +392,26 @@ private slots:
     }
 
 private:
+    // Controls' TextField/TextArea are QML composite types (and pages subclass
+    // them further), so their class names are generated. Identify an editor by
+    // the editing API instead: a plain Text has none of these.
+    static bool isTextEditor(QQuickItem* item)
+    {
+        return item && item->property("canPaste").isValid()
+            && item->property("selectedText").isValid()
+            && item->property("cursorPosition").isValid();
+    }
+
+    static QString describe(QQuickItem* item)
+    {
+        QString where = QString::fromLatin1(item->metaObject()->className());
+        if (QQmlContext* context = qmlContext(item))
+            where += QStringLiteral(" in ") + context->baseUrl().fileName();
+        if (!item->objectName().isEmpty())
+            where += QStringLiteral(" (") + item->objectName() + QLatin1Char(')');
+        return where;
+    }
+
     static QQuickItem* findVisualChild(QQuickItem* item, const QString& objectName)
     {
         if (!item)

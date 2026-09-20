@@ -69,6 +69,7 @@ ColumnLayout {
                 font.pixelSize: Theme.fontBody
                 selectByMouse: true
                 onEditingFinished: { root.text = text; root.edited(text) }
+                SpellCheckField { spellCheckEnabled: false }
                 // Keep in sync when the bound value changes externally.
                 Connections {
                     target: root
