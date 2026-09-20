@@ -732,6 +732,7 @@ ApplicationWindow {
             onMoveToRequested: (id) => moveToDialog.openFor(id)
             onDeleteRequested: root.confirmDelete()
             onNoteActivated: (noteRow, noteId) => root.openNote(noteRow, noteId, projectId)
+            onProjectActivated: (pid) => root.openProject(pid)
         }
     }
     Component {
@@ -793,6 +794,7 @@ ApplicationWindow {
             onMoveToRequested: (id) => moveToDialog.openFor(id)
             onDeleteRequested: root.confirmDelete()
             onItemActivated: (itemId) => root.openItem(itemId)
+            onProjectActivated: (pid) => root.openProject(pid)
         }
     }
     Component {

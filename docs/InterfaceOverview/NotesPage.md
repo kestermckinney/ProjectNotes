@@ -12,6 +12,8 @@ The **Notes** tab on a project's [Project Page](<ProjectPage.md>) lists all of t
 
 1. From the **Notes** tab, click the meeting's card.
 
+The open note fills the window, so a badge at the top left names the project the meeting belongs to. Click the badge to jump straight back to that project's [Project Page](<ProjectPage.md>).
+
 
 
 ## Creating a New Meeting

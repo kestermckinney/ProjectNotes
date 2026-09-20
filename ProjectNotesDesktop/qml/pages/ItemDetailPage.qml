@@ -118,6 +118,16 @@ Item {
 
             RowLayout {
                 Layout.fillWidth: true
+                // Names the project this item belongs to — the breadcrumb only
+                // says "Item", and an item opened from the master Items list or
+                // from search carries no other on-screen clue. Doubles as a jump
+                // back to the project.
+                ProjectChip {
+                    objectName: "projectChip"
+                    Layout.alignment: Qt.AlignVCenter
+                    projectId: page.projectId
+                    onActivated: page.projectActivated(page.projectId)
+                }
                 Item { Layout.fillWidth: true }
                 Rectangle {
                     implicitHeight: 28; implicitWidth: moveRow.implicitWidth + 18
@@ -370,6 +380,9 @@ Item {
     // Duplicate on selfMenu opens the copy — routed through Main so it gets a
     // breadcrumb and a history entry like any other item.
     signal itemActivated(string itemId)
+    // The project badge at the top of the page was clicked — routed through
+    // Main.openProject so the project opens with its own breadcrumb.
+    signal projectActivated(string projectId)
 
     // Shared record/plugin menu for the comments list.
     RecordRowMenu {

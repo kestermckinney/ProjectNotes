@@ -102,6 +102,17 @@ Item {
             width: pageScroll.availableWidth
             spacing: 10
 
+            // Names the project this note belongs to — the breadcrumb only says
+            // "Note", and a note reached from search has no other on-screen clue
+            // which project's minutes are open. Doubles as a jump back to the
+            // project.
+            ProjectChip {
+                objectName: "projectChip"
+                Layout.alignment: Qt.AlignLeft
+                projectId: page.projectId
+                onActivated: page.projectActivated(page.projectId)
+            }
+
             // Title + date + internal
             RowLayout {
                 Layout.fillWidth: true
@@ -529,6 +540,9 @@ Item {
     // Routed to Main's shared Move To… dialog, same as ProjectDetailPage /
     // ItemsPage / ItemDetailPage.
     signal moveToRequested(string itemId)
+    // The project badge at the top of the page was clicked — routed through
+    // Main.openProject so the project opens with its own breadcrumb.
+    signal projectActivated(string projectId)
 
     // Shared record/plugin menu for the Attendees and Action Items lists.
     // Move To… is only ever offered for Action Items (see ai._menu()'s

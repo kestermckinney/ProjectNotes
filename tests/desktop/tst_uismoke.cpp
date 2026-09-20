@@ -292,6 +292,55 @@ private slots:
         }
     }
 
+    // Notes and tracker items fill the whole content area, and the breadcrumb
+    // only says "Note" / "Item" — so the project badge is the only thing on
+    // either page naming the project the record belongs to. Check it resolves
+    // the project rather than sitting there blank, on both pages.
+    void test_03b_noteAndItemPagesNameTheirProject()
+    {
+        QQuickWindow* window = qobject_cast<QQuickWindow*>(root);
+        QVERIFY(window);
+
+        const QString pid = firstId(c->projectsListModel());
+        QVERIFY2(!pid.isEmpty(), "no seeded project to open");
+        const QString number = c->projectNumberForId(pid);
+        QVERIFY2(!number.isEmpty(), "seeded project has no project number");
+
+        clearWarnings();
+        nav("selectSection", "projects");
+        nav("openProject", pid);
+        c->setProjectFilter(pid);
+        const QString noteId = c->projectNoteIdAtRow(0);
+        QVERIFY2(!noteId.isEmpty(), "no seeded note to open");
+        nav("openNote", 0, noteId, pid);
+
+        QQuickItem* noteChip = findVisualChild(window->contentItem(), QStringLiteral("projectChip"));
+        QVERIFY(noteChip);
+        QCOMPARE(noteChip->property("projectId").toString(), pid);
+        QCOMPARE(noteChip->property("projectNumber").toString(), number);
+        QVERIFY(noteChip->property("linked").toBool());
+        nav("goBack");
+        nav("goBack");
+        assertClean("note project badge");
+
+        clearWarnings();
+        nav("selectSection", "items");
+        c->refreshAllItems();
+        const QString itemId = c->allItemIdAtRow(0);
+        QVERIFY2(!itemId.isEmpty(), "no seeded tracker item to open");
+        nav("openItem", itemId);
+
+        // The item page learns its project from the record, not from the caller,
+        // so the badge is only right if _reload() propagated it.
+        QQuickItem* itemChip = findVisualChild(window->contentItem(), QStringLiteral("projectChip"));
+        QVERIFY(itemChip);
+        const QString itemProject = itemChip->property("projectId").toString();
+        QVERIFY2(!itemProject.isEmpty(), "item badge resolved no project");
+        QCOMPARE(itemChip->property("projectNumber").toString(), c->projectNumberForId(itemProject));
+        QVERIFY(itemChip->property("linked").toBool());
+        assertClean("item project badge");
+    }
+
     void test_04_personDetail()
     {
         clearWarnings();

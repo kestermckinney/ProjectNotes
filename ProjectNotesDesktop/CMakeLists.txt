@@ -102,6 +102,7 @@ set(DESKTOP_QML_FILES
     qml/MoveToFolderDialog.qml
     qml/FindReplaceBar.qml
     qml/KebabButton.qml
+    qml/ProjectChip.qml
     qml/Card.qml
     qml/FormField.qml
     qml/ComboField.qml
