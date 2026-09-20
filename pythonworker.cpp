@@ -1,6 +1,6 @@
 // Copyright (C) 2025, 2026 Paul McKinney
 #include "pythonworker.h"
-#include "appsettings.h"
+#include "appresourcespath.h"
 #include <QFileInfo>
 #include <QCoreApplication>
 #include <QStringList>

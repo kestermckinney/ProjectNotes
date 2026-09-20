@@ -6,7 +6,7 @@ All entries are observations, not support claims. Do not mark an OS/client combi
 | --- | --- | --- | --- |
 | Linux container; Qt 6.11.2; Python 3.14.7 / PyQt6 | Import legacy report plugins | Qt WebEngine sandbox aborts during import before a workflow executes. | Not a client test; no renderer/page-layout evidence. |
 | Linux container; source `0507b53` | AST-only pure legacy builder capture | Can capture synthetic HTML, subjects and recipient labels without importing plugins or triggering side effects. | Capture tooling only; no PDF/rendering/client validation. |
-| Linux container; Qt 6.11.2; Python 3.14.7 | Optional Widgets frontend build (`BUILD_QML_DESKTOP=OFF`, `BUILD_WIDGETS_LEGACY=ON`) | `ProjectNotesWidgets` configured and built successfully alongside the new native modules. | Historic build-only coexistence evidence. Widgets is explicitly unsupported for future releases (2026-09-14); it remains outside native report/email release scope and must receive no further changes. |
+| Linux container; Qt 6.11.2; Python 3.14.7 | Optional Widgets frontend build (`BUILD_QML_DESKTOP=OFF`, `BUILD_WIDGETS_LEGACY=ON`) | `ProjectNotesWidgets` configured and built successfully alongside the new native modules. | Historic build-only coexistence evidence. Widgets was explicitly unsupported from 2026-09-14 and the frontend has since been removed from the tree, along with the `BUILD_WIDGETS_LEGACY` option; this row is history only. |
 | Windows | Outlook Classic / Graph / mailto / Thunderbird | Not run. | Planned prototype work (G3). |
 | macOS | Mail / Graph / mailto / Thunderbird | Not run. | Planned prototype work (G3). |
 | Linux desktop | Graph / mailto / Thunderbird | Not run. | Planned prototype work (G3). |

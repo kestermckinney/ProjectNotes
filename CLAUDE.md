@@ -15,9 +15,10 @@ cmake --build .
 ```
 
 - The default target is `ProjectNotes`, the **QML** desktop frontend in `ProjectNotesDesktop/`. A plain `cmake --build .` builds only that.
-- The legacy Qt Widgets frontend is the separate `ProjectNotesWidgets` target and is **deprecated and off by default**. Build it with `cmake .. -DBUILD_WIDGETS_LEGACY=ON`. Linux/Flatpak still ships it, so its manifest passes that flag explicitly.
+- The legacy Qt Widgets frontend has been **removed**. Its target (`ProjectNotesWidgets`), the `BUILD_WIDGETS_LEGACY` option, and all of its sources, `.ui` files, and icons are gone.
 - Requires CMake 3.16+, Qt6 (Qt5 fallback supported), Python 3 dev libraries, Hunspell 1.7
-- Qt modules used: Widgets, Core, SQL, XML, Network, Qml/Quick (QML frontend)
+- Qt modules used: Core, SQL, XML, Network, Qml/Quick, Widgets
+- **`Qt::Widgets` is still required.** No widget UI remains, but the app constructs a `QApplication` (not `QGuiApplication`) so that Python plugins can open `PyQt6.QtWidgets` dialogs, and so `ProjectNotesCore` can report database errors through `QMessageBox`. Do not swap it for `QGuiApplication` or drop the module.
 - Also requires `SqliteSyncPro` checked out as a sibling directory (`../SqliteSyncPro/src`) — it's linked as `SqliteSyncProLib`
 - No automated test framework exists in this project
 - No linting configuration
@@ -27,16 +28,10 @@ cmake --build .
 
 ### Application Structure
 
-Single-instance Qt application enforced via `RunGuard` (UUID-based). Three frontends share a common backend:
+Single-instance Qt application enforced via `RunGuard` (UUID-based). Two frontends share a common backend:
 
-1. **Qt Widgets (Legacy)** - Original desktop UI via `main.cpp` → `MainWindow` (`mainwindow.cpp`); deprecated, off by default (see Build Commands)
-2. **Qt QML (Current Desktop)** - Modern QML-based desktop UI via `ProjectNotesDesktop/` with reactive components; the default build target
-3. **Qt QML (Mobile)** - iOS/iPadOS companion app via `ProjectNotesMobile/` with reactive components; built and shipped separately from the desktop targets
-
-**MainWindow** (`mainwindow.cpp`) manages (Widgets frontend):
-- Page navigation with a history stack (max 20 nodes, forward/back)
-- Text formatting toolbar
-- Plugin menu injection
+1. **Qt QML (Desktop)** - QML desktop UI via `ProjectNotesDesktop/` with reactive components; the default build target
+2. **Qt QML (Mobile)** - iOS/iPadOS companion app via `ProjectNotesMobile/` with reactive components; built and shipped separately from the desktop targets
 
 **Main.qml** (QML desktop frontend) manages:
 - Section-based navigation (People, Clients, Projects, Items, Search)
@@ -47,17 +42,12 @@ Single-instance Qt application enforced via `RunGuard` (UUID-based). Three front
 **Main.qml** (QML mobile frontend, `ProjectNotesMobile/qml/`) manages:
 - Bottom tab bar navigation (Projects, People, Clients, Items) plus a hamburger-menu drawer for settings and utilities
 - Its own page set under `ProjectNotesMobile/qml/pages/` — sized and interaction-patterned for touch, not a reuse of the desktop QML pages
-- `AppController` (mobile) and `MobileSettings` fill the role `DesktopAppController`/`AppSettings` play on desktop
+- `AppController` (mobile) and `MobileSettings` fill the role `DesktopAppController` plays on desktop
 - User-facing behavior is documented in `docs/Mobile/ProjectNotesMobile.md`
 
-### Page System (MVC/QML)
+### Page System (QML)
 
-**Widgets pages:** All inherit from `BasePage`:
-- `ProjectsListPage`, `ProjectDetailsPage`, `ProjectNotesPage`
-- `ItemDetailsPage` (risks, issues, action items)
-- `PeoplePage`, `ClientsPage`, `SearchPage`
-
-**QML pages:** Modern reactive components in `ProjectNotesDesktop/qml/pages/`:
+**QML pages:** Reactive components in `ProjectNotesDesktop/qml/pages/`:
 - `PeoplePage.qml`, `ClientsPage.qml` - Master lists with card-based UI
 - `PersonDetailPage.qml`, `ClientDetailPage.qml` - Detail pages with inline editing
 - `ProjectDetailPage.qml` - Complex detail page with multiple sub-tabs
@@ -95,18 +85,21 @@ Cell editors in table views are implemented as delegates: `CheckboxDelegate`, `C
 
 ### Other Key Utilities
 
-- `AppSettings` — QSettings wrapper for persistent preferences
-- `PlainTextEdit` + `InlineSpellChecker` — Custom text editor with Hunspell spell-checking
+- `DesktopAppController` — QML bridge to the data layer; also owns the app's `QSettings` access ("ProjectNotes"[+profile] / "AppSettings")
+- `appResourcesPath()` (`appresourcespath.h`) — resolves the directory holding `plugins/`, `threads/`, and `dictionary/`; used by the embedded Python engine
+- `SpellCheck` — Hunspell spell-checking exposed to QML
 - `ImportExport` — XML-based data import/export
-- `QLogger` — Structured logging; log viewer available via `LogViewer`
+- `QLogger` — Structured logging; log viewer available via `LogViewerController` / `LogViewerWindow.qml`
 
 ## Naming Conventions
 
-- `*Model` for data models, `*Page` for page widgets, `*Dialog` for dialogs, `*Delegate` for cell editors
+- `*Model` for data models, `*Page` for pages, `*Dialog` for dialogs, `*Controller` for QML bridge objects
 
 ## Plugin Development
 
 Plugins are Python files in `plugins/`. See `docs/PluginsOverview/` for the plugin API and `docs/PluginsOverview/ProjectNotesXML.md` for the XML data format used to exchange data between C++ and Python.
+
+Plugins build their own UI with **PyQt6, including `PyQt6.QtWidgets`** (see `plugins/base_plugin.py` and `plugins/includes/common.py`). That is why the host app links `Qt::Widgets` and runs a `QApplication` — removing the Widgets frontend did not remove widget support for plugins. `common.py`'s `get_main_window()` returns `None` under the QML frontend (there is no `QMainWindow`); plugin dialogs are parented to `QApplication.activeWindow()` or to nothing.
 
 ## Documentation Writing
 

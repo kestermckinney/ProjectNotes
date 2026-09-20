@@ -13,7 +13,7 @@ Project Notes comes with a comprehensive set of standard plugins installed and e
 
 Standard plugins are configurable through dialogs under **Plugins > Settings**. File Finder and the native Office 365 connection are application services rather than Python plugins, so they have separate sections on the main **Settings** page.
 
-**Reaching Plugin Settings:** in the classic Widgets app, plugin settings are under the **Plugins > Settings** menu-bar item. In the QML desktop app, open the app menu (the menu icon at the top of the icon rail); plugin settings are grouped as **Plugins · Settings**. Open the main **Settings** page for File Finder or the native Office 365 connection.
+**Reaching Plugin Settings:** open the app menu (the menu icon at the top of the icon rail); plugin settings are grouped as **Plugins · Settings**. Open the main **Settings** page for File Finder or the native Office 365 connection.
 
 ### Standard Plugins Overview
 

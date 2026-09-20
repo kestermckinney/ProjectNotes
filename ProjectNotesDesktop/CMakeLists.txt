@@ -1,11 +1,14 @@
 # ProjectNotesDesktop — QML (Qt Quick Controls 2) desktop frontend.
 #
-# Phase 1 of the UI overhaul. Runs alongside the existing Widgets "ProjectNotes"
-# target and reuses the shared ProjectNotesCore data layer via a lean QML bridge
-# (DesktopAppController) plus the new project-folders feature (FolderManager).
+# The desktop app. Reuses the shared ProjectNotesCore data layer via a lean QML
+# bridge (DesktopAppController) plus the project-folders feature (FolderManager).
 #
 # Added from the top-level CMakeLists via add_subdirectory, guarded by the
-# BUILD_QML_DESKTOP option so it never disturbs the Widgets build.
+# BUILD_QML_DESKTOP option.
+#
+# Qt6::Widgets is linked below even though no widget UI remains: the app runs a
+# QApplication so Python plugins can open PyQt6.QtWidgets dialogs, and
+# ProjectNotesCore reports database errors through QMessageBox.
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -49,17 +52,16 @@ qt_add_executable(ProjectNotes
     SpellCheck.cpp           SpellCheck.h
     # Shared rich-text bridge — reused verbatim from the mobile app.
     ../ProjectNotesMobile/TextFormatter.cpp ../ProjectNotesMobile/TextFormatter.h
-    # Embedded-Python plugin system — same sources the Widgets app compiles.
-    # PluginManager was decoupled from MainWindow (self-registered singleton) so
-    # it builds here too. credentialstore is pulled in by the plugin secret API.
+    # Embedded-Python plugin system. PluginManager is a self-registered
+    # singleton, independent of any frontend window class. credentialstore is
+    # pulled in by the plugin secret API.
     ../plugin.cpp          ../plugin.h
     ../pluginmanager.cpp   ../pluginmanager.h
     ../pythonworker.cpp    ../pythonworker.h
     ../credentialstore.cpp ../credentialstore.h
     # Unattended software update (GitHub releases → silent install + relaunch).
     ../updatemanager.cpp   ../updatemanager.h
-    # Single-instance guard — same class the Widgets app uses, own UUID key
-    # (see main.cpp) so the two apps' guards don't interfere with each other.
+    # Single-instance guard (UUID key in main.cpp).
     ../runguard.cpp ../runguard.h
 )
 
@@ -203,10 +205,9 @@ endif()
 
 if(APPLE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     # ── macOS Release: full app bundle — real files + Qt/Python deployment ─────
-    # Mirrors the Widgets ProjectNotes target's macOS Release deploy steps (see
-    # top-level CMakeLists.txt) so "Project Notes.app" is self-contained and
-    # notarizable. Symlinks (used below for Debug/Win/Linux dev convenience) are
-    # rejected by notarization, so plugins/threads/dictionary are real copies here.
+    # "Project Notes.app" must be self-contained and notarizable. Symlinks (used
+    # below for Debug/Win/Linux dev convenience) are rejected by notarization, so
+    # plugins/threads/dictionary are real copies here.
     add_custom_target(sync_plugins_desktop
         COMMAND rsync -rv --checksum --delete
             "${CMAKE_CURRENT_SOURCE_DIR}/../plugins/"
@@ -217,13 +218,9 @@ if(APPLE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
         COMMENT "Syncing Python plugins to Project Notes (QML) app bundle (changed files only)"
         VERBATIM)
 
-    # The legacy Widgets target owns the plain "sync_plugins" name, but it is off
-    # by default now. Keep that name working — it is the one documented in
-    # AGENTS.md/CLAUDE.md and wired into Qt Creator build steps — by aliasing it
-    # to this target whenever the legacy frontend is not being built.
-    if(NOT BUILD_WIDGETS_LEGACY)
-        add_custom_target(sync_plugins DEPENDS sync_plugins_desktop)
-    endif()
+    # "sync_plugins" is the name documented in AGENTS.md/CLAUDE.md and wired
+    # into Qt Creator build steps, so keep it working as an alias.
+    add_custom_target(sync_plugins DEPENDS sync_plugins_desktop)
 
     set(DESKTOP_BUNDLE_RESOURCES  "$<TARGET_FILE_DIR:ProjectNotes>/../Resources")
     set(DESKTOP_BUNDLE_FRAMEWORKS "$<TARGET_FILE_DIR:ProjectNotes>/../Frameworks")
@@ -321,21 +318,18 @@ else()
         COMMENT "Symlinking Python plugins and threads")
 endif()
 
-# Ship under the same executable name as the Widgets app ("Project Notes.exe")
-# so the built binary, installer shortcuts, and registry entries all line up.
-# The Widgets ProjectNotes target also emits "Project Notes.exe", so pin this
-# target's output to its own build subdirectory (CMAKE_CURRENT_BINARY_DIR =
-# .../ProjectNotesDesktop) to guarantee the two never clobber each other,
-# regardless of any inherited CMAKE_RUNTIME_OUTPUT_DIRECTORY.
+# Ship as "Project Notes.exe" — the name earlier releases used — so the built
+# binary, installer shortcuts, and registry entries all line up. Output is
+# pinned to this target's own build subdirectory (CMAKE_CURRENT_BINARY_DIR =
+# .../ProjectNotesDesktop) regardless of any inherited
+# CMAKE_RUNTIME_OUTPUT_DIRECTORY.
 set_target_properties(ProjectNotes PROPERTIES
     OUTPUT_NAME "Project Notes"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 
 if(UNIX AND NOT APPLE AND NOT ANDROID)
     # Linux/Flatpak: the .desktop Exec and the Flatpak manifest invoke
-    # "projectnotes" (no space), matching the legacy Widgets target's Linux
-    # binary name — see the equivalent override on ProjectNotesWidgets in the
-    # top-level CMakeLists.txt.
+    # "projectnotes" (no space), so the installed binary must use that name.
     set_target_properties(ProjectNotes PROPERTIES OUTPUT_NAME "projectnotes")
 endif()
 
@@ -345,19 +339,18 @@ if(WIN32)
 endif()
 
 # ── macOS bundle identity ─────────────────────────────────────────────────────
-# Reuses the Widgets app's bundle identifier/name so this build replaces it in
-# place: same /Applications/Project Notes.app, same LaunchServices identity, so
-# packaging/macos/build_installer.sh (which pkgbuilds with the identifier below)
-# upgrades existing installs cleanly instead of installing a second app.
-# The icon, however, is NOT shared with the Widgets app — icons/projectnotes.icns
+# Keeps the bundle identifier/name earlier releases used so this build replaces
+# them in place: same /Applications/Project Notes.app, same LaunchServices
+# identity, so packaging/macos/build_installer.sh (which pkgbuilds with the
+# identifier below) upgrades existing installs cleanly instead of installing a
+# second app. The icon is the QML app's own — icons/projectnotes.icns
 # is generated from icons/projectnotes.ico (the QML app's own redesigned icon,
 # added in 5c72ee5 and already used for the Windows build via appicon.rc). The
 # .ico's largest embedded frame is 256x256, so the .icns's 512/1024 sizes are
 # upscaled from that; regenerate from a higher-res source if a crisper large
 # icon is ever needed (Finder Info window, Launchpad).
-# Debug builds skip the bundle entirely, matching the Widgets app's macOS Debug
-# behavior (see the ProjectNotes target's MACOSX_BUNDLE in the top-level
-# CMakeLists.txt) — faster build/run cycle, no code signing needed.
+# Debug builds skip the bundle entirely — faster build/run cycle, no code
+# signing needed.
 if(APPLE)
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         set(_desktop_macos_bundle FALSE)

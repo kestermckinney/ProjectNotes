@@ -45,13 +45,10 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # Adjust these to match your Qt Creator build directory names. PN_BUILD_DIR is
-# the top-level CMake build dir. The QML frontend is the default target and the
-# one shipped here; it builds to its own subdirectory:
-#   ${PN_BUILD_DIR}/ProjectNotesDesktop/Project Notes.app — QML frontend (shipped)
-#   ${PN_BUILD_DIR}/Project Notes.app                 — legacy Widgets frontend,
-#       only present when configured with -DBUILD_WIDGETS_LEGACY=ON (off by
-#       default). ProjectNotesDesktop's CMakeLists.txt pins its
-#       RUNTIME_OUTPUT_DIRECTORY to the subdirectory so the two never collide.
+# the top-level CMake build dir. The QML frontend is the only desktop target and
+# builds to its own subdirectory (ProjectNotesDesktop's CMakeLists.txt pins its
+# RUNTIME_OUTPUT_DIRECTORY there):
+#   ${PN_BUILD_DIR}/ProjectNotesDesktop/Project Notes.app — the shipped app
 PN_BUILD_DIR="${PN_BUILD_DIR:-${PROJECT_ROOT}/build/Qt_6_11_1_for_macOS_Release}"
 
 PN_APP="${PN_BUILD_DIR}/ProjectNotesDesktop/Project Notes.app"
