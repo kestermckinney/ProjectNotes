@@ -2,46 +2,28 @@
 
 ## Built-In Standard Plugins
 
-Project Notes comes with a comprehensive set of standard plugins installed and enabled out of the box. These plugins provide powerful functionality for common project management tasks, including:
+Project Notes ships with a small set of Python plugins, installed and enabled out of the box. They extend the application with contact synchronization, document templates and enterprise connections.
 
-- **Meeting and Email Integration** — Schedule meetings, send emails, and archive communications
-- **Document Management** — Export meeting notes and tracker items to PDF, create new documents from templates
-- **File Organization** — The native File Finder automatically collects and organizes project files
-- **Report Generation** — Generate tracker item reports and status reports
-- **Enterprise Integration** — Connect to Outlook, Office 365, and IFS Cloud ERP
-- **Customization** — Define custom shortcuts and configure plugin behavior
+Email, meeting invitations and the four project reports are **not** plugins. They are built into Project Notes and are configured on the main **Settings** page. See [Email and Meeting Setup](<../InterfaceOverview/EmailAndMeetingSetup.md>), [Reports and Email](<../InterfaceOverview/ReportsAndEmail.md>) and [Scheduling Meetings](<../InterfaceOverview/ScheduleMeeting.md>).
 
-Standard plugins are configurable through dialogs under **Plugins > Settings**. File Finder and the native Office 365 connection are application services rather than Python plugins, so they have separate sections on the main **Settings** page.
-
-**Reaching Plugin Settings:** open the app menu (the menu icon at the top of the icon rail); plugin settings are grouped as **Plugins · Settings**. Open the main **Settings** page for File Finder or the native Office 365 connection.
+**Reaching Plugin Settings:** open the app menu (the menu icon at the top of the icon rail); plugin settings are grouped as **Plugins · Settings**.
 
 ### Standard Plugins Overview
 
-The standard plugins are organized into several categories:
-
-**Communication Plugins:**
-- Send Meeting Notes — Email meeting notes to attendees
-- Send Project Emails — Send emails about projects to team members
-- Outlook Integration — Integrate with Outlook and Office 365 for scheduling and email
+**Contacts and enterprise connections:**
+- Outlook Integration — Import and export contacts through Microsoft Graph, download project-related email, and sync assigned items. See [Outlook Integration](<OutlookIntegration.md>).
 - iCloud Contacts — Import iCloud contacts and optionally export new Project Notes contacts
-- Schedule Meeting Plugins — Schedule customer and internal kick-off, status, and lessons learned meetings
+- IFS Cloud — Connect to a customized IFS Cloud ERP instance
 
-**Export and Report Plugins:**
-- Export Meeting Notes — Export meeting notes to PDF
-- Export Tracker Items — Export tracker items and action items to PDF
-- Export Status Report — Export a project status report, with earned value metrics, to HTML and PDF
-- Meeting Notes Archive — Archive meeting notes to a designated folder
-- Project Email Archive — Archive project-related emails
-
-**File and Document Features:**
-- File Finder — Native service that automatically monitors and organizes project-related files
-- New Document Templates — Create new documents from templates (MS Project, PowerPoint, Change Orders, etc.)
+**Documents and team:**
+- New Document Templates — Create documents from templates for MS Project, PowerPoint, change orders and registers
 - Team Member Quick Add — Quickly add team members to projects
 
-**Utility Plugins:**
-- Editor — Configure external script editors
+**Utility:**
+- Editor — Configure the external editor used to edit plugin scripts
 - My Shortcuts — Define custom menu shortcuts
-- IFS Cloud — Integrate with IFS Cloud ERP system
+
+Two features that appear alongside the plugins are application services rather than Python code, with their own sections on the main **Settings** page: [File Finder](<../InterfaceOverview/FileFinder.md>) and [Office 365 Integration](<../InterfaceOverview/Office365Integration.md>).
 
 ### Important Note: IFS-Related Plugins
 
@@ -68,7 +50,7 @@ Plugin settings, UI state, and connection credentials are stored in your **opera
 
 | Category | Examples |
 | :--- | :--- |
-| Local application and plugin configuration | Export sub-folders, IFS credentials, Outlook credentials, Office 365 connection details, File Finder search locations/exclusions/classifications, My Shortcuts definitions, meeting/email templates |
+| Local application and plugin configuration | Document template sub-folders, IFS credentials, Outlook credentials, Office 365 connection details, File Finder search locations/exclusions/classifications, My Shortcuts definitions, email templates |
 | Cloud sync connection | Sync enabled flag, Project Notes Pro account email, password, and encryption phrase |
 | Window position and size | Position and size of the main window, restored on the next launch |
 | UI Zoom level | The zoom percentage set via **Ctrl +/-/0** or the [Application Menu](<../InterfaceOverview/ApplicationMenu.md>)'s **View** group zoom row — see [UI Zoom](<../InterfaceOverview/VectorZoom.md>) |
@@ -98,6 +80,9 @@ Application preferences and view state that should be consistent for anyone usin
 | Show Closed Projects (View menu) | `UserFilter:ShowClosedProjects` |
 | Show Internal Items (View menu) | `UserFilter:ShowInternalItems` |
 | Active project filter (Filter Tool) | `UserFilter:ProjectFilter` |
+| Meeting types (Settings > Meeting Templates) | `Meeting/v1/Templates` |
+
+Saved report and meeting audiences also live in the database, in the `project_email_audiences` table, so they travel with the project.
 
 These settings persist across application restarts, so you only need to configure them once per database.
 
@@ -238,30 +223,14 @@ Project: P-003 - ERP Implementation
 Created: 03/23/2026
 ```
 
-#### Example 3: Email and Recipient Configuration
-
-When exporting meeting notes and sending via email, the plugin uses project data to populate the subject line:
-
-Template:
-```
-Meeting Minutes - [$project_notes.project_number.1] [$project_notes.project_name.1] - [$project_notes.note_date]
-```
-
-For Project P-001 (Sample Project) on 03/23/2026:
-```
-Subject: Meeting Minutes - P-001 Sample Project - 03/23/2026
-```
-
-
 ### Common Settings Examples
 
 #### Outlook Integration Settings
 
 | Setting | Example Value | Purpose |
 | :--- | :--- | :--- |
-| **Integration Type** | Office 365 Application | Use Graph API instead of Outlook COM |
-| **Client ID** | a1b2c3d4-e5f6-47a8-b9c0-d1e2f3a4b5c6 | Azure AD app ID for OAuth |
-| **Tenant ID** | f1e2d3c4-b5a6-4978-c9d0-e1f2a3b4c5d6 | Azure AD tenant for your organization |
+| **Client ID** | a1b2c3d4-e5f6-47a8-b9c0-d1e2f3a4b5c6 | Microsoft Entra app ID used for contact synchronization |
+| **Tenant ID** | f1e2d3c4-b5a6-4978-c9d0-e1f2a3b4c5d6 | Microsoft Entra tenant for your organization |
 
 #### File Finder Settings
 
@@ -272,13 +241,7 @@ Subject: Meeting Minutes - P-001 Sample Project - 03/23/2026
 | **Folder Exclusion** | `(^\|/)(node_modules\|[.]git)(/\|$)` | Skip development metadata folders and their subtrees |
 | **Classification** | `Project Schedule` / `.*[.]mpp$` | Classify Microsoft Project files as project schedules |
 
-These settings are on the main **Settings > File Finder** page, not in a plugin dialog. See [File Finder](<FileFinder.md>) for all controls.
-
-#### Export Meeting Notes Settings
-
-| Setting | Example Value | Purpose |
-| :--- | :--- | :--- |
-| **Sub-folder** | Meeting Minutes | Save exports to `[Project Folder]/Meeting Minutes/` |
+These settings are on the main **Settings > File Finder** page, not in a plugin dialog. See [File Finder](<../InterfaceOverview/FileFinder.md>) for all controls.
 
 #### New Document Templates Settings
 
@@ -306,13 +269,9 @@ The variable `[$projects.project_number.1]` in the URL is replaced with the actu
 | Settings Entry | Plugin | Description |
 | :--- | :--- | :--- |
 | **Editor** | Base Plugins Settings | Set the path to the Python script editor used by the Script Editor utility. |
-| **Outlook Integration** | Base Plugins Settings | Configure Office 365 Graph API credentials or Outlook COM options. See [Outlook Integration](<OutlookIntegration.md>). |
+| **Outlook Integration** | Base Plugins Settings | Configure the Microsoft Graph credentials and options used for contact and item synchronization. See [Outlook Integration](<OutlookIntegration.md>). |
 | **My Shortcuts** | Base Plugins Settings | Configure custom URL shortcuts that appear in the Plugins or right-click menus. See [My Shortcuts](<MyShortcuts.md>). |
-| **Meeting and Email Types** | Base Plugins Settings | Configure meeting invitation templates and email templates that appear in the **Schedule Meeting** and **Send Email** sub-menus. |
 | **Settings Migrator** | Base Plugins Settings | Migrate plugin settings between machines or installations. |
-| **Export Notes** | Export Meeting Notes | Configure the project sub-folder where meeting notes exports are saved. |
-| **Export Tracker Items** | Export Tracker Items | Configure the project sub-folder where tracker item exports are saved. |
-| **Export Status Report** | Export Status Report | Configure the project sub-folder where status report exports are saved. See [Export Status Report](<ExportStatusReport.md>). |
 | **iCloud Contacts** | Base Plugins Settings | Configure the Apple Account email and app-specific password used for scheduled iCloud contact sync. See [iCloud Contacts](<iCloudContacts.md>). |
 | **IFS Cloud Settings** | IFS Cloud Plugins Settings | Configure IFS Cloud ERP integration credentials and options. See [IFS Cloud](<IFSCloud.md>). |
 | **New Change Order** | New Change Order | Configure the sub-folder for new change order documents. |

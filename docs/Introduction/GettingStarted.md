@@ -41,11 +41,11 @@ You will need to setup yourself to manage all of the projects. First you need to
 7. Choose **Preferences** from the app menu (the menu icon at the top of the icon rail).
 8. Select yourself as the **Project Manager**.
 9. Select ***"Your Company Name"*** as the **Managing Company**.
-10. From the app menu, under **Plugins · Settings**, choose **Export Notes** and set the sub-folder where meeting note exports will be saved.
-11. From the app menu, under **Plugins · Settings**, choose **Export Tracker Items** and set the sub-folder where tracker item exports will be saved.
-12. From the app menu, choose **Settings**, select **File Finder**, and add the root folder where your project files are stored.
+10. Still in **Settings**, open **Preferences** and choose your **Email and Scheduling Integration**.
+11. Open **Settings > Meeting Templates** and add the meeting types you run, such as a status meeting and a kickoff.
+12. Open **Settings > File Finder** and add the root folder where your project files are stored.
 
-See [Plugin Settings](<../StandardPlugins/PluginSettings.md>) for the full list of plugin settings reachable this way.
+Steps 10 and 11 are the start of email and meeting setup. See [Email and Meeting Setup](<../InterfaceOverview/EmailAndMeetingSetup.md>) for the rest, including what to configure on Windows and macOS.
 
 ## Populating Your Database
 
@@ -53,7 +53,7 @@ Project Notes is capable of connecting information from various systems. In orde
 
 There are three methods to import clients and people.
 
-* **Importing From Outlook** - Project Notes includes Outlook contact sync utilities. See [Outlook Integration](<../StandardPlugins/OutlookIntegration.md>) for details. (Outlook COM sync requires Windows; Office 365 sync works on all platforms.)
+* **Importing From Outlook** - The Outlook Integration plugin imports and exports contacts through Microsoft 365 on any platform. See [Outlook Integration](<../StandardPlugins/OutlookIntegration.md>) for details.
 * **Importing From XML** - All database items can be imported from a [Project Notes XML](<../PluginsOverview/ProjectNotesXML.md>) file. Choose **Import XML…** from the app menu (the menu icon at the top of the icon rail) to import a file.
 * **Entering Manually** - Client information can be entered using the [Client List Page](<../InterfaceOverview/ClientListPage.md>), and contacts can be entered using the [People List Page](<../InterfaceOverview/PeopleListPage.md>).
 
@@ -61,9 +61,13 @@ There are three methods to import clients and people.
 
 Once your clients and people are setup, you will need to tell Project Notes which contact is the Project Manager coordinating all projects, and what company they work for. This information can be set up by clicking the **Settings** icon in the icon rail — see [Project Notes Preferences](<../InterfaceOverview/Preferences.md>).
 
+## Email, Meetings and Reports
+
+Sending meeting notes, sending project reports and scheduling meetings are built into Project Notes. They are configured on the main **Settings** page, under **Preferences**, **Email Templates** and **Meeting Templates**. Work through [Email and Meeting Setup](<../InterfaceOverview/EmailAndMeetingSetup.md>) once, then see [Reports and Email](<../InterfaceOverview/ReportsAndEmail.md>) and [Scheduling Meetings](<../InterfaceOverview/ScheduleMeeting.md>).
+
 ## Plugin Settings
 
-Project Notes plugins are highly configurable. Plugin dialogs are available under **Plugins > Settings**. Native services use the main **Settings** page instead: File Finder and Office 365 Integration have separate sections there. See [Plugin Settings](<../StandardPlugins/PluginSettings.md>), [File Finder](<../StandardPlugins/FileFinder.md>), and [Office 365 Integration](<../StandardPlugins/Office365Integration.md>) for configuration details.
+Project Notes plugins are configurable through dialogs under **Plugins > Settings**. Application services use the main **Settings** page instead: File Finder and Office 365 Integration have their own sections there. See [Plugin Settings](<../StandardPlugins/PluginSettings.md>), [File Finder](<../InterfaceOverview/FileFinder.md>), and [Office 365 Integration](<../InterfaceOverview/Office365Integration.md>) for configuration details.
 
 Plugin settings are stored in your local OS profile (registry on Windows, plist on macOS, ini on Linux) and are not synced to the cloud host. If you move to a new machine, use the **Settings Migrator** (under **Plugins > Settings**) to transfer your configuration.
 

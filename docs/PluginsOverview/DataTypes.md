@@ -155,13 +155,9 @@ The [My Shortcuts](<../StandardPlugins/MyShortcuts.md>) plugin uses data types t
 | Email Contact | `people` | Appears when right-clicking on a person; can access `$people.email.1` |
 | (blank) | (none) | Appears in the **Plugins** menu; available globally |
 
-### Meeting and Email Types Plugin
-
-The [Meeting and Email Types](<../StandardPlugins/PluginSettings.md>) plugin associates template types with data types to determine which templates appear in right-click menus for scheduling meetings and sending emails.
-
 ### File Finder
 
-The native [File Finder](<../StandardPlugins/FileFinder.md>) service classifies files and adds them with the `project_locations` data type, making them appear in the **Files & Folders** tab.
+The native [File Finder](<../InterfaceOverview/FileFinder.md>) service classifies files and adds them with the `project_locations` data type, making them appear in the **Files & Folders** tab.
 
 ## Summary
 

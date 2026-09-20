@@ -24,6 +24,7 @@ nav:
     - 'Search Page': InterfaceOverview/SearchPage.md
   - 'Productivity Features':
     - 'Project Folders': InterfaceOverview/ProjectFolders.md
+    - 'File Finder': InterfaceOverview/FileFinder.md
     - 'Filter Tool': InterfaceOverview/FilterTool.md
     - 'Sorting and Sizing Columns': InterfaceOverview/SortingandSizingColumns.md
     - 'Find and Replace in Notes': InterfaceOverview/FindAndReplace.md
@@ -34,7 +35,11 @@ nav:
     - 'Error Log': InterfaceOverview/ErrorLog.md
   - 'Cloud Sync':
     - 'Cloud Sync': InterfaceOverview/RemoteHost.md
-  - 'Reporting & Client Presentation':
+  - 'Email, Meetings & Reporting':
+    - 'Email and Meeting Setup': InterfaceOverview/EmailAndMeetingSetup.md
+    - 'Reports and Email': InterfaceOverview/ReportsAndEmail.md
+    - 'Scheduling Meetings': InterfaceOverview/ScheduleMeeting.md
+    - 'Office 365 Integration': InterfaceOverview/Office365Integration.md
     - 'Earned Value Terms': InterfaceOverview/EarnedValueTerms.md
     - 'Presenting to Clients': InterfaceOverview/PresentingToClients.md
   - 'Plugins Overview':
@@ -45,23 +50,9 @@ nav:
     - 'Plugin Settings': StandardPlugins/PluginSettings.md
     - 'Outlook Integration': StandardPlugins/OutlookIntegration.md
     - 'iCloud Contacts': StandardPlugins/iCloudContacts.md
-    - 'File Finder': StandardPlugins/FileFinder.md
     - 'My Shortcuts': StandardPlugins/MyShortcuts.md
     - 'Team Member Quick Add': StandardPlugins/TeamMemberQuickAdd.md
-    - 'Export Meeting Notes': StandardPlugins/ExportMeetingNotes.md
-    - 'Meeting Notes Archive': StandardPlugins/MeetingNotesArchive.md
-    - 'Export Tracker Items': StandardPlugins/ExportTrackerItems.md
-    - 'Export Status Report': StandardPlugins/ExportStatusReport.md
     - 'New Document Templates': StandardPlugins/NewDocumentTemplates.md
-    - 'Send Meeting Notes': StandardPlugins/SendMeetingNotes.md
-    - 'Send Project Emails': StandardPlugins/SendProjectEmails.md
-    - 'Project Email Archive': StandardPlugins/ProjectEmailArchive.md
-    - 'Schedule an Internal Status Meeting': StandardPlugins/ScheduleanInternalStatusMeeting.md
-    - 'Schedule a Customer Status Meeting': StandardPlugins/ScheduleaCustomerStatusMeeting.md
-    - 'Schedule an Internal Kickoff Meeting': StandardPlugins/ScheduleanInternalKickoffMeeting.md
-    - 'Schedule a Customer Kickoff Meeting': StandardPlugins/ScheduleaCustomerKickoffMeeting.md
-    - 'Schedule an Internal Lessons Learned Meeting': StandardPlugins/ScheduleanInternalLessonsLearned.md
-    - 'Schedule a Customer Lessons Learned Meeting': StandardPlugins/ScheduleaCustomerLessonsLearned.md
     - 'IFS Cloud Integration': StandardPlugins/IFSCloud.md
     - 'Editor': StandardPlugins/Editor.md
   - 'Project Notes Mobile':
