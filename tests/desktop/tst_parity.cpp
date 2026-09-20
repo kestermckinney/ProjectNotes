@@ -762,10 +762,12 @@ private slots:
             QStandardPaths::writableLocation(QStandardPaths::DesktopLocation),
             QDir::tempPath()
         };
-        const QString pattern = QStringLiteral("ProjectNotes-logs-*.zip");
+        // The archive and the .eml draft opened for it both land here.
+        const QStringList patterns = { QStringLiteral("ProjectNotes-logs-*.zip"),
+                                       QStringLiteral("ProjectNotes-logs-*.eml") };
         QMap<QString, QStringList> before;
         for (const QString& d : dirs)
-            before[d] = QDir(d).entryList({ pattern }, QDir::Files);
+            before[d] = QDir(d).entryList(patterns, QDir::Files);
 
         QSignalSpy info(c, &DesktopAppController::infoOccurred);
         QSignalSpy err(c,  &DesktopAppController::errorOccurred);
@@ -774,7 +776,7 @@ private slots:
 
         // Clean up any bundle this test created.
         for (const QString& d : dirs)
-            for (const QString& f : QDir(d).entryList({ pattern }, QDir::Files))
+            for (const QString& f : QDir(d).entryList(patterns, QDir::Files))
                 if (!before[d].contains(f))
                     QFile::remove(QDir(d).filePath(f));
     }

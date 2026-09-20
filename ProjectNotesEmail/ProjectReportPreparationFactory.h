@@ -27,12 +27,12 @@ public:
     static std::optional<ProjectReportReview> createStatus(const CommunicationSnapshot &snapshot,
                                                             SourceContext source,
                                                             const ReportOptions &options,
-                                                            BackendId backend = BackendId::Mailto,
+                                                            BackendId backend = BackendId::DefaultApp,
                                                             const CommunicationTemplate *contentTemplate = nullptr);
     static std::optional<ProjectReportReview> createTracker(const CommunicationSnapshot &snapshot,
                                                              SourceContext source,
                                                              const ReportOptions &options,
-                                                             BackendId backend = BackendId::Mailto,
+                                                             BackendId backend = BackendId::DefaultApp,
                                                              const CommunicationTemplate *contentTemplate = nullptr);
 };
 

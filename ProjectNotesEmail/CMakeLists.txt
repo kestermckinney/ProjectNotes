@@ -4,6 +4,8 @@ add_library(ProjectNotesEmail STATIC
     EmailTypes.cpp
     EmailTypes.h
     ReportTypes.h
+    EmlWriter.h
+    EmlWriter.cpp
     EmailSettingsStore.cpp
     EmailSettingsStore.h
     ArtifactStore.cpp
@@ -45,8 +47,8 @@ add_library(ProjectNotesEmail STATIC
     EmailContentBuilder.cpp
     CommunicationsController.h
     CommunicationsController.cpp
-    backends/MailtoEmailBackend.h
-    backends/MailtoEmailBackend.cpp
+    backends/EmlFileEmailBackend.h
+    backends/EmlFileEmailBackend.cpp
     backends/GraphEmailBackend.h
     backends/GraphEmailBackend.cpp
     backends/ThunderbirdLauncher.h

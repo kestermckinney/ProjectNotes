@@ -107,8 +107,8 @@ void GraphEmailBackend::handoff(EmailRequest request, Completion completion)
     }
 
     QJsonObject draft{{QStringLiteral("subject"), request.subject},
-                      {QStringLiteral("body"), QJsonObject{{QStringLiteral("contentType"), request.html.isEmpty() ? "Text" : "HTML"},
-                                                             {QStringLiteral("content"), request.html.isEmpty() ? request.plainText : request.html}}},
+                      {QStringLiteral("body"), QJsonObject{{QStringLiteral("contentType"), QStringLiteral("HTML")},
+                                                             {QStringLiteral("content"), request.html}}},
                       {QStringLiteral("toRecipients"), recipientsFor(request.recipients, RecipientRole::To)},
                       {QStringLiteral("ccRecipients"), recipientsFor(request.recipients, RecipientRole::Cc)},
                       {QStringLiteral("bccRecipients"), recipientsFor(request.recipients, RecipientRole::Bcc)}};

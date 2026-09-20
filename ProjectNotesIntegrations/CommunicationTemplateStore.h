@@ -16,9 +16,6 @@ struct CommunicationTemplate {
     QString subject;
     QString body;
     bool bundled = false;
-    // Optional separate plain-text prose.  Older persisted templates simply
-    // decode with an empty value and retain their existing rich body.
-    QString plainBody;
 };
 
 class CommunicationTemplateStore final {

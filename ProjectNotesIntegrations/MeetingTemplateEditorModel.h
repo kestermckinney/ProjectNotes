@@ -27,7 +27,6 @@ class MeetingTemplateEditorModel final : public QObject {
     Q_PROPERTY(int draftDurationMinutes READ draftDurationMinutes WRITE setDraftDurationMinutes NOTIFY changed)
     Q_PROPERTY(QString draftSubject READ draftSubject WRITE setDraftSubject NOTIFY changed)
     Q_PROPERTY(QString draftRichAgenda READ draftRichAgenda WRITE setDraftRichAgenda NOTIFY changed)
-    Q_PROPERTY(QString draftPlainAgenda READ draftPlainAgenda WRITE setDraftPlainAgenda NOTIFY changed)
     Q_PROPERTY(QString diagnostic READ diagnostic NOTIFY changed)
 public:
     explicit MeetingTemplateEditorModel(QObject *parent = nullptr);
@@ -41,14 +40,12 @@ public:
     int draftDurationMinutes() const { return m_draft.durationMinutes; }
     QString draftSubject() const { return m_draft.subject; }
     QString draftRichAgenda() const { return m_draft.agenda; }
-    QString draftPlainAgenda() const { return m_draft.plainAgenda; }
     QString diagnostic() const { return m_diagnostic; }
 
     void setDraftName(const QString &value);
     void setDraftDurationMinutes(int value);
     void setDraftSubject(const QString &value);
     void setDraftRichAgenda(const QString &value);
-    void setDraftPlainAgenda(const QString &value);
 
     // Switching database discards the draft rather than saving it into the
     // new database's settings.

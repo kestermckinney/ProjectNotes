@@ -15,24 +15,24 @@ QString tr(const char *text) { return QCoreApplication::translate("PN::Comm", te
 
 QString diagnosticDisplayText(const QString &code)
 {
-    // mailto carries the whole message inside a URL, so its limits are about
-    // length and content rather than connectivity. Every message names the way
-    // out, because the user cannot inspect the generated URL themselves.
-    if (code == QLatin1String("mailto-url-too-long"))
-        return tr("This email is too long to open in your default mail client. "
-                  "Choose Microsoft 365 or Thunderbird as the email client in Settings, "
-                  "or save the report and attach it manually.");
-    if (code == QLatin1String("mailto-unsupported-content"))
-        return tr("Your default mail client cannot receive formatted text or attachments this way. "
-                  "Choose Microsoft 365 or Thunderbird as the email client in Settings.");
-    if (code == QLatin1String("mailto-header-injection"))
-        return tr("The subject contains a line break, which cannot be sent to your default mail client. "
+    // The default-application handoff writes an .eml file and asks the desktop
+    // to open it, so its failures are about writing that file and about which
+    // application picks it up. Every message names the way out, because the
+    // user never sees the generated file themselves.
+    if (code == QLatin1String("eml-header-injection"))
+        return tr("The subject contains a line break, which cannot be written into an email. "
                   "Remove the line break and try again.");
-    if (code == QLatin1String("mailto-launch-failed"))
-        return tr("Your default mail client could not be started. "
-                  "Check that a mail client is set as the system default for email.");
-    if (code == QLatin1String("mailto-launch-already-attempted"))
-        return tr("This email was already handed to your mail client. "
+    if (code == QLatin1String("eml-attachment-unreadable"))
+        return tr("An attachment could not be read while preparing the email. "
+                  "Prepare the email again.");
+    if (code == QLatin1String("eml-write-failed") || code == QLatin1String("eml-staging-failed"))
+        return tr("The email file could not be created. "
+                  "Check that there is free space for the application cache, then try again.");
+    if (code == QLatin1String("eml-open-failed"))
+        return tr("Your default mail application could not be started. "
+                  "Check that a mail application is set as the system default for email files (.eml).");
+    if (code == QLatin1String("eml-launch-already-attempted"))
+        return tr("This email was already handed to your mail application. "
                   "Check for an open compose window before preparing it again.");
 
     if (code == QLatin1String("thunderbird-unavailable"))

@@ -29,8 +29,6 @@ ColumnLayout {
         editor.cursorPosition = start + token.length
         if (target === "subject")
             pane.templateModel.draftSubject = editor.text
-        else if (target === "plainAgenda")
-            pane.templateModel.draftPlainAgenda = editor.text
     }
 
     // Same commit-point contract as TemplateSettingsPane.saveAndValidate():
@@ -201,20 +199,6 @@ ColumnLayout {
         insertFields: pane.templateModel ? pane.templateModel.availableFields : []
         onValueEdited: if (pane.templateModel) pane.templateModel.draftRichAgenda = value
         onInsertFieldRequested: (path) => pane.insertField(richAgenda.editor, path, "richAgenda")
-    }
-    Label { visible: pane._editing; text: qsTr("Plain-text agenda (optional)"); color: Theme.text2 }
-    TemplateSettingsPane.TemplateTextArea {
-        id: plainAgenda
-        visible: pane._editing
-        Layout.fillWidth: true
-        Layout.preferredHeight: 90
-        wrapMode: TextArea.Wrap
-        placeholderText: qsTr("Plain-text alternative for calendar clients that cannot show formatting")
-        text: pane.templateModel ? pane.templateModel.draftPlainAgenda : ""
-        spellCheckEnabled: true
-        insertFields: pane.templateModel ? pane.templateModel.availableFields : []
-        onTextChanged: if (activeFocus && pane.templateModel) pane.templateModel.draftPlainAgenda = text
-        onInsertFieldRequested: (path) => pane.insertField(plainAgenda, path, "plainAgenda")
     }
     Label {
         Layout.fillWidth: true

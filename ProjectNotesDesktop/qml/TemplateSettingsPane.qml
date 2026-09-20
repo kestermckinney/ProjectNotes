@@ -114,32 +114,6 @@ ColumnLayout {
         }
     }
 
-    component TemplateTextArea: TextArea {
-        id: control
-        property bool spellCheckEnabled: false
-        property var insertFields: []
-        signal insertFieldRequested(string path)
-        leftPadding: 9
-        rightPadding: 9
-        topPadding: 7
-        bottomPadding: 7
-        color: Theme.text
-        placeholderTextColor: Theme.text3
-        font.pixelSize: Theme.fontBody
-        selectByMouse: true
-        background: Rectangle {
-            radius: Theme.radiusSm
-            color: Theme.surface
-            border.color: control.activeFocus ? Theme.accent : Theme.border
-        }
-        SpellCheckField {
-            target: control
-            spellCheckEnabled: control.spellCheckEnabled
-            insertFields: control.insertFields
-            onInsertFieldRequested: (path) => control.insertFieldRequested(path)
-        }
-    }
-
     function insertField(editor, path, target) {
         if (!pane.templateModel || !editor)
             return
@@ -152,8 +126,6 @@ ColumnLayout {
         editor.cursorPosition = start + token.length
         if (target === "subject")
             pane.templateModel.draftSubject = editor.text
-        else if (target === "plainBody")
-            pane.templateModel.draftPlainBody = editor.text
     }
 
     // Leaving a draft is a commit point.  Store it first so an incomplete
@@ -262,20 +234,6 @@ ColumnLayout {
         insertFields: pane.templateModel ? pane.templateModel.availableBodyFields : []
         onValueEdited: if (pane.templateModel) pane.templateModel.draftRichBody = value
         onInsertFieldRequested: (path) => pane.insertField(richBody.editor, path, "richBody")
-    }
-    Label { text: qsTr("Plain-text body (optional)"); color: Theme.text2 }
-    TemplateTextArea {
-        id: plainBody
-        Layout.fillWidth: true
-        Layout.preferredHeight: 90
-        wrapMode: TextArea.Wrap
-        placeholderText: qsTr("Plain-text alternative")
-        text: pane.templateModel ? pane.templateModel.draftPlainBody : ""
-        enabled: pane.templateModel !== null
-        spellCheckEnabled: true
-        insertFields: pane.templateModel ? pane.templateModel.availableBodyFields : []
-        onTextChanged: if (activeFocus && pane.templateModel) pane.templateModel.draftPlainBody = text
-        onInsertFieldRequested: (path) => pane.insertField(plainBody, path, "plainBody")
     }
     Label {
         Layout.fillWidth: true

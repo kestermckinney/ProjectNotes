@@ -59,12 +59,11 @@ struct EmailRequest {
     QUuid operationId;
     SourceContext source;
     quint64 previewRevision = 0;
-    BackendId backend = BackendId::Mailto;
+    BackendId backend = BackendId::DefaultApp;
     QString accountKey;
     quint64 accountGeneration = 0;
     QList<EmailAddress> recipients;
     QString subject;
-    QString plainText;
     QString html;
     QList<Artifact> attachments;
     bool addressLaterExplicitlyChosen = false;

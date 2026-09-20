@@ -22,7 +22,6 @@ class CommunicationsController final : public QObject {
     Q_PROPERTY(QString stageName READ stageName NOTIFY stateChanged)
     Q_PROPERTY(QString diagnostic READ diagnostic NOTIFY stateChanged)
     Q_PROPERTY(QString subject READ subject NOTIFY stateChanged)
-    Q_PROPERTY(QString plainText READ plainText NOTIFY stateChanged)
     Q_PROPERTY(QString htmlBody READ htmlBody NOTIFY stateChanged)
     Q_PROPERTY(bool inlineHtmlMode READ inlineHtmlMode NOTIFY stateChanged)
     Q_PROPERTY(QStringList attachmentNames READ attachmentNames NOTIFY stateChanged)
@@ -62,7 +61,6 @@ public:
     [[nodiscard]] QString stageName() const;
     [[nodiscard]] QString diagnostic() const;
     [[nodiscard]] QString subject() const { return m_preparation.document.defaultSubject; }
-    [[nodiscard]] QString plainText() const { return m_preparation.document.plainText; }
     [[nodiscard]] QString htmlBody() const { return m_preparation.document.emailFragment; }
     [[nodiscard]] bool inlineHtmlMode() const { return m_preparation.mode == EmailMode::InlineHtml; }
     [[nodiscard]] QStringList attachmentNames() const {

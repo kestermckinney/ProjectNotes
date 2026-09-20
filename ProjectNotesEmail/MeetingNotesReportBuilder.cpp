@@ -6,7 +6,6 @@
 #include <QPageSize>
 #include <QMap>
 #include <QRegularExpression>
-#include <QTextDocument>
 
 namespace PN::Comm {
 namespace {
@@ -119,7 +118,6 @@ std::optional<ReportDocument> MeetingNotesReportBuilder::build(const MeetingNote
     report.emailFragment = "<div style='font-family:Calibri,Arial,sans-serif;font-size:10pt;margin:0;padding:.2in;'>"
         + emailMarkup(reportTemplate).arg(escape(input.snapshot.projectNumber + QStringLiteral(" ") + input.snapshot.projectName),
                                           emailSections.join(QString()), escape(date)) + "</div>";
-    QTextDocument plainDocument; plainDocument.setHtml(report.emailFragment); report.plainText = plainDocument.toPlainText();
     report.defaultSubject = QStringLiteral("%1 %2 - %3").arg(input.snapshot.projectNumber, input.snapshot.projectName, date);
     report.fileStem = input.snapshot.projectNumber + QStringLiteral(" Meeting Minutes")
         + (input.internalReport ? QStringLiteral(" Internal") : QString());

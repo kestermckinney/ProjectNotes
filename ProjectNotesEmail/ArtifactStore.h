@@ -16,7 +16,7 @@ struct OperationManifest {
     Workflow workflow = Workflow::SendMeetingNotes;
     QString databaseKey;
     QString projectId;
-    BackendId backend = BackendId::Mailto;
+    BackendId backend = BackendId::DefaultApp;
     OperationState state = OperationState::Staged;
     QString providerIdentity;
     QString accountKey;

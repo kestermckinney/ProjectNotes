@@ -16,19 +16,17 @@ inline constexpr auto NativeContentTemplateField = "content.body";
 struct TemplateApplicationResult {
     QString subject;
     QString html;
-    QString plainText;
     ValidationResult validation;
 };
 
 class TemplateApplication final {
 public:
-    // `nativeHtml` and `nativePlainText` are produced by a native report
-    // builder.  A non-empty template body must contain exactly one protected
-    // content token, so surrounding prose is safe while report markup survives.
+    // `nativeHtml` is produced by a native report builder.  A non-empty
+    // template body must contain exactly one protected content token, so
+    // surrounding prose is safe while report markup survives.
     static TemplateApplicationResult apply(const CommunicationTemplate &templateValue,
                                            const TemplateContext &context,
-                                           const QString &nativeHtml,
-                                           const QString &nativePlainText);
+                                           const QString &nativeHtml);
     static int protectedContentBlockCount(const QString &body);
 };
 

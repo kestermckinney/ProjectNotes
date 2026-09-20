@@ -1,7 +1,6 @@
 #include "TrackerItemsReportBuilder.h"
 #include <QPageSize>
 #include <QRegularExpression>
-#include <QTextDocument>
 #include <algorithm>
 namespace PN::Comm { namespace {
 QString e(const QString&s){return s.toHtmlEscaped();}
@@ -175,6 +174,6 @@ td {
     text-decoration: underline;
 }
 </style></head><body>)HTML") + fragment + "</body></html>";
- QTextDocument plainDocument; plainDocument.setHtml(fragment); r.plainText=plainDocument.toPlainText();r.defaultSubject=in.projectNumber+" "+in.projectName+" - Tracker Items "+date;r.fileStem=in.projectNumber+" Tracker Items"+(in.options.internalReport?" Internal":"");r.pdfLayout=QPageLayout(QPageSize(QPageSize::Letter),QPageLayout::Landscape,QMarginsF(12,12,12,12),QPageLayout::Millimeter);return r;
+ r.defaultSubject=in.projectNumber+" "+in.projectName+" - Tracker Items "+date;r.fileStem=in.projectNumber+" Tracker Items"+(in.options.internalReport?" Internal":"");r.pdfLayout=QPageLayout(QPageSize(QPageSize::Letter),QPageLayout::Landscape,QMarginsF(12,12,12,12),QPageLayout::Millimeter);return r;
 }
 }

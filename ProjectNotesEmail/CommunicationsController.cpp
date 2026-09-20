@@ -100,12 +100,7 @@ bool CommunicationsController::setHtmlBody(QString html)
         return false;
     if (m_preparation.document.emailFragment == html)
         return true;
-    QString plain = html;
-    plain.replace(QRegularExpression(QStringLiteral(R"(<\s*(br|/p|/div|/li)\s*/?\s*>)"),
-                                     QRegularExpression::CaseInsensitiveOption), QStringLiteral("\n"));
-    plain.remove(QRegularExpression(QStringLiteral(R"(<[^>]*>)")));
     m_preparation.document.emailFragment = std::move(html);
-    m_preparation.document.plainText = plain.simplified();
     emit stateChanged();
     return true;
 }

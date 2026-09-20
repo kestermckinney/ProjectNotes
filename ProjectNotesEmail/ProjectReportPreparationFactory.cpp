@@ -66,13 +66,12 @@ bool applyContentTemplate(ReportDocument *document, const CommunicationSnapshot 
     context.values.insert(QStringLiteral("report.date"), options.reportingDate.toString(QStringLiteral("MM/dd/yyyy")));
     context.values.insert(QStringLiteral("report.internal"), templateBoolean(options.internalReport));
     const TemplateApplicationResult applied = TemplateApplication::apply(
-        *contentTemplate, context, document->emailFragment, document->plainText);
+        *contentTemplate, context, document->emailFragment);
     validation->issues += applied.validation.issues;
     if (!validation->ok())
         return false;
     document->htmlDocument.replace(document->emailFragment, applied.html);
     document->emailFragment = applied.html;
-    document->plainText = applied.plainText;
     document->defaultSubject = applied.subject;
     return true;
 }

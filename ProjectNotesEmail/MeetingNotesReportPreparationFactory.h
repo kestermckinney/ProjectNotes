@@ -11,7 +11,7 @@ class MeetingNotesReportPreparationFactory final {
 public:
     static std::optional<EmailPreparation> create(const CommunicationSnapshot &snapshot, SourceContext source,
                                                    QDate reportingDate, bool internalReport,
-                                                   BackendId backend = BackendId::Mailto,
+                                                   BackendId backend = BackendId::DefaultApp,
                                                    EmailMode mode = EmailMode::InlineHtml,
                                                    bool retainHtml = false,
                                                    ValidationResult *failureValidation = nullptr,

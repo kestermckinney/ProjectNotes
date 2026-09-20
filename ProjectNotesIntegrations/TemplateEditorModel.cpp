@@ -107,7 +107,6 @@ QStringList TemplateEditorModel::availableBodyFields() const
 void TemplateEditorModel::setDraftName(const QString &value) { if (m_draft.name != value) { m_draft.name = value; emit changed(); } }
 void TemplateEditorModel::setDraftSubject(const QString &value) { if (m_draft.subject != value) { m_draft.subject = value; emit changed(); } }
 void TemplateEditorModel::setDraftRichBody(const QString &value) { if (m_draft.body != value) { m_draft.body = value; emit changed(); } }
-void TemplateEditorModel::setDraftPlainBody(const QString &value) { if (m_draftPlainBody != value) { m_draftPlainBody = value; emit changed(); } }
 
 void TemplateEditorModel::setDatabaseKey(QString databaseKey)
 {
@@ -145,16 +144,13 @@ void TemplateEditorModel::reload(const QString &preferredId)
     });
     if (found != m_templates.cend()) {
         m_draft = *found;
-        m_draftPlainBody = found->plainBody;
         m_selectedId = found->id;
     } else if (wanted.isEmpty() && !m_templates.isEmpty()) {
         m_draft = m_templates.constFirst();
-        m_draftPlainBody = m_draft.plainBody;
         m_selectedId = m_draft.id;
     } else {
         m_draft = {};
         m_draft.workflow = currentWorkflow();
-        m_draftPlainBody.clear();
         m_selectedId.clear();
     }
     m_diagnostic.clear();
@@ -168,7 +164,6 @@ bool TemplateEditorModel::selectTemplate(const QString &id)
     });
     if (found == m_templates.cend()) return false;
     m_draft = *found;
-    m_draftPlainBody = found->plainBody;
     m_selectedId = found->id;
     m_diagnostic.clear();
     emit changed();
@@ -208,19 +203,13 @@ ValidationResult TemplateEditorModel::validate() const
     // Shield the protected native-content marker while validating ordinary
     // literal fields. TemplateApplication validates its count separately.
     QString richBody = m_draft.body;
-    QString plainBody = m_draftPlainBody;
     const QRegularExpression protectedToken(QStringLiteral(R"(\{\{\s*content\.body\s*\}\})"));
     richBody.replace(protectedToken, QStringLiteral("\\{{ content.body }}"));
-    plainBody.replace(protectedToken, QStringLiteral("\\{{ content.body }}"));
     result.issues += renderTemplateFields(m_draft.subject, context).validation.issues;
     result.issues += renderTemplateFields(richBody, context, TemplateRenderMode::Html).validation.issues;
-    result.issues += renderTemplateFields(plainBody, context).validation.issues;
     if (m_draft.name.trimmed().isEmpty()) result.addError("template-invalid", "name");
     if (TemplateApplication::protectedContentBlockCount(m_draft.body) != 1)
         result.addError("template-content-block-required", "body");
-    if (!m_draftPlainBody.isEmpty()
-        && TemplateApplication::protectedContentBlockCount(m_draftPlainBody) != 1)
-        result.addError("template-content-block-required", "plainBody");
     return result;
 }
 
@@ -251,7 +240,6 @@ bool TemplateEditorModel::save()
     // draft left by an older UI which assigned it a generated id.
     m_draft.id = nativeTemplateId(currentWorkflow());
     m_draft.workflow = currentWorkflow();
-    m_draft.plainBody = m_draftPlainBody;
     CommunicationTemplateStore store(*m_settings, m_databaseKey);
     const ValidationResult result = store.save(m_draft);
     setDiagnostic(result);
@@ -264,13 +252,12 @@ bool TemplateEditorModel::save()
 
 bool TemplateEditorModel::appendField(const QString &path, const QString &target)
 {
-    const bool bodyTarget = target == QStringLiteral("richBody") || target == QStringLiteral("plainBody");
+    const bool bodyTarget = target == QStringLiteral("richBody");
     if (!templateFieldIsApplicable(path, currentWorkflow())
         && !(bodyTarget && path == QStringLiteral("content.body"))) return false;
     const QString token = QStringLiteral("{{ %1 }}").arg(path);
     if (target == QStringLiteral("subject")) m_draft.subject += token;
     else if (target == QStringLiteral("richBody")) m_draft.body += token;
-    else if (target == QStringLiteral("plainBody")) m_draftPlainBody += token;
     else return false;
     emit changed();
     return true;

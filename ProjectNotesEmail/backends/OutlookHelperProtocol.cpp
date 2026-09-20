@@ -156,7 +156,7 @@ std::optional<OutlookHelperRequest> makeOutlookPrepareRequest(const EmailRequest
     }
     return OutlookHelperRequest{request.operationId, OutlookHelperCommand::Prepare,
         {{QStringLiteral("subject"), request.subject}, {QStringLiteral("html"), request.html},
-         {QStringLiteral("plainText"), request.plainText}, {QStringLiteral("bodyFile"), bodyFile},
+         {QStringLiteral("bodyFile"), bodyFile},
          {QStringLiteral("recipients"), recipients}, {QStringLiteral("attachments"), attachments}}};
 }
 

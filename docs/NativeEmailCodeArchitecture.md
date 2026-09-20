@@ -11,7 +11,7 @@ Priority: subsequent user decisions > product requirements > this architecture >
 ### Non-negotiable constraints
 
 - Four native workflows: Send Meeting Notes, Tracker Items Report, Status Report, Meeting Notes Report. Their options, default content, filenames and report appearance follow the product plan.
-- Five adapters: Graph, mailto, Outlook Classic, Thunderbird, macOS Mail. No direct email sending. No calendar writes in this release.
+- Five adapters: Graph, default application (.eml file), Outlook Classic, Thunderbird, macOS Mail. No direct email sending. No calendar writes in this release.
 - All adapters attempt to show the prepared message and focus its window; presentation retry must not recreate a message.
 - No Python or QWidget dialogs in the four replacement paths. Existing unrelated plugins remain functional.
 - Templates and company audiences are shared services, not duplicated in each report or adapter.
@@ -98,7 +98,7 @@ ProjectNotesEmail/
   templates/                        # bundled report HTML/CSS + envelope defaults
   backends/
     GraphEmailBackend.h/.cpp
-    MailtoEmailBackend.h/.cpp
+    EmlFileEmailBackend.h/.cpp
     ThunderbirdEmailBackend.h/.cpp
     OutlookClassicBackend.h/.cpp
     MacMailBackend.h/.mm
@@ -156,7 +156,7 @@ Use namespace `PN::Comm` for new C++ types. Use enum-class values internally and
 enum class Workflow { SendMeetingNotes, TrackerItemsReport,
                       StatusReport, MeetingNotesReport };
 enum class EmailMode { InlineHtml, HtmlAttachment, PdfAttachment, None };
-enum class BackendId { Graph, Mailto, OutlookClassic, Thunderbird, MacMail };
+enum class BackendId { Graph, DefaultApp, OutlookClassic, Thunderbird, MacMail };
 enum class RecipientRole { To, Cc, Bcc };
 
 struct SourceContext {
@@ -381,7 +381,7 @@ signals:
 
 Some clients combine creation and display into one call. For those, `prepare` only stages/validates; `present` performs the single irreversible launch. `PreparedMessage.preparationKind` distinguishes StagedForLaunch from MailboxDraftCreated; do not report “draft created” for staged files. Once a one-shot launch is attempted, retain its outcome and do not call it again automatically.
 
-`PresentationHandle` is a tagged C++ value with backend identity plus Graph draft ID/webLink, Outlook helper handle, Mail outgoing-item identity, or a one-shot compose launch descriptor. `PresentationResult` separates visibility and focus as Confirmed, RequestedUnconfirmed, Failed or NotAttempted. A URL launch success is not verified keyboard focus. Record actual reusable-handle support; Thunderbird/mailto may support only manual app activation after launch.
+`PresentationHandle` is a tagged C++ value with backend identity plus Graph draft ID/webLink, Outlook helper handle, Mail outgoing-item identity, or a one-shot compose launch descriptor. `PresentationResult` separates visibility and focus as Confirmed, RequestedUnconfirmed, Failed or NotAttempted. A URL launch success is not verified keyboard focus. Record actual reusable-handle support; Thunderbird and the default application may support only manual app activation after launch.
 
 `EmailService::retryPresentation(operationId)` operates only on the stored handle, with no rebuilding/upload/create calls. `retryRemainingAttachments` is a separate explicit Graph recovery action. Discarding an exact app-created partial Graph draft requires confirmation and matching account identity; never delete after user handoff as cleanup. Cancel after a possibly processed request yields OutcomeUnknown or PartialDraft, not a claim that nothing happened.
 
@@ -390,7 +390,7 @@ Some clients combine creation and display into one call. For those, `prepare` on
 | Adapter | Implementation boundary and required tests |
 | --- | --- |
 | Graph | Inject Office365Service + HttpTransport. POST `/me/messages`, persist ID/webLink, attach completed files, then present existing link. Allowlist mail draft/attachment operations; no `/send`, `/sendMail` or calendar endpoints. Test HTTP errors, size boundaries, partial uploads, identity changes and lost create responses. |
-| mailto | Pure builder uses QUrl/QUrlQuery with RFC6068 tests, then injected URL launcher. Explicit plain-text/manual route only. Prototype selects a conservative encoded-length limit; reject oversized payload instead of truncating. No attachment parameter or HTML claim. |
+| Default application | Pure builder writes an RFC 5322 message (HTML body, base64 attachments, `X-Unsent: 1`), staged in the operation's artifact directory, then an injected file opener hands the .eml to the desktop. Test header injection, non-ASCII headers, missing attachment files and repeated launches. An opener success does not prove the client kept the draft. |
 | Outlook Classic | Windows adapter starts bundled helper via QProcess pipes. Helper owns STA COM and MailItem/Inspector; typed JSON request, attachment validation, signature-aware composition, display and activation. No `.Send()`. Unavailable on non-Windows or new-Outlook-only systems. |
 | Thunderbird | Discover executable or explicit override, build argument list without a shell, stage UTF-8 body, use proven compose grammar/body-file mechanism. Test quotes, commas, non-ASCII paths, already-running process and sandbox file access. Process exit does not prove draft completion. |
 | macOS Mail | Objective-C++ bridge uses fixed Apple Events/script logic and typed parameters targeting `com.apple.mail`; no generated script source from user data. Prototype must prove editable inline HTML and attachment parity; denied consent/unproven rich HTML is explicit, not a PDF fallback. |
@@ -482,7 +482,7 @@ Reserve template kind `meeting` and `appointment` context, but do not add a fake
 
 Future `MeetingRequest` needs organizer/account, required/optional/resource attendees, typed zoned start/end, location, subject/agenda and attachment artifacts. It is not EmailRequest with an ICS flag. Share templates, identity, immutable snapshots and presentation semantics, but keep calendar operation outcomes and invitation authorization distinct.
 
-The existing Graph scheduler's `isDraft:true` is not a proven no-invitation contract. No native `/me/events` POST/PATCH until the user approves a verified review path or an explicit Schedule and send invitations action. Thunderbird mail compose, macOS Mail and mailto do not automatically provide calendar scheduling. The future task must independently prove each calendar capability and migrate configured meeting types before deleting their Python handlers. [Graph event creation](https://learn.microsoft.com/en-us/graph/api/user-post-events?view=graph-rest-1.0)
+The existing Graph scheduler's `isDraft:true` is not a proven no-invitation contract. No native `/me/events` POST/PATCH until the user approves a verified review path or an explicit Schedule and send invitations action. Thunderbird mail compose, macOS Mail and the default-application route do not automatically provide calendar scheduling. The future task must independently prove each calendar capability and migrate configured meeting types before deleting their Python handlers. [Graph event creation](https://learn.microsoft.com/en-us/graph/api/user-post-events?view=graph-rest-1.0)
 
 Implemented (2026-09-19) as the `ProjectNotesMeetings` static library: `MeetingRequest`/`MeetingHandoffResult` (`MeetingTypes.h`), `MeetingBackend`, `MeetingService`, the pure `IcsWriter`, `MeetingPreparationFactory` and three backends (`IcsFileMeetingBackend`, `ThunderbirdMeetingBackend`, `GraphMeetingBackend`). Thunderbird launching is shared with the email adapter through `ProjectNotesEmail/backends/ThunderbirdLauncher`. `Workflow::ScheduleMeeting` identifies meetings in staging manifests and audience defaults. `DesktopAppController` owns the review (`prepareMeetingReview`, `meetingReview`, `handoffPreparedMeeting`, `closeMeetingReview`) and reuses `RecipientSelectionModel` and the snapshot-fingerprint revalidation. The Graph route uses `isDraft: true` by the maintainer's decision; see the implementation plan's "Approved native scheduling" section. Coverage is in `tests/desktop/tst_meetings.cpp` and `UiSmokeTest::test_08_scheduleMeetingDialog`.
 

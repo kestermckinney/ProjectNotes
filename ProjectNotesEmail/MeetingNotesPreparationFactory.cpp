@@ -59,7 +59,7 @@ std::optional<MeetingNotesReview> MeetingNotesPreparationFactory::create(
         context.values.insert(QStringLiteral("meeting.date"), note == snapshot.notes.cend() || !note->date.isValid()
                               ? QString() : note->date.date().toString(QStringLiteral("MM/dd/yyyy")));
         const TemplateApplicationResult applied = TemplateApplication::apply(
-            *contentTemplate, context, document->emailFragment, document->plainText);
+            *contentTemplate, context, document->emailFragment);
         review.validation.issues += applied.validation.issues;
         if (!review.validation.ok()) {
             if (failureValidation) *failureValidation = review.validation;
@@ -67,7 +67,6 @@ std::optional<MeetingNotesReview> MeetingNotesPreparationFactory::create(
         }
         document->htmlDocument.replace(document->emailFragment, applied.html);
         document->emailFragment = applied.html;
-        document->plainText = applied.plainText;
         document->defaultSubject = applied.subject;
     }
 

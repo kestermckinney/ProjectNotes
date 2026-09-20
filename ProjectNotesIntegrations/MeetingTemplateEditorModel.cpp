@@ -83,7 +83,6 @@ QVariantList MeetingTemplateEditorModel::templates() const
 void MeetingTemplateEditorModel::setDraftName(const QString &value) { if (m_draft.name != value) { m_draft.name = value; emit changed(); } }
 void MeetingTemplateEditorModel::setDraftSubject(const QString &value) { if (m_draft.subject != value) { m_draft.subject = value; emit changed(); } }
 void MeetingTemplateEditorModel::setDraftRichAgenda(const QString &value) { if (m_draft.agenda != value) { m_draft.agenda = value; emit changed(); } }
-void MeetingTemplateEditorModel::setDraftPlainAgenda(const QString &value) { if (m_draft.plainAgenda != value) { m_draft.plainAgenda = value; emit changed(); } }
 
 void MeetingTemplateEditorModel::setDraftDurationMinutes(int value)
 {
@@ -182,7 +181,7 @@ bool MeetingTemplateEditorModel::deleteSelected()
 bool MeetingTemplateEditorModel::draftIsBlank() const
 {
     return m_draft.name.trimmed().isEmpty() && m_draft.subject.trimmed().isEmpty()
-        && richTextIsBlank(m_draft.agenda) && m_draft.plainAgenda.trimmed().isEmpty();
+        && richTextIsBlank(m_draft.agenda);
 }
 
 ValidationResult MeetingTemplateEditorModel::validate() const
@@ -194,7 +193,6 @@ ValidationResult MeetingTemplateEditorModel::validate() const
     const TemplateContext context = meetingExampleContext();
     result.issues += renderTemplateFields(m_draft.subject, context).validation.issues;
     result.issues += renderTemplateFields(m_draft.agenda, context, TemplateRenderMode::Html).validation.issues;
-    result.issues += renderTemplateFields(m_draft.plainAgenda, context).validation.issues;
     return result;
 }
 
@@ -239,7 +237,6 @@ bool MeetingTemplateEditorModel::appendField(const QString &path, const QString 
     const QString token = QStringLiteral("{{ %1 }}").arg(path);
     if (target == QStringLiteral("subject")) m_draft.subject += token;
     else if (target == QStringLiteral("richAgenda")) m_draft.agenda += token;
-    else if (target == QStringLiteral("plainAgenda")) m_draft.plainAgenda += token;
     else return false;
     emit changed();
     return true;

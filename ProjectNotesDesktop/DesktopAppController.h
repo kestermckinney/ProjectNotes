@@ -47,7 +47,7 @@ class MeetingTemplateEditorModel;
 class Office365Service;
 class QtNetworkHttpTransport;
 class GraphEmailBackend;
-class MailtoEmailBackend;
+class EmlFileEmailBackend;
 class ThunderbirdEmailBackend;
 class MeetingService;
 class IcsFileMeetingBackend;
@@ -868,7 +868,7 @@ private:
     PN::Comm::Office365Service *m_office365Service = nullptr;
     PN::Comm::QtNetworkHttpTransport *m_office365Transport = nullptr;
     std::unique_ptr<PN::Comm::GraphEmailBackend> m_graphEmailBackend;
-    std::unique_ptr<PN::Comm::MailtoEmailBackend> m_mailtoEmailBackend;
+    std::unique_ptr<PN::Comm::EmlFileEmailBackend> m_emlFileEmailBackend;
     std::unique_ptr<PN::Comm::ThunderbirdEmailBackend> m_thunderbirdEmailBackend;
     std::unique_ptr<PN::Comm::MeetingService> m_meetingService;
     std::unique_ptr<PN::Comm::IcsFileMeetingBackend> m_icsMeetingBackend;

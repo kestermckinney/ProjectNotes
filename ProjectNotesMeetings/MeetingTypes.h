@@ -27,7 +27,7 @@ struct MeetingAttendee {
 struct MeetingRequest {
     QUuid operationId;
     SourceContext source;
-    BackendId backend = BackendId::Mailto;
+    BackendId backend = BackendId::DefaultApp;
     QString accountKey;
     quint64 accountGeneration = 0;
     QString subject;

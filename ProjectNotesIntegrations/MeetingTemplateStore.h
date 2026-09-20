@@ -19,10 +19,9 @@ struct MeetingTemplate {
     QString name;
     int durationMinutes = 60;
     QString subject;
-    // Rich agenda prose placed in the invitation body.
+    // Rich agenda prose placed in the invitation body.  The plain-text
+    // DESCRIPTION a calendar file also needs is derived from it.
     QString agenda;
-    // Optional plain-text agenda for clients that cannot show HTML.
-    QString plainAgenda;
 };
 
 // Fields a meeting subject or agenda may insert.  A meeting is scheduled from

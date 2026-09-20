@@ -27,7 +27,6 @@ class TemplateEditorModel final : public QObject {
     Q_PROPERTY(QString draftName READ draftName WRITE setDraftName NOTIFY changed)
     Q_PROPERTY(QString draftSubject READ draftSubject WRITE setDraftSubject NOTIFY changed)
     Q_PROPERTY(QString draftRichBody READ draftRichBody WRITE setDraftRichBody NOTIFY changed)
-    Q_PROPERTY(QString draftPlainBody READ draftPlainBody WRITE setDraftPlainBody NOTIFY changed)
     Q_PROPERTY(QString diagnostic READ diagnostic NOTIFY changed)
 public:
     explicit TemplateEditorModel(QString organization, QString databaseKey = {}, QObject *parent = nullptr);
@@ -41,13 +40,11 @@ public:
     QString draftName() const { return m_draft.name; }
     QString draftSubject() const { return m_draft.subject; }
     QString draftRichBody() const { return m_draft.body; }
-    QString draftPlainBody() const { return m_draftPlainBody; }
     QString diagnostic() const { return m_diagnostic; }
 
     void setDraftName(const QString &value);
     void setDraftSubject(const QString &value);
     void setDraftRichBody(const QString &value);
-    void setDraftPlainBody(const QString &value);
 
     // Switching database must discard the prior draft rather than accidentally
     // saving it into the new database's settings scope.
@@ -79,7 +76,6 @@ private:
     Workflow m_workflow = Workflow::SendMeetingNotes;
     QList<CommunicationTemplate> m_templates;
     CommunicationTemplate m_draft;
-    QString m_draftPlainBody;
     QString m_selectedId;
     QString m_diagnostic;
 };

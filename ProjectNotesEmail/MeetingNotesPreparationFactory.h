@@ -25,7 +25,7 @@ class MeetingNotesPreparationFactory final {
 public:
     static std::optional<MeetingNotesReview> create(const CommunicationSnapshot &snapshot,
                                                      SourceContext source,
-                                                     BackendId backend = BackendId::Mailto,
+                                                     BackendId backend = BackendId::DefaultApp,
                                                      EmailMode mode = EmailMode::InlineHtml,
                                                      const CommunicationTemplate *contentTemplate = nullptr,
                                                      ValidationResult *failureValidation = nullptr);

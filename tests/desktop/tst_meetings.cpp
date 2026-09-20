@@ -210,7 +210,7 @@ void MeetingsTest::preparesFromMeetingType()
     const QDateTime now(QDate(2026, 5, 4), QTime(10, 20));
     ValidationResult validation;
     const auto prepared = MeetingPreparationFactory::create(snapshot, {QStringLiteral("db"), 2, QStringLiteral("project")},
-                                                            meetingType, BackendId::Mailto, now, &validation);
+                                                            meetingType, BackendId::DefaultApp, now, &validation);
     QVERIFY2(prepared, validation.issues.isEmpty() ? "" : qPrintable(validation.issues.constFirst().code));
     QCOMPARE(prepared->source.workflow, Workflow::ScheduleMeeting);
     QCOMPARE(prepared->subject, QStringLiteral("P100 kickoff"));
@@ -223,7 +223,7 @@ void MeetingsTest::preparesFromMeetingType()
 
     // A meeting type without a subject falls back to the project and type name.
     meetingType.subject.clear();
-    const auto fallback = MeetingPreparationFactory::create(snapshot, {}, meetingType, BackendId::Mailto, now);
+    const auto fallback = MeetingPreparationFactory::create(snapshot, {}, meetingType, BackendId::DefaultApp, now);
     QVERIFY(fallback);
     QCOMPARE(fallback->subject, QStringLiteral("P100 Plant & Tower - Kickoff"));
 }
@@ -237,7 +237,7 @@ void MeetingsTest::rejectsUnresolvedTemplateFields()
     // report.date belongs to the report workflows, not to meetings.
     meetingType.subject = QStringLiteral("Status {{ report.date }}");
     ValidationResult validation;
-    QVERIFY(!MeetingPreparationFactory::create(snapshot, {}, meetingType, BackendId::Mailto,
+    QVERIFY(!MeetingPreparationFactory::create(snapshot, {}, meetingType, BackendId::DefaultApp,
                                                QDateTime::currentDateTime(), &validation));
     QVERIFY(!validation.ok());
 }
@@ -375,7 +375,7 @@ void MeetingsTest::serviceValidatesAndDispatches()
     service.handoff(request, [&result](MeetingHandoffResult value) { result = value; });
     QCOMPARE(result.error.code, QStringLiteral("meeting-backend-unavailable"));
 
-    service.registerBackend(BackendId::Mailto, &backend);
+    service.registerBackend(BackendId::DefaultApp, &backend);
     request.subject.clear();
     service.handoff(request, [&result](MeetingHandoffResult value) { result = value; });
     QCOMPARE(result.error.code, QStringLiteral("meeting-subject-required"));

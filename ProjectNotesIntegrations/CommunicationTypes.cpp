@@ -69,7 +69,7 @@ QString toStableString(BackendId value)
 {
     switch (value) {
     case BackendId::Graph: return QStringLiteral("graph");
-    case BackendId::Mailto: return QStringLiteral("mailto");
+    case BackendId::DefaultApp: return QStringLiteral("default-app");
     case BackendId::OutlookClassic: return QStringLiteral("outlook-classic");
     case BackendId::Thunderbird: return QStringLiteral("thunderbird");
     case BackendId::MacMail: return QStringLiteral("mac-mail");
@@ -106,7 +106,10 @@ std::optional<EmailMode> emailModeFromStableString(const QString &value)
 
 std::optional<BackendId> backendIdFromStableString(const QString &value)
 {
-    return enumFromString<BackendId>(value, {{"graph", BackendId::Graph}, {"mailto", BackendId::Mailto},
+    // "mailto" is the name this backend was stored under before it wrote .eml
+    // files; settings written by earlier versions still carry it.
+    return enumFromString<BackendId>(value, {{"graph", BackendId::Graph}, {"default-app", BackendId::DefaultApp},
+                                               {"mailto", BackendId::DefaultApp},
                                                {"outlook-classic", BackendId::OutlookClassic},
                                                {"thunderbird", BackendId::Thunderbird}, {"mac-mail", BackendId::MacMail}});
 }

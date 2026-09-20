@@ -66,13 +66,10 @@ std::optional<MeetingPreparation> MeetingPreparationFactory::create(const Commun
         issues.issues += agenda.validation.issues;
         preparation.htmlAgenda = agenda.text;
     }
-    if (!meetingType.plainAgenda.trimmed().isEmpty()) {
-        const TemplateRender plain = renderTemplateFields(meetingType.plainAgenda, context);
-        issues.issues += plain.validation.issues;
-        preparation.plainAgenda = plain.text;
-    } else if (!preparation.htmlAgenda.isEmpty()) {
+    // A calendar file's DESCRIPTION is plain text by format, so it is derived
+    // from the agenda rather than written separately.
+    if (!preparation.htmlAgenda.isEmpty())
         preparation.plainAgenda = plainTextFromHtml(preparation.htmlAgenda);
-    }
 
     for (const SnapshotPerson &person : snapshot.people)
         if (!snapshot.projectManagerId.isEmpty() && person.id == snapshot.projectManagerId) {

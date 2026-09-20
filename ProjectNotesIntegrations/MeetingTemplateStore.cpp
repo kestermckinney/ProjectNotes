@@ -17,7 +17,7 @@ namespace {
 QJsonObject encode(const MeetingTemplate &value)
 {
     return {{"id", value.id}, {"name", value.name}, {"durationMinutes", value.durationMinutes}, {"subject", value.subject},
-            {"agenda", value.agenda}, {"plainAgenda", value.plainAgenda}};
+            {"agenda", value.agenda}};
 }
 
 std::optional<MeetingTemplate> decode(const QJsonObject &object)
@@ -30,7 +30,6 @@ std::optional<MeetingTemplate> decode(const QJsonObject &object)
     if (duration > 0) value.durationMinutes = duration;
     value.subject = object.value("subject").toString();
     value.agenda = object.value("agenda").toString();
-    value.plainAgenda = object.value("plainAgenda").toString();
     return value;
 }
 

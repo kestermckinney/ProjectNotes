@@ -52,8 +52,7 @@ int TemplateApplication::protectedContentBlockCount(const QString &body)
 
 TemplateApplicationResult TemplateApplication::apply(const CommunicationTemplate &templateValue,
                                                       const TemplateContext &context,
-                                                      const QString &nativeHtml,
-                                                      const QString &nativePlainText)
+                                                      const QString &nativeHtml)
 {
     TemplateApplicationResult result;
     if (templateValue.workflow != context.workflow)
@@ -78,20 +77,6 @@ TemplateApplicationResult TemplateApplication::apply(const CommunicationTemplate
                                                             &result.validation);
     if (!result.validation.ok()) return result;
     result.html = html.text;
-
-    if (templateValue.plainBody.isEmpty()) {
-        result.plainText = nativePlainText;
-        return result;
-    }
-    const int plainBlocks = protectedContentBlockCount(templateValue.plainBody);
-    if (plainBlocks != 1) {
-        result.validation.addError(QStringLiteral("template-content-block-required"), QStringLiteral("plainBody"));
-        return result;
-    }
-    const TemplateRender plain = renderWithProtectedContent(templateValue.plainBody, context,
-                                                             TemplateRenderMode::PlainText, nativePlainText,
-                                                             &result.validation);
-    if (result.validation.ok()) result.plainText = plain.text;
     return result;
 }
 

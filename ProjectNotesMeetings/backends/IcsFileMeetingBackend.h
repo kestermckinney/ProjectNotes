@@ -9,9 +9,9 @@
 
 namespace PN::Comm {
 
-// The plain-text counterpart of mailto: writes an .ics file to the cache and
-// opens it with the desktop's default calendar app, where the user reviews the
-// event and sends the invitations.
+// Writes an .ics file to the cache and opens it with the desktop's default
+// calendar app, where the user reviews the event and sends the invitations.
+// The calendar counterpart of EmlFileEmailBackend.
 class IcsFileMeetingBackend final : public MeetingBackend {
 public:
     using FileOpener = std::function<bool(const QUrl &)>;

@@ -32,7 +32,8 @@
 #include "ProjectNotesEmail/EmailSettingsStore.h"
 #include "ProjectNotesEmail/TransientCacheCleaner.h"
 #include "ProjectNotesEmail/backends/GraphEmailBackend.h"
-#include "ProjectNotesEmail/backends/MailtoEmailBackend.h"
+#include "ProjectNotesEmail/EmlWriter.h"
+#include "ProjectNotesEmail/backends/EmlFileEmailBackend.h"
 #include "ProjectNotesEmail/backends/ThunderbirdEmailBackend.h"
 #include "ProjectNotesEmailRendering/WebEngineReportRenderer.h"
 #include "ProjectNotesMeetings/MeetingService.h"
@@ -159,14 +160,16 @@ DesktopAppController::DesktopAppController(QObject* parent)
     m_office365Service->setHttpTransport(m_office365Transport);
     m_graphEmailBackend = std::make_unique<PN::Comm::GraphEmailBackend>(m_office365Service);
     m_emailService->registerBackend(PN::Comm::BackendId::Graph, m_graphEmailBackend.get());
-    m_mailtoEmailBackend = std::make_unique<PN::Comm::MailtoEmailBackend>();
-    m_emailService->registerBackend(PN::Comm::BackendId::Mailto, m_mailtoEmailBackend.get());
+    m_emlFileEmailBackend = std::make_unique<PN::Comm::EmlFileEmailBackend>(
+        PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile));
+    m_emailService->registerBackend(PN::Comm::BackendId::DefaultApp, m_emlFileEmailBackend.get());
     // Meetings use the same Email and Scheduling preference as email.  The
-    // plain-text choice opens an .ics file in the default calendar app.
+    // default-application choice opens an .ics file in the default calendar
+    // app, as the email side opens an .eml file in the default mail app.
     m_meetingService = std::make_unique<PN::Comm::MeetingService>();
     m_icsMeetingBackend = std::make_unique<PN::Comm::IcsFileMeetingBackend>(
         PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile));
-    m_meetingService->registerBackend(PN::Comm::BackendId::Mailto, m_icsMeetingBackend.get());
+    m_meetingService->registerBackend(PN::Comm::BackendId::DefaultApp, m_icsMeetingBackend.get());
     m_graphMeetingBackend = std::make_unique<PN::Comm::GraphMeetingBackend>(m_office365Service);
     m_meetingService->registerBackend(PN::Comm::BackendId::Graph, m_graphMeetingBackend.get());
     QSettings emailSettings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
@@ -1313,7 +1316,7 @@ QVariantMap DesktopAppController::meetingReview() const
     switch (review.backend) {
     case PN::Comm::BackendId::Graph: backendLabel = tr("Microsoft 365"); break;
     case PN::Comm::BackendId::Thunderbird: backendLabel = tr("Thunderbird"); break;
-    case PN::Comm::BackendId::Mailto: backendLabel = tr("Default calendar app"); break;
+    case PN::Comm::BackendId::DefaultApp: backendLabel = tr("Default application"); break;
     default: backendLabel = PN::Comm::toStableString(review.backend); break;
     }
     const QString agenda = !review.htmlAgenda.isEmpty() ? review.htmlAgenda
@@ -4188,25 +4191,46 @@ void DesktopAppController::sendLogsToSupport()
         return;
     }
 
-    // mailto can't carry attachments, so the body gives the path to attach.
-    QUrlQuery query;
-    query.addQueryItem(QStringLiteral("subject"),
-        tr("ProjectNotes Support Logs (v%1)").arg(appVersion()));
-    query.addQueryItem(QStringLiteral("body"),
-        tr("Please describe the problem you are seeing below.\n\n"
-           "IMPORTANT: attach the log archive located at:\n%1\n\n"
-           "--- describe your issue here ---\n")
-            .arg(QDir::toNativeSeparators(zipPath)));
-    QUrl mailUrl;
-    mailUrl.setScheme(QStringLiteral("mailto"));
-    mailUrl.setPath(supportEmail);
-    mailUrl.setQuery(query);
-    QDesktopServices::openUrl(mailUrl);
+    // An .eml draft carries the archive as a real attachment, so the user has
+    // nothing to attach by hand.
+    PN::Comm::EmailRequest request;
+    request.operationId = QUuid::createUuid();
+    request.backend = PN::Comm::BackendId::DefaultApp;
+    request.recipients.append({tr("Project Notes Support"), supportEmail, PN::Comm::RecipientRole::To});
+    request.subject = tr("ProjectNotes Support Logs (v%1)").arg(appVersion());
+    request.html = tr("<p>Please describe the problem you are seeing below.</p>"
+                      "<p>The log archive is attached.</p>"
+                      "<p>--- describe your issue here ---</p>");
+    PN::Comm::Artifact archive;
+    archive.artifactId = QUuid::createUuid();
+    archive.absolutePath = zipPath;
+    archive.displayName = QFileInfo(zipPath).fileName();
+    archive.mimeType = QStringLiteral("application/zip");
+    archive.generatedByApp = true;
+    request.attachments.append(archive);
+
+    const QByteArray message = PN::Comm::EmlWriter::write(request);
+    const QString messagePath = QDir(destDir).filePath(
+        QStringLiteral("ProjectNotes-logs-%1.eml").arg(stamp));
+    QFile messageFile(messagePath);
+    bool opened = false;
+    if (!message.isEmpty() && messageFile.open(QIODevice::WriteOnly)
+        && messageFile.write(message) == message.size()) {
+        messageFile.close();
+        opened = QDesktopServices::openUrl(QUrl::fromLocalFile(messagePath));
+    }
+    if (!opened) {
+        // Without a mail application for .eml files there is still a usable
+        // result: the archive itself, and where to send it.
+        emit infoOccurred(tr("Send Logs to Support"),
+            tr("A log archive was created here:\n\n%1\n\nPlease email it to %2.")
+                .arg(QDir::toNativeSeparators(zipPath), supportEmail));
+        return;
+    }
 
     emit infoOccurred(tr("Send Logs to Support"),
         tr("A log archive was created here:\n\n%1\n\n"
-           "An email to %2 has been started. Please attach that zip file to the "
-           "email and send it.")
+           "An email to %2 has been started with the archive attached. Review it and send it.")
             .arg(QDir::toNativeSeparators(zipPath), supportEmail));
 }
 

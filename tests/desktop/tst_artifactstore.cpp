@@ -47,7 +47,7 @@ void ArtifactStoreTest::settingsAreProfileAndDatabaseScoped()
     firstStore.setThunderbirdPath(QStringLiteral("/opt/thunderbird/thunderbird"));
     QCOMPARE(firstStore.preferredBackend(), BackendId::Thunderbird);
     QCOMPARE(firstStore.thunderbirdPath(), QStringLiteral("/opt/thunderbird/thunderbird"));
-    QCOMPARE(secondStore.preferredBackend(), BackendId::Mailto);
+    QCOMPARE(secondStore.preferredBackend(), BackendId::DefaultApp);
     QCOMPARE(secondStore.thunderbirdPath(), QString());
 }
 

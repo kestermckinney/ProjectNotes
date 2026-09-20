@@ -25,12 +25,11 @@ std::optional<EmailPreparation> MeetingNotesReportPreparationFactory::create(
         context.values.insert(QStringLiteral("report.date"), date);
         context.values.insert(QStringLiteral("report.internal"), templateBoolean(internalReport));
         const TemplateApplicationResult applied = TemplateApplication::apply(
-            *contentTemplate, context, document->emailFragment, document->plainText);
+            *contentTemplate, context, document->emailFragment);
         validation.issues += applied.validation.issues;
         if (!validation.ok()) { if (failureValidation) *failureValidation = validation; return std::nullopt; }
         document->htmlDocument.replace(document->emailFragment, applied.html);
         document->emailFragment = applied.html;
-        document->plainText = applied.plainText;
         document->defaultSubject = applied.subject;
     }
     EmailPreparation preparation; preparation.operationId = QUuid::createUuid(); preparation.source = std::move(source);

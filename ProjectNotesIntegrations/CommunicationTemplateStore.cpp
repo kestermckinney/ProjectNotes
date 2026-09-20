@@ -17,8 +17,7 @@ namespace {
 QJsonObject encode(const CommunicationTemplate &value)
 {
     return {{"id", value.id}, {"name", value.name}, {"workflow", toStableString(value.workflow)},
-            {"subject", value.subject}, {"body", value.body},
-            {"plainBody", value.plainBody}};
+            {"subject", value.subject}, {"body", value.body}};
 }
 
 std::optional<CommunicationTemplate> decode(const QJsonObject &object)
@@ -26,9 +25,10 @@ std::optional<CommunicationTemplate> decode(const QJsonObject &object)
     const auto workflow = workflowFromStableString(object.value("workflow").toString());
     const QString id = object.value("id").toString();
     if (!workflow || id.isEmpty()) return std::nullopt;
+    // A "plainBody" written by an earlier version is simply dropped: email
+    // bodies are HTML only.
     return CommunicationTemplate{id, object.value("name").toString(), *workflow,
-                                 object.value("subject").toString(), object.value("body").toString(), false,
-                                 object.value("plainBody").toString()};
+                                 object.value("subject").toString(), object.value("body").toString(), false};
 }
 
 } // namespace

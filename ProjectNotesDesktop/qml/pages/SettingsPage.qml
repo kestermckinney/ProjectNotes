@@ -1083,7 +1083,7 @@ Item {
                     title: qsTr("Email and Scheduling Integration")
                     subtitle: qsTr("Choose how Project Notes hands emails and meeting invitations to you for review. Nothing is sent until you send it yourself.")
                     readonly property var backends: [
-                        { value: "mailto", label: qsTr("Default apps (plain-text email, calendar file)") },
+                        { value: "default-app", label: qsTr("Default Application") },
                         { value: "thunderbird", label: qsTr("Thunderbird") },
                         { value: "graph", label: qsTr("Microsoft 365 drafts") }
                     ]
@@ -1125,7 +1125,7 @@ Item {
                             case "thunderbird":
                                 return qsTr("Emails open in a Thunderbird compose window with any attachments. Meetings are passed to Thunderbird as a calendar file to import, then you send the invitations from the event.")
                             default:
-                                return qsTr("Emails open in your default mail app as plain text, without attachments. Meetings open in your default calendar app as a calendar (.ics) file.")
+                                return qsTr("Emails open in your default mail application as a draft message (.eml) with any attachments. Meetings open in your default calendar application as a calendar (.ics) file.")
                             }
                         }
                     }
@@ -1134,7 +1134,7 @@ Item {
                         wrapMode: Text.WordWrap
                         color: Theme.text3
                         font.pixelSize: Theme.fontSm
-                        text: qsTr("Temporary email attachments and calendar files are kept in the application cache and removed when Project Notes closes.")
+                        text: qsTr("Temporary email messages, attachments and calendar files are kept in the application cache and removed when Project Notes closes.")
                     }
                 }
 

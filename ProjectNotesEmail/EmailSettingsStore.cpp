@@ -13,7 +13,7 @@ EmailSettingsStore::EmailSettingsStore(QSettings &settings) : m_settings(setting
 BackendId EmailSettingsStore::preferredBackend() const
 {
     return backendIdFromStableString(m_settings.value(QStringLiteral("Email/v1/PreferredBackend")).toString())
-        .value_or(BackendId::Mailto);
+        .value_or(BackendId::DefaultApp);
 }
 
 void EmailSettingsStore::setPreferredBackend(BackendId backend)

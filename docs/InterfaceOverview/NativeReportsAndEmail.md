@@ -13,7 +13,7 @@ review uses the version you intend to share.
 
 ## Review before sharing
 
-The review dialog shows the generated subject and a plain-text summary. Where
+The review dialog shows the generated subject and a preview of the message. Where
 the chosen mode permits it, you can edit the subject, choose a template, select
 the audience shortcut and company filter, adjust recipients, or attach a
 file. These review-only changes do not alter the project team or the saved
@@ -24,10 +24,9 @@ For a generated attachment, Project Notes stages its own copy before a client
 handoff. You can use **Save generated attachment** to copy that generated file
 to a location you choose. This does not send email or open an email client.
 
-For a manual email, use **Copy plain-text message** and, when present, **Save
-generated attachment**. Both actions require a click and leave it to you to
-paste the message and attach the saved file in your chosen client; Project
-Notes does not open or send a manual message.
+To handle an email yourself, use **Save generated attachment** and send it from
+your own client. That action requires a click and leaves the sending to you;
+Project Notes does not open or send a message for you.
 
 Choose **Do not email** in a project-report review and then select **Complete
 without email** to finalize the reviewed report without requesting an account,
@@ -111,9 +110,9 @@ the team members marked to receive status reports.
 a fixed set of reports. Meeting types are yours to define: add as many as you
 need with **New**, copy one with **Duplicate**, or remove one with **Delete**.
 
-Each meeting type has a name, a default duration, an invitation subject and
-an agenda. The agenda has a formatted version and an optional plain-text
-version for calendar clients that cannot show formatting.
+Each meeting type has a name, a default duration, an invitation subject and a
+formatted agenda. Calendar files also carry a plain-text description, which
+Project Notes derives from that agenda.
 
 Subjects and agendas can insert project number, project name, client name,
 the preference fields for project manager and managing company, and
@@ -150,8 +149,8 @@ attendee.
 
 What happens next depends on your Email and Scheduling Integration:
 
-- **Default apps** writes a calendar file (.ics) and opens it in your default
-  calendar app. Save the event there and send the invitations.
+- **Default Application** writes a calendar file (.ics) and opens it in your
+  default calendar app. Save the event there and send the invitations.
 - **Thunderbird** passes the calendar file to Thunderbird, which offers to
   import it into one of its calendars. Open the event to send the invitations.
 - **Microsoft 365 drafts** creates a draft event in your Microsoft 365 calendar
@@ -165,9 +164,17 @@ them. Try the Microsoft 365 route with a test meeting before relying on it.
 ## Email and Scheduling Integration
 
 **Settings > Preferences > Email and Scheduling Integration** chooses one route
-for both emails and meeting invitations: default apps (a plain-text email and a
-calendar file), Thunderbird, or Microsoft 365 drafts. For Thunderbird, enter
-its executable path or a command such as `flatpak run org.mozilla.Thunderbird`.
+for both emails and meeting invitations: Default Application, Thunderbird, or
+Microsoft 365 drafts. For Thunderbird, enter its executable path or a command
+such as `flatpak run org.mozilla.Thunderbird`.
+
+**Default Application** writes the email as a draft message file (.eml) in the
+application cache and opens it with whatever mail application your desktop uses
+for that file type. The draft carries the formatted report and its attachments,
+so there is nothing to attach by hand. Outlook opens such a file as a new,
+unsent message; some clients show it as a message you then edit or forward.
+Meeting invitations take the matching route: a calendar file (.ics) opened in
+your default calendar app.
 
 A preference is not proof that the client is installed, signed in, or
 available. Client focus after a handoff is only an attempt; it is never a

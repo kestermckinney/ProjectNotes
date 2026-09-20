@@ -10,7 +10,8 @@
 #include "ProjectNotesEmail/MeetingNotesReportBuilder.h"
 #include "ProjectNotesEmail/MeetingNotesReportPreparationFactory.h"
 #include "ProjectNotesEmail/ProjectReportPreparationFactory.h"
-#include "ProjectNotesEmail/backends/MailtoEmailBackend.h"
+#include "ProjectNotesEmail/EmlWriter.h"
+#include "ProjectNotesEmail/backends/EmlFileEmailBackend.h"
 #include "ProjectNotesEmail/backends/ThunderbirdEmailBackend.h"
 #include "ProjectNotesEmail/backends/GraphEmailBackend.h"
 #include "ProjectNotesEmail/backends/OutlookHelperProtocol.h"
@@ -130,7 +131,7 @@ private slots:
     void buildsProjectWideMeetingNotesReport();
     void preparesProjectWideMeetingNotesReport();
     void preparesStatusAndTrackerReportsFromSnapshot();
-    void encodesAndBoundsMailtoRequests();
+    void writesEmlMessagesForTheDefaultApplication();
     void createsThunderbirdComposeArguments();
     void launchesThunderbirdCommandWithFixedArguments();
     void resolvesThunderbirdExecutable();
@@ -650,7 +651,6 @@ void CommunicationContractsTest::exposesBundledTemplateForEveryNativeWorkflow()
         QCOMPARE(editor.templates().size(), 1);
         QCOMPARE(editor.templates().constFirst().toMap().value(QStringLiteral("id")).toString(), id);
         QVERIFY(editor.draftRichBody().contains(QStringLiteral("{{ content.body }}")));
-        QVERIFY(editor.draftPlainBody().isEmpty());
     }
 }
 
@@ -687,7 +687,8 @@ void CommunicationContractsTest::editsTemplatesWithoutQmlEvaluation()
     QVERIFY(editor.availableBodyFields().contains(QStringLiteral("content.body")));
     QVERIFY(!editor.availableFields().contains(QStringLiteral("content.body")));
     QVERIFY(editor.appendField(QStringLiteral("content.body"), QStringLiteral("richBody")));
-    QVERIFY(editor.appendField(QStringLiteral("content.body"), QStringLiteral("plainBody")));
+    // Email bodies are HTML only, so there is no plain-text target to insert into.
+    QVERIFY(!editor.appendField(QStringLiteral("content.body"), QStringLiteral("plainBody")));
     QVERIFY(!editor.appendField(QStringLiteral("content.body"), QStringLiteral("subject")));
     editor.beginNew();
     editor.setDraftName(QStringLiteral("Status prose"));
@@ -696,7 +697,6 @@ void CommunicationContractsTest::editsTemplatesWithoutQmlEvaluation()
     QVERIFY(editor.appendField(QStringLiteral("project.name"), QStringLiteral("richBody")));
     QVERIFY(!editor.appendField(QStringLiteral("meeting.date"), QStringLiteral("richBody")));
     editor.setDraftRichBody(editor.draftRichBody() + QStringLiteral("</p>{{ content.body }}"));
-    editor.setDraftPlainBody(QStringLiteral("Hello {{ project.name }}\n{{ content.body }}"));
     QVERIFY(editor.validateDraft());
     QVERIFY(editor.save());
     QVERIFY(!editor.selectedTemplateId().isEmpty());
@@ -704,7 +704,6 @@ void CommunicationContractsTest::editsTemplatesWithoutQmlEvaluation()
     TemplateEditorModel reopened(organization, m_templateDatabasePath);
     reopened.setWorkflow(QStringLiteral("status-report"));
     QVERIFY(reopened.selectTemplate(editor.selectedTemplateId()));
-    QCOMPARE(reopened.draftPlainBody(), QStringLiteral("Hello {{ project.name }}\n{{ content.body }}"));
     reopened.beginNew();
     reopened.setDraftName(QStringLiteral("Incomplete prose"));
     reopened.setDraftSubject(QStringLiteral("{{ meeting.date }}"));
@@ -783,8 +782,8 @@ void CommunicationContractsTest::editsMeetingTypesWithoutQmlEvaluation()
     editor.setDraftRichAgenda(QStringLiteral("<p>Review "));
     QVERIFY(editor.appendField(QStringLiteral("client.name"), QStringLiteral("richAgenda")));
     QVERIFY(!editor.appendField(QStringLiteral("meeting.date"), QStringLiteral("richAgenda")));
-    QVERIFY(editor.appendField(QStringLiteral("current.date"), QStringLiteral("plainAgenda")));
-    QVERIFY(!editor.appendField(QStringLiteral("content.body"), QStringLiteral("plainAgenda")));
+    // An agenda is rich text only; its plain-text DESCRIPTION is derived.
+    QVERIFY(!editor.appendField(QStringLiteral("current.date"), QStringLiteral("plainAgenda")));
     QVERIFY(editor.validateDraft());
     QVERIFY(editor.save());
     const QString statusId = editor.selectedTemplateId();
@@ -816,7 +815,6 @@ void CommunicationContractsTest::editsMeetingTypesWithoutQmlEvaluation()
     QCOMPARE(reopened.templates().size(), 2);
     QVERIFY(reopened.selectTemplate(statusId));
     QCOMPARE(reopened.draftRichAgenda(), QStringLiteral("<p>Review {{ client.name }}"));
-    QCOMPARE(reopened.draftPlainAgenda(), QStringLiteral("{{ current.date }}"));
     const auto persisted = reopened.templateById(statusId);
     QVERIFY(persisted);
     QCOMPARE(persisted->durationMinutes, 30);
@@ -829,25 +827,22 @@ void CommunicationContractsTest::editsMeetingTypesWithoutQmlEvaluation()
 void CommunicationContractsTest::appliesTemplateAroundProtectedNativeContent()
 {
     CommunicationTemplate templateValue{"meeting-prose", "Meeting prose", Workflow::SendMeetingNotes,
-                                        "{{ project.name }} notes", "<p>Hello {{ client.name }}</p>{{ content.body }}",
-                                        false, "Hello {{ client.name }}\n{{ content.body }}"};
+                                        "{{ project.name }} notes", "<p>Hello {{ client.name }}</p>{{ content.body }}"};
     TemplateContext context;
     context.workflow = Workflow::SendMeetingNotes;
     context.values = {{"project.name", "North"}, {"client.name", "Safe <Client>"}};
     const TemplateApplicationResult applied = TemplateApplication::apply(
-        templateValue, context, QStringLiteral("<table><tr><td>Native</td></tr></table>"),
-        QStringLiteral("Native plain"));
+        templateValue, context, QStringLiteral("<table><tr><td>Native</td></tr></table>"));
     QVERIFY(applied.validation.ok());
     QCOMPARE(applied.subject, QStringLiteral("North notes"));
     QVERIFY(applied.html.contains(QStringLiteral("Safe &lt;Client&gt;")));
     QVERIFY(applied.html.contains(QStringLiteral("<table><tr><td>Native</td></tr></table>")));
-    QCOMPARE(applied.plainText, QStringLiteral("Hello Safe <Client>\nNative plain"));
 
     // The protected block must not be represented by a marker that field data
     // can reproduce; that would turn ordinary text into native report markup.
     context.values.insert(QStringLiteral("client.name"), QString(QChar(0xe000)));
     const auto markerValue = TemplateApplication::apply(
-        templateValue, context, QStringLiteral("<table>Native once</table>"), QStringLiteral("Native plain"));
+        templateValue, context, QStringLiteral("<table>Native once</table>"));
     QVERIFY(markerValue.validation.ok());
     QCOMPARE(markerValue.html.count(QStringLiteral("<table>Native once</table>")), 1);
     QVERIFY(markerValue.html.contains(QString(QChar(0xe000))));
@@ -855,16 +850,16 @@ void CommunicationContractsTest::appliesTemplateAroundProtectedNativeContent()
 
     context.values.insert(QStringLiteral("project.name"), QStringLiteral("North\r\nBcc: injected@example.test"));
     const auto expandedHeader = TemplateApplication::apply(
-        templateValue, context, QStringLiteral("<table>Native</table>"), QStringLiteral("Native plain"));
+        templateValue, context, QStringLiteral("<table>Native</table>"));
     QVERIFY(!expandedHeader.validation.ok());
     QCOMPARE(expandedHeader.validation.issues.constLast().code,
              QStringLiteral("template-subject-header-injection"));
     context.values.insert(QStringLiteral("project.name"), QStringLiteral("North"));
 
     templateValue.body = QStringLiteral("<p>Missing protected content</p>");
-    QVERIFY(!TemplateApplication::apply(templateValue, context, "<p>Native</p>", "Native").validation.ok());
+    QVERIFY(!TemplateApplication::apply(templateValue, context, "<p>Native</p>").validation.ok());
     templateValue.body = QStringLiteral("{{ content.body }} {{ content.body }}");
-    QVERIFY(!TemplateApplication::apply(templateValue, context, "<p>Native</p>", "Native").validation.ok());
+    QVERIFY(!TemplateApplication::apply(templateValue, context, "<p>Native</p>").validation.ok());
 }
 
 void CommunicationContractsTest::buildsContextSpecificMeetingNotes()
@@ -886,7 +881,6 @@ void CommunicationContractsTest::buildsContextSpecificMeetingNotes()
     QVERIFY(document->emailFragment.contains("background-color:#e7e6e6;"));
     QVERIFY(document->emailFragment.contains("bgcolor='#d9e1f2'"));
     QVERIFY(document->emailFragment.contains("background-color:#d9e1f2;"));
-    QCOMPARE(document->plainText, QStringLiteral("Discussed scope\n\nAction Items:\nDraft  Assigned To: Alice  Due By: 09/20/2026\n\nAttendees:\nAlice"));
     const QRegularExpression cells(QStringLiteral("<(?:th|td)\\b[^>]*>"));
     auto matches = cells.globalMatch(document->emailFragment);
     while (matches.hasNext())
@@ -971,7 +965,7 @@ void CommunicationContractsTest::createsMeetingNotesReviewFromSnapshot()
 
     CommunicationTemplate templateValue{"meeting-prose", "Meeting prose", Workflow::SendMeetingNotes,
                                         "{{ project.name }} notes", "<p>Prepared for {{ project.name }}</p>{{ content.body }}"};
-    const auto templated = MeetingNotesPreparationFactory::create(snapshot, source, BackendId::Mailto,
+    const auto templated = MeetingNotesPreparationFactory::create(snapshot, source, BackendId::DefaultApp,
                                                                     EmailMode::InlineHtml, &templateValue);
     QVERIFY(templated.has_value());
     QCOMPARE(templated->preparation.document.defaultSubject, QStringLiteral("North notes"));
@@ -982,7 +976,7 @@ void CommunicationContractsTest::createsMeetingNotesReviewFromSnapshot()
     // fail the review; the snapshot supplies the name.
     snapshot.clientName = QStringLiteral("Acme");
     templateValue.body = QStringLiteral("<p>For {{ client.name }}</p>{{ content.body }}");
-    const auto withClient = MeetingNotesPreparationFactory::create(snapshot, source, BackendId::Mailto,
+    const auto withClient = MeetingNotesPreparationFactory::create(snapshot, source, BackendId::DefaultApp,
                                                                      EmailMode::InlineHtml, &templateValue);
     QVERIFY(withClient.has_value());
     QVERIFY(withClient->preparation.document.emailFragment.contains(QStringLiteral("For Acme")));
@@ -990,7 +984,7 @@ void CommunicationContractsTest::createsMeetingNotesReviewFromSnapshot()
     // A field that does not apply to this workflow is still rejected.
     templateValue.body = QStringLiteral("<p>{{ report.date }}</p>{{ content.body }}");
     ValidationResult unavailableTemplate;
-    QVERIFY(!MeetingNotesPreparationFactory::create(snapshot, source, BackendId::Mailto,
+    QVERIFY(!MeetingNotesPreparationFactory::create(snapshot, source, BackendId::DefaultApp,
                                                      EmailMode::InlineHtml, &templateValue,
                                                      &unavailableTemplate).has_value());
     QVERIFY(!unavailableTemplate.ok());
@@ -1048,7 +1042,7 @@ void CommunicationContractsTest::preparesProjectWideMeetingNotesReport()
     QCOMPARE(preparation->source.workflow, Workflow::MeetingNotesReport);
     QVERIFY(preparation->document.emailFragment.contains("Kickoff"));
     const auto retained = MeetingNotesReportPreparationFactory::create(
-        snapshot, source, QDate(2026, 9, 2), false, BackendId::Mailto,
+        snapshot, source, QDate(2026, 9, 2), false, BackendId::DefaultApp,
         EmailMode::None, true);
     QVERIFY(retained.has_value());
     QVERIFY(retained->retainHtml);
@@ -1058,7 +1052,7 @@ void CommunicationContractsTest::preparesProjectWideMeetingNotesReport()
                                         "<p>Prepared report</p>{{ content.body }}"};
     ValidationResult templateValidation;
     const auto templated = MeetingNotesReportPreparationFactory::create(
-        snapshot, source, QDate(2026, 9, 2), false, BackendId::Mailto,
+        snapshot, source, QDate(2026, 9, 2), false, BackendId::DefaultApp,
         EmailMode::InlineHtml, false, &templateValidation, &templateValue);
     QVERIFY(templateValidation.ok());
     QVERIFY(templated.has_value());
@@ -1109,7 +1103,7 @@ void CommunicationContractsTest::preparesStatusAndTrackerReportsFromSnapshot()
                                          "{{ project.number }} {{ report.type }} {{ report.date }}",
                                          "<p>Prepared {{ report.internal }}</p>{{ content.body }}"};
     const auto templatedStatus = ProjectReportPreparationFactory::createStatus(
-        snapshot, source, statusOptions, BackendId::Mailto, &statusTemplate);
+        snapshot, source, statusOptions, BackendId::DefaultApp, &statusTemplate);
     QVERIFY(templatedStatus.has_value());
     QCOMPARE(templatedStatus->preparation.document.defaultSubject,
              QStringLiteral("P Status Report 09/15/2026"));
@@ -1136,47 +1130,76 @@ void CommunicationContractsTest::preparesStatusAndTrackerReportsFromSnapshot()
     QCOMPARE(tracker->preparation.recipients.constFirst().address, QStringLiteral("status@example.test"));
 }
 
-void CommunicationContractsTest::encodesAndBoundsMailtoRequests()
+void CommunicationContractsTest::writesEmlMessagesForTheDefaultApplication()
 {
+    QTemporaryDir cache; QVERIFY(cache.isValid());
     EmailRequest request; request.operationId = QUuid::createUuid(); request.subject = "A & B + C";
-    request.plainText = "First line\nSecond & line";
+    request.backend = BackendId::DefaultApp; request.html = "<p>First line</p>";
     request.recipients = {{"To", "to@example.test", RecipientRole::To}, {"Bcc", "bcc@example.test", RecipientRole::Bcc}};
-    ValidationResult validation; const auto url = MailtoEmailBackend::buildUrl(request, &validation);
-    QVERIFY(validation.ok()); QVERIFY(url.has_value());
-    QVERIFY(url->toEncoded().contains("subject=A%20%26%20B%20%2B%20C"));
-    QVERIFY(url->toEncoded().contains("bcc=bcc%40example.test"));
-    QVERIFY(url->toEncoded().contains("body=First%20line%0ASecond%20%26%20line"));
-    request.html = "<p>not mailto</p>"; QVERIFY(!MailtoEmailBackend::buildUrl(request).has_value());
-    request.html.clear(); request.subject = "bad\r\nBcc:x@example.test"; QVERIFY(!MailtoEmailBackend::buildUrl(request).has_value());
-    // Express the bound in terms of the platform's own cap: it is deliberately
-    // larger away from Windows, so a hardcoded length would stop testing a limit.
-    request.subject.clear();
-    request.plainText = QString(MailtoEmailBackend::maximumEncodedLength + 1, 'x');
-    ValidationResult tooLong;
-    QVERIFY(!MailtoEmailBackend::buildUrl(request, &tooLong).has_value());
-    QCOMPARE(tooLong.issues.constFirst().code, QStringLiteral("mailto-url-too-long"));
-    // A body that fits must still be accepted, so the cap cannot silently
-    // collapse to something tiny.
-    request.plainText = QString(MailtoEmailBackend::maximumEncodedLength / 2, 'x');
-    QVERIFY(MailtoEmailBackend::buildUrl(request).has_value());
-    QUrl launched; int launches = 0; MailtoEmailBackend backend([&launched, &launches](const QUrl &value) { launched = value; ++launches; return true; });
-    request.plainText = "ok"; bool complete = false; backend.handoff(request, [&complete](EmailHandoffResult result) { complete = true; QCOMPARE(result.certainty, OutcomeCertainty::Uncertain); });
-    QVERIFY(complete); QVERIFY(!launched.isEmpty());
+    ValidationResult validation;
+    const QByteArray message = EmlWriter::write(
+        request, QDateTime::fromString(QStringLiteral("2026-09-02T13:05:00Z"), Qt::ISODate), &validation);
+    QVERIFY(validation.ok()); QVERIFY(!message.isEmpty());
+    // A Date header is fixed by RFC 5322 and must not follow the user's locale.
+    QVERIFY(message.contains("Date: Wed, 02 Sep 2026 13:05:00 +0000\r\n"));
+    QVERIFY(message.contains("Subject: A & B + C\r\n"));
+    QVERIFY(message.contains("To: \"To\" <to@example.test>\r\n"));
+    QVERIFY(message.contains("Bcc: \"Bcc\" <bcc@example.test>\r\n"));
+    // Outlook opens a message carrying X-Unsent as an editable draft.
+    QVERIFY(message.contains("X-Unsent: 1\r\n"));
+    QVERIFY(message.contains("Content-Type: text/html; charset=\"utf-8\"\r\n"));
+    QVERIFY(message.contains(QByteArray("<p>First line</p>").toBase64()));
+
+    // A line break in a header is refused rather than written through.
+    EmailRequest injected = request; injected.subject = "bad\r\nBcc:x@example.test";
+    ValidationResult injection;
+    QVERIFY(EmlWriter::write(injected, {}, &injection).isEmpty());
+    QCOMPARE(injection.issues.constFirst().code, QStringLiteral("eml-header-injection"));
+
+    // The reason for the file: unlike a mailto: URL it carries attachments.
+    const QString attachmentPath = QDir(cache.path()).filePath(QStringLiteral("notes.pdf"));
+    QFile attachmentFile(attachmentPath);
+    QVERIFY(attachmentFile.open(QIODevice::WriteOnly));
+    const QByteArray payload = "%PDF-1.4 report bytes";
+    QCOMPARE(attachmentFile.write(payload), payload.size());
+    attachmentFile.close();
+    request.attachments = {{QUuid::createUuid(), attachmentPath, QStringLiteral("notes.pdf"),
+                            QStringLiteral("application/pdf"), payload.size(), {}, true}};
+    const QByteArray withAttachment = EmlWriter::write(request);
+    QVERIFY(withAttachment.contains("Content-Type: multipart/mixed;"));
+    QVERIFY(withAttachment.contains("Content-Disposition: attachment; filename=\"notes.pdf\"\r\n"));
+    QVERIFY(withAttachment.contains(payload.toBase64()));
+
+    // An attachment that vanished between review and handoff is reported, not
+    // written as a message naming a file it could not read.
+    EmailRequest missing = request;
+    missing.attachments[0].absolutePath = QDir(cache.path()).filePath(QStringLiteral("gone.pdf"));
+    ValidationResult unreadable;
+    QVERIFY(EmlWriter::write(missing, {}, &unreadable).isEmpty());
+    QCOMPARE(unreadable.issues.constFirst().code, QStringLiteral("eml-attachment-unreadable"));
+
+    QUrl opened; int opens = 0;
+    EmlFileEmailBackend backend(cache.path(), [&opened, &opens](const QUrl &url) { opened = url; ++opens; return true; });
+    bool complete = false;
+    backend.handoff(request, [&complete](EmailHandoffResult result) { complete = true; QCOMPARE(result.certainty, OutcomeCertainty::Uncertain); });
+    QVERIFY(complete); QVERIFY(opened.isLocalFile());
+    QVERIFY(opened.toLocalFile().endsWith(QStringLiteral("message.eml")));
+    QVERIFY(QFileInfo::exists(opened.toLocalFile()));
     QString repeatedError;
     backend.handoff(request, [&repeatedError](EmailHandoffResult result) { repeatedError = result.error.code; });
-    QCOMPARE(repeatedError, QStringLiteral("mailto-launch-already-attempted"));
-    QCOMPARE(launches, 1);
+    QCOMPARE(repeatedError, QStringLiteral("eml-launch-already-attempted"));
+    QCOMPARE(opens, 1);
 
     request.operationId = QUuid::createUuid();
-    int failedLaunches = 0;
-    MailtoEmailBackend failingBackend([&failedLaunches](const QUrl &) { ++failedLaunches; return false; });
+    int failedOpens = 0;
+    EmlFileEmailBackend failingBackend(cache.path(), [&failedOpens](const QUrl &) { ++failedOpens; return false; });
     QString failedError;
     failingBackend.handoff(request, [&failedError](EmailHandoffResult result) { failedError = result.error.code; });
-    QCOMPARE(failedError, QStringLiteral("mailto-launch-failed"));
+    QCOMPARE(failedError, QStringLiteral("eml-open-failed"));
     failedError.clear();
     failingBackend.handoff(request, [&failedError](EmailHandoffResult result) { failedError = result.error.code; });
-    QCOMPARE(failedError, QStringLiteral("mailto-launch-already-attempted"));
-    QCOMPARE(failedLaunches, 1);
+    QCOMPARE(failedError, QStringLiteral("eml-launch-already-attempted"));
+    QCOMPARE(failedOpens, 1);
 }
 
 void CommunicationContractsTest::createsThunderbirdComposeArguments()
@@ -1350,11 +1373,11 @@ void CommunicationContractsTest::reportsMacMailPlatformAvailability()
 
 void CommunicationContractsTest::serializesEmailHandoffsAndRejectsStaleCompletion()
 {
-    Test::DeferredEmailBackend backend; Test::DeferredEmailBackend unrelated; EmailService service; service.registerBackend(BackendId::Mailto, &backend); service.registerBackend(BackendId::Thunderbird, &unrelated);
-    EmailRequest first; first.operationId=QUuid::createUuid(); first.backend=BackendId::Mailto;
+    Test::DeferredEmailBackend backend; Test::DeferredEmailBackend unrelated; EmailService service; service.registerBackend(BackendId::DefaultApp, &backend); service.registerBackend(BackendId::Thunderbird, &unrelated);
+    EmailRequest first; first.operationId=QUuid::createUuid(); first.backend=BackendId::DefaultApp;
     bool firstComplete=false; service.handoff(first, [&firstComplete](EmailHandoffResult) { firstComplete=true; });
     QCOMPARE(service.activeOperation(), first.operationId);
-    EmailRequest second; second.operationId=QUuid::createUuid(); second.backend=BackendId::Mailto;
+    EmailRequest second; second.operationId=QUuid::createUuid(); second.backend=BackendId::DefaultApp;
     QString busy; service.handoff(second, [&busy](EmailHandoffResult result) { busy=result.error.code; });
     QCOMPARE(busy, QStringLiteral("email-operation-busy"));
     service.cancel(first.operationId); QCOMPARE(backend.cancelled, QList<QUuid>({first.operationId}));
@@ -1524,10 +1547,13 @@ void CommunicationContractsTest::dispatchesAllNativeReportBuilders()
 void CommunicationContractsTest::preparesImmutableRequestsForEachEmailMode()
 {
     EmailPreparation input; input.operationId=QUuid::createUuid(); input.source={"db",1,"p",{},Workflow::StatusReport}; input.accountKey="Ada <ada@example.test>"; input.accountGeneration=42; input.document.workflow=Workflow::StatusReport;
-    input.document.defaultSubject="Report"; input.document.emailFragment="<p>HTML</p>"; input.document.plainText="HTML"; input.recipients={{"One","one@example.test",RecipientRole::To}};
-    auto inlineResult=EmailContentBuilder::prepare(input); QVERIFY(inlineResult.validation.ok()); QVERIFY(inlineResult.request.has_value()); QVERIFY(inlineResult.request->html.isEmpty()); QCOMPARE(inlineResult.request->plainText,QStringLiteral("HTML")); QCOMPARE(inlineResult.request->accountKey,input.accountKey); QCOMPARE(inlineResult.request->accountGeneration,input.accountGeneration);
+    input.document.defaultSubject="Report"; input.document.emailFragment="<p>HTML</p>"; input.recipients={{"One","one@example.test",RecipientRole::To}};
+    // Every backend now receives the HTML body, the default application included.
+    auto inlineResult=EmailContentBuilder::prepare(input); QVERIFY(inlineResult.validation.ok()); QVERIFY(inlineResult.request.has_value()); QCOMPARE(inlineResult.request->html,QStringLiteral("<p>HTML</p>")); QCOMPARE(inlineResult.request->accountKey,input.accountKey); QCOMPARE(inlineResult.request->accountGeneration,input.accountGeneration);
     input.backend=BackendId::Graph; inlineResult=EmailContentBuilder::prepare(input); QVERIFY(inlineResult.validation.ok()); QCOMPARE(inlineResult.request->html,QStringLiteral("<p>HTML</p>"));
-    input.mode=EmailMode::PdfAttachment; input.backend=BackendId::Mailto; input.attachments.clear(); auto mailtoReport=EmailContentBuilder::prepare(input); QVERIFY(mailtoReport.validation.ok()); QVERIFY(mailtoReport.request->attachments.isEmpty()); QVERIFY(mailtoReport.request->html.isEmpty());
+    // An attachment mode without its report attached is refused for every
+    // backend: the default application carries attachments like the others.
+    input.mode=EmailMode::PdfAttachment; input.backend=BackendId::DefaultApp; input.attachments.clear(); auto defaultAppReport=EmailContentBuilder::prepare(input); QVERIFY(!defaultAppReport.validation.ok()); QCOMPARE(defaultAppReport.validation.issues.constLast().code,QStringLiteral("email-attachment-required"));
     input.mode=EmailMode::InlineHtml; input.backend=BackendId::Graph;
     input.document.defaultSubject = QStringLiteral(" \t ");
     const auto missingSubject = EmailContentBuilder::prepare(input);
@@ -1807,9 +1833,9 @@ void CommunicationContractsTest::reportsUserFacingTextForEveryHandoffFailure()
     // dialog only shows its diagnostic label when the text is non-empty, so an
     // unmapped code used to fail the handoff with nothing on screen.
     const QStringList codes = {
-        QStringLiteral("mailto-url-too-long"), QStringLiteral("mailto-unsupported-content"),
-        QStringLiteral("mailto-header-injection"), QStringLiteral("mailto-launch-failed"),
-        QStringLiteral("mailto-launch-already-attempted"),
+        QStringLiteral("eml-header-injection"), QStringLiteral("eml-attachment-unreadable"),
+        QStringLiteral("eml-write-failed"), QStringLiteral("eml-staging-failed"),
+        QStringLiteral("eml-open-failed"), QStringLiteral("eml-launch-already-attempted"),
         QStringLiteral("thunderbird-unavailable"), QStringLiteral("thunderbird-launch-failed"),
         QStringLiteral("thunderbird-body-unavailable"),
         QStringLiteral("thunderbird-path-not-operation-owned"),
@@ -1837,7 +1863,6 @@ void CommunicationContractsTest::reportsUserFacingTextForEveryHandoffFailure()
     preparation.document.workflow = Workflow::StatusReport;
     preparation.document.defaultSubject = QStringLiteral("Report");
     preparation.document.emailFragment = QStringLiteral("<p>body</p>");
-    preparation.document.plainText = QStringLiteral("body");
     QVERIFY(controller.setPreparation(preparation));
     ValidationResult unmapped;
     unmapped.addError(QStringLiteral("totally-unknown-code"), QStringLiteral("handoff"));
@@ -1847,7 +1872,7 @@ void CommunicationContractsTest::reportsUserFacingTextForEveryHandoffFailure()
 
     // A backend-supplied message still wins over the table.
     ValidationResult explicitText;
-    explicitText.addError(QStringLiteral("mailto-url-too-long"), QStringLiteral("handoff"),
+    explicitText.addError(QStringLiteral("eml-open-failed"), QStringLiteral("handoff"),
                           QStringLiteral("Backend said so."));
     controller.setReviewValidation(explicitText);
     QCOMPARE(controller.diagnostic(), QStringLiteral("Backend said so."));
@@ -1883,14 +1908,14 @@ void CommunicationContractsTest::resolvesEveryOfferedTemplateField()
         switch (workflow) {
         case Workflow::SendMeetingNotes: {
             const auto review = MeetingNotesPreparationFactory::create(
-                snapshot, {"db", 3, "project", {"note"}, workflow}, BackendId::Mailto,
+                snapshot, {"db", 3, "project", {"note"}, workflow}, BackendId::DefaultApp,
                 EmailMode::InlineHtml, &value);
             if (!review) return std::nullopt;
             return review->preparation.document.defaultSubject;
         }
         case Workflow::MeetingNotesReport: {
             const auto preparation = MeetingNotesReportPreparationFactory::create(
-                snapshot, {"db", 3, "project", {}, workflow}, QDate(2026, 9, 2), false, BackendId::Mailto,
+                snapshot, {"db", 3, "project", {}, workflow}, QDate(2026, 9, 2), false, BackendId::DefaultApp,
                 EmailMode::InlineHtml, false, nullptr, &value);
             if (!preparation) return std::nullopt;
             return preparation->document.defaultSubject;
@@ -1900,8 +1925,8 @@ void CommunicationContractsTest::resolvesEveryOfferedTemplateField()
             const SourceContext source{"db", 3, "project", {}, workflow};
             const ReportOptions options = defaultReportOptions(workflow, QDate(2026, 9, 15));
             const auto review = workflow == Workflow::StatusReport
-                ? ProjectReportPreparationFactory::createStatus(snapshot, source, options, BackendId::Mailto, &value)
-                : ProjectReportPreparationFactory::createTracker(snapshot, source, options, BackendId::Mailto, &value);
+                ? ProjectReportPreparationFactory::createStatus(snapshot, source, options, BackendId::DefaultApp, &value)
+                : ProjectReportPreparationFactory::createTracker(snapshot, source, options, BackendId::DefaultApp, &value);
             if (!review) return std::nullopt;
             return review->preparation.document.defaultSubject;
         }
@@ -1945,7 +1970,7 @@ void CommunicationContractsTest::resolvesEveryOfferedTemplateField()
 void CommunicationContractsTest::coordinatesPreparationHandoffAndNoEmail()
 {
     Test::DeferredEmailBackend backend;
-    EmailService emailService; emailService.registerBackend(BackendId::Mailto, &backend);
+    EmailService emailService; emailService.registerBackend(BackendId::DefaultApp, &backend);
     CommunicationsController controller(&emailService);
     QVERIFY(!controller.setSubject(QStringLiteral("No preparation")));
     QVERIFY(controller.beginReviewPreparation());
@@ -1956,17 +1981,14 @@ void CommunicationContractsTest::coordinatesPreparationHandoffAndNoEmail()
     preparation.document.workflow = Workflow::StatusReport;
     preparation.document.defaultSubject = "Draft";
     preparation.document.emailFragment = "<p>Body</p>";
-    preparation.document.plainText = "Body";
     preparation.addressLater = true;
     QVERIFY(controller.setPreparation(preparation));
     QCOMPARE(controller.stageName(), QStringLiteral("reviewing"));
     QVERIFY(controller.diagnostic().isEmpty());
     QCOMPARE(controller.subject(), QStringLiteral("Draft"));
-    QCOMPARE(controller.plainText(), QStringLiteral("Body"));
     QVERIFY(controller.inlineHtmlMode());
     QVERIFY(controller.setHtmlBody(QStringLiteral("<p>Edited <b>body</b></p>")));
     QCOMPARE(controller.htmlBody(), QStringLiteral("<p>Edited <b>body</b></p>"));
-    QCOMPARE(controller.plainText(), QStringLiteral("Edited body"));
     QVERIFY(controller.appendAttachment({QUuid::createUuid(), QStringLiteral("/staged/user.txt"),
                                          QStringLiteral("user.txt"), QStringLiteral("text/plain"), 1, {}, false}));
     QCOMPARE(controller.attachmentNames(), QStringList{QStringLiteral("user.txt")});
