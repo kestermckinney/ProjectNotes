@@ -1147,19 +1147,25 @@ Item {
                 title: "View Options"
                 subtitle: "Control what the lists show. Changes apply immediately."
                 SettingsCheck {
+                    objectName: "viewOptionShowClosed"
                     label: qsTr("Show closed projects")
                     checked: DesktopAppController.showClosedProjects
                     onToggledValue: (v) => DesktopAppController.showClosedProjects = v
                 }
                 SettingsCheck {
+                    objectName: "viewOptionShowInternal"
                     label: qsTr("Show internal items")
                     checked: DesktopAppController.showInternalItems
                     onToggledValue: (v) => DesktopAppController.showInternalItems = v
                 }
                 SettingsCheck {
-                    label: qsTr("Only New and Assigned tracker items")
-                    checked: DesktopAppController.newAndAssignedOnly
-                    onToggledValue: (v) => DesktopAppController.newAndAssignedOnly = v
+                    // Same name and same sense as the View menu's own row —
+                    // the controller property is the inverse of both, so this
+                    // is the one view option that binds through a negation.
+                    objectName: "viewOptionShowResolved"
+                    label: qsTr("Show resolved items")
+                    checked: !DesktopAppController.newAndAssignedOnly
+                    onToggledValue: (v) => DesktopAppController.newAndAssignedOnly = !v
                 }
             }
 
@@ -1213,11 +1219,21 @@ Item {
         spacing: 8
         CheckBox {
             id: cb
+            // Named after the row so tests can drive the actual control.
+            objectName: chk.objectName !== "" ? chk.objectName + "Box" : ""
             checked: chk.checked
             padding: 0
             implicitWidth: 16; implicitHeight: 16
             Layout.alignment: Qt.AlignVCenter
-            onToggled: chk.toggledValue(checked)
+            onToggled: {
+                chk.toggledValue(checked)
+                // A click writes `checked` on the control itself, so until the
+                // source property next changes the row shows a value nothing
+                // has accepted yet — and it stays that way for good if the
+                // setter declines the change. Re-assert the binding so the row
+                // always ends up showing whatever the controller really holds.
+                checked = Qt.binding(function() { return chk.checked })
+            }
             indicator: Rectangle {
                 implicitWidth: 16; implicitHeight: 16; radius: 4
                 x: 0; y: cb.height/2 - height/2

@@ -25,7 +25,14 @@ Page {
                 label: qsTr("Show Closed Projects")
                 control: Switch {
                     checked: AppController.showClosedProjects
-                    onToggled: AppController.showClosedProjects = checked
+                    onToggled: {
+                        AppController.showClosedProjects = checked
+                        // A flick writes `checked` on the switch itself, so
+                        // until the property next changes the row shows a value
+                        // nothing has accepted yet. Re-assert the binding so it
+                        // always ends up showing what the controller holds.
+                        checked = Qt.binding(function() { return AppController.showClosedProjects })
+                    }
                 }
             }
 
@@ -36,15 +43,24 @@ Page {
                 label: qsTr("Internal Items")
                 control: Switch {
                     checked: AppController.showInternalItems
-                    onToggled: AppController.showInternalItems = checked
+                    onToggled: {
+                        AppController.showInternalItems = checked
+                        checked = Qt.binding(function() { return AppController.showInternalItems })
+                    }
                 }
             }
 
+            // Same name and same sense as the desktop app's View menu and its
+            // View Options screen — the controller property is the inverse of
+            // both, so this is the one row that binds through a negation.
             SettingsRow {
-                label: qsTr("New and Assigned Only")
+                label: qsTr("Show Resolved Items")
                 control: Switch {
-                    checked: AppController.newAndAssignedOnly
-                    onToggled: AppController.newAndAssignedOnly = checked
+                    checked: !AppController.newAndAssignedOnly
+                    onToggled: {
+                        AppController.newAndAssignedOnly = !checked
+                        checked = Qt.binding(function() { return !AppController.newAndAssignedOnly })
+                    }
                 }
             }
         }

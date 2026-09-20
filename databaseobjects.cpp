@@ -719,6 +719,19 @@ int DatabaseObjects::getProjectSidebarWidth()
     return value.toInt();
 }
 
+void DatabaseObjects::setProjectSidebarVisible(bool value)
+{
+    saveLocalParameter("UI:ProjectSidebarVisible", (value ? "1" : "0"));
+}
+
+bool DatabaseObjects::getProjectSidebarVisible()
+{
+    QString value = loadLocalParameter("UI:ProjectSidebarVisible");
+    if (value.isEmpty())
+        return true; // no saved preference — the panel starts out visible
+    return (bool)value.toUInt();
+}
+
 void DatabaseObjects::setUiZoomPercent(int percent)
 {
     saveLocalParameter("UI:ZoomPercent", QString::number(percent));

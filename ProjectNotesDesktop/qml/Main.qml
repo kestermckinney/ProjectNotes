@@ -531,7 +531,10 @@ ApplicationWindow {
         ProjectSidebar {
             id: sidebar
             Layout.fillHeight: true
+            // Only meaningful on the projects section, and hideable from there
+            // (View ▸ Show Project Folders, or the rail's panel button).
             visible: root.currentSection === "projects"
+                     && DesktopAppController.showProjectSidebar
             dragLayer: dragOverlay
             selectedProjectId: root.selectedProjectId
             onProjectActivated: (pid) => root.openProject(pid)

@@ -1893,6 +1893,16 @@ void DesktopAppController::setNewAndAssignedOnly(bool v)
     emit viewOptionsChanged();
 }
 
+bool DesktopAppController::showProjectSidebar() const
+{ return global_DBObjects.getProjectSidebarVisible(); }
+void DesktopAppController::setShowProjectSidebar(bool v)
+{
+    if (showProjectSidebar() == v)
+        return;
+    global_DBObjects.setProjectSidebarVisible(v);
+    emit viewOptionsChanged();
+}
+
 // ── Quick search ─────────────────────────────────────────────────────────────
 
 void DesktopAppController::setQuickSearch(QAbstractItemModel* model, const QString& text)

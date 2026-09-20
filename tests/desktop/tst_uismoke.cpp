@@ -203,6 +203,83 @@ private slots:
         assertClean("settings category tabs");
     }
 
+    // The Settings "View Options" checks and the app menu's View group drive the
+    // same controller properties, so they have to agree in both directions: a
+    // click in Settings has to move the menu's check mark, and a menu toggle has
+    // to move the Settings row — including after the row has been clicked once,
+    // which writes `checked` on the control directly.
+    void test_02c_viewOptionChecksTrackTheController()
+    {
+        clearWarnings();
+        nav("selectSection", "settings");
+        QQuickWindow* window = qobject_cast<QQuickWindow*>(root);
+        QVERIFY(window);
+        QQuickItem* settings = findVisualChild(window->contentItem(), QStringLiteral("settingsPage"));
+        QQuickItem* pages = findVisualChild(window->contentItem(), QStringLiteral("settingsPages"));
+        QVERIFY(settings);
+        QVERIFY(pages);
+        QVariant selected;
+        QVERIFY(QMetaObject::invokeMethod(settings, "selectTab", Q_RETURN_ARG(QVariant, selected),
+                                          Q_ARG(QVariant, 8)));
+        QVERIFY(selected.toBool());
+        QTRY_COMPARE_WITH_TIMEOUT(pages->property("currentIndex").toInt(), 8, 1000);
+
+        QObject* box = root->findChild<QObject*>(QStringLiteral("viewOptionShowClosedBox"));
+        QVERIFY2(box, "View Options 'Show closed projects' checkbox not found");
+
+        const bool orig = c->showClosedProjects();
+
+        // Settings -> controller (what the checkbox click does).
+        QVERIFY(QMetaObject::invokeMethod(box, "click"));
+        QTRY_COMPARE_WITH_TIMEOUT(c->showClosedProjects(), !orig, 1000);
+
+        // Controller -> Settings (what the View menu does), after the click.
+        c->setShowClosedProjects(orig);
+        QTRY_COMPARE_WITH_TIMEOUT(box->property("checked").toBool(), orig, 1000);
+
+        c->setShowClosedProjects(!orig);
+        QTRY_COMPARE_WITH_TIMEOUT(box->property("checked").toBool(), !orig, 1000);
+
+        c->setShowClosedProjects(orig);
+        QTRY_COMPARE_WITH_TIMEOUT(box->property("checked").toBool(), orig, 1000);
+
+        // The View menu's own check marks are bound to the same properties, so
+        // they have to follow a change made from Settings, and the Settings row
+        // has to follow a change made from the menu.
+        QObject* appMenu = root->findChild<QObject*>(QStringLiteral("appMenu"));
+        QVERIFY2(appMenu, "app menu not found");
+        QCOMPARE(menuToggleState(appMenu, QStringLiteral("toggle_closed")), orig);
+
+        QVERIFY(QMetaObject::invokeMethod(appMenu, "_act",
+                                          Q_ARG(QVariant, QStringLiteral("toggle_closed"))));
+        QTRY_COMPARE_WITH_TIMEOUT(c->showClosedProjects(), !orig, 1000);
+        QTRY_COMPARE_WITH_TIMEOUT(box->property("checked").toBool(), !orig, 1000);
+        QCOMPARE(menuToggleState(appMenu, QStringLiteral("toggle_closed")), !orig);
+
+        QVERIFY(QMetaObject::invokeMethod(box, "click"));
+        QTRY_COMPARE_WITH_TIMEOUT(c->showClosedProjects(), orig, 1000);
+        QCOMPARE(menuToggleState(appMenu, QStringLiteral("toggle_closed")), orig);
+
+        // "Show resolved items" reads the same way in both places, but the
+        // controller property (newAndAssignedOnly) is its inverse — so this row
+        // is the one that binds through a negation, in both directions.
+        QObject* resolved = root->findChild<QObject*>(QStringLiteral("viewOptionShowResolvedBox"));
+        QVERIFY2(resolved, "View Options 'Show resolved items' checkbox not found");
+        const bool showResolved = !c->newAndAssignedOnly();
+        QCOMPARE(resolved->property("checked").toBool(), showResolved);
+        QCOMPARE(menuToggleState(appMenu, QStringLiteral("toggle_resolved")), showResolved);
+
+        QVERIFY(QMetaObject::invokeMethod(appMenu, "_act",
+                                          Q_ARG(QVariant, QStringLiteral("toggle_resolved"))));
+        QTRY_COMPARE_WITH_TIMEOUT(c->newAndAssignedOnly(), showResolved, 1000);
+        QTRY_COMPARE_WITH_TIMEOUT(resolved->property("checked").toBool(), !showResolved, 1000);
+
+        QVERIFY(QMetaObject::invokeMethod(resolved, "click"));
+        QTRY_COMPARE_WITH_TIMEOUT(c->newAndAssignedOnly(), !showResolved, 1000);
+        QCOMPARE(menuToggleState(appMenu, QStringLiteral("toggle_resolved")), showResolved);
+        assertClean("view option checkbox sync");
+    }
+
     void test_03_itemDetail()
     {
         clearWarnings();
@@ -423,6 +500,23 @@ private:
                 return match;
         }
         return nullptr;
+    }
+
+    // The `on` flag the app menu's View group currently shows for a toggle
+    // action — i.e. whether that row would draw a check mark right now.
+    static bool menuToggleState(QObject* appMenu, const QString& action)
+    {
+        const QVariantList groups = appMenu->property("groups").toList();
+        for (const QVariant& g : groups) {
+            const QVariantList items = g.toMap().value(QStringLiteral("items")).toList();
+            for (const QVariant& i : items) {
+                const QVariantMap item = i.toMap();
+                if (item.value(QStringLiteral("action")).toString() == action)
+                    return item.value(QStringLiteral("on")).toBool();
+            }
+        }
+        qWarning() << "no menu item with action" << action;
+        return false;
     }
 
     static QString firstId(QAbstractItemModel* m)

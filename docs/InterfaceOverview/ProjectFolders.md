@@ -4,6 +4,10 @@ Project Folders let you group projects in the sidebar — for example a **Favori
 
 Folders, their icons and colors, and which projects belong to them are stored with your synced data, so they follow you across devices that share the same database.
 
+## Hiding the Sidebar
+
+The sidebar only appears on the [Project List Page](<ProjectListPage.md>), and you can put it away when you want the full window for the project cards. Choose **Show Project Folders** from the app menu's **View** group, or click the panel button near the bottom of the icon rail. Either one toggles the panel, and Project Notes remembers the choice for the next launch. The rail button is dimmed on other sections, since there is no sidebar to hide there.
+
 ## Creating a Folder
 
 Folders are created and managed from **Settings > Project Folders**.

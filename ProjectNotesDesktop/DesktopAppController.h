@@ -103,6 +103,9 @@ class DesktopAppController : public QObject
     Q_PROPERTY(bool showClosedProjects READ showClosedProjects WRITE setShowClosedProjects NOTIFY viewOptionsChanged)
     Q_PROPERTY(bool showInternalItems  READ showInternalItems  WRITE setShowInternalItems  NOTIFY viewOptionsChanged)
     Q_PROPERTY(bool newAndAssignedOnly READ newAndAssignedOnly WRITE setNewAndAssignedOnly NOTIFY viewOptionsChanged)
+    // Whether the project folder panel is shown beside the icon rail. Persisted
+    // per-user like the panel's width; toggled from the View menu and the rail.
+    Q_PROPERTY(bool showProjectSidebar READ showProjectSidebar WRITE setShowProjectSidebar NOTIFY viewOptionsChanged)
 
     // Bumped (coalesced per event-loop turn) whenever the sidebar's per-folder
     // project snapshots go stale — projects proxy reset/filter/data change or a
@@ -318,6 +321,8 @@ public:
     void setShowInternalItems(bool v);
     bool newAndAssignedOnly() const;
     void setNewAndAssignedOnly(bool v);
+    bool showProjectSidebar() const;
+    void setShowProjectSidebar(bool v);
 
     // ── Quick search ─────────────────────────────────────────────────────────
     Q_INVOKABLE void setQuickSearch(QAbstractItemModel* model, const QString& text);

@@ -201,6 +201,10 @@ public:
     int getProjectDetailHeaderHeight();
     void setProjectSidebarWidth(int width);
     int getProjectSidebarWidth();
+    // Whether the project folder panel is shown at all. Defaults to visible the
+    // first time the app runs, before anything has been saved.
+    void setProjectSidebarVisible(bool value);
+    bool getProjectSidebarVisible();
     // UI zoom (uiScale), persisted as a whole percentage (e.g. 130 for 1.30x).
     void setUiZoomPercent(int percent);
     int getUiZoomPercent();

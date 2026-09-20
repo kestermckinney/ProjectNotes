@@ -51,7 +51,7 @@ The **View Options** section holds three checkboxes that control what the Projec
 
 - **Show closed projects** — Shows or hides projects whose **Project Status** is **Closed** on the [Project List Page](<ProjectListPage.md>).
 - **Show internal items** — Shows or hides notes and tracker items marked **Internal**, and the earned value/budget figures on the Project List and Project Page. See [Presenting to Clients](<PresentingToClients.md>).
-- **Only New and Assigned tracker items** — When checked, hides tracker items whose **Status** is **Resolved**, **Deferred**, or **Canceled**, on the [Item Tracker Page](<ItemTrackerPage.md>).
+- **Show resolved items** — When cleared, hides tracker items whose **Status** is **Resolved**, **Deferred**, or **Canceled**, on the [Item Tracker Page](<ItemTrackerPage.md>), leaving only **New** and **Assigned** items.
 
 These same three toggles are also reachable from the [Application Menu](<ApplicationMenu.md>)'s **View** group as **Show Closed Projects**, **Show Internal / Budget Items**, and **Show Resolved Items** — the two locations stay in sync.
 

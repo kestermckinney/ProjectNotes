@@ -466,6 +466,13 @@ private slots:
         c->setNewAndAssignedOnly(!d);
         QCOMPARE(c->newAndAssignedOnly(), !d);
         c->setNewAndAssignedOnly(d);
+
+        // Show Project Folders defaults to on, and round-trips like the rest.
+        QVERIFY(c->showProjectSidebar());
+        c->setShowProjectSidebar(false);
+        QCOMPARE(c->showProjectSidebar(), false);
+        c->setShowProjectSidebar(true);
+        QCOMPARE(c->showProjectSidebar(), true);
     }
 
     // Regression: toggling a view option has to re-query the models it filters.
