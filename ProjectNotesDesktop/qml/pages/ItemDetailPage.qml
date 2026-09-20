@@ -161,7 +161,8 @@ Item {
             Text { text: qsTr("Description"); color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: Math.max(76, descArea.contentHeight + 16)
+                Layout.preferredHeight: Math.max(76, descArea.contentHeight + descArea.topPadding
+                                                 + descArea.bottomPadding + 14)
                 radius: Theme.radiusSm
                 color: Theme.surface
                 border.color: descArea.activeFocus ? Theme.accent : Theme.border
@@ -176,6 +177,7 @@ Item {
                     font.pixelSize: Theme.fontBody
                     onTextChanged: page._changed = true
                     SpellCheckField { dialog: spellDialog }
+                    CaretFollow {}
                 }
             }
 
@@ -344,6 +346,7 @@ Item {
                             background: null
                             font.pixelSize: Theme.fontBody
                             SpellCheckField { dialog: spellDialog }
+                            CaretFollow {}
                             onEditingFinished: cCard._saveComment()
                         }
                     }

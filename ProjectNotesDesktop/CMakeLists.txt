@@ -109,6 +109,7 @@ set(DESKTOP_QML_FILES
     qml/NoteFormatToolbar.qml
     qml/RichTextEditor.qml
     qml/SpellCheckField.qml
+    qml/CaretFollow.qml
     qml/SpellSquiggle.qml
     qml/SpellCheckDialog.qml
     qml/RecipientSelectionPane.qml

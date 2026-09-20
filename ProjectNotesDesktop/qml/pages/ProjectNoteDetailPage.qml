@@ -489,7 +489,9 @@ Item {
                                     Text { text: qsTr("Description"); color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
                                     Rectangle {
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: Math.max(56, aiDesc.contentHeight + 14)
+                                        Layout.preferredHeight: Math.max(56, aiDesc.contentHeight
+                                                                         + aiDesc.topPadding
+                                                                         + aiDesc.bottomPadding + 14)
                                         radius: Theme.radiusSm
                                         color: Theme.surface
                                         border.color: aiDesc.activeFocus ? Theme.accent : Theme.border
@@ -504,6 +506,7 @@ Item {
                                             font.pixelSize: Theme.fontBody
                                             onEditingFinished: ai._save()
                                             SpellCheckField { dialog: spellDialog }
+                                            CaretFollow {}
                                         }
                                     }
                                 }

@@ -90,7 +90,11 @@ ColumnLayout {
     }
     Rectangle {
         Layout.fillWidth: true
-        Layout.preferredHeight: Math.max(root.minimumHeight, textEdit.contentHeight + 32)
+        // The box has to clear the editor's own top/bottom padding as well as
+        // the margins below, or the last line is clipped as the note grows.
+        Layout.preferredHeight: Math.max(root.minimumHeight,
+                                         textEdit.contentHeight + textEdit.topPadding
+                                         + textEdit.bottomPadding + 23)
         radius: Theme.radiusSm
         color: Theme.surface
         border.color: textEdit.activeFocus ? Theme.accent : Theme.border
@@ -121,6 +125,7 @@ ColumnLayout {
                 insertFields: root.insertFields
                 onInsertFieldRequested: (path) => root.insertFieldRequested(path)
             }
+            CaretFollow {}
         }
     }
     SpellCheckDialog { id: spellDialog }
