@@ -25,6 +25,15 @@ OperationState stateFromName(const QString &value) {
     if (value == "draft-created") return OperationState::DraftCreated; if (value == "handoff-requested") return OperationState::HandoffRequested;
     return OperationState::Unknown;
 }
+// Qt normalizes every path it hands back to '/' separators, including on
+// Windows, so containment checks compare against a '/' prefix. Using
+// QDir::separator() here would never match a Windows path.
+constexpr QChar kPathSeparator = u'/';
+#ifdef Q_OS_WIN
+constexpr Qt::CaseSensitivity kPathCase = Qt::CaseInsensitive;
+#else
+constexpr Qt::CaseSensitivity kPathCase = Qt::CaseSensitive;
+#endif
 void fail(ServiceError *error, const QString &code, const QString &text = {}) { if (error) *error = {code, text}; }
 QJsonObject artifactJson(const Artifact &a) { return {{"id", a.artifactId.toString(QUuid::WithoutBraces)}, {"path", a.absolutePath}, {"name", a.displayName}, {"mime", a.mimeType}, {"size", QString::number(a.byteSize)}, {"sha256", QString::fromLatin1(a.sha256.toHex())}, {"generated", a.generatedByApp}}; }
 Artifact artifactFromJson(const QJsonObject &o) { Artifact a; a.artifactId = QUuid(o["id"].toString()); a.absolutePath=o["path"].toString(); a.displayName=o["name"].toString(); a.mimeType=o["mime"].toString(); a.byteSize=o["size"].toString().toLongLong(); a.sha256=QByteArray::fromHex(o["sha256"].toString().toLatin1()); a.generatedByApp=o["generated"].toBool(); return a; }
@@ -120,9 +129,9 @@ ArtifactStoreResult ArtifactStore::registerGeneratedFile(const QUuid &id, const 
     if (!readManifest(id, &manifest, &result.error)) return result;
     if (!validFileName(displayName)) { result.error.code = "artifact-name-invalid"; return result; }
     const QFileInfo file(path);
-    const QString directory = QDir::cleanPath(QFileInfo(QDir(operationDirectory(id)).filePath(QStringLiteral("artifacts"))).absoluteFilePath()) + QDir::separator();
+    const QString directory = QDir::cleanPath(QFileInfo(QDir(operationDirectory(id)).filePath(QStringLiteral("artifacts"))).absoluteFilePath()) + kPathSeparator;
     const QString absolutePath = QDir::cleanPath(file.absoluteFilePath());
-    if (!file.exists() || !file.isFile() || file.isSymLink() || !absolutePath.startsWith(directory)) { result.error.code = "artifact-path-rejected"; return result; }
+    if (!file.exists() || !file.isFile() || file.isSymLink() || !absolutePath.startsWith(directory, kPathCase)) { result.error.code = "artifact-path-rejected"; return result; }
     for (const Artifact &artifact : manifest.artifacts)
         if (artifact.absolutePath == absolutePath) {
             result.error.code = "artifact-already-registered";
@@ -151,7 +160,7 @@ bool ArtifactStore::publish(const Artifact &artifact, const QString &destination
 }
 
 QList<OperationManifest> ArtifactStore::loadRecoveryStatus(QList<ServiceError> *diagnostics) { QList<OperationManifest> result; QDir root(stagingRoot()); for (const auto &entry:root.entryList(QDir::Dirs|QDir::NoDotAndDotDot)) { const QUuid id(entry); if (id.isNull()) continue; OperationManifest m; ServiceError error; if (readManifest(id,&m,&error)) result.append(m); else { QFile broken(root.filePath(entry+QStringLiteral("/manifest.json"))); if (broken.exists()) broken.rename(root.filePath(entry+QStringLiteral("/manifest.corrupt.json"))); if (diagnostics) diagnostics->append(error); } } return result; }
-bool ArtifactStore::cleanup(const QUuid &id, ServiceError *error) { OperationManifest m; if (!readManifest(id,&m,error)) return false; const QString dir=QFileInfo(operationDirectory(id)).absoluteFilePath()+QDir::separator(); for (const auto &a:m.artifacts) if (!QFileInfo(a.absolutePath).absoluteFilePath().startsWith(dir) || QFileInfo(a.absolutePath).isSymLink()) { fail(error,"cleanup-path-rejected"); return false; } if (!QDir(operationDirectory(id)).removeRecursively()) { fail(error,"cleanup-failed"); return false; } return true; }
+bool ArtifactStore::cleanup(const QUuid &id, ServiceError *error) { OperationManifest m; if (!readManifest(id,&m,error)) return false; const QString dir=QDir::cleanPath(QFileInfo(operationDirectory(id)).absoluteFilePath())+kPathSeparator; for (const auto &a:m.artifacts) if (!QDir::cleanPath(QFileInfo(a.absolutePath).absoluteFilePath()).startsWith(dir, kPathCase) || QFileInfo(a.absolutePath).isSymLink()) { fail(error,"cleanup-path-rejected"); return false; } if (!QDir(operationDirectory(id)).removeRecursively()) { fail(error,"cleanup-failed"); return false; } return true; }
 
 bool ArtifactStore::cleanupAll(ServiceError *error)
 {
