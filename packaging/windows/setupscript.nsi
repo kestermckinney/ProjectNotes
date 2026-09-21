@@ -105,6 +105,24 @@ Section "MainSection" SEC01
   Delete "$INSTDIR\plugins\forms\dialogFileFinder.ui"
   Delete "$INSTDIR\plugins\forms\dialogClassification.ui"
 
+  ; The three report plugins and the Meeting and Email Types settings are native
+  ; as of 6.2. Remove the retired scripts, forms and cached bytecode before
+  ; copying the current payload so an upgrade cannot show their menus again.
+  Delete "$INSTDIR\plugins\exportnotes_plugin.py"
+  Delete "$INSTDIR\plugins\exportstatusreport_plugin.py"
+  Delete "$INSTDIR\plugins\exporttrackeritems_plugin.py"
+  Delete "$INSTDIR\plugins\__pycache__\exportnotes_plugin*.pyc"
+  Delete "$INSTDIR\plugins\__pycache__\exportstatusreport_plugin*.pyc"
+  Delete "$INSTDIR\plugins\__pycache__\exporttrackeritems_plugin*.pyc"
+  Delete "$INSTDIR\plugins\__pycache__\exportnotes_plugin*.pyo"
+  Delete "$INSTDIR\plugins\__pycache__\exportstatusreport_plugin*.pyo"
+  Delete "$INSTDIR\plugins\__pycache__\exporttrackeritems_plugin*.pyo"
+  Delete "$INSTDIR\plugins\forms\dialogExportNotesOptions.ui"
+  Delete "$INSTDIR\plugins\forms\dialogExportStatusReportOptions.ui"
+  Delete "$INSTDIR\plugins\forms\dialogExportTrackerOptions.ui"
+  Delete "$INSTDIR\plugins\forms\dialogMeetingEmailTemplate.ui"
+  Delete "$INSTDIR\plugins\forms\dialogMeetingEmailTypes.ui"
+
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
 
@@ -264,9 +282,6 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\plugins\base_plugin.py"
   File "${DEPLOY_DIR}\plugins\base_plugin_settings.py"
   File "${DEPLOY_DIR}\plugins\excelkill_plugin.py"
-  File "${DEPLOY_DIR}\plugins\exportnotes_plugin.py"
-  File "${DEPLOY_DIR}\plugins\exportstatusreport_plugin.py"
-  File "${DEPLOY_DIR}\plugins\exporttrackeritems_plugin.py"
    File "${DEPLOY_DIR}\plugins\myshortcuts_plugin.py"
   File "${DEPLOY_DIR}\plugins\newchangeorder_plugin.py"
   File "${DEPLOY_DIR}\plugins\newmsproject_plugin.py"
@@ -291,11 +306,6 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\plugins\forms\dialogDuplicateFilesFound.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogEditor.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogExportLocation.ui"
-  File "${DEPLOY_DIR}\plugins\forms\dialogExportNotesOptions.ui"
-  File "${DEPLOY_DIR}\plugins\forms\dialogExportStatusReportOptions.ui"
-  File "${DEPLOY_DIR}\plugins\forms\dialogExportTrackerOptions.ui"
-   File "${DEPLOY_DIR}\plugins\forms\dialogMeetingEmailTemplate.ui"
-  File "${DEPLOY_DIR}\plugins\forms\dialogMeetingEmailTypes.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogMyShortcuts.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogOutlookIntegrationOptions.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogSettingsMigrator.ui"

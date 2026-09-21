@@ -114,11 +114,10 @@ int main(int argc, char* argv[])
 #endif
 
     // Must be set before QApplication is constructed, or any Python plugin that
-    // imports PyQt6.QtWebEngineWidgets (exportnotes_plugin.py,
-    // exportstatusreport_plugin.py, exporttrackeritems_plugin.py) fails to load
-    // with "QtWebEngineWidgets must be imported or Qt.AA_ShareOpenGLContexts
-    // must be set before a QCoreApplication instance is created" — matches the
-    // Widgets app's main.cpp, which sets this for the same reason.
+    // imports PyQt6.QtWebEngineWidgets fails to load with "QtWebEngineWidgets
+    // must be imported or Qt.AA_ShareOpenGLContexts must be set before a
+    // QCoreApplication instance is created". No bundled plugin still does this
+    // now that the report plugins are native, but user plugins may.
     QCoreApplication::setAttribute(Qt::ApplicationAttribute::AA_ShareOpenGLContexts);
 
     // QApplication (not QGuiApplication): ProjectNotesCore surfaces database

@@ -2,7 +2,7 @@
 
 `synthetic-project.json` is deliberately fictional and contains the four workflow inputs used by the initial baseline capture. It covers managing/client/partner roles, special HTML characters, internal and external tracker records, multiple statuses/types, attendees, action items, recipient sources, reporting dates and status-report calculations. The broader matrix still needed for T00 is recorded in `docs/email-build/Progress.md`.
 
-Run the capture without loading a plugin or Qt WebEngine:
+The three report plugins it reads (`exportnotes_plugin.py`, `exportstatusreport_plugin.py`, `exporttrackeritems_plugin.py`) have been deleted now that the reports are native, so the capture only runs against an earlier revision; `baseline-summary.json` keeps the captured result. Run it there without loading a plugin or Qt WebEngine:
 
 ```sh
 python3 tests/desktop/fixtures/email/capture_legacy_baselines.py --output /tmp/projectnotes-email-baseline

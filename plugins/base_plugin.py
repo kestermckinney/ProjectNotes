@@ -3,12 +3,9 @@ import sys
 import platform
 import threading
 import time
-import json
 import projectnotes
 
 from includes.common import ProjectNotesCommon
-from includes.noteformatter import NoteFormatter
-from includes.collaboration_tools import CollaborationTools
 from includes.graphapi_tools import GraphAPITools, TokenAPI
 if (platform.system() == 'Windows'):
     from includes.outlook_tools import ProjectNotesOutlookTools
@@ -36,7 +33,6 @@ pluginmenus = [
     {"menutitle" : "Copy Email to Clipboard", "function" : "menu_copy_attendee_email", "tablefilter" : "meeting_attendees", "submenu" : "", "dataexport" : "meeting_attendees"}, 
     {"menutitle" : "Copy Path to Clipboard", "function" : "menu_copy_path", "tablefilter" : "project_locations", "submenu" : "", "dataexport" : "project_locations"}, 
     {"menutitle" : "Script Editor", "function" : "menu_open_editor", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : ""},
-    {"menutitle" : "Send Meeting Notes", "function" : "menu_send_notes", "tablefilter" : "", "submenu" : "", "dataexport" : "project_notes"},
 ]
 
 # events must have a data structure and data view specified
@@ -60,10 +56,9 @@ pluginmenus = [
 tapi = TokenAPI()
 
 class BasePlugins:
-    def __init__(self, tapi):
+    def __init__(self, tapi=None):
         super().__init__()
         self.pnc = ProjectNotesCommon()
-        self.ct = CollaborationTools(tapi)
 
     def copy_email_to_clipboard(self, xmlstr):
 
@@ -155,89 +150,16 @@ class BasePlugins:
             self.pnc.exec_program( EditorFullPath )
         return ""
 
-    def send_an_email(self, xmlstr, subject, content, attachment, invitees):
-        self.ct.send_an_email(xmlstr, subject, content, attachment, invitees)
-
-    def schedule_a_meeting(self, xmlstr, subject, content, attachment, invitees):
-        self.ct.schedule_a_meeting(xmlstr, subject, content, attachment, invitees)
-
-def populate_dynamic_menu(json_string):
-    global json_menu_data
+def populate_dynamic_menu():
     global pluginmenus
 
-    # nothing was saved
-    if (json_string is None or json_string == ""):
-        return
-
-    json_menu_data = json.loads(json_string)
     use_graph_api = ((pnc.get_plugin_setting("IntegrationType", "Outlook Integration") or "") == "Office 365 Application")
-
-    if (len(json_menu_data) > 0):
-        # Populate the table with data
-        # make sure to filter the xml to the top level.  We don't want to get the full projeect xml
-        for row, row_data in enumerate(json_menu_data): 
-            tablefilter = None
-            dataexport = None
-
-            if row_data["Type"] == "Email":
-                if row_data["Invitees"] == "Attachment Only":
-                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menu_send_email",  "tablefilter" : "projects/project_people/people/project_notes/meeting_attendees/project_locations", "submenu" : "Send Email", "dataexport" : row_data["Data Type"], "parameter" : row_data["Name"] })
-                else:
-                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menu_send_email",  "tablefilter" : "projects/project_people/people/project_notes/meeting_attendees", "submenu" : "Send Email", "dataexport" : row_data["Data Type"], "parameter" : row_data["Name"] })
-            else:
-                pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menu_schedule_meeting",  "tablefilter" : "projects/project_people/people/project_notes/meeting_attendees/project_locations", "submenu" : "Schedule Meeting", "dataexport" : row_data["Data Type"], "parameter" : row_data["Name"] })
 
     if (platform.system() == 'Windows' and not use_graph_api):
         pluginmenus.append({"menutitle" : "Export Contacts to Outlook", "function" : "menu_export_contacts_to_outlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : ""})
         pluginmenus.append({"menutitle" : "Import Contacts from Outlook", "function" : "menu_import_contacts_from_outlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : ""})
         pluginmenus.append({"menutitle" : "Download Emails from Outlook", "function" : "menu_download_emails_from_outlook", "tablefilter" : "projects/project_locations", "submenu" : "Utilities", "dataexport" : "projects", "parameter" : ""})
 
-
-def menu_schedule_meeting(xmlstr, parameter):
-    global json_menu_data
-
-    # find meeting type
-    nam = None
-    for d in json_menu_data:
-        itemname = d.get('Name')
-        if itemname == parameter:
-            nam = d
-
-    if nam is None or len(nam) == 0:
-        QMessageBox.critical(QApplication.activeWindow(), "Meeting Type Error", "Unable schedule a meeting.  The meeting type is not configured correctly.")
-        return ""
-
-    template = nam.get('Template')
-    invitees = nam.get('Invitees')
-    subject = nam.get('Subject')
-
-    baseplugin = BasePlugins(tapi)
-    baseplugin.schedule_a_meeting(xmlstr, subject, template, None, invitees)
-
-    return ""
-
-def menu_send_email(xmlstr, parameter):
-    global json_menu_data
-
-    # find meeting type
-    nam = None
-    for d in json_menu_data:
-        itemname = d.get('Name')
-        if itemname == parameter:
-            nam = d
-
-    if nam is None or len(nam) == 0:
-        QMessageBox.critical(QApplication.activeWindow(), "Meeting Type Error", "Unable schedule a meeting.  The meeting type is not configured correctly.")
-        return ""
-
-    template = nam.get('Template')
-    invitees = nam.get('Invitees')
-    subject = nam.get('Subject')
-
-    baseplugin = BasePlugins(tapi)
-    baseplugin.send_an_email(xmlstr, subject, template, None, invitees)
-
-    return ""
 
 def menu_copy_contact_email(xmlstr, parameter):
     baseplugin = BasePlugins(tapi)
@@ -267,13 +189,6 @@ def menu_open_editor(parameter):
 
     return ""
 
-def menu_send_notes(xmlstr, parameter):
-    baseplugin = BasePlugins(tapi)
-    nf = NoteFormatter(xmlstr)
-    baseplugin.send_an_email(xmlstr, nf.get_subject(), nf.get_html(), None, "Full Project Team")
-
-    return ""
-
 def menu_import_contacts_from_outlook(parameter):
     pnot = ProjectNotesOutlookTools()
     return pnot.import_contacts("")
@@ -295,6 +210,4 @@ def menu_download_emails_from_outlook(xmlstr, parameter):
     return ""
 
 pnc = ProjectNotesCommon()
-json_menu_data = None
-menu_data = pnc.get_plugin_setting("MeetingEmailTypes", "Meeting and Email Types")
-populate_dynamic_menu(menu_data)
+populate_dynamic_menu()

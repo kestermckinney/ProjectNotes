@@ -19,6 +19,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[4]
 FIXTURE_DIR = Path(__file__).resolve().parent
 
+# The three report plugins were deleted once the native reports replaced them,
+# so this tool only runs against a checkout that still carries their sources.
+LEGACY_SOURCES = (
+    "plugins/exporttrackeritems_plugin.py",
+    "plugins/exportstatusreport_plugin.py",
+    "plugins/exportnotes_plugin.py",
+)
+
 
 def load_functions(relative_path: str, names: set[str], namespace: dict) -> None:
     """Compile selected pure function definitions from a legacy plugin."""
@@ -84,6 +92,16 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True, help="empty/new directory for generated baselines")
     args = parser.parse_args()
+
+    absent = [name for name in LEGACY_SOURCES if not (ROOT / name).is_file()]
+    if absent:
+        raise SystemExit(
+            "Legacy report plugin sources are no longer in this checkout: "
+            + ", ".join(absent)
+            + ".\nRun this capture from a revision that predates their removal; "
+            "baseline-summary.json holds the captured result."
+        )
+
     data = json.loads((FIXTURE_DIR / "synthetic-project.json").read_text(encoding="utf-8"))
     args.output.mkdir(parents=True, exist_ok=True)
 

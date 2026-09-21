@@ -78,7 +78,8 @@ std::optional<ReportDocument> TrackerItemsReportBuilder::build(const TrackerItem
  ReportDocument r;
  r.workflow = Workflow::TrackerItemsReport;
  r.emailFragment = inlineEmailFragment(fragment);
- // Keep the exported report's presentation consistent with exporttrackeritems_plugin.py.
+ // Presentation matches the retired exporttrackeritems_plugin.py, whose captured
+ // baseline lives in tests/desktop/fixtures/email/baseline-summary.json.
  r.htmlDocument = QStringLiteral(R"HTML(<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=1024">
 <style>

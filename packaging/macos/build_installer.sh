@@ -249,6 +249,14 @@ IFS_PLUGIN_FILES=(
 
 RETIRED_PLUGIN_FILES=(
     "threads/filefinder_thread.py"
+    "plugins/exportnotes_plugin.py"
+    "plugins/exportstatusreport_plugin.py"
+    "plugins/exporttrackeritems_plugin.py"
+    "plugins/forms/dialogExportNotesOptions.ui"
+    "plugins/forms/dialogExportStatusReportOptions.ui"
+    "plugins/forms/dialogExportTrackerOptions.ui"
+    "plugins/forms/dialogMeetingEmailTemplate.ui"
+    "plugins/forms/dialogMeetingEmailTypes.ui"
     "plugins/forms/dialogFileFinder.ui"
     "plugins/forms/dialogClassification.ui"
 )

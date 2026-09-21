@@ -55,25 +55,6 @@
 
 namespace {
 
-// The native project report routes replace only these three actions from the
-// bundled export plugins.  Match both the bundled module filename and its
-// callback, rather than a display title or a generic function name, so user
-// plugins and the legacy plugins' unrelated Settings actions still coexist.
-bool isMigratedBundledReportAction(const Plugin *plugin, const PluginMenu &menu)
-{
-    if (!plugin)
-        return false;
-
-    const QString module = QFileInfo(plugin->modulepath()).fileName();
-    const QString function = menu.functionname();
-    return (module == QLatin1String("exportnotes_plugin.py")
-            && function == QLatin1String("menu_export_meeting_notes"))
-        || (module == QLatin1String("exportstatusreport_plugin.py")
-            && function == QLatin1String("menu_export_status_report"))
-        || (module == QLatin1String("exporttrackeritems_plugin.py")
-            && function == QLatin1String("menu_export_tracker_items"));
-}
-
 // Every generated report starts from the project team, excluding the project
 // manager, before any saved audience preset is applied.
 PN::Comm::AudienceRule projectTeamAudienceRule()
@@ -2451,8 +2432,6 @@ QVariantList DesktopAppController::pluginMenusForTable(const QString& table)
             continue;
         for (const PluginMenu& m : p->pythonplugin().menus()) {
             if (m.dataexport().compare(table, Qt::CaseInsensitive) != 0)
-                continue;
-            if (isMigratedBundledReportAction(p, m))
                 continue;
 
             m_pluginMenuCache.append({ p, m.functionname(), m.tablefilter(), m.parameter() });

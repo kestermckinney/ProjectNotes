@@ -159,6 +159,16 @@ if(NOT APPLE)
     )
     install(SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/RemoveLegacyFileFinder.cmake")
 
+    # Same story for the three report plugins and the Meeting and Email Types
+    # settings forms: reports, email templates and meeting templates are native,
+    # so an upgrade must not leave their scripts behind for PluginManager to load.
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/packaging/RemoveLegacyReportPlugins.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/RemoveLegacyReportPlugins.cmake"
+        @ONLY
+    )
+    install(SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/RemoveLegacyReportPlugins.cmake")
+
     # Install runtime assets alongside the executable so packaged builds
     # (e.g. Flatpak installs to /app/bin) can find them via appResourcesPath().
     # The IFS ERP plugins are intentionally excluded from this (Flatpak/Linux)
@@ -313,6 +323,12 @@ if(WIN32)
         # 8. Application content
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/plugins"    "${DEPLOY_DIR}/plugins"
+
+        # copy_directory merges, so retired plugins linger in an existing deploy
+        # tree. Drop the report plugins and legacy meeting/email forms again.
+        COMMAND ${CMAKE_COMMAND}
+            "-DPN_PLUGIN_ROOT=${DEPLOY_DIR}/plugins"
+            -P "${CMAKE_CURRENT_BINARY_DIR}/RemoveLegacyReportPlugins.cmake"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/threads"    "${DEPLOY_DIR}/threads"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
