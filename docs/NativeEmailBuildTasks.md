@@ -217,11 +217,27 @@ Implement validated executable selection, UTF-8 body-file staging, compose gramm
 
 Accept: fake-process argument assertions for punctuation/Unicode and files; manual release/ESR tests on each supported OS and separate sandbox tests. Reopening/activation does not launch a duplicate compose request. No extension dependency introduced without a scope decision.
 
-## T19 — macOS Mail bridge (superseded)
+## T19 — macOS Mail and Calendar bridge
 
-A native Apple Events (Mail)/EventKit (Calendar) bridge was evaluated and rejected: EventKit exposes no public API to add attendees, so it cannot send meeting invitations, and Mail.app AppleScript/Scripting Bridge does not reliably render real HTML in a compose window. `MacMailBackend` was removed.
+`BackendId::MacMail` ("MacOS Email and Calendar" in Settings, the first-run default on macOS) drives Mail.app and Calendar.app natively. On other hosts the same id falls back to the `.eml`/`.ics` file adapters.
 
-Instead, `BackendId::MacMail` ("MacOS Email and Calendar" in Settings) registers the same file-based `EmlFileEmailBackend`/`IcsFileMeetingBackend` adapters as Default Application. It adds a configured `EmailSettingsStore::senderAddress()`, written as the `.eml` `From:` header and used as the `.ics` `ORGANIZER` fallback when the project has no project manager email, and is the first-run default on macOS.
+**Email** (`ProjectNotesEmail/backends/MacMailBackend.mm`). The report HTML is converted to an `NSAttributedString` and handed to `NSSharingService` (`NSSharingServiceNameComposeEmail`), so Mail opens a compose window with the formatted body. That service has one flat recipient list and no attachment slot. To and Cc both become recipients, Bcc is dropped, and attachments are not carried. `EmailContentBuilder` raises the `mac-mail-bcc-unsupported` and `mac-mail-attachments-unsupported` warnings during preparation. The desktop review dialogs do not display them yet, so today the reviewer is not told. No Apple Events are sent to Mail and no Automation consent is needed.
+
+**Meetings** (`ProjectNotesMeetings/backends/MacCalendarBackend.mm`). An `NSAppleScript` creates the event on the first writable calendar (skipping Birthdays, holidays and Siri Suggestions), sets subject, location, agenda and times, then shows it. When Accessibility access already exists, System Events presses Return to open the event editor. It is never requested. User data enters the script only as escaped string literals. Attendees are never added: EventKit has no attendee API, and Calendar's scripting sends invitations as soon as a syncable event has attendees. The Schedule meeting dialog's **Copy Attendees** button (`DesktopAppController::copyMeetingAttendees()`) instead puts required and optional attendees on the clipboard as `Name <address>, ...` for the reviewer to paste before clicking Send.
+
+Calendar enforces two separate privacy checks on a scripting sender, and both report failure as `-1743`:
+
+1. **Calendars** (`kTCCServiceCalendar`). Calendar itself rejects commands ("Event Not Permitted") from a sender without full calendar access. The backend requests it through `EKEventStore` before scripting (`requestFullAccessToEventsWithCompletion:` on macOS 14+, `requestAccessToEntityType:` on 13), and reports `mac-calendar-access-denied` when it is refused.
+2. **Automation** (`kTCCServiceAppleEvents`). `AEDeterminePermissionToAutomateTarget` is called first so the consent dialog never races the real script. It returns `procNotFound` (-600) without prompting when Calendar is not running, so Calendar is launched in the background and the check retried. An explicit refusal reports `mac-calendar-automation-denied`.
+
+Packaging requirements:
+
+- `packaging/macos/Info.plist.in` (set as `MACOSX_BUNDLE_INFO_PLIST`) declares `NSAppleEventsUsageDescription`, `NSCalendarsFullAccessUsageDescription` and `NSCalendarsUsageDescription`. Without a usage string macOS refuses without prompting. The template also needs the `MACOSX_BUNDLE_*` values set as plain CMake variables, or `CFBundleIdentifier` comes out blank and TCC records grants against an empty client.
+- `ProjectNotes.entitlements` carries `com.apple.security.automation.apple-events` and `com.apple.security.personal-information.calendars`. The hardened runtime blocks both without them, whatever the user allows.
+- Ad-hoc signed dev bundles have their TCC grants pinned to the binary's cdhash, so every rebuild silently revokes them. Set `PN_MACOS_DEV_SIGN_IDENTITY` to an Apple Development identity to keep grants across rebuilds.
+- TCC attributes requests to the *responsible* process. A bundle launched from a shell or IDE (or the unbundled Debug build) is attributed to that terminal or editor, not to Project Notes. Test with `open "Project Notes.app"`.
+
+Accept: a Calendar event is created on a clean account after allowing the Calendars and Automation prompts; denying either produces the matching error; Copy Attendees yields a list Calendar's invitee field accepts; Mail opens a formatted compose window, and the Bcc/attachment warnings are shown in review once the dialogs surface preparation warnings.
 
 ## T20 — Report/options and email preparation QML
 

@@ -24,10 +24,11 @@ Open **Settings > Preferences** and find **Email and Scheduling Integration**. O
 | Integration | Email becomes | Meeting becomes | Works on |
 | :--- | :--- | :--- | :--- |
 | **Default Application** | A draft message file (`.eml`) opened by whatever application handles that file type | A calendar file (`.ics`) opened by your default calendar application | Windows, macOS, Linux |
+| **MacOS Email and Calendar** | A Mail compose window with the formatted message. No Bcc and no attachments | An event created directly in Calendar, without attendees. Copy them from the Schedule meeting window and paste them in | macOS |
 | **Thunderbird** | A Thunderbird compose window, attachments included | A calendar file handed to Thunderbird, which offers to import it | Windows, macOS, Linux |
 | **Microsoft 365 drafts** | A draft in your Microsoft 365 mailbox, opened in Outlook on the web | A draft event in your Microsoft 365 calendar, opened in Outlook on the web | Windows, macOS, Linux |
 
-**Default Application** is the right starting point on Windows and macOS. Pick it, then follow the section for your platform below.
+On macOS, **MacOS Email and Calendar** is selected the first time you run Project Notes. Elsewhere, **Default Application** is the right starting point. Pick one, then follow the section for your platform below.
 
 ## Windows with Outlook Classic
 
@@ -53,12 +54,15 @@ If you keep both Outlook Classic and the new Outlook installed, whichever one ho
 
 ## macOS with Mail and Calendar
 
-1. Set **Integration** to **Default Application**.
-2. Confirm Mail handles `.eml` files. In Finder, select any `.eml` file, press **Command-I**, set **Open with** to **Mail**, then click **Change All**.
-3. Confirm Calendar handles `.ics` files the same way.
-4. Open Mail and Calendar at least once and add the account you send project mail from.
+1. Set **Integration** to **MacOS Email and Calendar**.
+2. Open Mail and Calendar at least once and add the account you send project mail from.
+3. Schedule a test meeting. macOS asks whether Project Notes may access your calendars, then whether it may control Calendar. Allow both.
 
-Reports open in Mail as a message with the recipients, body and attachments already set. Invitations open in Calendar as an event on the calendar you choose. Confirm the attendees and the time, then send the invitations from Calendar.
+Reports open in a Mail compose window with the recipients and the formatted body already in place. Cc recipients appear alongside the To recipients. Bcc recipients and attachments cannot be carried and are left out. Choose **Default Application** for reports that need either.
+
+Invitations become an event on your first writable calendar with the agenda in its notes. Calendar would send invitations the moment the event had attendees, so Project Notes adds none. Click **Copy Attendees** in the Schedule meeting window, paste the list into the event's invitees field, check the time, then click **Send**.
+
+If you would rather work with files, choose **Default Application** instead. Mail must handle `.eml` files and Calendar must handle `.ics` files. To set that, select any such file in Finder, press **Command-I**, choose the application under **Open with**, then click **Change All**.
 
 ## Linux
 
@@ -173,6 +177,8 @@ Run one of each before you rely on it.
 | The audience is empty | Nobody is on the project team, or nobody is marked **Receive Status** for a status report. |
 | Microsoft 365 reports it is not signed in | Open **Settings > Office 365 Integration** and sign in again. A refresh token expires if it goes unused for a long time. |
 | A meeting draft is created but has no attendees | The sign-in predates calendar permission. Sign out, then sign in again to grant `Calendars.ReadWrite`. |
+| Calendar reports it is not allowed, or no event appears | Open **System Settings > Privacy & Security**. Under **Calendars**, give Project Notes full access. Under **Automation**, turn on **Calendar** for Project Notes. |
+| Mail opens without the attachment | **MacOS Email and Calendar** cannot attach files. Use **Default Application** for that report. |
 | Thunderbird does not start | The **Thunderbird executable** value is wrong. Try the bare command `thunderbird`, a full path, or `flatpak run org.mozilla.Thunderbird`. |
 | An attachment is missing after you reopen a draft | Staged files are removed when Project Notes closes. Send or save the draft before you quit. |
 
