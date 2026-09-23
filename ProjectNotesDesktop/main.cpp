@@ -175,7 +175,16 @@ int main(int argc, char* argv[])
         return 0;
     }
 
+#ifndef Q_OS_MACOS
+    // Windows/Linux taskbar and window-manager icon hints come from the window's
+    // own icon (see applyWindowsTaskbarIdentity above for Windows specifics), so
+    // this is required there. On macOS, QApplication::setWindowIcon also becomes
+    // the running app's Dock tile — which would override the bundle's
+    // icons/projectnotes.icns (MACOSX_BUNDLE_ICON_FILE, set in CMakeLists.txt)
+    // shown at launch with this un-backgrounded .ico as soon as the main window
+    // appears. Skipping it on macOS keeps the Dock icon the bundle one throughout.
     app.setWindowIcon(QIcon(":/qt/qml/ProjectNotesDesktop/icons/projectnotes.ico"));
+#endif
 
     // The executable links QtWebEngine directly.  Deployment must therefore
     // provide Qt's matching helper/resources; never redirect it into a PyQt
