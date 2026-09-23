@@ -40,6 +40,10 @@
 #include "ProjectNotesMeetings/backends/GraphMeetingBackend.h"
 #include "ProjectNotesMeetings/backends/IcsFileMeetingBackend.h"
 #include "ProjectNotesMeetings/backends/ThunderbirdMeetingBackend.h"
+#if defined(Q_OS_DARWIN)
+#include "ProjectNotesEmail/backends/MacMailBackend.h"
+#include "ProjectNotesMeetings/backends/MacCalendarBackend.h"
+#endif
 #include "ProjectNotesIntegrations/MeetingTemplateStore.h"
 #include "ProjectNotesIntegrations/Office365Service.h"
 #include "ProjectNotesIntegrations/QtNetworkHttpTransport.h"
@@ -151,6 +155,18 @@ DesktopAppController::DesktopAppController(QObject* parent)
     m_icsMeetingBackend = std::make_unique<PN::Comm::IcsFileMeetingBackend>(
         PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile));
     m_meetingService->registerBackend(PN::Comm::BackendId::DefaultApp, m_icsMeetingBackend.get());
+#if defined(Q_OS_DARWIN)
+    // "MacOS Email and Calendar" drives Mail.app and Calendar.app directly via
+    // AppKit/Apple Events (see MacMailBackend/MacCalendarBackend) rather than
+    // opening a staged .eml/.ics file.
+    m_macMailBackend = std::make_unique<PN::Comm::MacMailBackend>();
+    m_emailService->registerBackend(PN::Comm::BackendId::MacMail, m_macMailBackend.get());
+    m_macCalendarBackend = std::make_unique<PN::Comm::MacCalendarBackend>();
+    m_meetingService->registerBackend(PN::Comm::BackendId::MacMail, m_macCalendarBackend.get());
+#else
+    m_emailService->registerBackend(PN::Comm::BackendId::MacMail, m_emlFileEmailBackend.get());
+    m_meetingService->registerBackend(PN::Comm::BackendId::MacMail, m_icsMeetingBackend.get());
+#endif
     m_graphMeetingBackend = std::make_unique<PN::Comm::GraphMeetingBackend>(m_office365Service);
     m_meetingService->registerBackend(PN::Comm::BackendId::Graph, m_graphMeetingBackend.get());
     QSettings emailSettings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
@@ -517,6 +533,19 @@ void DesktopAppController::setThunderbirdExecutable(const QString &path)
     emit emailSettingsChanged();
 }
 
+QString DesktopAppController::emailSenderAddress() const
+{
+    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    return PN::Comm::EmailSettingsStore(settings).senderAddress();
+}
+
+void DesktopAppController::setEmailSenderAddress(const QString &address)
+{
+    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    PN::Comm::EmailSettingsStore(settings).setSenderAddress(address.trimmed());
+    emit emailSettingsChanged();
+}
+
 bool DesktopAppController::stageRequestedGeneratedAttachment(PN::Comm::EmailPreparation *preparation,
                                                               PN::Comm::ValidationResult *validation)
 {
@@ -705,7 +734,7 @@ bool DesktopAppController::prepareMeetingNotesReview(const QString& projectId, c
         // time so its subject and body are always applied to the prepared note.
         const auto contentTemplate =
             self->resolveWorkflowTemplate(PN::Comm::Workflow::SendMeetingNotes);
-        const auto review = PN::Comm::MeetingNotesPreparationFactory::create(
+        auto review = PN::Comm::MeetingNotesPreparationFactory::create(
             result.snapshot, request.source, backend, PN::Comm::EmailMode::InlineHtml,
             contentTemplate ? &*contentTemplate : nullptr);
         if (!review) {
@@ -713,6 +742,7 @@ bool DesktopAppController::prepareMeetingNotesReview(const QString& projectId, c
                                      self->tr("The selected note could not be prepared for review."));
             return;
         }
+        review->preparation.senderAddress = PN::Comm::EmailSettingsStore(settings).senderAddress();
         self->stageRequestedGeneratedAttachmentAsync(review->preparation,
             [self, audience = review->audience, snapshot = result.snapshot, source = request.source]
             (std::optional<PN::Comm::EmailPreparation> prepared, PN::Comm::ValidationResult validation) mutable {
@@ -803,6 +833,7 @@ bool DesktopAppController::prepareMeetingNotesReportReviewWithOptions(const QStr
         const PN::Comm::AudienceRule audienceRule = projectTeamAudienceRule();
         self->m_recipientSelectionModel->setAudience(PN::Comm::resolveAudience(result.snapshot, audienceRule));
         PN::Comm::EmailPreparation prepared = *preparation;
+        prepared.senderAddress = PN::Comm::EmailSettingsStore(settings).senderAddress();
         prepared.displayPdf = displayPdf;
         prepared.createHtmlExport = true;
         prepared.createPdfExport = true;
@@ -945,6 +976,7 @@ bool DesktopAppController::prepareProjectReportReview(const QString &projectId, 
             return;
         }
         PN::Comm::EmailPreparation prepared = review->preparation;
+        prepared.senderAddress = PN::Comm::EmailSettingsStore(settings).senderAddress();
         prepared.createHtmlExport = true;
         prepared.createPdfExport = true;
         self->stageRequestedGeneratedAttachmentAsync(std::move(prepared),
@@ -1261,7 +1293,7 @@ bool DesktopAppController::prepareMeetingReview(const QString &projectId, const 
         QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
         const PN::Comm::BackendId backend = PN::Comm::EmailSettingsStore(settings).preferredBackend();
         PN::Comm::ValidationResult validation;
-        const auto prepared = PN::Comm::MeetingPreparationFactory::create(
+        auto prepared = PN::Comm::MeetingPreparationFactory::create(
             result.snapshot, request.source, meetingType, backend, QDateTime::currentDateTime(), &validation);
         if (!prepared) {
             emit self->errorOccurred(self->tr("Cannot Schedule Meeting"),
@@ -1270,6 +1302,11 @@ bool DesktopAppController::prepareMeetingReview(const QString &projectId, const 
                                          .arg(meetingType.name));
             return;
         }
+        // Falls back to the configured sender address only when the project has
+        // no Project Manager email to use as organizer (see
+        // MeetingPreparationFactory::preparation, which already prefers that).
+        if (prepared->organizerAddress.trimmed().isEmpty())
+            prepared->organizerAddress = PN::Comm::EmailSettingsStore(settings).senderAddress();
         // A meeting starts from the same project-team audience as the reports,
         // then loads the audience saved as the meeting default, if any.
         const PN::Comm::AudienceRule rule = projectTeamAudienceRule();
@@ -1415,9 +1452,24 @@ bool DesktopAppController::handoffPreparedMeeting(const QString &subject, const 
         }
         const PN::Comm::MeetingRequest meeting =
             PN::Comm::MeetingPreparationFactory::request(*self->m_meetingReview, recipients.recipients);
-        self->m_meetingService->handoff(meeting, [self](PN::Comm::MeetingHandoffResult outcome) {
-            if (self)
-                self->finishMeetingHandoff(outcome);
+        const PN::Comm::BackendId backend = meeting.backend;
+        self->m_meetingService->handoff(meeting, [self, backend](PN::Comm::MeetingHandoffResult outcome) {
+            if (!self)
+                return;
+            self->finishMeetingHandoff(outcome);
+#if defined(Q_OS_DARWIN)
+            // MacCalendarBackend creates the event directly in Calendar rather
+            // than opening a file, so nothing else confirms it happened; the
+            // calendar is also chosen automatically and may not be the one the
+            // user was last looking at, so name it explicitly rather than
+            // leaving the dialog to just close silently.
+            if (backend == PN::Comm::BackendId::MacMail && outcome.error.code.isEmpty()
+                && !outcome.eventIdentity.isEmpty()) {
+                emit self->infoOccurred(self->tr("Schedule Meeting"),
+                    self->tr("The event was created on your \"%1\" calendar. Paste the copied attendees into "
+                             "the event's invitees, then click Send in Calendar.").arg(outcome.eventIdentity));
+            }
+#endif
         });
     });
     return true;
@@ -1453,6 +1505,21 @@ void DesktopAppController::finishMeetingHandoff(const PN::Comm::MeetingHandoffRe
         return;
     }
     emit meetingHandoffFinished(true, QString());
+}
+
+int DesktopAppController::copyMeetingAttendees() const
+{
+    if (!m_meetingReview || !m_recipientSelectionModel)
+        return 0;
+    const PN::Comm::MeetingRequest meeting =
+        PN::Comm::MeetingPreparationFactory::request(*m_meetingReview, m_recipientSelectionModel->resolve().recipients);
+    QStringList entries;
+    for (const PN::Comm::MeetingAttendee &attendee : meeting.attendees)
+        entries << (attendee.displayName.isEmpty() ? attendee.address
+                                                   : QStringLiteral("%1 <%2>").arg(attendee.displayName, attendee.address));
+    if (!entries.isEmpty())
+        copyTextToClipboard(entries.join(QStringLiteral(", ")));
+    return int(entries.size());
 }
 
 void DesktopAppController::closeMeetingReview()

@@ -217,13 +217,11 @@ Implement validated executable selection, UTF-8 body-file staging, compose gramm
 
 Accept: fake-process argument assertions for punctuation/Unicode and files; manual release/ESR tests on each supported OS and separate sandbox tests. Reopening/activation does not launch a duplicate compose request. No extension dependency introduced without a scope decision.
 
-## T19 — macOS Mail bridge
+## T19 — macOS Mail bridge (superseded)
 
-Read: product Mail section, architecture §9. Edit: MacMailBackend, Apple-only source/CMake and platform tests.
+A native Apple Events (Mail)/EventKit (Calendar) bridge was evaluated and rejected: EventKit exposes no public API to add attendees, so it cannot send meeting invitations, and Mail.app AppleScript/Scripting Bridge does not reliably render real HTML in a compose window. `MacMailBackend` was removed.
 
-First prove rich editable body, To/Cc/Bcc, HTML/PDF attachment and correct-window activation using a fixed bridge with typed parameters. Select the proven implementation from G3; do not proceed as if an unproven scripting content property renders HTML. Handle missing account, automation refusal/revocation and file-access errors. Native application identity is `com.apple.mail`, not the system default.
-
-Accept: signed-build manual evidence for all requested formats and composer states; non-Apple stub reports unavailable. If inline HTML cannot meet the requirement, record the gap and request a product decision; do not silently ship PDF-only Mail support.
+Instead, `BackendId::MacMail` ("MacOS Email and Calendar" in Settings) registers the same file-based `EmlFileEmailBackend`/`IcsFileMeetingBackend` adapters as Default Application. It adds a configured `EmailSettingsStore::senderAddress()`, written as the `.eml` `From:` header and used as the `.ics` `ORGANIZER` fallback when the project has no project manager email, and is the first-run default on macOS.
 
 ## T20 — Report/options and email preparation QML
 

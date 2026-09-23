@@ -12,8 +12,17 @@ EmailSettingsStore::EmailSettingsStore(QSettings &settings) : m_settings(setting
 
 BackendId EmailSettingsStore::preferredBackend() const
 {
-    return backendIdFromStableString(m_settings.value(QStringLiteral("Email/v1/PreferredBackend")).toString())
-        .value_or(BackendId::DefaultApp);
+    if (const auto parsed = backendIdFromStableString(
+            m_settings.value(QStringLiteral("Email/v1/PreferredBackend")).toString()))
+        return *parsed;
+    // Nothing has been configured yet. macOS ships a Mail/Calendar pair whose
+    // From/organizer field is otherwise left blank (see MacMail), so it is a
+    // better first-run default there than the generic file-opening backend.
+#if defined(Q_OS_DARWIN)
+    return BackendId::MacMail;
+#else
+    return BackendId::DefaultApp;
+#endif
 }
 
 void EmailSettingsStore::setPreferredBackend(BackendId backend)
@@ -30,6 +39,17 @@ QString EmailSettingsStore::thunderbirdPath() const
 void EmailSettingsStore::setThunderbirdPath(const QString &path)
 {
     m_settings.setValue(QStringLiteral("Email/v1/ThunderbirdPath"), path);
+    m_settings.sync();
+}
+
+QString EmailSettingsStore::senderAddress() const
+{
+    return m_settings.value(QStringLiteral("Email/v1/SenderAddress")).toString();
+}
+
+void EmailSettingsStore::setSenderAddress(const QString &address)
+{
+    m_settings.setValue(QStringLiteral("Email/v1/SenderAddress"), address.trimmed());
     m_settings.sync();
 }
 

@@ -17,6 +17,8 @@ public:
     void setPreferredBackend(BackendId backend);
     QString thunderbirdPath() const;
     void setThunderbirdPath(const QString &path);
+    QString senderAddress() const;
+    void setSenderAddress(const QString &address);
 
 private:
     QSettings &m_settings;

@@ -9,8 +9,16 @@
 #   FRAMEWORKS           — path to Contents/Frameworks inside the built app bundle
 #   EXECUTABLE           — path to the app's main executable (Contents/MacOS/ProjectNotes)
 #   PYTHON_VERSION       — major.minor string, e.g. "3.14"
+#
+# Optional:
+#   SIGN_IDENTITY        — codesign identity for the re-signs below (default
+#                          "-", ad-hoc)
 
 cmake_minimum_required(VERSION 3.16)
+
+if(NOT SIGN_IDENTITY)
+    set(SIGN_IDENTITY "-")
+endif()
 
 set(_dest_framework "${FRAMEWORKS}/Python.framework")
 set(_py_dylib       "${_dest_framework}/Versions/${PYTHON_VERSION}/Python")
@@ -94,8 +102,8 @@ endif()
 # with SIP, loading a dylib with an invalid signature causes an immediate SIGKILL.
 # Ad-hoc signing ("-") is sufficient for dev/build time; the final installer
 # build will replace this with a proper Developer ID signature.
-message(STATUS "BundlePythonFramework: re-signing Python dylib (ad-hoc)")
-execute_process(COMMAND codesign --force --sign - "${_py_dylib}"
+message(STATUS "BundlePythonFramework: re-signing Python dylib (${SIGN_IDENTITY})")
+execute_process(COMMAND codesign --force --sign "${SIGN_IDENTITY}" "${_py_dylib}"
     OUTPUT_QUIET ERROR_QUIET)
 
 # ── 6. Re-sign the executable and re-seal the app bundle ─────────────────────
@@ -108,8 +116,8 @@ execute_process(COMMAND codesign --force --sign - "${_py_dylib}"
 #
 # Sealing the surrounding .app afterwards keeps Contents/_CodeSignature in sync
 # with the modified executable; nested frameworks keep their own signatures.
-message(STATUS "BundlePythonFramework: re-signing executable (ad-hoc)")
-execute_process(COMMAND codesign --force --sign - "${EXECUTABLE}"
+message(STATUS "BundlePythonFramework: re-signing executable (${SIGN_IDENTITY})")
+execute_process(COMMAND codesign --force --sign "${SIGN_IDENTITY}" "${EXECUTABLE}"
     RESULT_VARIABLE _rc_exe OUTPUT_QUIET ERROR_QUIET)
 if(NOT _rc_exe EQUAL 0)
     message(FATAL_ERROR "BundlePythonFramework: failed to re-sign ${EXECUTABLE} "
@@ -119,8 +127,8 @@ endif()
 # EXECUTABLE = <bundle>.app/Contents/MacOS/<name> → up three levels is the bundle.
 get_filename_component(_app_bundle "${EXECUTABLE}/../../.." REALPATH)
 if(_app_bundle MATCHES "\\.app$" AND IS_DIRECTORY "${_app_bundle}")
-    message(STATUS "BundlePythonFramework: re-sealing bundle ${_app_bundle} (ad-hoc)")
-    execute_process(COMMAND codesign --force --sign - "${_app_bundle}"
+    message(STATUS "BundlePythonFramework: re-sealing bundle ${_app_bundle} (${SIGN_IDENTITY})")
+    execute_process(COMMAND codesign --force --sign "${SIGN_IDENTITY}" "${_app_bundle}"
         RESULT_VARIABLE _rc_app OUTPUT_QUIET ERROR_QUIET)
     if(NOT _rc_app EQUAL 0)
         message(WARNING "BundlePythonFramework: re-sealing the bundle returned ${_rc_app}")

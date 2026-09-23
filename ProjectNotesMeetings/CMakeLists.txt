@@ -23,6 +23,14 @@ add_library(ProjectNotesMeetings STATIC
     backends/GraphMeetingBackend.cpp
 )
 
+if(APPLE)
+    target_sources(ProjectNotesMeetings PRIVATE
+        backends/MacCalendarBackend.h
+        backends/MacCalendarBackend.mm
+    )
+    target_link_libraries(ProjectNotesMeetings PRIVATE "-framework AppKit" "-framework ApplicationServices" "-framework CoreServices" "-framework EventKit")
+endif()
+
 target_include_directories(ProjectNotesMeetings PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 target_link_libraries(ProjectNotesMeetings PUBLIC
     ProjectNotesEmail

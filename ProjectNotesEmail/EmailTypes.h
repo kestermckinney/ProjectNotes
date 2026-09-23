@@ -62,6 +62,7 @@ struct EmailRequest {
     BackendId backend = BackendId::DefaultApp;
     QString accountKey;
     quint64 accountGeneration = 0;
+    QString senderAddress;
     QList<EmailAddress> recipients;
     QString subject;
     QString html;

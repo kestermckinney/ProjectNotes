@@ -9,11 +9,14 @@
 
 namespace PN::Comm {
 
-// The Objective-C++ Apple Events bridge belongs behind this boundary.  Keeping
-// an explicit backend on every host means a saved Mac Mail preference produces
-// an actionable platform result rather than falling through to an unregistered
-// adapter.  The bridge itself is deliberately deferred until its rich-editable
-// composer behavior is proven on signed macOS builds.
+// Hands a message to Mail.app as a real, editable HTML compose window via
+// NSSharingService, rather than writing an .eml file for the desktop to open.
+// NSSharingService's compose-email item has no To/Cc distinction and no
+// attachment slot: Cc addresses are folded into the single recipients list it
+// exposes, Bcc addresses are dropped (EmailContentBuilder warns about this
+// before handoff so it is never a surprise), and attachments are not carried
+// over. Callers who need attachments or a true Bcc should pick Default
+// Application instead.
 class MacMailBackend final : public EmailBackend {
 public:
     void handoff(EmailRequest request, Completion completion) override;

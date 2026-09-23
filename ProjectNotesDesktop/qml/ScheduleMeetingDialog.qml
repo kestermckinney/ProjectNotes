@@ -33,6 +33,9 @@ Dialog {
     property string templateId: ""
     property var review: ({ ready: false, loading: false })
     property string errorText: ""
+    // Confirmation after "Copy Attendees", shown in place of the backend
+    // description for a few seconds.
+    property string copyNotice: ""
 
     readonly property bool busy: DesktopAppController.meetingHandoffBusy
     readonly property bool ready: review.ready === true
@@ -61,6 +64,8 @@ Dialog {
         case "graph":
             return qsTr("A draft meeting will be created in your Microsoft 365 calendar%1 and opened in Outlook. Edit the time, subject and agenda there, then send the invitations.")
                 .arg(office365 && office365.accountLabel !== "" ? " (" + office365.accountLabel + ")" : "")
+        case "mac-mail":
+            return qsTr("The meeting will be created in Calendar without attendees. Copy the attendees, paste them into the event's invitees, then click Send.")
         case "thunderbird":
             return qsTr("Thunderbird will offer to import the meeting into one of its calendars. Open the event there to edit it and send the invitations.")
         default:
@@ -75,8 +80,19 @@ Dialog {
                                                     review.date, review.time, review.durationMinutes)
     }
 
+    function copyAttendees() {
+        var count = DesktopAppController.copyMeetingAttendees()
+        copyNotice = count === 0 ? qsTr("No attendees are selected.")
+                   : count === 1 ? qsTr("Copied 1 attendee to the clipboard.")
+                   : qsTr("Copied %1 attendees to the clipboard.").arg(count)
+        copyNoticeTimer.restart()
+    }
+
+    Timer { id: copyNoticeTimer; interval: 4000; onTriggered: dialog.copyNotice = "" }
+
     onOpened: {
         errorText = ""
+        copyNotice = ""
         review = ({ ready: false, loading: false })
         meetingTypes = DesktopAppController.meetingTemplateChoices()
         if (templateName(templateId) === "")
@@ -201,7 +217,16 @@ Dialog {
                 Label {
                     Layout.fillWidth: true; color: Theme.text2; wrapMode: Text.Wrap
                     text: dialog.busy ? qsTr("Scheduling the meeting…")
+                        : dialog.copyNotice !== "" ? dialog.copyNotice
                         : dialog.ready ? dialog.backendDescription() : ""
+                }
+                // Calendar can't be handed attendees without sending the
+                // invitations at once, so on macOS they travel by clipboard.
+                Button {
+                    visible: dialog.review.backend === "mac-mail"
+                    text: qsTr("Copy Attendees")
+                    enabled: dialog.ready && !dialog.busy
+                    onClicked: dialog.copyAttendees()
                 }
                 Button { text: qsTr("Cancel"); onClicked: dialog._dismiss() }
                 Button {

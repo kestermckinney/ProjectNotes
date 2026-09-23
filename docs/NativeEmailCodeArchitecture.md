@@ -101,7 +101,6 @@ ProjectNotesEmail/
     EmlFileEmailBackend.h/.cpp
     ThunderbirdEmailBackend.h/.cpp
     OutlookClassicBackend.h/.cpp
-    MacMailBackend.h/.mm
     UnsupportedEmailBackend.h/.cpp
   outlook-helper/
     CMakeLists.txt

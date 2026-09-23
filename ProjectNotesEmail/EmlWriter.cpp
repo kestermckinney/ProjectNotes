@@ -96,6 +96,8 @@ QByteArray EmlWriter::write(const EmailRequest &request, const QDateTime &stamp,
         parts.append({headers, content});
     }
 
+    if (containsLineBreak(request.senderAddress)) { error("eml-header-injection", "sender"); return {}; }
+
     const QDateTime sent = stamp.isValid() ? stamp : QDateTime::currentDateTime();
     // A C-locale format: the month and day names in a Date header are fixed by
     // RFC 5322 and must not follow the user's locale.
@@ -106,6 +108,8 @@ QByteArray EmlWriter::write(const EmailRequest &request, const QDateTime &stamp,
 
     QByteArray message;
     message += "Date: " + date + "\r\n";
+    if (!request.senderAddress.trimmed().isEmpty())
+        message += "From: " + addressHeader({}, request.senderAddress) + "\r\n";
     if (!request.subject.isEmpty()) message += "Subject: " + headerText(request.subject) + "\r\n";
     if (!to.isEmpty()) message += "To: " + to + "\r\n";
     if (!cc.isEmpty()) message += "Cc: " + cc + "\r\n";

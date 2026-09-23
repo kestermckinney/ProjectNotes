@@ -282,6 +282,12 @@ if(APPLE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
         VERBATIM)
 
     # ── 5. Bundle Python.framework ───────────────────────────────────────────────
+    # Identity used to re-sign the dev bundle. Ad-hoc ("-") works, but TCC then
+    # pins every privacy grant (e.g. Automation > Calendar) to the binary's
+    # cdhash, so each rebuild silently revokes it. A real identity such as
+    # "Apple Development" makes grants survive rebuilds.
+    set(PN_MACOS_DEV_SIGN_IDENTITY "-" CACHE STRING
+        "codesign identity for the macOS dev bundle (\"-\" = ad-hoc)")
     add_custom_command(TARGET ProjectNotes POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory "${DESKTOP_BUNDLE_FRAMEWORKS}"
         COMMAND ${CMAKE_COMMAND}
@@ -289,6 +295,7 @@ if(APPLE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
             "-DFRAMEWORKS=${DESKTOP_BUNDLE_FRAMEWORKS}"
             "-DEXECUTABLE=$<TARGET_FILE:ProjectNotes>"
             "-DPYTHON_VERSION=${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}"
+            "-DSIGN_IDENTITY=${PN_MACOS_DEV_SIGN_IDENTITY}"
             -P "${CMAKE_CURRENT_SOURCE_DIR}/../packaging/macos/BundlePythonFramework.cmake"
         COMMENT "Bundling Python.framework into Contents/Frameworks"
         VERBATIM)
@@ -361,11 +368,31 @@ if(APPLE)
     set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/icons/projectnotes.icns" PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
     target_sources(ProjectNotes PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/icons/projectnotes.icns")
 
+    # CMake only auto-fills the @MACOSX_BUNDLE_...@ tokens below from these
+    # same-named target properties when using CMake's own default Info.plist
+    # template. Since MACOSX_BUNDLE_INFO_PLIST below points at our own custom
+    # template instead, the same values must also exist as plain CMake
+    # variables here, or every substitution silently comes out blank
+    # (including CFBundleIdentifier — which leaves macOS's TCC subsystem with
+    # no stable app identity to register an Automation permission against, so
+    # the "MacOS Email and Calendar" integration's Calendar access silently
+    # never works).
+    set(MACOSX_BUNDLE_GUI_IDENTIFIER "com.projectnotespro.ProjectNotes")
+    set(MACOSX_BUNDLE_BUNDLE_NAME "Project Notes")
+    set(MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION})
+    set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
+    set(MACOSX_BUNDLE_ICON_FILE projectnotes.icns)
+    set(MACOSX_BUNDLE_EXECUTABLE_NAME "Project Notes")
+
     set_target_properties(ProjectNotes PROPERTIES
         MACOSX_BUNDLE_GUI_IDENTIFIER "com.projectnotespro.ProjectNotes"
         MACOSX_BUNDLE_BUNDLE_NAME "Project Notes"
         MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
         MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
         MACOSX_BUNDLE_ICON_FILE projectnotes.icns
-        MACOSX_BUNDLE ${_desktop_macos_bundle})
+        MACOSX_BUNDLE ${_desktop_macos_bundle}
+        # A custom template (rather than CMake's default) so it can declare
+        # NSAppleEventsUsageDescription, required by the "MacOS Email and
+        # Calendar" integration's Apple Events to Calendar.app.
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/../packaging/macos/Info.plist.in")
 endif()

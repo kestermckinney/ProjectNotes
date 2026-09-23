@@ -57,13 +57,19 @@ add_library(ProjectNotesEmail STATIC
     backends/ThunderbirdEmailBackend.cpp
     backends/OutlookHelperProtocol.h
     backends/OutlookHelperProtocol.cpp
-    backends/MacMailBackend.h
-    backends/MacMailBackend.cpp
     EmailService.h
     EmailService.cpp
     EmailBackend.h
     ReportRenderer.h
 )
+
+if(APPLE)
+    target_sources(ProjectNotesEmail PRIVATE
+        backends/MacMailBackend.h
+        backends/MacMailBackend.mm
+    )
+    target_link_libraries(ProjectNotesEmail PRIVATE "-framework AppKit")
+endif()
 
 target_include_directories(ProjectNotesEmail PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 target_link_libraries(ProjectNotesEmail PUBLIC

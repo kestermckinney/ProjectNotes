@@ -15,7 +15,6 @@
 #include "ProjectNotesEmail/backends/ThunderbirdEmailBackend.h"
 #include "ProjectNotesEmail/backends/GraphEmailBackend.h"
 #include "ProjectNotesEmail/backends/OutlookHelperProtocol.h"
-#include "ProjectNotesEmail/backends/MacMailBackend.h"
 #include "ProjectNotesEmail/EmailService.h"
 #include "ProjectNotesEmail/AudiencePresetStore.h"
 #include "ProjectNotesEmail/StatusReportBuilder.h"
@@ -1355,20 +1354,36 @@ void CommunicationContractsTest::validatesOutlookHelperProtocolFrames()
 
 void CommunicationContractsTest::reportsMacMailPlatformAvailability()
 {
-    MacMailBackend backend;
-    EmailRequest request;
-    request.operationId = QUuid::createUuid();
-    QString errorCode;
-    backend.handoff(request, [&errorCode](EmailHandoffResult result) { errorCode = result.error.code; });
-#if defined(Q_OS_DARWIN)
-    QCOMPARE(errorCode, QStringLiteral("mac-mail-bridge-unavailable"));
-#else
-    QCOMPARE(errorCode, QStringLiteral("mac-mail-unavailable"));
-#endif
-    request.operationId = QUuid::createUuid();
-    backend.cancel(request.operationId);
-    backend.handoff(request, [&errorCode](EmailHandoffResult result) { errorCode = result.error.code; });
-    QCOMPARE(errorCode, QStringLiteral("operation-cancelled"));
+    // "MacOS Email and Calendar" now drives Mail.app/Calendar.app natively
+    // (MacMailBackend/MacCalendarBackend, macOS-only) instead of writing an
+    // .eml/.ics file. Its native compose has no Cc/Bcc distinction and no
+    // attachment slot, so EmailContentBuilder warns — rather than silently
+    // dropping data — when a MacMail request carries a Bcc recipient or an
+    // attachment; every other backend gets neither warning for the same input.
+    EmailPreparation input; input.operationId = QUuid::createUuid();
+    input.source = {"db", 1, "p", {}, Workflow::StatusReport};
+    input.document.workflow = Workflow::StatusReport;
+    input.document.defaultSubject = "Status";
+    input.document.emailFragment = "<p>HTML</p>";
+    input.recipients = {{QString(), "to@example.test", RecipientRole::To},
+                        {QString(), "bcc@example.test", RecipientRole::Bcc}};
+    input.attachments = {{QUuid::createUuid(), "/staged/report.pdf", "report.pdf", "application/pdf", 10, {}, true}};
+    input.backend = BackendId::MacMail;
+    const auto macMailResult = EmailContentBuilder::prepare(input);
+    QVERIFY(macMailResult.validation.ok());
+    QVERIFY(macMailResult.request.has_value());
+    const auto hasWarning = [](const ValidationResult &validation, const QString &code) {
+        return std::any_of(validation.issues.cbegin(), validation.issues.cend(),
+                           [&code](const ValidationIssue &issue) { return issue.code == code; });
+    };
+    QVERIFY(hasWarning(macMailResult.validation, QStringLiteral("mac-mail-bcc-unsupported")));
+    QVERIFY(hasWarning(macMailResult.validation, QStringLiteral("mac-mail-attachments-unsupported")));
+
+    input.backend = BackendId::DefaultApp;
+    const auto defaultAppResult = EmailContentBuilder::prepare(input);
+    QVERIFY(defaultAppResult.validation.ok());
+    QVERIFY(!hasWarning(defaultAppResult.validation, QStringLiteral("mac-mail-bcc-unsupported")));
+    QVERIFY(!hasWarning(defaultAppResult.validation, QStringLiteral("mac-mail-attachments-unsupported")));
 }
 
 void CommunicationContractsTest::serializesEmailHandoffsAndRejectsStaleCompletion()

@@ -20,6 +20,19 @@
     <key>com.apple.security.network.client</key>
     <true/>
 
+    <!-- Apple Events to Calendar.app (and System Events) for the "MacOS Email
+         and Calendar" integration. Under the hardened runtime, Apple Events
+         are rejected with -1743 without this, even when the user has allowed
+         Automation in System Settings. -->
+    <key>com.apple.security.automation.apple-events</key>
+    <true/>
+
+    <!-- Calendars access, which Calendar.app also requires of any app that
+         scripts it. Under the hardened runtime the Calendars prompt never
+         appears without this. -->
+    <key>com.apple.security.personal-information.calendars</key>
+    <true/>
+
     <!-- Read/write access to user-selected files (open/save dialogs) -->
     <key>com.apple.security.files.user-selected.read-write</key>
     <true/>

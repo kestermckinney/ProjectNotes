@@ -53,6 +53,10 @@ class MeetingService;
 class IcsFileMeetingBackend;
 class ThunderbirdMeetingBackend;
 class GraphMeetingBackend;
+#if defined(Q_OS_DARWIN)
+class MacMailBackend;
+class MacCalendarBackend;
+#endif
 }
 
 // DesktopAppController — the QML bridge for the desktop app.
@@ -95,6 +99,7 @@ class DesktopAppController : public QObject
     Q_PROPERTY(QObject* office365SettingsModel READ office365SettingsModel CONSTANT)
     Q_PROPERTY(QString preferredEmailBackend READ preferredEmailBackend WRITE setPreferredEmailBackend NOTIFY emailSettingsChanged)
     Q_PROPERTY(QString thunderbirdExecutable READ thunderbirdExecutable WRITE setThunderbirdExecutable NOTIFY emailSettingsChanged)
+    Q_PROPERTY(QString emailSenderAddress READ emailSenderAddress WRITE setEmailSenderAddress NOTIFY emailSettingsChanged)
     Q_PROPERTY(bool databaseOpen READ databaseOpen NOTIFY databaseReady)
     // True while a reviewed meeting is being handed to its calendar backend.
     Q_PROPERTY(bool meetingHandoffBusy READ meetingHandoffBusy NOTIFY meetingReviewChanged)
@@ -178,6 +183,8 @@ public:
     void setPreferredEmailBackend(const QString &backend);
     QString thunderbirdExecutable() const;
     void setThunderbirdExecutable(const QString &path);
+    QString emailSenderAddress() const;
+    void setEmailSenderAddress(const QString &address);
     // Starts the native Send Meeting Notes review from persisted IDs. It only
     // loads/builds review state; callers must use the later handoff flow to
     // interact with a backend.
@@ -241,6 +248,10 @@ public:
                                             const QString& location, const QString& date,
                                             const QString& time, int durationMinutes);
     Q_INVOKABLE void closeMeetingReview();
+    // Copies the selected meeting attendees (required and optional, organizer
+    // excluded) to the clipboard as "Name <address>, …", ready to paste into
+    // Calendar's invitees field. Returns how many were copied.
+    Q_INVOKABLE int copyMeetingAttendees() const;
     bool meetingHandoffBusy() const { return m_meetingHandoffBusy; }
 
     // ── Models ───────────────────────────────────────────────────────────────
@@ -879,6 +890,10 @@ private:
     std::unique_ptr<PN::Comm::IcsFileMeetingBackend> m_icsMeetingBackend;
     std::unique_ptr<PN::Comm::ThunderbirdMeetingBackend> m_thunderbirdMeetingBackend;
     std::unique_ptr<PN::Comm::GraphMeetingBackend> m_graphMeetingBackend;
+#if defined(Q_OS_DARWIN)
+    std::unique_ptr<PN::Comm::MacMailBackend> m_macMailBackend;
+    std::unique_ptr<PN::Comm::MacCalendarBackend> m_macCalendarBackend;
+#endif
     std::unique_ptr<PN::Comm::CommunicationsController> m_communicationsController;
     std::unique_ptr<PN::Comm::RecipientSelectionModel> m_recipientSelectionModel;
     std::unique_ptr<PN::Comm::TemplateEditorModel> m_templateEditorModel;

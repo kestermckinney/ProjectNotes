@@ -1083,11 +1083,16 @@ Item {
                     id: integrationSection
                     title: qsTr("Email and Scheduling Integration")
                     subtitle: qsTr("Choose how Project Notes hands emails and meeting invitations to you for review. Nothing is sent until you send it yourself.")
-                    readonly property var backends: [
-                        { value: "default-app", label: qsTr("Default Application") },
-                        { value: "thunderbird", label: qsTr("Thunderbird") },
-                        { value: "graph", label: qsTr("Microsoft 365 drafts") }
-                    ]
+                    readonly property var backends: {
+                        var list = [
+                            { value: "default-app", label: qsTr("Default Application") },
+                            { value: "thunderbird", label: qsTr("Thunderbird") },
+                            { value: "graph", label: qsTr("Microsoft 365 drafts") }
+                        ]
+                        if (Qt.platform.os === "osx")
+                            list.splice(1, 0, { value: "mac-mail", label: qsTr("MacOS Email and Calendar") })
+                        return list
+                    }
                     function labelFor(value) {
                         for (var i = 0; i < backends.length; ++i)
                             if (backends[i].value === value) return backends[i].label
@@ -1125,6 +1130,8 @@ Item {
                                 return qsTr("Emails become drafts in your Microsoft 365 mailbox, and meetings become draft events in your Microsoft 365 calendar. Both open in Outlook for review. Sign in under Office 365 Integration first.")
                             case "thunderbird":
                                 return qsTr("Emails open in a Thunderbird compose window with any attachments. Meetings are passed to Thunderbird as a calendar file to import, then you send the invitations from the event.")
+                            case "mac-mail":
+                                return qsTr("Emails open a native Mail compose window with your message rendered as real HTML, ready to review and send. Meetings create an event directly in your default calendar; for your safety, invitees are never added automatically, since Calendar would send the invitations the moment you did that. Use Copy Attendees in the Schedule meeting window, then paste them into the event and send it yourself. Bcc recipients and attachments are not supported in this mode; choose Default Application if you need either.")
                             default:
                                 return qsTr("Emails open in your default mail application as a draft message (.eml) with any attachments. Meetings open in your default calendar application as a calendar (.ics) file.")
                             }
