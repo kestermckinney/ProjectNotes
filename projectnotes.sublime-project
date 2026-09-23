@@ -17,6 +17,9 @@
 			"linux": {
 				"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-debug\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/sublime-debug\" --parallel 1"
 			},
+			"osx": {
+				"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-debug\" -DCMAKE_TOOLCHAIN_FILE=/Users/paulmckinney/Documents/Projects/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_PREFIX_PATH=/Users/paulmckinney/Qt/6.11.1/macos -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/sublime-debug\" --parallel"
+			},
 			"windows": {
 				"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\sublime-debug\" -G Ninja -DCMAKE_MAKE_PROGRAM=C:/Qt/Tools/Ninja/ninja.exe -DCMAKE_TOOLCHAIN_FILE=C:/Users/paulmckinney/Documents/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_PREFIX_PATH=C:/Qt/6.10.0/msvc2022_64 -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path\\build\\sublime-debug\" --parallel"
 			},
@@ -24,24 +27,28 @@
 				{
 					"name": "Configure Debug",
 					"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-debug\" -DCMAKE_BUILD_TYPE=Debug",
+					"osx": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-debug\" -DCMAKE_TOOLCHAIN_FILE=/Users/paulmckinney/Documents/Projects/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_PREFIX_PATH=/Users/paulmckinney/Qt/6.11.1/macos -DCMAKE_BUILD_TYPE=Debug" },
 					"windows": { "shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\sublime-debug\" -G Ninja -DCMAKE_MAKE_PROGRAM=C:/Qt/Tools/Ninja/ninja.exe -DCMAKE_TOOLCHAIN_FILE=C:/Users/paulmckinney/Documents/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_PREFIX_PATH=C:/Qt/6.10.0/msvc2022_64 -DCMAKE_BUILD_TYPE=Debug" }
 				},
 				{
 					"name": "Build Release",
 					"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-release\" -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/sublime-release\" --parallel",
 					"linux": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-release\" -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/sublime-release\" --parallel 1" },
+					"osx": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-release\" -DCMAKE_TOOLCHAIN_FILE=/Users/paulmckinney/Documents/Projects/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_PREFIX_PATH=/Users/paulmckinney/Qt/6.11.1/macos -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/sublime-release\" --parallel" },
 					"windows": { "shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\sublime-release\" -G Ninja -DCMAKE_MAKE_PROGRAM=C:/Qt/Tools/Ninja/ninja.exe -DCMAKE_TOOLCHAIN_FILE=C:/Users/paulmckinney/Documents/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_PREFIX_PATH=C:/Qt/6.10.0/msvc2022_64 -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path\\build\\sublime-release\" --parallel" }
 				},
 				{
 					"name": "Rebuild Debug",
 					"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-debug\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/sublime-debug\" --clean-first --parallel",
 					"linux": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-debug\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/sublime-debug\" --clean-first --parallel 1" },
+					"osx": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-debug\" -DCMAKE_TOOLCHAIN_FILE=/Users/paulmckinney/Documents/Projects/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_PREFIX_PATH=/Users/paulmckinney/Qt/6.11.1/macos -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/sublime-debug\" --clean-first --parallel" },
 					"windows": { "shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\sublime-debug\" -G Ninja -DCMAKE_MAKE_PROGRAM=C:/Qt/Tools/Ninja/ninja.exe -DCMAKE_TOOLCHAIN_FILE=C:/Users/paulmckinney/Documents/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_PREFIX_PATH=C:/Qt/6.10.0/msvc2022_64 -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path\\build\\sublime-debug\" --clean-first --parallel" }
 				},
 				{
 					"name": "Rebuild Release",
 					"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-release\" -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/sublime-release\" --clean-first --parallel",
 					"linux": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-release\" -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/sublime-release\" --clean-first --parallel 1" },
+					"osx": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-release\" -DCMAKE_TOOLCHAIN_FILE=/Users/paulmckinney/Documents/Projects/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_PREFIX_PATH=/Users/paulmckinney/Qt/6.11.1/macos -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/sublime-release\" --clean-first --parallel" },
 					"windows": { "shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\sublime-release\" -G Ninja -DCMAKE_MAKE_PROGRAM=C:/Qt/Tools/Ninja/ninja.exe -DCMAKE_TOOLCHAIN_FILE=C:/Users/paulmckinney/Documents/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_PREFIX_PATH=C:/Qt/6.10.0/msvc2022_64 -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path\\build\\sublime-release\" --clean-first --parallel" }
 				},
 				{
@@ -60,18 +67,21 @@
 					"name": "Build & Run Debug",
 					"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-debug\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/sublime-debug\" --parallel && \"$project_path/build/sublime-debug/ProjectNotesDesktop/projectnotes\"",
 					"linux": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-debug\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/sublime-debug\" --parallel 1 && \"$project_path/build/sublime-debug/ProjectNotesDesktop/projectnotes\"" },
+					"osx": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-debug\" -DCMAKE_TOOLCHAIN_FILE=/Users/paulmckinney/Documents/Projects/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_PREFIX_PATH=/Users/paulmckinney/Qt/6.11.1/macos -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/sublime-debug\" --parallel && open \"$project_path/build/sublime-debug/ProjectNotesDesktop/Project Notes.app\"" },
 					"windows": { "shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\sublime-debug\" -G Ninja -DCMAKE_MAKE_PROGRAM=C:/Qt/Tools/Ninja/ninja.exe -DCMAKE_TOOLCHAIN_FILE=C:/Users/paulmckinney/Documents/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_PREFIX_PATH=C:/Qt/6.10.0/msvc2022_64 -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path\\build\\sublime-debug\" --parallel && set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"$project_path\\build\\sublime-debug\\ProjectNotesDesktop\\Project Notes.exe\"" }
 				},
 				{
 					"name": "Build & Run Debug (TESTMODE)",
 					"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-debug\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/sublime-debug\" --parallel && \"$project_path/build/sublime-debug/ProjectNotesDesktop/projectnotes\" --test-supabase --developer-profile TESTMODE",
 					"linux": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-debug\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/sublime-debug\" --parallel 1 && \"$project_path/build/sublime-debug/ProjectNotesDesktop/projectnotes\" --test-supabase --developer-profile TESTMODE" },
+					"osx": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-debug\" -DCMAKE_TOOLCHAIN_FILE=/Users/paulmckinney/Documents/Projects/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_PREFIX_PATH=/Users/paulmckinney/Qt/6.11.1/macos -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/sublime-debug\" --parallel && open \"$project_path/build/sublime-debug/ProjectNotesDesktop/Project Notes.app\" --args --test-supabase --developer-profile TESTMODE" },
 					"windows": { "shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\sublime-debug\" -G Ninja -DCMAKE_MAKE_PROGRAM=C:/Qt/Tools/Ninja/ninja.exe -DCMAKE_TOOLCHAIN_FILE=C:/Users/paulmckinney/Documents/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_PREFIX_PATH=C:/Qt/6.10.0/msvc2022_64 -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path\\build\\sublime-debug\" --parallel && set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"$project_path\\build\\sublime-debug\\ProjectNotesDesktop\\Project Notes.exe\" --test-supabase --developer-profile TESTMODE" }
 				},
 				{
 					"name": "Build & Run Release (TESTMODE)",
 					"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-release\" -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/sublime-release\" --parallel && \"$project_path/build/sublime-release/ProjectNotesDesktop/projectnotes\" --test-supabase --developer-profile TESTMODE",
 					"linux": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-release\" -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/sublime-release\" --parallel 1 && \"$project_path/build/sublime-release/ProjectNotesDesktop/projectnotes\" --test-supabase --developer-profile TESTMODE" },
+					"osx": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-release\" -DCMAKE_TOOLCHAIN_FILE=/Users/paulmckinney/Documents/Projects/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_PREFIX_PATH=/Users/paulmckinney/Qt/6.11.1/macos -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/sublime-release\" --parallel && open \"$project_path/build/sublime-release/ProjectNotesDesktop/Project Notes.app\" --args --test-supabase --developer-profile TESTMODE" },
 					"windows": { "shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\sublime-release\" -G Ninja -DCMAKE_MAKE_PROGRAM=C:/Qt/Tools/Ninja/ninja.exe -DCMAKE_TOOLCHAIN_FILE=C:/Users/paulmckinney/Documents/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_PREFIX_PATH=C:/Qt/6.10.0/msvc2022_64 -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path\\build\\sublime-release\" --parallel && set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"$project_path\\build\\sublime-release\\ProjectNotesDesktop\\Project Notes.exe\" --test-supabase --developer-profile TESTMODE" }
 				}
 			]
