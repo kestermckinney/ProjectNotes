@@ -721,7 +721,7 @@ public:
     Q_INVOKABLE QString duplicateRecordInTable(const QString& table, const QString& recordId);
 
     // ── Help ▸ maintenance actions (mirror the Widgets Help menu) ────────────
-    Q_INVOKABLE QString appVersion() const;   // "6.2.0"
+    Q_INVOKABLE QString appVersion() const;   // "6.3.0"
     // Compile-time build timestamp ("Aug  7 2026 14:32:10"), same __DATE__/
     // __TIME__ source as the Widgets AboutDialog's BUILDV.
     Q_INVOKABLE QString buildTimestamp() const;
