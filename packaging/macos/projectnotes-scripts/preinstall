@@ -1,19 +1,96 @@
 #!/bin/sh
 
-# pkg upgrades can merge a component bundle with the existing application.
-# Remove the retired Python File Finder worker before installing the native one.
+# pkg upgrades can merge a component bundle with the existing application, so
+# plugins removed from a release can survive the upgrade and load again.
+# Remove every bundled plugin, thread, form and helper that an earlier release
+# shipped and this one dropped. Files are named one by one because the plugins
+# folder can also hold the user's own plugins; it is never removed recursively.
+#
+# Keep this list in step with packaging/RemoveRetiredPlugins.cmake.in and
+# packaging/windows/remove_retired_plugins.nsh.
 target_volume="${3:-/}"
 application_root="${target_volume%/}/Applications/Project Notes.app"
+
+# Scripts, listed without .py so their cached bytecode goes too.
+retired_scripts="
+plugins/archivenotes_plugin
+plugins/cci_connectdrives_plugin
+plugins/cci_ifs_projects_import_plugin
+plugins/cci_ifs_projects_statusreport_plugin
+plugins/cci_scheduleoneonone_plugin
+plugins/cci_scheduleoneononeattendee_plugin
+plugins/cci_scheduleoneononeteam_plugin
+plugins/contactexport_plugin
+plugins/contactimport_plugin
+plugins/copy_email_member_plugin
+plugins/copy_email_plugin
+plugins/copy_filepath_plugin
+plugins/editor_plugin
+plugins/email_as_attachment_plugin
+plugins/emailarchive_plugin
+plugins/exportnotes_plugin
+plugins/exportstatusreport_plugin
+plugins/exporttrackeritems_plugin
+plugins/exporttrakeritems_plugin
+plugins/findprojectemailperson_plugin
+plugins/findprojectmailperson_plugin
+plugins/globalsettings_plugin
+plugins/ifs_cloud_projectsstatusreportfixed_plugin
+plugins/ifs_cloud_settings_plugin
+plugins/ifs_project_report_plugin
+plugins/outlooksync_plugin
+plugins/paul_cleanpc_plugin
+plugins/schedulecustomerkickoffinvite_plugin
+plugins/schedulecustomerlessonslearnedinvite_plugin
+plugins/schedulecustomerstatusinvite_plugin
+plugins/scheduleinternalkickoffinvite_plugin
+plugins/scheduleinternallessonslearnedinvite_plugin
+plugins/scheduleinternalstatusinvite_plugin
+plugins/sendmeetingnotes_plugin
+plugins/sendprojectemail_plugin
+plugins/sendprojectemailtoattendee_plugin
+plugins/sendprojectemailtoperson_plugin
+plugins/sendprojectemailtoteam_plugin
+plugins/tester_plugin
+plugins/tester_tools
+plugins/trackkerreport_plugin
+threads/filefinder_thread
+threads/tester_thread_1
+"
+
+retired_files="
+plugins/forms/dialogClassification.ui
+plugins/forms/dialogExportNotesOptions.ui
+plugins/forms/dialogExportStatusReportOptions.ui
+plugins/forms/dialogExportTrackerOptions.ui
+plugins/forms/dialogFileFinder.ui
+plugins/forms/dialogMeetingEmailTemplate.ui
+plugins/forms/dialogMeetingEmailTypes.ui
+plugins/forms/dialogStatusRptOptions.ui
+plugins/forms/dialogTrackerOptions.ui
+plugins/forms/dialogTrackerRptOptions.ui
+plugins/includes/dialogDuplicateFilesFound.ui
+plugins/includes/dialogNotesArchiveOptions.ui
+plugins/includes/dialogStatusRptOptions.ui
+plugins/includes/dialogTrackerRptOptions.ui
+"
 
 for resources_root in \
     "${application_root}/Contents/Resources" \
     "${application_root}/Contents/MacOS"
 do
-    rm -f "${resources_root}/threads/filefinder_thread.py"
-    rm -f "${resources_root}/threads/__pycache__/filefinder_thread"*.pyc
-    rm -f "${resources_root}/threads/__pycache__/filefinder_thread"*.pyo
-    rm -f "${resources_root}/plugins/forms/dialogFileFinder.ui"
-    rm -f "${resources_root}/plugins/forms/dialogClassification.ui"
+    for script in ${retired_scripts}; do
+        script_dir=$(dirname "${script}")
+        script_name=$(basename "${script}")
+        rm -f "${resources_root}/${script}.py"
+        rm -f "${resources_root}/${script_dir}/__pycache__/${script_name}."*.pyc
+        rm -f "${resources_root}/${script_dir}/__pycache__/${script_name}."*.pyo
+    done
+    for retired_file in ${retired_files}; do
+        rm -f "${resources_root}/${retired_file}"
+    done
+    # The one retired name with a space in it.
+    rm -f "${resources_root}/plugins/templates/Tracker Items Template.xlsx"
 done
 
 exit 0

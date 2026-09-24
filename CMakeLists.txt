@@ -149,25 +149,17 @@ include(GNUInstallDirs)
 # ── Install rules (Linux/Flatpak) ────────────────────────────────────────────
 # These stage runtime assets and freedesktop metadata for the *installed* tree.
 if(NOT APPLE)
-    # CMake directory installs merge into an existing prefix. Run a targeted
-    # cleanup first so upgrades cannot retain the retired Python File Finder
-    # worker (or its importable bytecode) now that File Finder is native C++.
+    # CMake directory installs merge into an existing prefix. Remove every
+    # plugin, thread and form an earlier release shipped and this one dropped,
+    # so an upgrade never leaves a retired script behind for PluginManager to
+    # load (the report plugins, the Python File Finder, the old email and
+    # meeting plugins, and so on).
     configure_file(
-        "${CMAKE_CURRENT_SOURCE_DIR}/packaging/RemoveLegacyFileFinder.cmake.in"
-        "${CMAKE_CURRENT_BINARY_DIR}/RemoveLegacyFileFinder.cmake"
+        "${CMAKE_CURRENT_SOURCE_DIR}/packaging/RemoveRetiredPlugins.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/RemoveRetiredPlugins.cmake"
         @ONLY
     )
-    install(SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/RemoveLegacyFileFinder.cmake")
-
-    # Same story for the three report plugins and the Meeting and Email Types
-    # settings forms: reports, email templates and meeting templates are native,
-    # so an upgrade must not leave their scripts behind for PluginManager to load.
-    configure_file(
-        "${CMAKE_CURRENT_SOURCE_DIR}/packaging/RemoveLegacyReportPlugins.cmake.in"
-        "${CMAKE_CURRENT_BINARY_DIR}/RemoveLegacyReportPlugins.cmake"
-        @ONLY
-    )
-    install(SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/RemoveLegacyReportPlugins.cmake")
+    install(SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/RemoveRetiredPlugins.cmake")
 
     # Install runtime assets alongside the executable so packaged builds
     # (e.g. Flatpak installs to /app/bin) can find them via appResourcesPath().
@@ -324,11 +316,6 @@ if(WIN32)
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/plugins"    "${DEPLOY_DIR}/plugins"
 
-        # copy_directory merges, so retired plugins linger in an existing deploy
-        # tree. Drop the report plugins and legacy meeting/email forms again.
-        COMMAND ${CMAKE_COMMAND}
-            "-DPN_PLUGIN_ROOT=${DEPLOY_DIR}/plugins"
-            -P "${CMAKE_CURRENT_BINARY_DIR}/RemoveLegacyReportPlugins.cmake"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/threads"    "${DEPLOY_DIR}/threads"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
