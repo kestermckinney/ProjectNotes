@@ -8,8 +8,9 @@
 
 namespace PN::Comm {
 
-IcsFileMeetingBackend::IcsFileMeetingBackend(QString cacheDirectory, FileOpener opener)
-    : m_cacheDirectory(std::move(cacheDirectory)), m_opener(std::move(opener))
+IcsFileMeetingBackend::IcsFileMeetingBackend(QString cacheDirectory, FileOpener opener, QString openFailureCode)
+    : m_cacheDirectory(std::move(cacheDirectory)), m_opener(std::move(opener)),
+      m_openFailureCode(std::move(openFailureCode))
 {
     if (!m_opener) m_opener = [](const QUrl &url) { return QDesktopServices::openUrl(url); };
 }
@@ -29,7 +30,7 @@ void IcsFileMeetingBackend::handoff(MeetingRequest request, Completion completio
     if (!invite.ok()) { result.error = invite.error; completion(result); return; }
     result.eventIdentity = invite.path;
     if (!m_opener(QUrl::fromLocalFile(invite.path))) {
-        result.error = {QStringLiteral("calendar-open-failed"), {}, RetryKind::RetryPresentation,
+        result.error = {m_openFailureCode, {}, RetryKind::RetryPresentation,
                         OutcomeCertainty::Certain};
         completion(result);
         return;

@@ -190,6 +190,8 @@ void CommunicationContractsTest::stableEnumRoundTrips()
     QVERIFY(workflowFromStableString(toStableString(Workflow::StatusReport)) == Workflow::StatusReport);
     QVERIFY(emailModeFromStableString(toStableString(EmailMode::PdfAttachment)) == EmailMode::PdfAttachment);
     QVERIFY(backendIdFromStableString(toStableString(BackendId::Thunderbird)) == BackendId::Thunderbird);
+    QVERIFY(backendIdFromStableString(toStableString(BackendId::Outlook)) == BackendId::Outlook);
+    QVERIFY(backendIdFromStableString(toStableString(BackendId::OutlookClassic)) == BackendId::OutlookClassic);
     QVERIFY(recipientRoleFromStableString(toStableString(RecipientRole::Bcc)) == RecipientRole::Bcc);
 }
 

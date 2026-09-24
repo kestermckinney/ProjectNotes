@@ -15,7 +15,8 @@ namespace PN::Comm {
 // so they can share project audiences and staging with the email workflows.
 enum class Workflow { SendMeetingNotes, TrackerItemsReport, StatusReport, MeetingNotesReport, ScheduleMeeting };
 enum class EmailMode { InlineHtml, HtmlAttachment, PdfAttachment, None };
-enum class BackendId { Graph, DefaultApp, OutlookClassic, Thunderbird, MacMail };
+// Outlook is the new Outlook for Windows; OutlookClassic is OUTLOOK.EXE.
+enum class BackendId { Graph, DefaultApp, OutlookClassic, Thunderbird, MacMail, Outlook };
 enum class RecipientRole { To, Cc, Bcc };
 enum class IssueSeverity { Info, Warning, Error };
 enum class RetryKind { None, RetryPresentation, RetryOperation, ReviewAndRetry };

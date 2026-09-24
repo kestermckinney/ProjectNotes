@@ -5,6 +5,30 @@
 
 namespace PN::Comm {
 
+bool isBackendAvailableOnThisPlatform(BackendId backend)
+{
+    switch (backend) {
+    case BackendId::Outlook:
+    case BackendId::OutlookClassic:
+#if defined(Q_OS_WIN)
+        return true;
+#else
+        return false;
+#endif
+    case BackendId::MacMail:
+#if defined(Q_OS_DARWIN)
+        return true;
+#else
+        return false;
+#endif
+    case BackendId::Graph:
+    case BackendId::DefaultApp:
+    case BackendId::Thunderbird:
+        return true;
+    }
+    return false;
+}
+
 EmailSettingsStore::EmailSettingsStore(QSettings &settings) : m_settings(settings)
 {
     m_settings.setFallbacksEnabled(false);
@@ -13,7 +37,8 @@ EmailSettingsStore::EmailSettingsStore(QSettings &settings) : m_settings(setting
 BackendId EmailSettingsStore::preferredBackend() const
 {
     if (const auto parsed = backendIdFromStableString(
-            m_settings.value(QStringLiteral("Email/v1/PreferredBackend")).toString()))
+            m_settings.value(QStringLiteral("Email/v1/PreferredBackend")).toString());
+        parsed && isBackendAvailableOnThisPlatform(*parsed))
         return *parsed;
     // Nothing has been configured yet. macOS ships a Mail/Calendar pair whose
     // From/organizer field is otherwise left blank (see MacMail), so it is a
@@ -27,6 +52,7 @@ BackendId EmailSettingsStore::preferredBackend() const
 
 void EmailSettingsStore::setPreferredBackend(BackendId backend)
 {
+    if (!isBackendAvailableOnThisPlatform(backend)) return;
     m_settings.setValue(QStringLiteral("Email/v1/PreferredBackend"), toStableString(backend));
     m_settings.sync();
 }

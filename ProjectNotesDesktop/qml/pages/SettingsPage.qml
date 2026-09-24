@@ -1091,6 +1091,9 @@ Item {
                         ]
                         if (Qt.platform.os === "osx")
                             list.splice(1, 0, { value: "mac-mail", label: qsTr("MacOS Email and Calendar") })
+                        if (Qt.platform.os === "windows")
+                            list.splice(1, 0, { value: "outlook", label: qsTr("Outlook") },
+                                              { value: "outlook-classic", label: qsTr("Outlook (Classic)") })
                         return list
                     }
                     function labelFor(value) {
@@ -1128,6 +1131,10 @@ Item {
                             switch (DesktopAppController.preferredEmailBackend) {
                             case "graph":
                                 return qsTr("Emails become drafts in your Microsoft 365 mailbox, and meetings become draft events in your Microsoft 365 calendar. Both open in Outlook for review. Sign in under Office 365 Integration first.")
+                            case "outlook":
+                                return qsTr("Emails and meetings open in the new Outlook, even when another app handles .eml and .ics files. The new Outlook drops the attendees when it opens a meeting, so use Copy Attendees in the Schedule meeting window and paste them into the event before you send it.")
+                            case "outlook-classic":
+                                return qsTr("Emails and meetings open in Outlook (classic), even when another app handles .eml and .ics files. Meetings open as an unsent meeting window with the attendees filled in, ready to review and send.")
                             case "thunderbird":
                                 return qsTr("Emails open in a Thunderbird compose window with any attachments. Meetings are passed to Thunderbird as a calendar file to import, then you send the invitations from the event.")
                             case "mac-mail":

@@ -18,13 +18,17 @@ namespace PN::Comm {
 class EmlFileEmailBackend final : public EmailBackend {
 public:
     using FileOpener = std::function<bool(const QUrl &)>;
-    explicit EmlFileEmailBackend(QString cacheDirectory, FileOpener opener = {});
+    // `openFailureCode` names the failure when `opener` returns false, so a
+    // backend that opens one specific application can say which.
+    explicit EmlFileEmailBackend(QString cacheDirectory, FileOpener opener = {},
+                                 QString openFailureCode = QStringLiteral("eml-open-failed"));
     void handoff(EmailRequest request, Completion completion) override;
     void cancel(const QUuid &operationId) override;
 
 private:
     QString m_cacheDirectory;
     FileOpener m_opener;
+    QString m_openFailureCode;
     QSet<QUuid> m_cancelled;
     // Opening a file with the desktop's handler is unobservable and may already
     // have created a compose window even when the opener reports failure; never

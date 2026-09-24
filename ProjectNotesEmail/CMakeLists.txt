@@ -57,6 +57,8 @@ add_library(ProjectNotesEmail STATIC
     backends/ThunderbirdEmailBackend.cpp
     backends/OutlookHelperProtocol.h
     backends/OutlookHelperProtocol.cpp
+    backends/OutlookLauncher.h
+    backends/OutlookLauncher.cpp
     EmailService.h
     EmailService.cpp
     EmailBackend.h
@@ -69,6 +71,11 @@ if(APPLE)
         backends/MacMailBackend.mm
     )
     target_link_libraries(ProjectNotesEmail PRIVATE "-framework AppKit")
+endif()
+
+if(WIN32)
+    # OutlookLauncher opens files in the new Outlook with ShellExecuteEx.
+    target_link_libraries(ProjectNotesEmail PRIVATE shell32)
 endif()
 
 target_include_directories(ProjectNotesEmail PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)

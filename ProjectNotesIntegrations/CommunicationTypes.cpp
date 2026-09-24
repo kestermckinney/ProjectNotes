@@ -73,6 +73,7 @@ QString toStableString(BackendId value)
     case BackendId::OutlookClassic: return QStringLiteral("outlook-classic");
     case BackendId::Thunderbird: return QStringLiteral("thunderbird");
     case BackendId::MacMail: return QStringLiteral("mac-mail");
+    case BackendId::Outlook: return QStringLiteral("outlook");
     }
     return {};
 }
@@ -110,6 +111,7 @@ std::optional<BackendId> backendIdFromStableString(const QString &value)
     // files; settings written by earlier versions still carry it.
     return enumFromString<BackendId>(value, {{"graph", BackendId::Graph}, {"default-app", BackendId::DefaultApp},
                                                {"mailto", BackendId::DefaultApp},
+                                               {"outlook", BackendId::Outlook},
                                                {"outlook-classic", BackendId::OutlookClassic},
                                                {"thunderbird", BackendId::Thunderbird}, {"mac-mail", BackendId::MacMail}});
 }

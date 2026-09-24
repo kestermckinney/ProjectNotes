@@ -45,7 +45,7 @@ You will need to setup yourself to manage all of the projects. First you need to
 11. Open **Settings > Meeting Templates** and add the meeting types you run, such as a status meeting and a kickoff.
 12. Open **Settings > File Finder** and add the root folder where your project files are stored.
 
-Steps 10 and 11 are the start of email and meeting setup. See [Email and Meeting Setup](<../InterfaceOverview/EmailAndMeetingSetup.md>) for the rest, including what to configure on Windows and macOS.
+Steps 10 and 11 are the start of email and meeting setup. See [Email and Meeting Setup](<../InterfaceOverview/EmailAndMeetingSetup.md>) for the rest, including what to configure on Windows, macOS and Linux.
 
 ## Populating Your Database
 
@@ -53,7 +53,7 @@ Project Notes is capable of connecting information from various systems. In orde
 
 There are three methods to import clients and people.
 
-* **Importing From Outlook** - The Outlook Integration plugin imports and exports contacts through Microsoft 365 on any platform. See [Outlook Integration](<../StandardPlugins/OutlookIntegration.md>) for details.
+* **Importing From Outlook** - The Outlook Integration plugin imports and exports contacts through Microsoft 365 on any platform, or directly from Outlook (classic) on Windows. See [Outlook Integration](<../StandardPlugins/OutlookIntegration.md>) for details.
 * **Importing From XML** - All database items can be imported from a [Project Notes XML](<../PluginsOverview/ProjectNotesXML.md>) file. Choose **Import XML…** from the app menu (the menu icon at the top of the icon rail) to import a file.
 * **Entering Manually** - Client information can be entered using the [Client List Page](<../InterfaceOverview/ClientListPage.md>), and contacts can be entered using the [People List Page](<../InterfaceOverview/PeopleListPage.md>).
 

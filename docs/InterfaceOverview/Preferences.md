@@ -53,11 +53,24 @@ The **Managing Company** setting, also under the **Preferences** section of Sett
 
 The **Email and Scheduling Integration** section, below **Preferences**, decides how Project Notes hands finished emails and meeting invitations to you. One choice covers both.
 
+The **Integration** list only offers what your operating system supports:
+
+| Platform | Choices in the list |
+| :--- | :--- |
+| **Windows** | Default Application, Outlook, Outlook (Classic), Thunderbird, Microsoft 365 drafts |
+| **macOS** | Default Application, MacOS Email and Calendar, Thunderbird, Microsoft 365 drafts |
+| **Linux** | Default Application, Thunderbird, Microsoft 365 drafts |
+
 | Integration | What happens |
 | :--- | :--- |
 | **Default Application** | The email is written as a draft message file (`.eml`) and opened by whatever application handles that type. Meetings open as a calendar file (`.ics`) in your default calendar application. |
+| **Outlook** (Windows) | The email and the meeting open in the new Outlook, whichever app holds the `.eml` and `.ics` associations. The new Outlook drops a meeting's attendees, so use **Copy Attendees** in the Schedule meeting window and paste them into the event. |
+| **Outlook (Classic)** (Windows) | The email opens in Outlook (classic) as an unsent message. The meeting opens as an unsent meeting window with the attendees and agenda already filled in. |
+| **MacOS Email and Calendar** (macOS) | The email opens in a Mail compose window without Bcc recipients or attachments. The meeting becomes an event in Calendar without attendees; use **Copy Attendees** in the Schedule meeting window and paste them into the event. |
 | **Thunderbird** | The email opens in a Thunderbird compose window with its attachments. The meeting is passed to Thunderbird, which offers to import it into one of its calendars. |
 | **Microsoft 365 drafts** | The email becomes a draft in your Microsoft 365 mailbox and the meeting a draft event in your calendar, both opened in Outlook on the web. Sign in under **Settings > Office 365 Integration** first. |
+
+Until you choose, Project Notes uses **MacOS Email and Calendar** on macOS and **Default Application** everywhere else. A settings file copied from another computer can name a choice this platform lacks, such as **Outlook (Classic)** on a Mac. Project Notes ignores it and uses the default until you pick again.
 
 Choosing **Thunderbird** reveals a **Thunderbird executable** field. Enter a path or a command, such as `flatpak run org.mozilla.Thunderbird`.
 
@@ -65,7 +78,7 @@ Project Notes never sends an email or an invitation. It prepares one and hands i
 
 Temporary messages, attachments and calendar files live in the application cache and are removed when Project Notes closes.
 
-For the full walk-through, including what to set up on Windows and macOS, see [Email and Meeting Setup](<EmailAndMeetingSetup.md>).
+For the full walk-through, including what to set up on Windows, macOS and Linux, see [Email and Meeting Setup](<EmailAndMeetingSetup.md>).
 
 ## View Options
 

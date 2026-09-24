@@ -66,10 +66,14 @@ Dialog {
                 .arg(office365 && office365.accountLabel !== "" ? " (" + office365.accountLabel + ")" : "")
         case "mac-mail":
             return qsTr("The meeting will be created in Calendar without attendees. Copy the attendees, paste them into the event's invitees, then click Send.")
+        case "outlook":
+            return qsTr("The meeting will open in the new Outlook without attendees. Copy the attendees, paste them into the event, then send the invitations.")
+        case "outlook-classic":
+            return qsTr("The meeting will open in Outlook (classic) with the attendees filled in. Review it there, then click Send.")
         case "thunderbird":
             return qsTr("Thunderbird will offer to import the meeting into one of its calendars. Open the event there to edit it and send the invitations.")
         default:
-            return qsTr("A calendar file (.ics) will open in your default calendar app. Edit and save the event there, then send the invitations.")
+            return qsTr("A calendar file (.ics) will open in your default calendar app. Some calendar apps leave out the attendees, so copy them first if you need to. Edit and save the event there, then send the invitations.")
         }
     }
     function schedule() {
@@ -221,9 +225,11 @@ Dialog {
                         : dialog.ready ? dialog.backendDescription() : ""
                 }
                 // Calendar can't be handed attendees without sending the
-                // invitations at once, so on macOS they travel by clipboard.
+                // invitations at once, and the new Outlook (and other apps
+                // opening the .ics) drop them, so they travel by clipboard.
+                // Only Outlook (classic) and Microsoft 365 fill them in.
                 Button {
-                    visible: dialog.review.backend === "mac-mail"
+                    visible: ["default-app", "outlook", "mac-mail"].indexOf(dialog.review.backend) >= 0
                     text: qsTr("Copy Attendees")
                     enabled: dialog.ready && !dialog.busy
                     onClicked: dialog.copyAttendees()

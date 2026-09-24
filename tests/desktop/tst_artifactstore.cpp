@@ -16,6 +16,7 @@ class ArtifactStoreTest final : public QObject {
     Q_OBJECT
 private slots:
     void settingsAreProfileAndDatabaseScoped();
+    void platformOnlyBackendsStayOnTheirPlatform();
     void stagesImmutableAttachmentsAndRejectsTraversal();
     void rejectsOperationIdCollisionsWithoutReplacingRecoveryData();
     void recoversAndCleansOnlyOwnedArtifacts();
@@ -49,6 +50,32 @@ void ArtifactStoreTest::settingsAreProfileAndDatabaseScoped()
     QCOMPARE(firstStore.thunderbirdPath(), QStringLiteral("/opt/thunderbird/thunderbird"));
     QCOMPARE(secondStore.preferredBackend(), BackendId::DefaultApp);
     QCOMPARE(secondStore.thunderbirdPath(), QString());
+}
+
+void ArtifactStoreTest::platformOnlyBackendsStayOnTheirPlatform()
+{
+    QTemporaryDir dir;
+    QSettings settings(dir.filePath("settings.ini"), QSettings::IniFormat);
+    EmailSettingsStore store(settings);
+    const BackendId platformDefault = store.preferredBackend();
+
+    // A value written on another platform, such as a copied settings file.
+    settings.setValue(QStringLiteral("Email/v1/PreferredBackend"), QStringLiteral("outlook-classic"));
+#if defined(Q_OS_WIN)
+    QCOMPARE(store.preferredBackend(), BackendId::OutlookClassic);
+    Q_UNUSED(platformDefault);
+#else
+    QCOMPARE(store.preferredBackend(), platformDefault);
+    store.setPreferredBackend(BackendId::Outlook);
+    QCOMPARE(store.preferredBackend(), platformDefault);
+#endif
+#if !defined(Q_OS_DARWIN)
+    store.setPreferredBackend(BackendId::MacMail);
+    QVERIFY(store.preferredBackend() != BackendId::MacMail);
+#endif
+    QVERIFY(isBackendAvailableOnThisPlatform(BackendId::DefaultApp));
+    QVERIFY(isBackendAvailableOnThisPlatform(BackendId::Thunderbird));
+    QVERIFY(isBackendAvailableOnThisPlatform(BackendId::Graph));
 }
 
 void ArtifactStoreTest::stagesImmutableAttachmentsAndRejectsTraversal()

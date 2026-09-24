@@ -57,6 +57,7 @@ class GraphMeetingBackend;
 class MacMailBackend;
 class MacCalendarBackend;
 #endif
+class OutlookClassicMeetingBackend;
 }
 
 // DesktopAppController — the QML bridge for the desktop app.
@@ -893,6 +894,14 @@ private:
 #if defined(Q_OS_DARWIN)
     std::unique_ptr<PN::Comm::MacMailBackend> m_macMailBackend;
     std::unique_ptr<PN::Comm::MacCalendarBackend> m_macCalendarBackend;
+#endif
+#if defined(Q_OS_WIN)
+    // "Outlook" is the new Outlook for Windows, "Outlook (Classic)" is
+    // OUTLOOK.EXE; each opens that app whatever the file associations say.
+    std::unique_ptr<PN::Comm::EmlFileEmailBackend> m_outlookEmailBackend;
+    std::unique_ptr<PN::Comm::EmlFileEmailBackend> m_outlookClassicEmailBackend;
+    std::unique_ptr<PN::Comm::IcsFileMeetingBackend> m_outlookMeetingBackend;
+    std::unique_ptr<PN::Comm::OutlookClassicMeetingBackend> m_outlookClassicMeetingBackend;
 #endif
     std::unique_ptr<PN::Comm::CommunicationsController> m_communicationsController;
     std::unique_ptr<PN::Comm::RecipientSelectionModel> m_recipientSelectionModel;

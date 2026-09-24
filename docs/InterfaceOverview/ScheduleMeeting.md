@@ -40,18 +40,21 @@ Saved audiences are shared with the project's reports. An audience saved here ap
 
 ## What happens after Open Invite
 
-The route depends on **Settings > Preferences > Email and Scheduling Integration**.
+The route depends on **Settings > Preferences > Email and Scheduling Integration**. The list there only offers the choices your platform supports; see [Email and Meeting Setup](<EmailAndMeetingSetup.md>) for which appear where.
 
-**Default Application** writes a calendar file and opens it with your default calendar application.
+Some routes cannot carry the attendees. For those, the Schedule meeting window shows a **Copy Attendees** button that puts every required and optional attendee on the clipboard, ready to paste into the event.
 
-- On Windows, Outlook opens it as an appointment. Confirm the attendees and the time, then click **Send**.
-- On macOS, Calendar opens it as an event. Pick the calendar, confirm the attendees, then send the invitations.
+**Default Application** (all platforms) writes a calendar file and opens it with whatever application handles `.ics` files. Many calendar applications, the new Outlook among them, import the file without its attendees, so click **Copy Attendees** first and paste them into the event. Then confirm the time and send the invitations.
 
-**MacOS Email and Calendar** creates the event directly in Calendar, on your first writable calendar, with the agenda in its notes. Calendar would send invitations the moment an event gets attendees, so none are added. Click **Copy Attendees** in the Schedule meeting window before or after **Open Invite**. That puts every required and optional attendee on the clipboard. Paste them into the event's invitees field in Calendar, then click **Send**. The first time, macOS asks to let Project Notes access your calendars and control Calendar. Allow both.
+**Outlook** (Windows) opens the calendar file in the new Outlook, whatever application holds the `.ics` association. The new Outlook drops the attendees, so click **Copy Attendees**, paste them into the event, then send it.
 
-**Thunderbird** hands Thunderbird the calendar file. Thunderbird asks which of its calendars to import it into. Open the event there to edit it and send the invitations.
+**Outlook (Classic)** (Windows) builds the meeting in Outlook (classic) and opens it as an unsent meeting window. The attendees, time and agenda are already filled in: required attendees on the **To** line, optional ones on the optional line. Check it, then click **Send**.
 
-**Microsoft 365 drafts** creates a draft event in your Microsoft 365 calendar and opens it in Outlook on the web. Review it and send the invitations from there. This route needs calendar permission, so sign out and sign in again under **Settings > Office 365 Integration** if your sign-in predates meeting scheduling.
+**MacOS Email and Calendar** (macOS) creates the event directly in Calendar, on your first writable calendar, with the agenda in its notes. Calendar would send invitations the moment an event gets attendees, so none are added. Click **Copy Attendees** in the Schedule meeting window before or after **Open Invite**. That puts every required and optional attendee on the clipboard. Paste them into the event's invitees field in Calendar, then click **Send**. The first time, macOS asks to let Project Notes access your calendars and control Calendar. Allow both.
+
+**Thunderbird** (all platforms) hands Thunderbird the calendar file. Thunderbird asks which of its calendars to import it into. Open the event there to edit it and send the invitations.
+
+**Microsoft 365 drafts** (all platforms) creates a draft event in your Microsoft 365 calendar and opens it in Outlook on the web. Review it and send the invitations from there. This route needs calendar permission, so sign out and sign in again under **Settings > Office 365 Integration** if your sign-in predates meeting scheduling.
 
 Project Notes never sends an invitation. It only prepares one.
 

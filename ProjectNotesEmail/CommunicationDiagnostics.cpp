@@ -31,6 +31,12 @@ QString diagnosticDisplayText(const QString &code)
     if (code == QLatin1String("eml-open-failed"))
         return tr("Your default mail application could not be started. "
                   "Check that a mail application is set as the system default for email files (.eml).");
+    if (code == QLatin1String("outlook-open-failed"))
+        return tr("The new Outlook could not be started. "
+                  "Check that it is installed, or choose another Email and Scheduling Integration in Settings.");
+    if (code == QLatin1String("outlook-classic-open-failed"))
+        return tr("Outlook (classic) could not be started. "
+                  "Check that it is installed, or choose another Email and Scheduling Integration in Settings.");
     if (code == QLatin1String("eml-launch-already-attempted"))
         return tr("This email was already handed to your mail application. "
                   "Check for an open compose window before preparing it again.");

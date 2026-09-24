@@ -44,6 +44,10 @@
 #include "ProjectNotesEmail/backends/MacMailBackend.h"
 #include "ProjectNotesMeetings/backends/MacCalendarBackend.h"
 #endif
+#if defined(Q_OS_WIN)
+#include "ProjectNotesEmail/backends/OutlookLauncher.h"
+#include "ProjectNotesMeetings/backends/OutlookClassicMeetingBackend.h"
+#endif
 #include "ProjectNotesIntegrations/MeetingTemplateStore.h"
 #include "ProjectNotesIntegrations/Office365Service.h"
 #include "ProjectNotesIntegrations/QtNetworkHttpTransport.h"
@@ -166,6 +170,32 @@ DesktopAppController::DesktopAppController(QObject* parent)
 #else
     m_emailService->registerBackend(PN::Comm::BackendId::MacMail, m_emlFileEmailBackend.get());
     m_meetingService->registerBackend(PN::Comm::BackendId::MacMail, m_icsMeetingBackend.get());
+#endif
+#if defined(Q_OS_WIN)
+    // The new Outlook takes the staged .eml/.ics file like any default app, but
+    // imports an .ics without its attendees; the Schedule meeting window offers
+    // Copy Attendees for it.  Outlook (classic) opens the .eml the way its own
+    // file association does, and builds meetings through its object model so
+    // the attendees arrive filled in.
+    const QString cacheDirectory = PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile);
+    const auto openInNewOutlook = [](const QUrl &url) {
+        return PN::Comm::OutlookLauncher::openWithNewOutlook(url.toLocalFile());
+    };
+    m_outlookEmailBackend = std::make_unique<PN::Comm::EmlFileEmailBackend>(
+        cacheDirectory, openInNewOutlook, QStringLiteral("outlook-open-failed"));
+    m_emailService->registerBackend(PN::Comm::BackendId::Outlook, m_outlookEmailBackend.get());
+    m_outlookMeetingBackend = std::make_unique<PN::Comm::IcsFileMeetingBackend>(
+        cacheDirectory, openInNewOutlook, QStringLiteral("outlook-open-failed"));
+    m_meetingService->registerBackend(PN::Comm::BackendId::Outlook, m_outlookMeetingBackend.get());
+    m_outlookClassicEmailBackend = std::make_unique<PN::Comm::EmlFileEmailBackend>(
+        cacheDirectory,
+        [](const QUrl &url) {
+            return PN::Comm::OutlookLauncher::openWithClassicOutlook(url.toLocalFile(), QStringLiteral("/eml"));
+        },
+        QStringLiteral("outlook-classic-open-failed"));
+    m_emailService->registerBackend(PN::Comm::BackendId::OutlookClassic, m_outlookClassicEmailBackend.get());
+    m_outlookClassicMeetingBackend = std::make_unique<PN::Comm::OutlookClassicMeetingBackend>();
+    m_meetingService->registerBackend(PN::Comm::BackendId::OutlookClassic, m_outlookClassicMeetingBackend.get());
 #endif
     m_graphMeetingBackend = std::make_unique<PN::Comm::GraphMeetingBackend>(m_office365Service);
     m_meetingService->registerBackend(PN::Comm::BackendId::Graph, m_graphMeetingBackend.get());
@@ -512,7 +542,7 @@ QString DesktopAppController::preferredEmailBackend() const
 void DesktopAppController::setPreferredEmailBackend(const QString &backend)
 {
     const auto parsed = PN::Comm::backendIdFromStableString(backend);
-    if (!parsed) return;
+    if (!parsed || !PN::Comm::isBackendAvailableOnThisPlatform(*parsed)) return;
     QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
     PN::Comm::EmailSettingsStore(settings).setPreferredBackend(*parsed);
     emit emailSettingsChanged();
@@ -1335,6 +1365,8 @@ QVariantMap DesktopAppController::meetingReview() const
     case PN::Comm::BackendId::Graph: backendLabel = tr("Microsoft 365"); break;
     case PN::Comm::BackendId::Thunderbird: backendLabel = tr("Thunderbird"); break;
     case PN::Comm::BackendId::DefaultApp: backendLabel = tr("Default application"); break;
+    case PN::Comm::BackendId::Outlook: backendLabel = tr("Outlook"); break;
+    case PN::Comm::BackendId::OutlookClassic: backendLabel = tr("Outlook (Classic)"); break;
     default: backendLabel = PN::Comm::toStableString(review.backend); break;
     }
     const QString agenda = !review.htmlAgenda.isEmpty() ? review.htmlAgenda
@@ -1555,6 +1587,9 @@ QString DesktopAppController::meetingErrorText(const QString &code, const QStrin
         {QStringLiteral("meeting-backend-unavailable"), QT_TR_NOOP("The selected Email and Scheduling Integration cannot schedule meetings. Choose another in Settings > Preferences.")},
         {QStringLiteral("thunderbird-unavailable"), QT_TR_NOOP("Thunderbird was not found. Check its path in Settings > Preferences > Email and Scheduling Integration.")},
         {QStringLiteral("thunderbird-launch-failed"), QT_TR_NOOP("Thunderbird could not be started.")},
+        {QStringLiteral("outlook-open-failed"), QT_TR_NOOP("The meeting file was created, but the new Outlook did not open it. Check that the new Outlook is installed, or choose another Email and Scheduling Integration.")},
+        {QStringLiteral("outlook-classic-unavailable"), QT_TR_NOOP("Outlook (classic) was not found. Check that it is installed, or choose another Email and Scheduling Integration.")},
+        {QStringLiteral("outlook-classic-failed"), QT_TR_NOOP("Outlook (classic) could not create the meeting. Close any Outlook dialog that is waiting for an answer, then try again.")},
         {QStringLiteral("calendar-open-failed"), QT_TR_NOOP("The meeting file was created, but no calendar app opened it. Set a default app for .ics files, or choose another Email and Scheduling Integration.")},
         {QStringLiteral("office365-not-authenticated"), QT_TR_NOOP("Sign in to Microsoft 365 in Settings > Office 365 Integration, then try again.")},
         {QStringLiteral("account-generation-changed"), QT_TR_NOOP("The Microsoft 365 account changed. Try again.")},

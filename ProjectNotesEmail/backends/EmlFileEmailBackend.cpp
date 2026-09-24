@@ -40,8 +40,9 @@ QString stageMessage(const QString &cacheDirectory, const EmailRequest &request,
 
 } // namespace
 
-EmlFileEmailBackend::EmlFileEmailBackend(QString cacheDirectory, FileOpener opener)
-    : m_cacheDirectory(std::move(cacheDirectory)), m_opener(std::move(opener))
+EmlFileEmailBackend::EmlFileEmailBackend(QString cacheDirectory, FileOpener opener, QString openFailureCode)
+    : m_cacheDirectory(std::move(cacheDirectory)), m_opener(std::move(opener)),
+      m_openFailureCode(std::move(openFailureCode))
 {
     if (!m_opener) m_opener = [](const QUrl &url) { return QDesktopServices::openUrl(url); };
 }
@@ -76,7 +77,7 @@ void EmlFileEmailBackend::handoff(EmailRequest request, Completion completion)
     }
     m_launchAttempted.insert(request.operationId);
     if (!m_opener(QUrl::fromLocalFile(path))) {
-        result.error = {"eml-open-failed", {}, RetryKind::RetryPresentation, OutcomeCertainty::Certain};
+        result.error = {m_openFailureCode, {}, RetryKind::RetryPresentation, OutcomeCertainty::Certain};
         completion(result); return;
     }
     // The mail application may or may not keep the draft; nothing reports back.

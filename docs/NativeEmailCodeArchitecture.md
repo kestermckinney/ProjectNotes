@@ -155,7 +155,7 @@ Use namespace `PN::Comm` for new C++ types. Use enum-class values internally and
 enum class Workflow { SendMeetingNotes, TrackerItemsReport,
                       StatusReport, MeetingNotesReport };
 enum class EmailMode { InlineHtml, HtmlAttachment, PdfAttachment, None };
-enum class BackendId { Graph, DefaultApp, OutlookClassic, Thunderbird, MacMail };
+enum class BackendId { Graph, DefaultApp, OutlookClassic, Thunderbird, MacMail, Outlook };  // Outlook/OutlookClassic: Windows only; MacMail: macOS only
 enum class RecipientRole { To, Cc, Bcc };
 
 struct SourceContext {

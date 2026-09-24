@@ -24,33 +24,47 @@ Open **Settings > Preferences** and find **Email and Scheduling Integration**. O
 | Integration | Email becomes | Meeting becomes | Works on |
 | :--- | :--- | :--- | :--- |
 | **Default Application** | A draft message file (`.eml`) opened by whatever application handles that file type | A calendar file (`.ics`) opened by your default calendar application | Windows, macOS, Linux |
+| **Outlook** | A draft message opened in the new Outlook | A calendar file opened in the new Outlook, which leaves out the attendees. Copy them from the Schedule meeting window and paste them in | Windows |
+| **Outlook (Classic)** | A draft message opened in Outlook (classic) | An unsent meeting window in Outlook (classic) with the attendees filled in | Windows |
 | **MacOS Email and Calendar** | A Mail compose window with the formatted message. No Bcc and no attachments | An event created directly in Calendar, without attendees. Copy them from the Schedule meeting window and paste them in | macOS |
 | **Thunderbird** | A Thunderbird compose window, attachments included | A calendar file handed to Thunderbird, which offers to import it | Windows, macOS, Linux |
 | **Microsoft 365 drafts** | A draft in your Microsoft 365 mailbox, opened in Outlook on the web | A draft event in your Microsoft 365 calendar, opened in Outlook on the web | Windows, macOS, Linux |
 
-On macOS, **MacOS Email and Calendar** is selected the first time you run Project Notes. Elsewhere, **Default Application** is the right starting point. Pick one, then follow the section for your platform below.
+The list only shows the choices your operating system supports, so no one sees all six at once:
+
+- **Windows:** Default Application, Outlook, Outlook (Classic), Thunderbird and Microsoft 365 drafts.
+- **macOS:** Default Application, MacOS Email and Calendar, Thunderbird and Microsoft 365 drafts.
+- **Linux:** Default Application, Thunderbird and Microsoft 365 drafts.
+
+On macOS, **MacOS Email and Calendar** is selected the first time you run Project Notes. Windows and Linux start on **Default Application**; on Windows, switch to the Outlook you use. Pick one, then follow the section for your platform below.
+
+If your settings came from another computer and name a choice this one lacks, such as **Outlook (Classic)** on a Mac, Project Notes falls back to the platform default until you choose again.
 
 ## Windows with Outlook Classic
 
-1. Open **Settings > Preferences > Email and Scheduling Integration** and set **Integration** to **Default Application**.
-2. Confirm Outlook owns the two file types Project Notes produces. Open **Settings > Apps > Default apps** in Windows, select **Outlook**, and check that `.eml` and `.ics` are both assigned to it.
-3. Start Outlook and leave it running. Handoff is faster when Outlook is already open.
+1. Open **Settings > Preferences > Email and Scheduling Integration** and set **Integration** to **Outlook (Classic)**.
+2. Start Outlook and leave it running. Handoff is faster when Outlook is already open.
+
+Project Notes starts Outlook (classic) itself, so the `.eml` and `.ics` file associations don't matter.
 
 When you send a report, Project Notes writes the message with its attachments and opens it in Outlook as a new, unsent message. The subject, recipients, body and attachments are already filled in. Edit anything you like, then click **Send**.
 
-When you schedule a meeting, the calendar file opens as an appointment window. Add or confirm the attendees, check the time, then click **Send** to issue the invitations.
+When you schedule a meeting, Outlook opens an unsent meeting window. The attendees, time, location and agenda are already in it. Required attendees go on the **To** line and optional ones on the optional line. Check it over, then click **Send** to issue the invitations.
 
 ## Windows with the new Outlook
 
-The new Outlook uses the same two file types, so the setup is the same.
+1. Set **Integration** to **Outlook**.
+2. Sign in to the new Outlook with the account you send project mail from.
 
-1. Set **Integration** to **Default Application**.
-2. In **Settings > Apps > Default apps**, assign `.eml` and `.ics` to the new Outlook.
-3. Sign in to the new Outlook with the account you send project mail from.
+Project Notes opens the new Outlook directly, even when Outlook (classic) or another app holds the `.eml` and `.ics` associations.
 
-Reports open as a draft message ready to send. Invitations open as a draft event where you confirm the attendee list and send.
+Reports open as a draft message ready to send. Meetings are different. The new Outlook imports the calendar file as a plain event and drops the attendee list. Before you click **Open Invite**, click **Copy Attendees** in the Schedule meeting window. Then paste the attendees into the event in Outlook and send it.
 
-If you keep both Outlook Classic and the new Outlook installed, whichever one holds the file association is the one Project Notes opens. Change the association to switch.
+If you want the meeting to arrive with its attendees already filled in, use **Outlook (Classic)** or **Microsoft 365 drafts** instead.
+
+## Windows with another default app
+
+**Default Application** opens the files with whatever app holds the `.eml` and `.ics` associations. Many calendar apps, the new Outlook among them, import an `.ics` file without its attendees. **Copy Attendees** is available with this choice too.
 
 ## macOS with Mail and Calendar
 
@@ -172,6 +186,8 @@ Run one of each before you rely on it.
 | :--- | :--- |
 | Nothing opens after **Send Email** | No application is registered for `.eml`. Set the association, or switch to **Thunderbird** or **Microsoft 365 drafts**. |
 | Nothing opens after **Open Invite** | No application is registered for `.ics`. Same fix. |
+| The meeting opens in the new Outlook with no attendees | The new Outlook drops them when it imports a calendar file. Click **Copy Attendees** before **Open Invite** and paste them into the event, or switch to **Outlook (Classic)**. |
+| Outlook reports it is not installed | The Outlook you chose is missing. **Outlook** needs the new Outlook for Windows from the Microsoft Store; **Outlook (Classic)** needs Microsoft Office's Outlook. |
 | The wrong mail application opens | Another application holds the `.eml` association. Reassign it in your operating system's default applications settings. |
 | A person cannot be selected as a recipient | Their person record has no **Email**. Add one. |
 | The audience is empty | Nobody is on the project team, or nobody is marked **Receive Status** for a status report. |

@@ -15,13 +15,17 @@ namespace PN::Comm {
 class IcsFileMeetingBackend final : public MeetingBackend {
 public:
     using FileOpener = std::function<bool(const QUrl &)>;
-    explicit IcsFileMeetingBackend(QString cacheDirectory, FileOpener opener = {});
+    // `openFailureCode` names the failure when `opener` returns false, so a
+    // backend that opens one specific application can say which.
+    explicit IcsFileMeetingBackend(QString cacheDirectory, FileOpener opener = {},
+                                   QString openFailureCode = QStringLiteral("calendar-open-failed"));
     void handoff(MeetingRequest request, Completion completion) override;
     void cancel(const QUuid &operationId) override;
 
 private:
     QString m_cacheDirectory;
     FileOpener m_opener;
+    QString m_openFailureCode;
     QSet<QUuid> m_cancelled;
 };
 

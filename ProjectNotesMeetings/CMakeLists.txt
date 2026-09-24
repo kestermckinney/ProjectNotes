@@ -31,6 +31,15 @@ if(APPLE)
     target_link_libraries(ProjectNotesMeetings PRIVATE "-framework AppKit" "-framework ApplicationServices" "-framework CoreServices" "-framework EventKit")
 endif()
 
+if(WIN32)
+    # Outlook (classic) meetings are built through its COM object model.
+    target_sources(ProjectNotesMeetings PRIVATE
+        backends/OutlookClassicMeetingBackend.h
+        backends/OutlookClassicMeetingBackend.cpp
+    )
+    target_link_libraries(ProjectNotesMeetings PRIVATE ole32 oleaut32)
+endif()
+
 target_include_directories(ProjectNotesMeetings PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 target_link_libraries(ProjectNotesMeetings PUBLIC
     ProjectNotesEmail
