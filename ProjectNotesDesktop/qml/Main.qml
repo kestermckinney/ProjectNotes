@@ -873,7 +873,10 @@ ApplicationWindow {
                     Layout.alignment: Qt.AlignHCenter
                     Layout.preferredWidth: 88
                     Layout.preferredHeight: 88
-                    source: "qrc:/qt/qml/ProjectNotesDesktop/icons/projectnotes.ico"
+                    // Use the high-resolution PNG bundled with the help assets.
+                    // Loading the multi-frame Windows ICO here can make Qt pick
+                    // a low-resolution frame and upscale it on HiDPI displays.
+                    source: "qrc:/qt/qml/ProjectNotesDesktop/help/img/logo1024.png"
                     fillMode: Image.PreserveAspectFit
                     smooth: true
                     mipmap: true
