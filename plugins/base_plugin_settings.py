@@ -309,7 +309,6 @@ class OutlookIntegrationSettings(QDialog):
         self.ui.lineEditBackupInboxFolder.setText(self.pnc.get_plugin_setting("BackupInBoxFolder", self.settings_pluginname) or "")
         self.ui.lineEditBackupSentFolder.setText(self.pnc.get_plugin_setting("BackupSentFolder", self.settings_pluginname) or "")
         self.ui.checkBoxSendO365.setChecked((self.pnc.get_plugin_setting("SendO365", self.settings_pluginname) or "").lower() == "true")
-        self.ui.checkBoxScheduleO365.setChecked((self.pnc.get_plugin_setting("ScheduleO365", self.settings_pluginname) or "").lower() == "true")
 
         if w is not None and h is not None:
             self.ui.resize(int(w), int(h))
@@ -341,7 +340,6 @@ class OutlookIntegrationSettings(QDialog):
         self.pnc.set_plugin_setting("BackupEmails", self.settings_pluginname, "true" if self.ui.checkBoxBackupEmails.isChecked() else "false")
         self.pnc.set_plugin_setting("BackupInBoxFolder", self.settings_pluginname, self.ui.lineEditBackupInboxFolder.text())
         self.pnc.set_plugin_setting("BackupSentFolder", self.settings_pluginname, self.ui.lineEditBackupSentFolder.text())
-        self.pnc.set_plugin_setting("ScheduleO365", self.settings_pluginname, "true" if self.ui.checkBoxScheduleO365.isChecked() else "false")
         self.pnc.set_plugin_setting("SendO365", self.settings_pluginname, "true" if self.ui.checkBoxSendO365.isChecked() else "false")
 
         projectnotes.force_reload("outlooksync_thread")
@@ -754,8 +752,6 @@ def setup_default_outlook_settings():
         pnc_tmp.set_plugin_setting("BackupSentFolder", settings_pluginname, "Project Management/Correspondence/Sent Items")
     if pnc_tmp.get_plugin_setting("SendO365", settings_pluginname) is None:
         pnc_tmp.set_plugin_setting("SendO365", settings_pluginname, "false")
-    if pnc_tmp.get_plugin_setting("ScheduleO365", settings_pluginname) is None:
-        pnc_tmp.set_plugin_setting("ScheduleO365", settings_pluginname, "false")
 
 def setup_default_icloud_settings():
     pnc_tmp = ProjectNotesCommon()

@@ -21,3 +21,20 @@ Still intentionally **not** removed: shared plugin helpers (including
 unrelated report plugins, and user data/settings. Upgrade cleanup
 must identify the shipped bundled files exactly and never recursively remove a
 plugin directory.
+
+## Upgrade cleanup
+
+Every bundled plugin, thread, form and helper that any release shipped and a
+later one dropped is listed by exact name in three places, one per packaging
+route. Keep them identical:
+
+- `packaging/windows/remove_retired_plugins.nsh`: run by the Windows installer
+  before it copies the new payload, and by the uninstaller.
+- `packaging/RemoveRetiredPlugins.cmake.in`: an `install(SCRIPT)` for the
+  Linux/Flatpak install tree.
+- `packaging/macos/projectnotes-scripts/preinstall`: run by the macOS pkg.
+
+The list covers the report plugins above, the Python File Finder, and the
+older email, meeting, contact and settings plugins retired in 4.0 and earlier.
+Cached bytecode for those scripts goes with them. User plugins are never
+touched, because no plugin folder is removed recursively.

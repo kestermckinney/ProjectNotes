@@ -11,7 +11,7 @@ Email, meeting invitations and the four project reports are **not** plugins. The
 ### Standard Plugins Overview
 
 **Contacts and enterprise connections:**
-- Outlook Integration — Import and export contacts through Microsoft Graph, download project-related email, and sync assigned items. See [Outlook Integration](<OutlookIntegration.md>).
+- Outlook Integration — Import and export contacts, download project-related email, and sync assigned items, through Microsoft 365 on any platform or Outlook (classic) on Windows. See [Outlook Integration](<OutlookIntegration.md>).
 - iCloud Contacts — Import iCloud contacts and optionally export new Project Notes contacts
 - IFS Cloud — Connect to a customized IFS Cloud ERP instance
 
@@ -229,7 +229,8 @@ Created: 03/23/2026
 
 | Setting | Example Value | Purpose |
 | :--- | :--- | :--- |
-| **Client ID** | a1b2c3d4-e5f6-47a8-b9c0-d1e2f3a4b5c6 | Microsoft Entra app ID used for contact synchronization |
+| **Integration Type** | Office 365 Application | Work through Microsoft 365. **Outlook Automation** drives Outlook (classic) instead, on Windows only |
+| **Application ID** | a1b2c3d4-e5f6-47a8-b9c0-d1e2f3a4b5c6 | Microsoft Entra app ID used for contact synchronization |
 | **Tenant ID** | f1e2d3c4-b5a6-4978-c9d0-e1f2a3b4c5d6 | Microsoft Entra tenant for your organization |
 
 #### File Finder Settings
@@ -269,7 +270,7 @@ The variable `[$projects.project_number.1]` in the URL is replaced with the actu
 | Settings Entry | Plugin | Description |
 | :--- | :--- | :--- |
 | **Editor** | Base Plugins Settings | Set the path to the Python script editor used by the Script Editor utility. |
-| **Outlook Integration** | Base Plugins Settings | Configure the Microsoft Graph credentials and options used for contact and item synchronization. See [Outlook Integration](<OutlookIntegration.md>). |
+| **Outlook Integration** | Base Plugins Settings | Choose Microsoft 365 or Outlook (classic), and set the credentials and options used for contact, email and item synchronization. See [Outlook Integration](<OutlookIntegration.md>). |
 | **My Shortcuts** | Base Plugins Settings | Configure custom URL shortcuts that appear in the Plugins or right-click menus. See [My Shortcuts](<MyShortcuts.md>). |
 | **Settings Migrator** | Base Plugins Settings | Migrate plugin settings between machines or installations. |
 | **iCloud Contacts** | Base Plugins Settings | Configure the Apple Account email and app-specific password used for scheduled iCloud contact sync. See [iCloud Contacts](<iCloudContacts.md>). |
