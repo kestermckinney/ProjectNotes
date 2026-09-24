@@ -14,7 +14,7 @@ Project Notes includes several plugins that copy pre-configured Microsoft Office
 
 ## Default Project Folder Structure
 
-All template and export plugins look for a **Files & Folders** entry on the project with the description **"Project Folder"** to determine the project's root folder on disk. From that root, each plugin writes output to a configurable sub-folder. The defaults assume the following structure:
+All template plugins look for a **Files & Folders** entry on the project with the description **"Project Folder"** to determine the project's root folder on disk. From that root, each plugin writes output to a configurable sub-folder. The defaults assume the following structure:
 
 ```
 [Project Folder]/
@@ -23,7 +23,6 @@ All template and export plugins look for a **Files & Folders** entry on the proj
     ├── Schedule/             ← New MS Project
     ├── PCR's/                ← New Change Order, PCR Register
     ├── Risk Management/      ← New Risk Register
-    ├── Issues List/          ← Export Tracker Items
     └── Status Reports/       ← SSRS Report Capture (IFS)
 ```
 

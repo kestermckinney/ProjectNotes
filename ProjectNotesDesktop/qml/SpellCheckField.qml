@@ -23,8 +23,16 @@ Item {
 
     // The editor to check. Defaults to the parent (the usual inline placement).
     property Item target: parent
+    // Some fields (paths, identifiers, names) need the standard editing menu
+    // without spelling suggestions or squiggles.
+    property bool spellCheckEnabled: true
     // Shared full-field dialog; if null the "Check Spelling…" item is hidden.
     property var  dialog: null
+    // Optional literal fields supplied by a host editor.  Keeping this on the
+    // shared text context menu gives template editors the same menu treatment
+    // as every other editable surface instead of adding page-local controls.
+    property var insertFields: []
+    signal insertFieldRequested(string path)
     // Exposed so a toolbar button can open the dialog for this same field.
     property alias spell: spell
 
@@ -34,6 +42,9 @@ Item {
     property bool   _bad: false
     property var    _suggestions: []
     property bool   _hasSelection: false
+    // A read-only view (the log viewer, the help document) still offers Copy
+    // and Select All; everything that would change the text stays dimmed.
+    property bool   _readOnly: false
     property bool   _canPaste: false
     property bool   _canUndo: false
     property bool   _canRedo: false
@@ -51,15 +62,28 @@ Item {
         t.cursorPosition = s + txt.length
     }
 
+    // Qt 6.9 gave every Controls text item a context menu of its own
+    // (ContextMenu.menu, set by the style's TextField.qml/TextArea.qml). It is
+    // a deferred property, so it costs nothing until something asks for it:
+    // the first right-click showed this menu, that request built Qt's, and
+    // every right-click after it showed Qt's instead. Clearing it leaves one
+    // menu on the field.
+    Binding {
+        target: root.target
+        property: "ContextMenu.menu"
+        value: null
+    }
+
     SpellCheck {
         id: spell
         editor: root.target
-        enabled: true
+        enabled: root.spellCheckEnabled
     }
 
     // The visible red squiggle (Qt Quick won't draw it via QTextCharFormat).
     SpellSquiggle {
         anchors.fill: parent
+        visible: root.spellCheckEnabled
         spell: spell
         editor: root.target
     }
@@ -72,12 +96,13 @@ Item {
             if (!root.target)
                 return
             var pos = root.target.positionAt(ep.position.x, ep.position.y)
-            var w = spell.wordAt(pos)
+            var w = root.spellCheckEnabled ? spell.wordAt(pos) : ""
             root._pos = pos
             root._word = w
             root._bad = (w !== "" && spell.isMisspelled(w))
             root._suggestions = root._bad ? spell.suggestionsFor(w).slice(0, 8) : []
             root._hasSelection = root.target.selectedText.length > 0
+            root._readOnly = root.target.readOnly === true
             root._canPaste = root.target.canPaste === true
             root._canUndo = root.target.canUndo === true
             root._canRedo = root.target.canRedo === true
@@ -117,6 +142,7 @@ Item {
             open()
         }
         onHeightChanged: if (visible && parent) y = Math.max(6, Math.min(y, parent.height - height - 6))
+        onClosed: insertFieldFlyout.close()
 
         contentItem: ColumnLayout {
             spacing: 0
@@ -173,12 +199,29 @@ Item {
                 onActivated: { menu.close(); spell.addToDictionary(root._word) }
             }
             SpellRow {
-                visible: root.dialog !== null
+                visible: root.dialog !== null && !root._readOnly
                 icon: "spellcheck"; label: qsTr("Check Spelling…")
                 onActivated: { menu.close(); if (root.dialog) root.dialog.openFor(spell, root.target) }
             }
 
             Rectangle {
+                Layout.fillWidth: true; Layout.preferredHeight: 1
+                color: Theme.borderSoft; Layout.topMargin: 3; Layout.bottomMargin: 3
+            }
+
+            MenuRow {
+                id: insertFieldRow
+                visible: root.insertFields.length > 0
+                icon: "data_object"
+                label: qsTr("Insert Field")
+                showChevron: true
+                highlighted: insertFieldFlyout.visible
+                onHoveredChanged: if (hovered) insertFieldFlyout.openBeside(insertFieldRow)
+                onActivated: insertFieldFlyout.openBeside(insertFieldRow)
+            }
+
+            Rectangle {
+                visible: root.insertFields.length > 0
                 Layout.fillWidth: true; Layout.preferredHeight: 1
                 color: Theme.borderSoft; Layout.topMargin: 3; Layout.bottomMargin: 3
             }
@@ -190,12 +233,12 @@ Item {
             // same operation via the menu, for parity with the Widgets menu and
             // with reach for anyone who doesn't know the key.
             SpellRow {
-                enabled: root._canUndo
+                enabled: root._canUndo && !root._readOnly
                 icon: "undo"; label: qsTr("Undo")
                 onActivated: { menu.close(); root.target.undo() }
             }
             SpellRow {
-                enabled: root._canRedo
+                enabled: root._canRedo && !root._readOnly
                 icon: "redo"; label: qsTr("Redo")
                 onActivated: { menu.close(); root.target.redo() }
             }
@@ -209,7 +252,7 @@ Item {
             // in the Widgets app (Cut/Copy/Paste/Paste Unformatted/Delete/
             // Select All).
             SpellRow {
-                enabled: root._hasSelection
+                enabled: root._hasSelection && !root._readOnly
                 icon: "content_cut"; label: qsTr("Cut")
                 onActivated: { menu.close(); root.target.cut() }
             }
@@ -219,17 +262,17 @@ Item {
                 onActivated: { menu.close(); root.target.copy() }
             }
             SpellRow {
-                enabled: root._canPaste
+                enabled: root._canPaste && !root._readOnly
                 icon: "content_paste"; label: qsTr("Paste")
                 onActivated: { menu.close(); root.target.paste() }
             }
             SpellRow {
-                enabled: root._canPaste
+                enabled: root._canPaste && !root._readOnly
                 icon: "content_paste_go"; label: qsTr("Paste Unformatted")
                 onActivated: { menu.close(); root._pasteUnformatted() }
             }
             SpellRow {
-                enabled: root._hasSelection
+                enabled: root._hasSelection && !root._readOnly
                 icon: "delete"; label: qsTr("Delete")
                 onActivated: { menu.close(); root.target.remove(root.target.selectionStart, root.target.selectionEnd) }
             }
@@ -242,6 +285,19 @@ Item {
             SpellRow {
                 icon: "select_all"; label: qsTr("Select All")
                 onActivated: { menu.close(); root.target.selectAll() }
+            }
+        }
+
+        MenuFlyout {
+            id: insertFieldFlyout
+            items: root.insertFields.map(function(path) {
+                return { icon: "data_object", label: path }
+            })
+            onItemActivated: (index) => {
+                const path = root.insertFields[index]
+                insertFieldFlyout.close()
+                menu.close()
+                root.insertFieldRequested(path)
             }
         }
 

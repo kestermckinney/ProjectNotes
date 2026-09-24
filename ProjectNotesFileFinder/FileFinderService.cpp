@@ -3,13 +3,14 @@
 
 #include "FileFinderService.h"
 #include "FileFinderWorker.h"
-#include "MicrosoftOAuthManager.h"
+#include "ProjectNotesIntegrations/Office365Service.h"
 #include "../credentialstore.h"
 
 #include <QDir>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QUrl>
 #include <QMetaObject>
 #include <QReadWriteLock>
 #include <QSettings>
@@ -90,8 +91,8 @@ FileFinderService::FileFinderService(QObject *parent) : QObject(parent)
     qRegisterMetaType<QHash<QString, QString>>();
     qRegisterMetaType<QReadWriteLock *>("QReadWriteLock*");
 
-    m_oauth = new MicrosoftOAuthManager(this);
-    m_oauth->setSecretStore(
+    m_office365Service = new PN::Comm::Office365Service(this);
+    m_office365Service->setSecretStore(
         [](const QString &account, QString *error) {
             return CredentialStore::read(QString::fromLatin1(kCredentialService), account, error);
         },
@@ -101,18 +102,39 @@ FileFinderService::FileFinderService(QObject *parent) : QObject(parent)
         [](const QString &account, QString *error) {
             return CredentialStore::remove(QString::fromLatin1(kCredentialService), account, error);
         });
-    connect(m_oauth, &MicrosoftOAuthManager::stateChanged,
+    m_office365Service->setGrantedScopesStore(
+        [this](const QString &account) {
+            QSettings settings(m_settingsOrganization, QStringLiteral("AppSettings"));
+            settings.setFallbacksEnabled(false);
+            return settings.value(QStringLiteral("FileFinder/v1/grantedScopes/")
+                                      + QString::fromLatin1(QUrl::toPercentEncoding(account))).toStringList();
+        },
+        [this](const QString &account, const QStringList &scopes) {
+            QSettings settings(m_settingsOrganization, QStringLiteral("AppSettings"));
+            settings.setFallbacksEnabled(false);
+            settings.setValue(QStringLiteral("FileFinder/v1/grantedScopes/")
+                                  + QString::fromLatin1(QUrl::toPercentEncoding(account)), scopes);
+            settings.sync();
+        },
+        [this](const QString &account) {
+            QSettings settings(m_settingsOrganization, QStringLiteral("AppSettings"));
+            settings.setFallbacksEnabled(false);
+            settings.remove(QStringLiteral("FileFinder/v1/grantedScopes/")
+                            + QString::fromLatin1(QUrl::toPercentEncoding(account)));
+            settings.sync();
+        });
+    connect(m_office365Service, &PN::Comm::Office365Service::accountChanged,
             this, &FileFinderService::authenticationChanged);
-    connect(m_oauth, &MicrosoftOAuthManager::diagnostic, this,
+    connect(m_office365Service, &PN::Comm::Office365Service::diagnostic, this,
             [this](const QString &message) {
         m_status = message;
         emit statusChanged();
     });
-    connect(m_oauth, &MicrosoftOAuthManager::accessTokenChanged, this,
-            [this](const QString &token) {
-        m_accessToken = token;
+    connect(m_office365Service, &PN::Comm::Office365Service::accountChanged, this,
+            [this] {
+        m_accessToken = m_office365Service->fileFinderAccessToken();
         applyConfiguration();
-        if (!token.isEmpty() && m_enabled && m_office365Enabled)
+        if (!m_accessToken.isEmpty() && m_enabled && m_office365Enabled)
             scanNow();
     });
 }
@@ -139,8 +161,12 @@ void FileFinderService::initialize(const QString &databasePath, QReadWriteLock *
     if (m_initialized)
         return;
     m_settingsOrganization = settingsOrganization;
+    // Existing production credentials used only tenant/client. Keep that exact
+    // key while ensuring any developer profile cannot read or delete them.
+    m_office365Service->setSecretNamespace(settingsOrganization == QLatin1String("ProjectNotes")
+        ? QString() : settingsOrganization);
     loadAndMigrateSettings();
-    m_oauth->configure(m_tenantId, m_clientId);
+    m_office365Service->configureIdentity(m_settingsOrganization, m_tenantId, m_clientId);
 
     m_thread = new QThread(this);
     m_thread->setObjectName(QStringLiteral("ProjectNotesFileFinderThread"));
@@ -201,7 +227,7 @@ void FileFinderService::initialize(const QString &databasePath, QReadWriteLock *
     applyConfiguration();
     QMetaObject::invokeMethod(m_worker, &FileFinderWorker::start, Qt::QueuedConnection);
     if (m_office365Enabled)
-        m_oauth->restoreSession();
+        m_office365Service->restoreSession();
     m_status = m_enabled ? tr("File Finder is ready") : tr("File Finder is disabled");
     emit settingsChanged();
     emit statusChanged();
@@ -236,7 +262,7 @@ void FileFinderService::setOffice365Enabled(bool enabled)
     saveSettings();
     applyConfiguration();
     if (enabled)
-        m_oauth->restoreSession();
+        m_office365Service->restoreSession();
     emit settingsChanged();
 }
 
@@ -258,7 +284,7 @@ void FileFinderService::setOffice365TenantId(const QString &tenantId)
     m_tenantId = value;
     invalidateGraphFolderState();
     saveSettings();
-    m_oauth->configure(m_tenantId, m_clientId);
+    m_office365Service->setIdentity(m_tenantId, m_clientId);
     emit settingsChanged();
 }
 
@@ -270,33 +296,33 @@ void FileFinderService::setOffice365ClientId(const QString &clientId)
     m_clientId = value;
     invalidateGraphFolderState();
     saveSettings();
-    m_oauth->configure(m_tenantId, m_clientId);
+    m_office365Service->setIdentity(m_tenantId, m_clientId);
     emit settingsChanged();
 }
 
 bool FileFinderService::office365Authenticated() const
 {
-    return m_oauth && m_oauth->authenticated();
+    return m_office365Service && m_office365Service->authenticated();
 }
 
 bool FileFinderService::office365AuthenticationInProgress() const
 {
-    return m_oauth && m_oauth->authenticationInProgress();
+    return m_office365Service && m_office365Service->authenticationInProgress();
 }
 
 QString FileFinderService::office365AuthenticationStatus() const
 {
-    return m_oauth ? m_oauth->status() : tr("Not signed in");
+    return m_office365Service ? m_office365Service->authenticationStatus() : tr("Not signed in");
 }
 
 QString FileFinderService::office365UserCode() const
 {
-    return m_oauth ? m_oauth->userCode() : QString();
+    return m_office365Service ? m_office365Service->userCode() : QString();
 }
 
 QUrl FileFinderService::office365VerificationUrl() const
 {
-    return m_oauth ? m_oauth->verificationUrl() : QUrl();
+    return m_office365Service ? m_office365Service->verificationUrl() : QUrl();
 }
 
 void FileFinderService::addSearchRoot(const QString &path)
@@ -423,7 +449,7 @@ void FileFinderService::startOffice365SignIn()
 {
     if (!m_office365Enabled)
         setOffice365Enabled(true);
-    m_oauth->startSignIn();
+    m_office365Service->startSignIn();
 }
 
 void FileFinderService::signOutOffice365()
@@ -431,7 +457,7 @@ void FileFinderService::signOutOffice365()
     invalidateGraphFolderState();
     saveSettings();
     applyConfiguration();
-    m_oauth->signOut();
+    m_office365Service->signOut();
 }
 
 void FileFinderService::invalidateGraphFolderState()
@@ -525,12 +551,10 @@ void FileFinderService::saveSettings() const
     const QString office365Prefix = QString::fromLatin1(kOffice365SettingsPrefix);
     settings.setValue(prefix + QStringLiteral("enabled"), m_enabled);
     settings.setValue(prefix + QStringLiteral("office365Enabled"), m_office365Enabled);
-    settings.setValue(office365Prefix + QStringLiteral("tenantId"), m_tenantId);
-    settings.setValue(office365Prefix + QStringLiteral("clientId"), m_clientId);
+    // tenantId/clientId are owned and persisted by Office365Service (see
+    // persistIdentity() below), so a stale copy here can never overwrite them.
     settings.setValue(office365Prefix + QStringLiteral("openLinksInDesktop"),
                       m_office365OpenLinksInDesktop);
-    settings.remove(prefix + QStringLiteral("tenantId"));
-    settings.remove(prefix + QStringLiteral("clientId"));
     settings.setValue(prefix + QStringLiteral("roots"), m_roots);
     settings.setValue(prefix + QStringLiteral("folderExclusions"), m_folderExclusions);
     settings.setValue(prefix + QStringLiteral("graphFolderState"),
@@ -541,6 +565,10 @@ void FileFinderService::saveSettings() const
                                  {QStringLiteral("pattern"), rule.pattern}});
     settings.setValue(prefix + QStringLiteral("rules"),
                       QJsonDocument(array).toJson(QJsonDocument::Compact));
+    settings.sync();
+    // Other File Finder preferences must never flush an older QSettings cache
+    // over the service-owned identity keys.
+    m_office365Service->persistIdentity();
 }
 
 void FileFinderService::applyConfiguration()

@@ -11,6 +11,7 @@
 #include "databaseupgrade_v1_2_0.h"
 #include "databaseupgrade_v5_0_0.h"
 #include "databaseupgrade_v6_1_0.h"
+#include "databaseupgrade_v6_2_0.h"
 
 bool DatabaseStructure::CreateDatabase()
 {
@@ -68,6 +69,11 @@ bool DatabaseStructure::UpgradeDatabase()
         global_DBObjects.execute(QString("update application_version set current_version = '%1';")
             .arg(targetversion));
     }
+
+    // Runs on every launch, outside the version check: every statement is
+    // guarded, so pre-6.2 databases receive the audience table and databases
+    // created by early 6.2.0 builds pick up the shared-audience columns.
+    db_UpgradeStep_v6_2_0();
 
     // Recreate all views as final step (always uses current column names)
     db_CreateAllViews();

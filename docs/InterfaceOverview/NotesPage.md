@@ -12,6 +12,8 @@ The **Notes** tab on a project's [Project Page](<ProjectPage.md>) lists all of t
 
 1. From the **Notes** tab, click the meeting's card.
 
+The open note fills the window, so a badge at the top left names the project the meeting belongs to. Click the badge to jump straight back to that project's [Project Page](<ProjectPage.md>).
+
 
 
 ## Creating a New Meeting
@@ -73,3 +75,11 @@ It is important to record who attended a meeting to make sure the team is commun
 **To delete an attendee:**
 
 1. Click the **×** button on the attendee row.
+
+## Emailing the Notes
+
+Right-click a meeting note, on the project's **Notes** tab or on the note's own page, and choose **Send Notes**. Attendees are preselected as **To** recipients; the rest of the project team appears unchecked and defaults to **Cc**. The notes are formatted into the body of the email.
+
+To send every meeting in one document instead of one note at a time, use the project's **Reports > Meeting Notes…** action.
+
+See [Reports and Email](<ReportsAndEmail.md>).

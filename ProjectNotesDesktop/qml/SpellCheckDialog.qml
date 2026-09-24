@@ -156,6 +156,9 @@ Dialog {
                     background: null
                     selectByMouse: true
                     onAccepted: dlg._change()
+                    // No `dialog` here: this field belongs to the spell-check
+                    // dialog, which cannot check itself.
+                    SpellCheckField { spellCheckEnabled: false }
                 }
             }
 

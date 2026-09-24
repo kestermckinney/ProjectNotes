@@ -42,7 +42,7 @@ Status report items are temporary items, shown under the **Status Report** tab. 
 
 | **Column** | **Description** |
 | :--- | :--- |
-| Category | The category of the status report item: **In Progress**, **Starting**, or **Completed**. These map to the **Activities in Progress**, **Activities For Next Period**, and **Activities Completed** sections of the [Export Status Report](<../StandardPlugins/ExportStatusReport.md>). |
+| Category | The category of the status report item: **In Progress**, **Starting**, or **Completed**. These map to the **Activities in Progress**, **Activities For Next Period**, and **Activities Completed** sections of the [Status Report](<ReportsAndEmail.md>). |
 | Description | The status item description. |
 
 
@@ -76,7 +76,7 @@ Team members are set up under the **Team** tab of the Project Page. Team members
 | :--- | :--- |
 | Team Member | The person selected from values found in the [People List Page](<PeopleListPage.md>). |
 | Role | The role is an open text field. If a Role has been specified in the [People List Page](<PeopleListPage.md>), it will auto populate with a value you can change. |
-| Receive Status | When checked, the [Export Status Report](<../StandardPlugins/ExportStatusReport.md>) plugin includes this team member as a stakeholder and, when emailing the report, sends it to them. |
+| Receive Status | When checked, the [Status Report](<ReportsAndEmail.md>) includes this team member as a stakeholder, and they are selected by default when the report is emailed. |
 
 
 **To add a team member:**
@@ -107,6 +107,16 @@ Team members are set up under the **Team** tab of the Project Page. Team members
 3. The application will automatically switch to the People page and open that person's full record.
 
 
+
+## Reports and Meetings
+
+Right-click the project, either in the Projects list or on the project's own page, to reach two actions built on the data above.
+
+**Reports** opens a submenu with **Meeting Notes…**, **Status…** and **Tracker Items…**. Each one prepares the report, then lets you save it or email it to recipients you pick from the team. See [Reports and Email](<ReportsAndEmail.md>).
+
+**Schedule Meeting…** builds an invitation from a meeting type and the project team, then opens it in your calendar application. See [Scheduling Meetings](<ScheduleMeeting.md>).
+
+Both need a one-time setup before first use. See [Email and Meeting Setup](<EmailAndMeetingSetup.md>).
 
 ## Locations
 

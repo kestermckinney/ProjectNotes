@@ -747,7 +747,7 @@ Item {
                                 // sidebar to move this item there.
                                 Drag.active: dragArea.drag.active
                                 Drag.source: trackerCard
-                                Drag.keys: ["trackerItem"]
+                                Drag.keys: ["Tracker Item"]
                                 Drag.hotSpot.x: width / 2
                                 Drag.hotSpot.y: height / 2
 
@@ -1419,6 +1419,7 @@ Item {
                     topPadding: 0; bottomPadding: 0
                     verticalAlignment: Text.AlignVCenter
                     font.pixelSize: Theme.fontSm
+                    SpellCheckField { spellCheckEnabled: false }
                     onTextEdited: DesktopAppController.setQuickSearch(bar.searchModel, text)
                     // Esc clears the field while it has focus; with nothing to
                     // clear the key falls through to whoever else wants it.
@@ -1528,8 +1529,18 @@ Item {
             }
         }
         onMoveToRecord: (id) => page.moveToRequested(id)
+        onSendNotesRequested: (id) => {
+            if (DesktopAppController.prepareMeetingNotesReview(page.projectId, id))
+                notesEmailReview.open()
+        }
         onGoToPersonRequested: (personId) => page.goToPersonRequested(personId)
         onGoToClientRequested: (clientId) => page.goToClientRequested(clientId)
+    }
+
+    MeetingNotesReviewDialog {
+        id: notesEmailReview
+        controller: DesktopAppController.communicationsController
+        recipientModel: DesktopAppController.recipientSelectionModel
     }
 
     // The project's own record/plugin menu — opened by the title row's kebab
@@ -1542,6 +1553,12 @@ Item {
         recordId: page.projectId
         canOpen: false
         canMoveTo: true
+        reportItems: [
+            { label: qsTr("Meeting Notes…"), value: "meeting-notes-report" },
+            { label: qsTr("Status…"), value: "status-report" },
+            { label: qsTr("Tracker Items…"), value: "tracker-items-report" }
+        ]
+        canScheduleMeeting: true
         onNewRequested: page.newRequested()
         onDeleteRequested: page.deleteRequested()
         onDuplicateRequested: {
@@ -1557,10 +1574,32 @@ Item {
         onFilterRequested: page.filterRequested()
         onSortRequested: (sx, sy) => page.sortRequested(sx, sy)
         onRefreshRequested: page._refreshAll()
+        onReportRequested: (workflow) => {
+            if (page._saveNow()) {
+                meetingNotesReportReview.workflow = workflow
+                meetingNotesReportReview.open()
+            }
+        }
+        onScheduleMeetingRequested: {
+            if (page._saveNow()) {
+                scheduleMeeting.projectId = page.projectId
+                scheduleMeeting.open()
+            }
+        }
     }
 
     // "Move To Folder" for the project itself, opened from selfMenu above.
     MoveToFolderDialog { id: moveToFolderDialog }
+
+    MeetingNotesReportReviewDialog {
+        id: meetingNotesReportReview
+        projectId: page.projectId
+        controller: DesktopAppController.communicationsController
+        recipientModel: DesktopAppController.recipientSelectionModel
+        templateModel: DesktopAppController.templateEditorModel
+    }
+
+    ScheduleMeetingDialog { id: scheduleMeeting }
 
     // Shared full-field spell-check dialog (opened by fields / right-click).
     SpellCheckDialog { id: spellDialog }
@@ -1600,6 +1639,7 @@ Item {
                 placeholderTextColor: Theme.text3
                 color: Theme.text; background: null; font.pixelSize: Theme.fontBody
                 onEditingFinished: lf.commit(text)
+                SpellCheckField { spellCheckEnabled: false }
             }
         }
     }

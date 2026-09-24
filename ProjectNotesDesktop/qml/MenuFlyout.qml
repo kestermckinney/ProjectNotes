@@ -16,8 +16,9 @@ import ProjectNotesDesktop
 // an earlier hover-grace-timer version of this popup would often vanish while
 // the pointer was still crossing from the trigger row to the flyout (a race
 // against the timer, worse at high UI zoom or a slow mouse). Like a native menu
-// bar, once open it stays open until: a leaf item is chosen, a sibling trigger
-// row is hovered/clicked (which repoints this same instance), the host menu
+// bar, once open it stays open until: a leaf item is chosen, the pointer rests
+// on a different row of the host menu (another trigger row repoints or swaps
+// the flyout; a plain row closes it — the host owns that timer), the host menu
 // closes, or the user clicks elsewhere / presses Escape (Popup's own default
 // closePolicy handles both).
 Popup {
@@ -30,13 +31,14 @@ Popup {
     // live changes (e.g. a toggle item's checkmark) are reflected without
     // needing to reopen the flyout. This popup stays dumb about what a leaf
     // index *means* or what a group's items contain; dispatch and any further
-    // nesting are the host's job — see groupHoverChanged/groupActivated below.
+    // nesting are the host's job — see rowHoverChanged/groupActivated below.
     property var items: []
     signal itemActivated(int index)
-    // Fired for rows that carry a `group` instead of being a plain leaf action.
-    // The host owns opening a second flyout beside the row for these — see
-    // AppMenu.qml's pluginSubFlyout for the one place that currently uses this.
-    signal groupHoverChanged(int index, bool hovered)
+    // Fired for every row, leaf or group, so the host can open a second flyout
+    // beside a group row and close it again once the pointer settles on some
+    // other row — see AppMenu.qml's pluginSubFlyout. groupActivated is the
+    // click on a row that carries a `group` instead of being a leaf action.
+    signal rowHoverChanged(int index, bool hovered)
     signal groupActivated(int index)
     // Fired by rows that carry `custom: "<kind>"` instead of being a plain leaf
     // action — a bespoke row (see ZoomMenuRow) that can emit more than one
@@ -142,8 +144,7 @@ Popup {
                     toggle: modelData.toggle === true
                     checked: modelData.checked === true
                     showChevron: modelData.group !== undefined
-                    onHoveredChanged: if (modelData.group !== undefined)
-                                          flyout.groupHoverChanged(index, hovered)
+                    onHoveredChanged: flyout.rowHoverChanged(index, hovered)
                     onActivated: modelData.group !== undefined ? flyout.groupActivated(index)
                                                                 : flyout.itemActivated(index)
                 }

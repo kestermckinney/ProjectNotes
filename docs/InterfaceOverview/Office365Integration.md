@@ -2,16 +2,28 @@
 
 The **Office 365 Integration** settings page connects Project Notes to Microsoft 365 through Microsoft Graph. It is separate from File Finder so the same authenticated connection can support additional Project Notes features in the future.
 
-The current native integration is used by File Finder to discover project channels in Microsoft Teams and documents stored in their SharePoint-backed file folders. Email, meeting, and contact features continue to use the separately configured [Outlook Integration](<OutlookIntegration.md>).
+Two features use this connection. The **Microsoft 365 drafts** integration creates email drafts and draft calendar events in your mailbox. File Finder discovers project channels in Microsoft Teams and the documents in their SharePoint-backed folders.
+
+Contact synchronization is not part of this connection. It uses the separately configured [Outlook Integration](<../StandardPlugins/OutlookIntegration.md>) plugin.
 
 ## Before You Sign In
 
 Your organization must provide a **dedicated** Microsoft Entra app registration for Office 365 Integration. Do not reuse the app registration configured for [Outlook Integration](<OutlookIntegration.md>) — its consent only covers Mail, Calendar, Contacts, and Tasks scopes. Office 365 Integration requests different, higher-privilege delegated Microsoft Graph scopes:
 
+For email drafts and meeting invitations:
+
+- `User.Read`
+- `Mail.ReadWrite`
+- `Calendars.ReadWrite`
+- `offline_access`
+
+For File Finder's Teams and SharePoint discovery:
+
 - `Team.ReadBasic.All`
 - `Channel.ReadBasic.All`
 - `Files.Read.All`
-- `offline_access`
+
+`Mail.ReadWrite` creates and updates drafts. Project Notes never requests `Mail.Send`, so it cannot send mail from your account.
 
 Microsoft Graph marks `Team.ReadBasic.All`, `Channel.ReadBasic.All`, and `Files.Read.All` as requiring administrator consent. A tenant administrator must grant consent for these permissions on the dedicated app registration (Microsoft Entra admin center > **App registrations** > the app > **API permissions** > **Grant admin consent**) before sign-in will succeed. If sign-in appears to complete but File Finder then reports an error mentioning admin approval (AADSTS90094), consent has not been granted yet, or the tenant/client ID entered below points at an app registration that was never granted it.
 
@@ -23,7 +35,7 @@ Open the app menu, choose **Settings**, and select **Office 365 Integration**.
 | :--- | :--- |
 | **Microsoft Entra tenant ID** | The directory (tenant) ID for the organization that owns the app registration. The default `organizations` allows sign-in with a work or school account from any Microsoft Entra organization. Use a specific tenant ID when access should be restricted to one organization. |
 | **Application (client) ID** | The application ID assigned to the Microsoft Entra app registration. |
-| **Sign in to Microsoft 365** | Begins device-code sign-in. Project Notes displays a code and a button that opens Microsoft's sign-in page. Copy the code, open the page, and complete sign-in in your browser. |
+| **Sign in to Microsoft 365** | Begins device-code sign-in and requests the email and calendar draft permissions. Project Notes displays a code and a button that opens Microsoft's sign-in page. Copy the code, open the page, and complete sign-in in your browser. |
 | **Sign out** | Removes the saved refresh token and invalidates cached Office 365 File Finder state. It does not remove local File Finder settings or existing **Files & Folders** entries. |
 
 The status panel reports whether Project Notes is signed in and shows the device code and verification-page button while authentication is in progress.
@@ -54,3 +66,16 @@ Clicking **Open** on a row with a direct document address launches the matching 
 Rows found by earlier scans still hold viewer-page links. Select **Reconsider All Files** on the File Finder page once to replace them with direct addresses.
 
 See [File Finder](<FileFinder.md>) for discovery, matching, classification settings, and how local/Teams precedence works.
+
+## Use for Email and Meetings
+
+After authentication succeeds:
+
+1. Open **Settings > Preferences**.
+2. Under **Email and Scheduling Integration**, set **Integration** to **Microsoft 365 drafts**.
+
+Reports then become drafts in your mailbox and meetings become draft events in your calendar, both opened in Outlook on the web for review. Nothing is sent by Project Notes.
+
+If you signed in before meeting scheduling existed, sign out and sign in again. The earlier sign-in did not request calendar permission.
+
+See [Email and Meeting Setup](<EmailAndMeetingSetup.md>) for the full setup.

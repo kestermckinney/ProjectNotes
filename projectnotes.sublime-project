@@ -1,142 +1,89 @@
 {
-	"folders":
-	[
+	"folders": [
 		{
 			"path": ".",
-			"file_exclude_patterns": ["*.sublime-workspace",".gitattributes", "*.pro.user", ".gitignore", "CMakeLists.txt.user*",".*","*.flatpak"],
-			"folder_exclude_patterns": ["build", "__pycache__", ".*", ".flatpak-builder", "flatpak-build", "flatpak-build-remotehost", "graphify-out","flatpak-repo"],
+			"file_exclude_patterns": ["*.sublime-workspace", ".gitattributes", "*.pro.user", ".gitignore", "CMakeLists.txt.user*", ".*", "*.flatpak"],
+			"folder_exclude_patterns": ["build", "__pycache__", ".*", ".flatpak-builder", "flatpak-build", "flatpak-build-remotehost", "graphify-out", "flatpak-repo", "build-qmltests"],
 			"binary_file_patterns": ["*.so", "*.so.*", "*.a", "*.o", "*.pack", "*.idx", "*.db", "*.dll", "*.dylib", "*.exe", "*.png", "*.jpg", "*.ico", "*.zip", "*.tar", "*.gz", "*.AppImage", "*.flatpak"],
-			"index_exclude_patterns": ["packaging/linux/.flatpak-builder/*", "packaging/linux/flatpak-build/*", "*.db"],
-		},
+			"index_exclude_patterns": ["packaging/linux/.flatpak-builder/*", "packaging/linux/flatpak-build/*", "*.db"]
+		}
 	],
-	"build_systems":
-	[
+	"build_systems": [
 		{
 			"name": "Project Notes",
 			"selector": "source.c++, source.c",
-			"shell_cmd": "cmake --build .",
 			"file_regex": "^(..[^:]*):([0-9]+):?([0-9]+)?:? (.*)$",
-			"windows":
-			{
-				"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build .",
-				"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Debug"
+			"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/System_Qt_6_11_1_Debug\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/System_Qt_6_11_1_Debug\" --parallel",
+			"linux": {
+				"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/System_Qt_6_11_1_Debug\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/System_Qt_6_11_1_Debug\" --parallel 1"
 			},
-			"linux":
-			{
-				"working_dir": "$project_path/build/System_Qt_6_11_1-Debug"
+			"osx": {
+				"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/Qt_6_11_1_for_macOS_Debug\" -DCMAKE_TOOLCHAIN_FILE=/Users/paulmckinney/Documents/Projects/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_PREFIX_PATH=/Users/paulmckinney/Qt/6.11.1/macos -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/Qt_6_11_1_for_macOS_Debug\" --parallel"
 			},
-			"osx":
-			{
-				"working_dir": "$project_path/build/Qt_6_11_1_for_macOS_Debug"
+			"windows": {
+				"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\Desktop_Qt_6_10_0_MSVC2022_64bit-Debug\" -G Ninja -DCMAKE_MAKE_PROGRAM=C:/Qt/Tools/Ninja/ninja.exe -DCMAKE_TOOLCHAIN_FILE=C:/Users/paulmckinney/Documents/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_PREFIX_PATH=C:/Qt/6.10.0/msvc2022_64 -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path\\build\\Desktop_Qt_6_10_0_MSVC2022_64bit-Debug\" --parallel"
 			},
-			"variants":
-			[
+			"variants": [
+				{
+					"name": "Configure Debug",
+					"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/System_Qt_6_11_1_Debug\" -DCMAKE_BUILD_TYPE=Debug",
+					"osx": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/Qt_6_11_1_for_macOS_Debug\" -DCMAKE_TOOLCHAIN_FILE=/Users/paulmckinney/Documents/Projects/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_PREFIX_PATH=/Users/paulmckinney/Qt/6.11.1/macos -DCMAKE_BUILD_TYPE=Debug" },
+					"windows": { "shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\Desktop_Qt_6_10_0_MSVC2022_64bit-Debug\" -G Ninja -DCMAKE_MAKE_PROGRAM=C:/Qt/Tools/Ninja/ninja.exe -DCMAKE_TOOLCHAIN_FILE=C:/Users/paulmckinney/Documents/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_PREFIX_PATH=C:/Qt/6.10.0/msvc2022_64 -DCMAKE_BUILD_TYPE=Debug" }
+				},
 				{
 					"name": "Build Release",
-					"shell_cmd": "cmake --build .",
-					"windows": {
-						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build .",
-						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Release"
-					},
-					"linux": { "working_dir": "$project_path/build/System_Qt_6_11_1-Release" },
-					"osx": { "working_dir": "$project_path/build/Qt_6_11_1_for_macOS_Release" },
+					"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/System_Qt_6_11_1_Release\" -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/System_Qt_6_11_1_Release\" --parallel",
+					"linux": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/System_Qt_6_11_1_Release\" -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/System_Qt_6_11_1_Release\" --parallel 1" },
+					"osx": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/Qt_6_11_1_for_macOS_Release\" -DCMAKE_TOOLCHAIN_FILE=/Users/paulmckinney/Documents/Projects/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_PREFIX_PATH=/Users/paulmckinney/Qt/6.11.1/macos -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/Qt_6_11_1_for_macOS_Release\" --parallel" },
+					"windows": { "shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\" -G Ninja -DCMAKE_MAKE_PROGRAM=C:/Qt/Tools/Ninja/ninja.exe -DCMAKE_TOOLCHAIN_FILE=C:/Users/paulmckinney/Documents/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_PREFIX_PATH=C:/Qt/6.10.0/msvc2022_64 -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path\\build\\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\" --parallel" }
 				},
 				{
 					"name": "Rebuild Debug",
-					"shell_cmd": "cmake --build . --clean-first",
-					"windows": {
-						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build . --clean-first",
-						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Debug"
-					},
-					"linux": { "working_dir": "$project_path/build/System_Qt_6_11_1-Debug" },
-					"osx": { "working_dir": "$project_path/build/Qt_6_11_1_for_macOS_Debug" },
+					"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/System_Qt_6_11_1_Debug\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/System_Qt_6_11_1_Debug\" --clean-first --parallel",
+					"linux": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/System_Qt_6_11_1_Debug\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/System_Qt_6_11_1_Debug\" --clean-first --parallel 1" },
+					"osx": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/Qt_6_11_1_for_macOS_Debug\" -DCMAKE_TOOLCHAIN_FILE=/Users/paulmckinney/Documents/Projects/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_PREFIX_PATH=/Users/paulmckinney/Qt/6.11.1/macos -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/Qt_6_11_1_for_macOS_Debug\" --clean-first --parallel" },
+					"windows": { "shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\Desktop_Qt_6_10_0_MSVC2022_64bit-Debug\" -G Ninja -DCMAKE_MAKE_PROGRAM=C:/Qt/Tools/Ninja/ninja.exe -DCMAKE_TOOLCHAIN_FILE=C:/Users/paulmckinney/Documents/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_PREFIX_PATH=C:/Qt/6.10.0/msvc2022_64 -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path\\build\\Desktop_Qt_6_10_0_MSVC2022_64bit-Debug\" --clean-first --parallel" }
 				},
 				{
 					"name": "Rebuild Release",
-					"shell_cmd": "cmake --build . --clean-first",
-					"windows": {
-						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build . --clean-first",
-						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Release"
-					},
-					"linux": { "working_dir": "$project_path/build/System_Qt_6_11_1-Release" },
-					"osx": { "working_dir": "$project_path/build/Qt_6_11_1_for_macOS_Release" },
+					"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/System_Qt_6_11_1_Release\" -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/System_Qt_6_11_1_Release\" --clean-first --parallel",
+					"linux": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/System_Qt_6_11_1_Release\" -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/System_Qt_6_11_1_Release\" --clean-first --parallel 1" },
+					"osx": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/Qt_6_11_1_for_macOS_Release\" -DCMAKE_TOOLCHAIN_FILE=/Users/paulmckinney/Documents/Projects/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_PREFIX_PATH=/Users/paulmckinney/Qt/6.11.1/macos -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/Qt_6_11_1_for_macOS_Release\" --clean-first --parallel" },
+					"windows": { "shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\" -G Ninja -DCMAKE_MAKE_PROGRAM=C:/Qt/Tools/Ninja/ninja.exe -DCMAKE_TOOLCHAIN_FILE=C:/Users/paulmckinney/Documents/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_PREFIX_PATH=C:/Qt/6.10.0/msvc2022_64 -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path\\build\\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\" --clean-first --parallel" }
 				},
 				{
 					"name": "Run Debug",
-					"shell_cmd": "./projectnotes --developer-profile TESTMODE --test-supabase",
-					"windows":
-					{
-						"shell_cmd": "set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"ProjectNotesDesktop\\Project Notes.exe\" --developer-profile TESTMODE --test-supabase",
-						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Debug"
-					},
-					"linux":
-					{
-						"shell_cmd": "./ProjectNotesDesktop/projectnotes --developer-profile TESTMODE --test-supabase",
-						"working_dir": "$project_path/build/System_Qt_6_11_1-Debug"
-					},
-					"osx":
-					{
-						"shell_cmd": "./ProjectNotesDesktop/\"Project Notes\" --developer-profile TESTMODE --test-supabase",
-						"working_dir": "$project_path/build/Qt_6_11_1_for_macOS_Debug"
-					},
+					"shell_cmd": "\"$project_path/build/System_Qt_6_11_1_Debug/ProjectNotesDesktop/projectnotes\"",
+					"windows": { "shell_cmd": "set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"$project_path\\build\\Desktop_Qt_6_10_0_MSVC2022_64bit-Debug\\ProjectNotesDesktop\\Project Notes.exe\"" },
+					"osx": { "shell_cmd": "\"$project_path/build/Qt_6_11_1_for_macOS_Debug/ProjectNotesDesktop/Project Notes\"" }
 				},
 				{
 					"name": "Run Release",
-					"shell_cmd": "./projectnotes --developer-profile TESTMODE --test-supabase",
-					"windows":
-					{
-						"shell_cmd": "set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"ProjectNotesDesktop\\Project Notes.exe\" --developer-profile TESTMODE --test-supabase",
-						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Release"
-					},
-					"linux":
-					{
-						"shell_cmd": "./ProjectNotesDesktop/projectnotes --developer-profile TESTMODE --test-supabase",
-						"working_dir": "$project_path/build/System_Qt_6_11_1-Release"
-					},
-					"osx":
-					{
-						"shell_cmd": "open \"./ProjectNotesDesktop/Project Notes.app\" --args --developer-profile TESTMODE --test-supabase",
-						"working_dir": "$project_path/build/Qt_6_11_1_for_macOS_Release"
-					},
+					"shell_cmd": "\"$project_path/build/System_Qt_6_11_1_Release/ProjectNotesDesktop/projectnotes\"",
+					"windows": { "shell_cmd": "set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"$project_path\\build\\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\\ProjectNotesDesktop\\Project Notes.exe\"" },
+					"osx": { "shell_cmd": "open \"$project_path/build/Qt_6_11_1_for_macOS_Release/ProjectNotesDesktop/Project Notes.app\"" }
 				},
 				{
 					"name": "Build & Run Debug",
-					"shell_cmd": "cmake --build . && ./projectnotes --developer-profile TESTMODE --test-supabase",
-					"windows":
-					{
-						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build . --target ProjectNotes && set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"ProjectNotesDesktop\\Project Notes.exe\" --developer-profile TESTMODE --test-supabase",
-						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Debug"
-					},
-					"linux":
-					{
-						"shell_cmd": "cmake --build . --target ProjectNotes && ./ProjectNotesDesktop/projectnotes --developer-profile TESTMODE --test-supabase",
-						"working_dir": "$project_path/build/System_Qt_6_11_1-Debug"
-					},
-					"osx":
-					{
-						"shell_cmd": "cmake --build . --target ProjectNotes && ./ProjectNotesDesktop/\"Project Notes\" --developer-profile TESTMODE --test-supabase",
-						"working_dir": "$project_path/build/Qt_6_11_1_for_macOS_Debug"
-					},
+					"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/System_Qt_6_11_1_Debug\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/System_Qt_6_11_1_Debug\" --parallel && \"$project_path/build/System_Qt_6_11_1_Debug/ProjectNotesDesktop/projectnotes\"",
+					"linux": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/System_Qt_6_11_1_Debug\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/System_Qt_6_11_1_Debug\" --parallel 1 && \"$project_path/build/System_Qt_6_11_1_Debug/ProjectNotesDesktop/projectnotes\"" },
+					"osx": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/Qt_6_11_1_for_macOS_Debug\" -DCMAKE_TOOLCHAIN_FILE=/Users/paulmckinney/Documents/Projects/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_PREFIX_PATH=/Users/paulmckinney/Qt/6.11.1/macos -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/Qt_6_11_1_for_macOS_Debug\" --parallel && \"$project_path/build/Qt_6_11_1_for_macOS_Debug/ProjectNotesDesktop/Project Notes\"" },
+					"windows": { "shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\Desktop_Qt_6_10_0_MSVC2022_64bit-Debug\" -G Ninja -DCMAKE_MAKE_PROGRAM=C:/Qt/Tools/Ninja/ninja.exe -DCMAKE_TOOLCHAIN_FILE=C:/Users/paulmckinney/Documents/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_PREFIX_PATH=C:/Qt/6.10.0/msvc2022_64 -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path\\build\\Desktop_Qt_6_10_0_MSVC2022_64bit-Debug\" --parallel && set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"$project_path\\build\\Desktop_Qt_6_10_0_MSVC2022_64bit-Debug\\ProjectNotesDesktop\\Project Notes.exe\"" }
 				},
 				{
-					"name": "Build & Run Release",
-					"shell_cmd": "cmake --build . && ./projectnotes --developer-profile TESTMODE --test-supabase",
-					"windows":
-					{
-						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build . --target ProjectNotes && set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"ProjectNotesDesktop\\Project Notes.exe\" --developer-profile TESTMODE --test-supabase",
-						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Release"
-					},
-					"linux":
-					{
-						"shell_cmd": "cmake --build . --target ProjectNotes && ./ProjectNotesDesktop/projectnotes --developer-profile TESTMODE --test-supabase",
-						"working_dir": "$project_path/build/System_Qt_6_11_1-Release"
-					},
-					"osx":
-					{
-						"shell_cmd": "cmake --build . --target ProjectNotes && open \"./ProjectNotesDesktop/Project Notes.app\" --args --developer-profile TESTMODE --test-supabase",
-						"working_dir": "$project_path/build/Qt_6_11_1_for_macOS_Release"
-					},
+					"name": "Build & Run Debug (TESTMODE)",
+					"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/System_Qt_6_11_1_Debug\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/System_Qt_6_11_1_Debug\" --parallel && \"$project_path/build/System_Qt_6_11_1_Debug/ProjectNotesDesktop/projectnotes\" --test-supabase --developer-profile TESTMODE",
+					"linux": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/System_Qt_6_11_1_Debug\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/System_Qt_6_11_1_Debug\" --parallel 1 && \"$project_path/build/System_Qt_6_11_1_Debug/ProjectNotesDesktop/projectnotes\" --test-supabase --developer-profile TESTMODE" },
+					"osx": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/Qt_6_11_1_for_macOS_Debug\" -DCMAKE_TOOLCHAIN_FILE=/Users/paulmckinney/Documents/Projects/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_PREFIX_PATH=/Users/paulmckinney/Qt/6.11.1/macos -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/Qt_6_11_1_for_macOS_Debug\" --parallel && \"$project_path/build/Qt_6_11_1_for_macOS_Debug/ProjectNotesDesktop/Project Notes\" --test-supabase --developer-profile TESTMODE" },
+					"windows": { "shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\Desktop_Qt_6_10_0_MSVC2022_64bit-Debug\" -G Ninja -DCMAKE_MAKE_PROGRAM=C:/Qt/Tools/Ninja/ninja.exe -DCMAKE_TOOLCHAIN_FILE=C:/Users/paulmckinney/Documents/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_PREFIX_PATH=C:/Qt/6.10.0/msvc2022_64 -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path\\build\\Desktop_Qt_6_10_0_MSVC2022_64bit-Debug\" --parallel && set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"$project_path\\build\\Desktop_Qt_6_10_0_MSVC2022_64bit-Debug\\ProjectNotesDesktop\\Project Notes.exe\" --test-supabase --developer-profile TESTMODE" }
 				},
+				{
+					"name": "Build & Run Release (TESTMODE)",
+					"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/System_Qt_6_11_1_Release\" -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/System_Qt_6_11_1_Release\" --parallel && \"$project_path/build/System_Qt_6_11_1_Release/ProjectNotesDesktop/projectnotes\" --test-supabase --developer-profile TESTMODE",
+					"linux": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/System_Qt_6_11_1_Release\" -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/System_Qt_6_11_1_Release\" --parallel 1 && \"$project_path/build/System_Qt_6_11_1_Release/ProjectNotesDesktop/projectnotes\" --test-supabase --developer-profile TESTMODE" },
+					"osx": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/Qt_6_11_1_for_macOS_Release\" -DCMAKE_TOOLCHAIN_FILE=/Users/paulmckinney/Documents/Projects/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_PREFIX_PATH=/Users/paulmckinney/Qt/6.11.1/macos -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/Qt_6_11_1_for_macOS_Release\" --parallel && open \"$project_path/build/Qt_6_11_1_for_macOS_Release/ProjectNotesDesktop/Project Notes.app\" --args --test-supabase --developer-profile TESTMODE" },
+					"windows": { "shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\" -G Ninja -DCMAKE_MAKE_PROGRAM=C:/Qt/Tools/Ninja/ninja.exe -DCMAKE_TOOLCHAIN_FILE=C:/Users/paulmckinney/Documents/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_PREFIX_PATH=C:/Qt/6.10.0/msvc2022_64 -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path\\build\\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\" --parallel && set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"$project_path\\build\\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\\ProjectNotesDesktop\\Project Notes.exe\" --test-supabase --developer-profile TESTMODE" }
+				}
 			]
 		}
 	]

@@ -302,6 +302,8 @@ SqlQueryModel* DatabaseObjects::createExportObject(const QString& tableName)
         return new ProjectsModel(this);
     else if (lower == QLatin1String("status_report_items"))
         return new StatusReportItemsModel(this);
+    else if (lower == QLatin1String("project_email_audiences"))
+        return new ProjectEmailAudiencesModel(this);
     else if (lower == QLatin1String("project_people"))
         return new ProjectTeamMembersModel(this);
     else if (lower == QLatin1String("project_locations"))
@@ -730,6 +732,19 @@ int DatabaseObjects::getProjectSidebarWidth()
     return value.toInt();
 }
 
+void DatabaseObjects::setProjectSidebarVisible(bool value)
+{
+    saveLocalParameter("UI:ProjectSidebarVisible", (value ? "1" : "0"));
+}
+
+bool DatabaseObjects::getProjectSidebarVisible()
+{
+    QString value = loadLocalParameter("UI:ProjectSidebarVisible");
+    if (value.isEmpty())
+        return true; // no saved preference — the panel starts out visible
+    return (bool)value.toUInt();
+}
+
 void DatabaseObjects::setUiZoomPercent(int percent)
 {
     saveLocalParameter("UI:ZoomPercent", QString::number(percent));
@@ -948,6 +963,17 @@ bool DatabaseObjects::importXMLDoc(const QDomDocument& xmldoc)
     }
 
     // import project people
+    domlist = findTableNodes(root, "project_email_audiences");
+    if (!domlist.empty())
+    {
+        ProjectEmailAudiencesModel audience_model(this);
+        for (QDomNode& tablenode : domlist)
+            if (!audience_model.importXMLNode(tablenode))
+                return false;
+        domlist.clear();
+    }
+
+    // import project people
     domlist = findTableNodes(root, "project_people");
     if (!domlist.empty())
     {
@@ -1114,6 +1140,20 @@ QList<SqlQueryModel*>* DatabaseObjects::getData(const QDomDocument& xmldoc)
 
         domlist.clear();
 
+    }
+
+    // import project email audiences
+    domlist = findTableNodes(root, "project_email_audiences");
+    if (!domlist.empty())
+    {
+        for (QDomNode& tablenode : domlist)
+        {
+            SqlQueryModel* model = new ProjectEmailAudiencesModel(this);
+            model->setFilter(tablenode);
+            model->refresh();
+            model_list->append(model);
+        }
+        domlist.clear();
     }
 
     // import project people

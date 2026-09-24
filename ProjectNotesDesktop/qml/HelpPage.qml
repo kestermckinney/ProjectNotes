@@ -204,6 +204,7 @@ Rectangle {
                                 background: null
                                 font.pixelSize: Theme.fontBody
                                 selectByMouse: true
+                                SpellCheckField { spellCheckEnabled: false }
                             }
 
                             MaterialIcon {
@@ -384,6 +385,8 @@ Rectangle {
                     readOnly: true
                     activeFocusOnPress: false
                     selectByMouse: true
+                    // Read-only: the menu offers Copy and Select All.
+                    SpellCheckField { spellCheckEnabled: false }
                     // Qt's Markdown-to-QTextDocument import packs blocks tight
                     // enough to look cramped in-app; widen the live document's
                     // margins/line height once it has (re-)parsed. Deferred a

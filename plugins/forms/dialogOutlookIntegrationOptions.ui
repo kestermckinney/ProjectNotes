@@ -152,13 +152,6 @@
        </property>
       </widget>
      </item>
-     <item row="13" column="1">
-      <widget class="QCheckBox" name="checkBoxScheduleO365">
-       <property name="text">
-        <string>Schedule Meetings using Office 365</string>
-       </property>
-      </widget>
-     </item>
     </layout>
    </item>
    <item>

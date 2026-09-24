@@ -1,150 +1,80 @@
 # Outlook Integration
 
-Project Notes can send emails and schedule meetings using one of two methods. You configure which method to use in **Plugins > Settings > Outlook Integration**.
+The **Outlook Integration** plugin keeps your Project Notes people, emails and assigned items in step with Outlook. It can work through Microsoft 365 on any platform, or drive Outlook (classic) directly on Windows. It runs on a timer in the background and also adds menu items you can trigger yourself.
 
-## Integration Types
+It does **not** send project email and it does not schedule meetings. Those are built into Project Notes and are set up on the main **Settings** page. See [Email and Meeting Setup](<../InterfaceOverview/EmailAndMeetingSetup.md>).
 
-### Office 365 Application (Graph API) — All Platforms
+## Two ways to connect
 
-When **Integration Type** is set to **Office 365 Application**, Project Notes uses the Microsoft Graph API to send email and schedule meetings. This method works on Windows, macOS, and Linux.
+The **Integration Type** setting picks the route.
 
-Requirements:
-- An **Azure Active Directory** app registration with the following permissions:
-  - `Mail.Send` — for sending email
-  - `Calendars.ReadWrite` — for scheduling meetings
-  - `Contacts.ReadWrite` — for importing and exporting contacts
-- The **Application ID** and **Tenant ID** entered in the Outlook Integration settings
+| Integration Type | Works on | What it can do |
+| :--- | :--- | :--- |
+| **Office 365 Application** | Windows, macOS, Linux | Everything below, through the Microsoft Graph API. Runs on a five-minute timer as well as from the menu. |
+| **Outlook Automation** | Windows only, with Outlook (classic) installed | Import contacts, export new contacts and download project email, by controlling Outlook (classic) on your computer. Menu items only; it does not sync assigned items. |
 
-When Project Notes first needs to authenticate, it opens a browser window for you to sign in with your Microsoft 365 account. The token is cached so you are not prompted on every action.
+**Outlook Automation** is the default for a new installation. It has no effect on macOS or Linux, so choose **Office 365 Application** there.
 
-### Microsoft Outlook COM (Windows Only)
+## What it does
 
-When **Integration Type** is set to **Outlook Automation**, Project Notes uses COM automation to control the local Outlook desktop application. This method is Windows-only and requires Microsoft Outlook to be installed.
+| Capability | Description |
+| :--- | :--- |
+| Import contacts | Copies contacts from Outlook into the Project Notes people list. |
+| Export new contacts | Copies Project Notes people that do not already exist in your Outlook contacts. Existing contacts are skipped, never merged or overwritten. |
+| Download project emails | Archives project-related email from configured mailbox folders into the project folder. |
+| Sync assigned items | Publishes the project manager's active tracker and action items as Microsoft To Do tasks. **Office 365 Application** only. |
 
-When sending an email or scheduling a meeting, Outlook opens with a pre-populated draft. You review and send (or send directly) from Outlook.
+## Requirements for Office 365 Application
 
-> **Note:** Email sending honors the **Integration Type** selection — when **Outlook Automation** is selected, email is delivered through the local Outlook application even if you have **Office 365 Application** credentials configured for other features. Earlier 5.0.x builds had a bug in which email was sent through Graph regardless of this setting; that has been fixed in 5.0.1.
+You need a Microsoft Entra app registration that permits these delegated permissions:
 
-## Configuring Outlook Integration Settings
+- `Contacts.Read` and `Contacts.ReadWrite` for importing and exporting contacts
+- `Mail.ReadWrite` for archiving project email
+- `Tasks.ReadWrite` for publishing assigned items
+- `Mail.Send`, used only when the optional IFS Cloud report plugin emails a report with **Send Emails using Office 365** turned on
 
-**To open the Outlook Integration settings:**
+This registration is configured separately from the one used by the built-in email and meeting features. The two connections are independent, and signing in to one does not sign you in to the other.
 
-1. From the **Plugins** menu choose **Settings > Outlook Integration**.
+## Configuring the settings
 
-The settings dialog contains the following fields:
+1. From the app menu choose **Plugins · Settings**, then **Outlook Integration**.
 
 | Setting | Description |
 | :--- | :--- |
-| **Integration Type** | Choose **Outlook Automation** to use the local Outlook desktop app via COM (Windows only), or **Office 365 Application** to use the Microsoft Graph API. |
-| **Application ID** | The Azure AD application (client) ID for your app registration. Required for Office 365 Application. |
-| **Tenant ID** | Your Azure AD tenant ID. Required for Office 365 Application. |
-| **Import Contacts** | Enable to allow importing contacts from Outlook. |
-| **Export New Contacts** | Enable to allow exporting new contacts to Outlook. |
-| **Sync ToDo Items with Due Dates** | Enable to sync action items that have a due date as Outlook tasks. |
-| **Sync ToDo Items without Due Dates** | Enable to also sync action items without a due date. |
-| **Backup Emails** | Enable to archive project-related emails to the project folder. |
-| **Backup Inbox Folder** | Folder name (or path) inside the inbox to archive from. |
-| **Backup Sent Folder** | Folder name (or path) inside the sent items to archive from. |
+| **Integration Type** | **Office 365 Application** or **Outlook Automation**. See [Two ways to connect](#two-ways-to-connect). |
+| **Application ID** | The Microsoft Entra application (client) ID for your app registration. Office 365 Application only. |
+| **Tenant ID** | Your Microsoft Entra tenant ID. Office 365 Application only. |
+| **Import Contacts** | Import contacts from Outlook into the people list. |
+| **Export New Contacts** | Export people who do not already exist as Outlook contacts. |
+| **Sync ToDo Items with Due Dates** | Publish action items that have a due date as tasks. |
+| **Sync ToDo Items without Due Dates** | Also publish action items without a due date. |
+| **Backup Emails** | Archive project-related email into the project folder. |
+| **Backup Inbox Folder** | The folder name or path inside the inbox to archive from. |
+| **Backup Sent Folder** | The folder name or path inside sent items to archive from. |
+| **Send Emails using Office 365** | Used only by the IFS Cloud report plugin. When on, and **Integration Type** is **Office 365 Application**, the plugin creates its email as a Microsoft 365 draft. When off, it opens the email in Outlook (classic), which works on Windows only. Project Notes' own email ignores this setting. |
 
-## Email Recipient Groups
+With **Office 365 Application**, the first time the plugin needs to authenticate it opens a browser window for sign-in. The token is cached so you are not prompted on every action.
 
-When sending an email or scheduling a meeting, Project Notes automatically determines recipients based on the context:
+## Running it manually
 
-| Recipient Group | Who is included |
-| :--- | :--- |
-| **Full Project Team** | All team members on the project. |
-| **Internal Project Team** | Only team members whose company matches the Managing Company in Preferences. |
-| **Exclude Client** | All team members except those belonging to the client company. |
-| **Only Client** | Only team members belonging to the client company. |
-| **Receives Status** | Team members with the **Receive Status** flag checked on the project team. |
-| **Individual** | A single recipient based on the right-clicked record. |
+With **Office 365 Application**, these entries appear under **Plugins · Utilities**:
 
-The project manager specified in [Preferences](<../InterfaceOverview/Preferences.md>) is never included as a recipient.
+- **Import Contacts from Office 365**
+- **Export New Contacts to Office 365**
+- **Sync Tracker Items**
+- **Download All Emails**, available when you right-click a project
 
-## Configuring Meeting and Email Types
+Between manual runs the plugin performs the same work on a five-minute timer.
 
-Meeting invitation templates and email templates are managed in **Plugins > Settings > Meeting and Email Types**. Each row in the settings table defines one item that appears in either the **Schedule Meeting** or **Send Email** right-click sub-menu.
+With **Outlook Automation** on Windows, the entries are **Import Contacts from Outlook**, **Export Contacts to Outlook** and **Download Emails from Outlook**. They run only when you choose them.
 
-**To open Meeting and Email Types settings:**
+## Archived email
 
-1. From the **Plugins** menu choose **Settings > Meeting and Email Types**.
+Downloaded messages are written to the project's configured folder. See [Project Page](<../InterfaceOverview/ProjectPage.md>) for setting the **Project Folder** location. Messages are matched to a project by the project number appearing in the subject.
 
-### Fields
+## Related Documentation
 
-| Field | Description |
-| :--- | :--- |
-| **Type** | `Email` — adds the entry to the **Send Email** sub-menu. `Meeting` — adds the entry to the **Schedule Meeting** sub-menu. |
-| **Name** | The label shown in the sub-menu. |
-| **Invitees** | Controls who receives the email or meeting invitation. See [Invitees Options](#invitees-options) below. |
-| **Subject** | The subject line template. Supports [variable substitution](<PluginSettings.md#variable-replacement-in-plugins>) (e.g., `[$projects.project_number.1] [$projects.project_name.1]`). |
-| **Template** | The body template for the email or meeting invitation. Supports variable substitution. Edited as rich text. |
-| **Data Type** | Determines which right-click context shows this item. See [Data Types](#data-types) below. |
-
-### Invitees Options
-
-| Option | Who receives the email or meeting invitation |
-| :--- | :--- |
-| **Full Project Team** | All team members on the project. |
-| **Internal Project Team** | Only team members whose company matches the Managing Company in Preferences. |
-| **Exclude Client** | All team members except those belonging to the client company. |
-| **Only Client** | Only team members belonging to the client company. |
-| **Receives Status** | Team members with the **Receive Status** flag checked on the project team. |
-| **Individual** | The single person associated with the right-clicked record. |
-| **Attachment Only** | No recipients — used for email types that send an attachment without addressing it to specific people. |
-
-### Data Types
-
-The **Data Type** controls which table's right-click menu shows the item:
-
-| Data Type | Where it appears |
-| :--- | :--- |
-| `projects` | Right-click on a project in the Project List. |
-| `people` | Right-click on a person in the People List. |
-| `project_people` | Right-click on a team member in the project team. |
-| `project_locations` | Right-click on a file/location entry in the project. |
-| `project_notes` | Right-click on a meeting or note in the Project Notes panel. |
-| `meeting_attendees` | Right-click on an attendee in a meeting. |
-| `item_tracker` | Right-click on a tracker item. |
-| `item_tracker_updates` | Right-click on a tracker item update. |
-
-### Default Types
-
-Project Notes ships with the following types pre-configured:
-
-**Meetings** (appear in the **Schedule Meeting** sub-menu):
-
-| Name | Invitees | Subject Template |
-| :--- | :--- | :--- |
-| Project Kickoff | Full Project Team | `[$projects.project_number.1] [$projects.project_name.1] - Project Kickoff` |
-| Project Kickoff (Internal) | Exclude Client | `[$projects.project_number.1] [$projects.project_name.1] - Project Kickoff (Internal)` |
-| Project Status | Full Project Team | `[$projects.project_number.1] [$projects.project_name.1] - Project Status` |
-| Project Status (Internal) | Exclude Client | `[$projects.project_number.1] [$projects.project_name.1] - Project Status (Internal)` |
-| Lessons Learned | Full Project Team | `[$projects.project_number.1] [$projects.project_name.1] - Lessons Learned` |
-| Lessons Learned (Internal) | Exclude Client | `[$projects.project_number.1] [$projects.project_name.1] - Lessons Learned (Internal)` |
-| Proposal Working | Exclude Client | `[$projects.project_number.1] [$projects.project_name.1] - Proposal Working Meeting` |
-
-Each meeting type has a pre-built agenda in its **Template** field. You can edit any template to match your organization's standards.
-
-**Emails** (appear in the **Send Email** sub-menu):
-
-| Name | Invitees | Data Type |
-| :--- | :--- | :--- |
-| Individual | Individual | `people` |
-| Attendee | Individual | `meeting_attendees` |
-| Team Member | Individual | `project_people` |
-| Non-Client | Exclude Client | `projects` |
-| Full Team | Full Project Team | `projects` |
-| Internal Project Team | Internal Project Team | `projects` |
-| Attachment | Attachment Only | `project_locations` |
-
-## Outlook Contact Sync (Windows Only)
-
-On Windows using Outlook COM, two utilities are available in **Plugins > Utilities**:
-
-- **Export Contacts to Outlook** — Copies all people in Project Notes to your Outlook contacts.
-- **Import Contacts from Outlook** — Imports contacts from Outlook into the Project Notes people list.
-- **Download Emails from Outlook** — Archives project-related emails from Outlook to the project folder.
-
-## Contact Export Behavior (Office 365)
-
-When using the **Office 365 Application** integration, contact export adds new contacts to your Microsoft 365 account but does **not** overwrite existing contacts. If a contact already exists in your Microsoft 365 contacts, it is skipped — no fields are updated or merged. To update an existing contact, edit it directly in Outlook or your Microsoft 365 account.
+- [Email and Meeting Setup](<../InterfaceOverview/EmailAndMeetingSetup.md>) — Sending project email and scheduling meetings
+- [iCloud Contacts](<iCloudContacts.md>) — The Apple equivalent for contact synchronization
+- [Office 365 Integration](<../InterfaceOverview/Office365Integration.md>) — The separate native Microsoft connection
+- [Plugin Settings](<PluginSettings.md>) — Where plugin settings are stored

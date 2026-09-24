@@ -143,6 +143,7 @@ Dialog {
                     background: null
                     verticalAlignment: Text.AlignVCenter
                     selectByMouse: true
+                    SpellCheckField { spellCheckEnabled: false }
                     onTextChanged: {
                         root._filter = text
                         root._hi = 0

@@ -12,7 +12,7 @@
 #include "QLoggerWriter.h"
 #include "databaseobjects.h"
 #include "credentialstore.h"
-#include "appsettings.h"   // appResourcesPath(), AppSettings::developerProfile()
+#include "appresourcespath.h"
 
 using namespace QLogger;
 

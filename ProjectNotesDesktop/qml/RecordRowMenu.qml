@@ -22,6 +22,8 @@ RecordContextMenu {
     signal duplicateRecord(string table, string id)
     // Re-emitted when Move To… is chosen (only offered when openFor enables it).
     signal moveToRecord(string id)
+    // Re-emitted when Send Notes is chosen for a meeting-note row.
+    signal sendNotesRequested(string id)
     // Navigation signals are re-emitted from the base class (not redeclared here)
 
     // Built-ins that make sense for a child record: the row already carries inline
@@ -40,6 +42,7 @@ RecordContextMenu {
     onDuplicateRequested: rowMenu.duplicateRecord(
         DesktopAppController.tableNameForModel(rowMenu.model), rowMenu.recordId)
     onMoveToRequested: rowMenu.moveToRecord(rowMenu.recordId)
+    onReviewEmailRequested: rowMenu.sendNotesRequested(rowMenu.recordId)
     onRefreshRequested: DesktopAppController.refreshModel(rowMenu.model)
 
     // Configure for one row and open at scene coordinates. Pass allowMoveTo true
@@ -52,6 +55,7 @@ RecordContextMenu {
         rowMenu.recordType = type
         rowMenu.recordLabel = label
         rowMenu.canMoveTo = (allowMoveTo === true)
+        rowMenu.canReviewEmail = DesktopAppController.tableNameForModel(rowModel) === "project_notes"
         rowMenu.personId = personId || ""
         rowMenu.clientId = clientId || ""
         rowMenu.openAt(sx, sy)

@@ -2,6 +2,8 @@
 
 The **Action Item Detail Page** provides the ability to add comments about work being done on an **Action/Tracker Item**. It also gives you the flexibility to move an item between projects or meetings. Keep in mind: if you change projects, related items such as the **Meeting**, **Identified By**, and **Assigned To** are cleared. The **Action Item Detail Page** has a text box for entering multiple lines of text when entering the **Description** of the **Action/Tracker Item**. When you change any information on the page the **Updated** date will change to the current date. If you set the **Status** to **Resolved**, the **Date Resolved** is set to the current date.
 
+A badge at the top left of the page names the project the item belongs to, which matters most when you reached the item from the **Items** list or from a search rather than from the project itself. Click the badge to jump to that project's [Project Page](<ProjectPage.md>). An item with no project assigned shows a greyed-out **No project** badge instead.
+
 ## Comments
 
 Comments can be multiple lines. When you add a new comment it defaults the **Date Updated** to the current date. **Updated By** defaults to the **Project Manager** specified in [Preferences](<Preferences.md>). **Comments** are intended to be a quick note. Comments are listed newest first, so the most recent update is always at the top.

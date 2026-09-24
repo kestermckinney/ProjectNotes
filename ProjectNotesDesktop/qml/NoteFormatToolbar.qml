@@ -449,6 +449,7 @@ Rectangle {
                     background: null
                     font.pixelSize: Theme.fontSm
                     selectByMouse: true
+                    SpellCheckField { spellCheckEnabled: false }
                 }
             }
             ListView {

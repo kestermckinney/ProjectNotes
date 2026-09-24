@@ -110,6 +110,8 @@ ApplicationWindow {
     // native-window, keyboard-shortcut, or application-menu close. Moving focus
     // first flushes inline delegates that save from editingFinished; _saveCurrent
     // then covers each detail page's aggregate fields and rich-text editors.
+    // A template validation failure deliberately keeps the window open so the
+    // user can correct it; SettingsPage shows the standard dialog.
     onClosing: (close) => {
         if (!root._prepareToClose(true)) {
             close.accepted = false
@@ -297,7 +299,8 @@ ApplicationWindow {
     function selectSection(section) {
         if (section === root.currentSection && contentStack.depth <= 1)
             return
-        _saveCurrent()
+        if (!_saveCurrent())
+            return
         if (_gateOnSyncCheck(function() { root._selectSectionNow(section) }))
             return
         _selectSectionNow(section)
@@ -378,7 +381,8 @@ ApplicationWindow {
 
     function openProject(projectId) {
         if (projectId === "") return
-        _saveCurrent()
+        if (!_saveCurrent())
+            return
         root.selectedProjectId = projectId
         var r = DesktopAppController.projectRowForId(projectId)
         if (r < 0) return
@@ -392,34 +396,39 @@ ApplicationWindow {
     // and name (ProjectDetailPage._saveNow), which is also when its child tabs
     // become usable, since every one of them is keyed by the project id.
     function openNewProject(projectRow) {
-        _saveCurrent()
+        if (!_saveCurrent())
+            return
         root.crumbSub = qsTr("New Project")
         contentStack.push(projectDetailComponent,
                           { projectRow: projectRow, projectId: "", isNewRecord: true })
     }
 
     function openNote(noteRow, noteId, projectId) {
-        _saveCurrent()
+        if (!_saveCurrent())
+            return
         root.crumbSub = qsTr("Note")
         contentStack.push(noteDetailComponent,
                           { noteRow: noteRow, noteId: noteId, projectId: projectId })
     }
 
     function openPerson(row, personId) {
-        _saveCurrent()
+        if (!_saveCurrent())
+            return
         root.crumbSub = DesktopAppController.peopleNameForId(personId)
         contentStack.push(personDetailComponent, { personRow: row, personId: personId })
     }
 
     function openClient(row, clientId) {
-        _saveCurrent()
+        if (!_saveCurrent())
+            return
         root.crumbSub = DesktopAppController.clientNameForId(clientId)
         contentStack.push(clientDetailComponent, { clientRow: row, clientId: clientId })
     }
 
     function openItem(itemId) {
         if (itemId === "") return
-        _saveCurrent()
+        if (!_saveCurrent())
+            return
         root.crumbSub = qsTr("Item")
         contentStack.push(itemDetailComponent, { itemId: itemId })
     }
@@ -498,7 +507,8 @@ ApplicationWindow {
     property string _exportId: ""
     function exportRecord(table, id) {
         if (!table || !id) return
-        _saveCurrent()
+        if (!_saveCurrent())
+            return
         root._exportTable = table
         root._exportId = id
         exportDialog.open()
@@ -518,7 +528,8 @@ ApplicationWindow {
     }
 
     function goBack() {
-        _saveCurrent()
+        if (!_saveCurrent())
+            return
         _popAndRecrumb()
     }
 
@@ -575,7 +586,10 @@ ApplicationWindow {
         ProjectSidebar {
             id: sidebar
             Layout.fillHeight: true
+            // Only meaningful on the projects section, and hideable from there
+            // (View ▸ Show Project Folders, or the rail's panel button).
             visible: root.currentSection === "projects"
+                     && DesktopAppController.showProjectSidebar
             dragLayer: dragOverlay
             selectedProjectId: root.selectedProjectId
             onProjectActivated: (pid) => root.openProject(pid)
@@ -780,6 +794,7 @@ ApplicationWindow {
             }
             onDeleteRequested: root.confirmDelete()
             onNoteActivated: (noteRow, noteId) => root.openNote(noteRow, noteId, projectId)
+            onProjectActivated: (pid) => root.openProject(pid)
         }
     }
     Component {
@@ -841,6 +856,7 @@ ApplicationWindow {
             onMoveToRequested: (id) => moveToDialog.openFor(id)
             onDeleteRequested: root.confirmDelete()
             onItemActivated: (itemId) => root.openItem(itemId)
+            onProjectActivated: (pid) => root.openProject(pid)
         }
     }
     Component {
@@ -911,7 +927,10 @@ ApplicationWindow {
                     Layout.alignment: Qt.AlignHCenter
                     Layout.preferredWidth: 88
                     Layout.preferredHeight: 88
-                    source: "qrc:/qt/qml/ProjectNotesDesktop/icons/projectnotes.ico"
+                    // Use the high-resolution PNG bundled with the help assets.
+                    // Loading the multi-frame Windows ICO here can make Qt pick
+                    // a low-resolution frame and upscale it on HiDPI displays.
+                    source: "qrc:/qt/qml/ProjectNotesDesktop/help/img/logo1024.png"
                     fillMode: Image.PreserveAspectFit
                     smooth: true
                     mipmap: true

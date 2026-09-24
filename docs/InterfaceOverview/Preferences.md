@@ -7,7 +7,7 @@ The Project Notes Settings page allows you to configure application-wide setting
 **To open the Settings page:**
 
 1. Click the **Settings** icon in the icon rail, or choose **Preferences** from the app menu (the menu icon at the top of the icon rail).
-2. The Settings page opens with sections for Appearance, Cloud Sync, Project Folders, Preferences, View Options, Data, and About.
+2. The Settings page opens with sections for Appearance, Cloud Sync, Office 365 Integration, Email Templates, Meeting Templates, File Finder, Project Folders, Preferences, View Options, and Data.
 
 ## Related Settings Pages
 
@@ -56,13 +56,48 @@ The **Managing Company** setting, also under the **Preferences** section of Sett
 
 **Note:** The managing company list is populated from the **Clients** data in your database. If you don't see your company in the list, add it as a client first (see [Client List Page](ClientListPage.md)).
 
+## View Report After Save
+
+**View report after save**, at the top of the **Preferences** section, opens a saved report in its default application as soon as it is written. Leave it off if you only want the file on disk. It has no effect on emailed reports.
+
+## Email and Scheduling Integration
+
+The **Email and Scheduling Integration** section, below **Preferences**, decides how Project Notes hands finished emails and meeting invitations to you. One choice covers both.
+
+The **Integration** list only offers what your operating system supports:
+
+| Platform | Choices in the list |
+| :--- | :--- |
+| **Windows** | Default Application, Outlook, Outlook (Classic), Thunderbird, Microsoft 365 drafts |
+| **macOS** | Default Application, MacOS Email and Calendar, Thunderbird, Microsoft 365 drafts |
+| **Linux** | Default Application, Thunderbird, Microsoft 365 drafts |
+
+| Integration | What happens |
+| :--- | :--- |
+| **Default Application** | The email is written as a draft message file (`.eml`) and opened by whatever application handles that type. Meetings open as a calendar file (`.ics`) in your default calendar application. |
+| **Outlook** (Windows) | The email and the meeting open in the new Outlook, whichever app holds the `.eml` and `.ics` associations. The new Outlook drops a meeting's attendees, so use **Copy Attendees** in the Schedule meeting window and paste them into the event. |
+| **Outlook (Classic)** (Windows) | The email opens in Outlook (classic) as an unsent message. The meeting opens as an unsent meeting window with the attendees and agenda already filled in. |
+| **MacOS Email and Calendar** (macOS) | The email opens in a Mail compose window without Bcc recipients or attachments. The meeting becomes an event in Calendar without attendees; use **Copy Attendees** in the Schedule meeting window and paste them into the event. |
+| **Thunderbird** | The email opens in a Thunderbird compose window with its attachments. The meeting is passed to Thunderbird, which offers to import it into one of its calendars. |
+| **Microsoft 365 drafts** | The email becomes a draft in your Microsoft 365 mailbox and the meeting a draft event in your calendar, both opened in Outlook on the web. Sign in under **Settings > Office 365 Integration** first. |
+
+Until you choose, Project Notes uses **MacOS Email and Calendar** on macOS and **Default Application** everywhere else. A settings file copied from another computer can name a choice this platform lacks, such as **Outlook (Classic)** on a Mac. Project Notes ignores it and uses the default until you pick again.
+
+Choosing **Thunderbird** reveals a **Thunderbird executable** field. Enter a path or a command, such as `flatpak run org.mozilla.Thunderbird`.
+
+Project Notes never sends an email or an invitation. It prepares one and hands it over; you send it.
+
+Temporary messages, attachments and calendar files live in the application cache and are removed when Project Notes closes.
+
+For the full walk-through, including what to set up on Windows, macOS and Linux, see [Email and Meeting Setup](<EmailAndMeetingSetup.md>).
+
 ## View Options
 
 The **View Options** section holds three checkboxes that control what the Projects, Items, and Search lists show. Each takes effect immediately:
 
 - **Show closed projects** — Shows or hides projects whose **Project Status** is **Closed** on the [Project List Page](<ProjectListPage.md>).
 - **Show internal items** — Shows or hides notes and tracker items marked **Internal**, and the earned value/budget figures on the Project List and Project Page. See [Presenting to Clients](<PresentingToClients.md>).
-- **Only New and Assigned tracker items** — When checked, hides tracker items whose **Status** is **Resolved**, **Deferred**, or **Canceled**, on the [Item Tracker Page](<ItemTrackerPage.md>).
+- **Show resolved items** — When cleared, hides tracker items whose **Status** is **Resolved**, **Deferred**, or **Canceled**, on the [Item Tracker Page](<ItemTrackerPage.md>), leaving only **New** and **Assigned** items.
 
 These same three toggles are also reachable from the [Application Menu](<ApplicationMenu.md>)'s **View** group as **Show Closed Projects**, **Show Internal / Budget Items**, and **Show Resolved Items** — the two locations stay in sync.
 
@@ -80,7 +115,7 @@ Export is handled separately, per record — open any project, note, item, perso
 
 ## About
 
-The **About** section shows the installed version and links to the online documentation, release notes, and source code. It is also reachable by choosing **About** from the [Application Menu](<ApplicationMenu.md>)'s **Help** group.
+Choosing **About** from the [Application Menu](<ApplicationMenu.md>)'s **Help** group shows the installed version and links to the online documentation, release notes, and source code.
 
 ## Checking for Updates
 
@@ -92,11 +127,12 @@ You can also check at any time from the app menu by choosing **Check for Updates
 
 ### In Communications
 
-When you use plugins to send emails or schedule meetings, Project Notes uses your preferences to:
+When you send a report or schedule a meeting, Project Notes uses your preferences to:
 
-- **Determine recipients** — The project manager is often excluded from internal emails to avoid duplicating communication
-- **Filter content** — Internal items and notes marked as "Internal" may be excluded from client-facing communications based on your preferences
-- **Personalize messages** — Your project manager setting may be used to automatically populate your name in email signatures or meeting invitations
+- **Determine recipients** — The project manager is kept off recipient lists to avoid sending information to yourself
+- **Name the organizer** — Meeting invitations list the project manager as the organizer, never as an attendee
+- **Filter content** — Items and notes marked **Internal** are excluded from client-facing reports
+- **Fill in templates** — `preferences.managerName` and `preferences.managingCompanyName` resolve from these two settings
 
 ### In Reports
 
@@ -116,10 +152,12 @@ When you use the [Filter Tool](FilterTool.md) or the **Show Internal / Budget It
 
 The **Project Manager** and **Managing Company** settings are saved in the `application_settings` table inside the Project Notes database (`ProjectNotes.db`). This means they travel with the database — if you share a database or copy it to another machine, your preferences move with it. They are also included in cloud sync when synchronization is enabled.
 
-See [Plugin Settings — Where Settings Are Stored](<../StandardPlugins/PluginSettings.md>) for a complete breakdown of what is stored in the database versus your local OS profile across all features and plugins.
+The **Email and Scheduling Integration** choice and the Thunderbird path are stored in your local OS profile instead, so each machine can use a different mail application. See [Plugin Settings — Where Settings Are Stored](<../StandardPlugins/PluginSettings.md>) for the full breakdown.
 
 ## Related Documentation
 
 - [People List Page](PeopleListPage.md) — Manage people in your database
 - [Client List Page](ClientListPage.md) — Manage clients/companies in your database
 - [Presenting to Clients](PresentingToClients.md) — How to use preferences when presenting to clients
+- [Email and Meeting Setup](<EmailAndMeetingSetup.md>) — Setting up mail and calendar handoff
+- [Reports and Email](<ReportsAndEmail.md>) — Generating and sending project reports

@@ -29,7 +29,6 @@ pluginmenus = [
     {"menutitle" : "Outlook Integration", "function" : "menu_outlook_integration_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "iCloud Contacts", "function" : "menu_icloud_contacts_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "My Shortcuts", "function" : "menu_my_shortcut_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
-    {"menutitle" : "Meeting and Email Types", "function" : "menu_meeting_email_types_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "Settings Migrator", "function" : "menu_settings_migrator", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
 ]
 
@@ -310,7 +309,6 @@ class OutlookIntegrationSettings(QDialog):
         self.ui.lineEditBackupInboxFolder.setText(self.pnc.get_plugin_setting("BackupInBoxFolder", self.settings_pluginname) or "")
         self.ui.lineEditBackupSentFolder.setText(self.pnc.get_plugin_setting("BackupSentFolder", self.settings_pluginname) or "")
         self.ui.checkBoxSendO365.setChecked((self.pnc.get_plugin_setting("SendO365", self.settings_pluginname) or "").lower() == "true")
-        self.ui.checkBoxScheduleO365.setChecked((self.pnc.get_plugin_setting("ScheduleO365", self.settings_pluginname) or "").lower() == "true")
 
         if w is not None and h is not None:
             self.ui.resize(int(w), int(h))
@@ -342,7 +340,6 @@ class OutlookIntegrationSettings(QDialog):
         self.pnc.set_plugin_setting("BackupEmails", self.settings_pluginname, "true" if self.ui.checkBoxBackupEmails.isChecked() else "false")
         self.pnc.set_plugin_setting("BackupInBoxFolder", self.settings_pluginname, self.ui.lineEditBackupInboxFolder.text())
         self.pnc.set_plugin_setting("BackupSentFolder", self.settings_pluginname, self.ui.lineEditBackupSentFolder.text())
-        self.pnc.set_plugin_setting("ScheduleO365", self.settings_pluginname, "true" if self.ui.checkBoxScheduleO365.isChecked() else "false")
         self.pnc.set_plugin_setting("SendO365", self.settings_pluginname, "true" if self.ui.checkBoxSendO365.isChecked() else "false")
 
         projectnotes.force_reload("outlooksync_thread")
@@ -505,236 +502,6 @@ class MyShortcutSettings(QDialog):
 
     def closeEvent(self, event):
         self.save_window_state()
-        # Call the base class implementation
-        super().closeEvent(event)
-
-class EditMETemplate(QDialog):
-    def __init__(self, parent: QMainWindow = None):
-        super().__init__(parent)
-
-        self.ui = uic.loadUi("plugins/forms/dialogMeetingEmailTemplate.ui", self)
-        self.ui.setWindowFlags(
-            QtCore.Qt.WindowType.Window |
-            QtCore.Qt.WindowType.WindowCloseButtonHint
-            )
-        self.ui.setModal(True)
-
-class MeetingEmailTypesSettings(QDialog):
-    def __init__(self, parent: QMainWindow = None):
-        super().__init__(parent)
-
-        self.pnc = ProjectNotesCommon()
-        self.settings_pluginname = "Meeting and Email Types"
-
-        self.ui = uic.loadUi("plugins/forms/dialogMeetingEmailTypes.ui", self)
-
-        self.ui.setWindowFlags(
-            QtCore.Qt.WindowType.Window |
-            QtCore.Qt.WindowType.WindowCloseButtonHint
-            )
-        self.ui.setModal(True)
- 
-        self.ui.pushButtonAddType.clicked.connect(self.add_type)
-        self.ui.pushButtonEditType.clicked.connect(self.edit_type)
-        self.ui.pushButtonDeleteType.clicked.connect(self.delete_type)
-        self.ui.buttonBox.accepted.connect(self.save_settings)
-        self.ui.buttonBox.rejected.connect(self.reject_changes)
-        self.ui.tableWidgetMeetingEmailTypes.verticalHeader().sectionDoubleClicked.connect(self.on_row_header_clicked)
-
-        type_delegate = ComboBoxDelegate(self.ui, False)
-        type_delegate.set_items([
-            "Email",
-            "Meeting"])
-
-        delegate = ComboBoxDelegate(self.ui, False)
-        delegate.set_items([
-            "clients",
-            "people",
-            "projects",
-            "project_people",
-            "status_report_items",
-            "project_locations ",
-            "project_notes",
-            "meeting_attendees",
-            "item_tracker_updates",
-            "item_tracker"])
-
-        group_delegate = ComboBoxDelegate(self.ui, False)
-        group_delegate.set_items([
-           "Attachment Only",
-           "Exclude Client",
-           "Full Project Team",
-           "Individual",
-           "Internal Project Team",
-           "Only Client",           
-           "Receives Status"])
-
-        self.ui.tableWidgetMeetingEmailTypes.setItemDelegateForColumn(0, type_delegate)
-        self.ui.tableWidgetMeetingEmailTypes.setItemDelegateForColumn(2, group_delegate)
-        self.ui.tableWidgetMeetingEmailTypes.setItemDelegateForColumn(5, delegate)
-
-        self.meeting_types = self.pnc.get_plugin_setting("MeetingEmailTypes", self.settings_pluginname)
-        self.populate_table_from_json(self.meeting_types, self.ui.tableWidgetMeetingEmailTypes)
-
-        w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
-        h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
-
-        c1 = self.pnc.get_plugin_setting("c1", self.settings_pluginname)
-        c2 = self.pnc.get_plugin_setting("c2", self.settings_pluginname)
-        c3 = self.pnc.get_plugin_setting("c3", self.settings_pluginname)
-        c4 = self.pnc.get_plugin_setting("c4", self.settings_pluginname)
-        c5 = self.pnc.get_plugin_setting("c5", self.settings_pluginname)
-        c6 = self.pnc.get_plugin_setting("c6", self.settings_pluginname)
-
-        geometry = self.pnc.get_plugin_setting("types_geometry", self.settings_pluginname)
-
-        if (c1 is not None and c2 is not None and c3 is not None and c4 is not None and c5 is not None and c6 is not None):
-            #print(f"loading column sizes {c1},{c2},{c3},{c4},{c5},{c6}")
-
-            self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(0, int(c1))
-            self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(1, int(c2))
-            self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(2, int(c3))
-            self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(3, int(c4))
-            self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(4, int(c5))
-            self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(5, int(c6))
-
-        if w is not None and h is not None:
-            #print(f"loading dimensions {int(w)},{int(h)}")
-            self.ui.resize(int(w), int(h))
-        self.center_on_main_window()
-
-        self.ui_template = EditMETemplate(self.ui)
-        self.ui_template.buttonBox.accepted.connect(self.update_row)
-
-    def copy_table_to_json(self, qtable):
-        data = []
-        for row in range(qtable.rowCount()):
-            row_data = {}
-            for column in range(qtable.columnCount()):
-                header = qtable.horizontalHeaderItem(column).text()
-                item = qtable.item(row, column)
-                value = item.text() if item is not None else ''
-                row_data[header] = value
-            data.append(row_data)
-
-        json_data = json.dumps(data, indent=4)
-        return(json_data)
-
-    def populate_table_from_json(self, json_string, qtable):
-
-        # nothing was saved
-        if (json_string is None or json_string == ""):
-            return
-
-        data = json.loads(json_string)
-
-        if (len(data) > 0):
-            # Get the column headers from the first row
-            column_headers = list(data[0].keys())
-
-            # Populate the table with data
-            qtable.setRowCount(len(data))
-            for row, row_data in enumerate(data):
-                for column, header in enumerate(column_headers):
-                    value = row_data.get(header, '')
-                    qtable.setItem(row, column, QTableWidgetItem(value))
-
-    def update_row(self):
-        if (self.edit_row >= self.ui.tableWidgetMeetingEmailTypes.rowCount()):
-            self.ui.tableWidgetMeetingEmailTypes.setRowCount(self.edit_row + 1)
-
-        self.ui.tableWidgetMeetingEmailTypes.setItem(self.edit_row, 0, QTableWidgetItem(self.ui_template.comboBoxType.currentText()))
-        self.ui.tableWidgetMeetingEmailTypes.setItem(self.edit_row, 1, QTableWidgetItem(self.ui_template.lineEditName.text()))
-        self.ui.tableWidgetMeetingEmailTypes.setItem(self.edit_row, 2, QTableWidgetItem(self.ui_template.comboBoxInvitees.currentText()))
-        self.ui.tableWidgetMeetingEmailTypes.setItem(self.edit_row, 3, QTableWidgetItem(self.ui_template.lineEditSubject.text()))
-        self.ui.tableWidgetMeetingEmailTypes.setItem(self.edit_row, 4, QTableWidgetItem(self.ui_template.textEditTemplate.toHtml()))
-        self.ui.tableWidgetMeetingEmailTypes.setItem(self.edit_row, 5, QTableWidgetItem(self.ui_template.comboBoxData.currentText()))
-
-    def on_row_header_clicked(self, row):
-        self.ui.tableWidgetMeetingEmailTypes.selectRow(row)
-        self.edit_type()
-
-    def add_type(self):
-        self.edit_row = self.ui.tableWidgetMeetingEmailTypes.rowCount()
-
-        self.ui_template.comboBoxType.setCurrentText("Meeting")
-        self.ui_template.lineEditName.setText('')
-        self.ui_template.comboBoxInvitees.setCurrentText('')
-        self.ui_template.lineEditSubject.setText('')
-        self.ui_template.textEditTemplate.setHtml('')
-        self.ui_template.comboBoxData.setCurrentText("people")
-        self.ui_template.setModal(True)
-        self.ui_template.show()
-
-    def edit_type(self):
-        self.edit_row = self.ui.tableWidgetMeetingEmailTypes.currentRow()
-
-        print('Editing Meeting Email Type')
-
-        # self.ui_template.textEditTemplate.setFontFamily("Arial")
-        # self.ui_template.textEditTemplate.setFontSize("11")
-
-        if (self.edit_row > -1):
-            mtype = self.ui.tableWidgetMeetingEmailTypes.item(self.edit_row, 0).text()
-            nam = self.ui.tableWidgetMeetingEmailTypes.item(self.edit_row, 1).text()
-            matt = self.ui.tableWidgetMeetingEmailTypes.item(self.edit_row, 2).text()
-            subj = self.ui.tableWidgetMeetingEmailTypes.item(self.edit_row, 3).text() 
-            mhtml = self.ui.tableWidgetMeetingEmailTypes.item(self.edit_row, 4).text() 
-            data = self.ui.tableWidgetMeetingEmailTypes.item(self.edit_row, 5).text() 
-
-
-            self.ui_template.comboBoxType.setCurrentText(mtype)
-            self.ui_template.lineEditName.setText(nam)
-            self.ui_template.comboBoxInvitees.setCurrentText(matt)
-            self.ui_template.comboBoxData.setCurrentText(data)
-            self.ui_template.lineEditSubject.setText(subj)
-            self.ui_template.textEditTemplate.setHtml(mhtml)
-            self.ui_template.setModal(True)
-            self.ui_template.show()
-
-    def delete_type(self):
-        row = self.ui.tableWidgetMeetingEmailTypes.currentRow()
-        if (row > -1):
-            value = self.ui.tableWidgetMeetingEmailTypes.removeRow(row)
-
-    def center_on_main_window(self):
-        main_window = QApplication.activeWindow()
-        if main_window:
-            main_geometry = main_window.geometry()
-            x = main_geometry.x() + (main_geometry.width() - self.width()) // 2
-            y = main_geometry.y() + (main_geometry.height() - self.height()) // 2
-            self.move(max(0, x), max(0, y))
-
-    def save_window_state(self):
-        self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
-        self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
-
-        self.pnc.set_plugin_setting("c1", self.settings_pluginname, f"{self.ui.tableWidgetMeetingEmailTypes.columnWidth(0)}")
-        self.pnc.set_plugin_setting("c2", self.settings_pluginname, f"{self.ui.tableWidgetMeetingEmailTypes.columnWidth(1)}")
-        self.pnc.set_plugin_setting("c3", self.settings_pluginname, f"{self.ui.tableWidgetMeetingEmailTypes.columnWidth(2)}")
-        self.pnc.set_plugin_setting("c4", self.settings_pluginname, f"{self.ui.tableWidgetMeetingEmailTypes.columnWidth(3)}")
-        self.pnc.set_plugin_setting("c5", self.settings_pluginname, f"{self.ui.tableWidgetMeetingEmailTypes.columnWidth(4)}")
-        self.pnc.set_plugin_setting("c6", self.settings_pluginname, f"{self.ui.tableWidgetMeetingEmailTypes.columnWidth(5)}")
-
-        # print(f"saving dimensions {self.size().width()},{self.size().height()}")
-
-    def save_settings(self):
-        self.meeting_types = self.copy_table_to_json(self.ui.tableWidgetMeetingEmailTypes)
-        self.pnc.set_plugin_setting("MeetingEmailTypes", self.settings_pluginname, self.meeting_types)
-
-        projectnotes.force_reload("base_plugin")
-
-        self.save_window_state()
-        self.accept()
-
-    def reject_changes(self):
-        self.save_window_state()
-        
-        # Call the base class implementation
-        self.reject()
-
-    def closeEvent(self, event):
-        self.save_window_state()        
         # Call the base class implementation
         super().closeEvent(event)
 
@@ -944,10 +711,6 @@ def menu_my_shortcut_settings(parameter):
     mss.show()
     return ""
 
-def menu_meeting_email_types_settings(parameter):
-    mets.show()
-    return ""
-
 def menu_settings_migrator(parameter):
     sm.show()
     return ""
@@ -965,17 +728,6 @@ def setup_default_editor_settings():
             default_editor = "/usr/bin/vi"
 
         pnc_tmp.set_plugin_setting("EditorPath", settings_pluginname, default_editor)
-
-_MEETING_EMAIL_TYPES_DEFAULTS = r'''{"Meeting and Email Types": {"MeetingEmailTypes": "[\n    {\n        \"Type\": \"Email\",\n        \"Name\": \"Individual\",\n        \"Invitees\": \"Individual\",\n        \"Subject\": \"\",\n        \"Template\": \"<!DOCTYPE HTML PUBLIC \\\"-//W3C//DTD HTML 4.0//EN\\\" \\\"http://www.w3.org/TR/REC-html40/strict.dtd\\\">\\n<html><head><meta name=\\\"qrichtext\\\" content=\\\"1\\\" /><meta charset=\\\"utf-8\\\" /><style type=\\\"text/css\\\">\\np, li { white-space: pre-wrap; }\\nhr { height: 1px; border-width: 0; }\\nli.unchecked::marker { content: \\\"\\\\2610\\\"; }\\nli.checked::marker { content: \\\"\\\\2612\\\"; }\\n</style></head><body style=\\\" font-family:'Aptos'; font-size:11pt; font-weight:400; font-style:normal;\\\"></body></html>\",\n        \"Data Type\": \"people\"\n    },\n    {\n        \"Type\": \"Email\",\n        \"Name\": \"Attendee\",\n        \"Invitees\": \"Individual\",\n        \"Subject\": \"[$meeting_attendee.project_number.1] [$meeting_attendee.project_name.1] - \",\n        \"Template\": \"<!DOCTYPE HTML PUBLIC \\\"-//W3C//DTD HTML 4.0//EN\\\" \\\"http://www.w3.org/TR/REC-html40/strict.dtd\\\">\\n<html><head><meta name=\\\"qrichtext\\\" content=\\\"1\\\" /><meta charset=\\\"utf-8\\\" /><style type=\\\"text/css\\\">\\np, li { white-space: pre-wrap; }\\nhr { height: 1px; border-width: 0; }\\nli.unchecked::marker { content: \\\"\\\\2610\\\"; }\\nli.checked::marker { content: \\\"\\\\2612\\\"; }\\n</style></head><body style=\\\" font-family:'Aptos'; font-size:11pt; font-weight:400; font-style:normal;\\\"></body></html>\",\n        \"Data Type\": \"meeting_attendees\"\n    },\n    {\n        \"Type\": \"Email\",\n        \"Name\": \"Non-Client\",\n        \"Invitees\": \"Exclude Client\",\n        \"Subject\": \"[$projects.project_number.1] [$projects.project_name.1] - \",\n        \"Template\": \"<!DOCTYPE HTML PUBLIC \\\"-//W3C//DTD HTML 4.0//EN\\\" \\\"http://www.w3.org/TR/REC-html40/strict.dtd\\\">\\n<html><head><meta name=\\\"qrichtext\\\" content=\\\"1\\\" /><meta charset=\\\"utf-8\\\" /><style type=\\\"text/css\\\">\\np, li { white-space: pre-wrap; }\\nhr { height: 1px; border-width: 0; }\\nli.unchecked::marker { content: \\\"\\\\2610\\\"; }\\nli.checked::marker { content: \\\"\\\\2612\\\"; }\\n</style></head><body style=\\\" font-family:'Aptos'; font-size:11pt; font-weight:400; font-style:normal;\\\"></body></html>\",\n        \"Data Type\": \"projects\"\n    },\n    {\n        \"Type\": \"Email\",\n        \"Name\": \"Full Team\",\n        \"Invitees\": \"Full Project Team\",\n        \"Subject\": \"[$projects.project_number.1] [$projects.project_name.1] - \",\n        \"Template\": \"<!DOCTYPE HTML PUBLIC \\\"-//W3C//DTD HTML 4.0//EN\\\" \\\"http://www.w3.org/TR/REC-html40/strict.dtd\\\">\\n<html><head><meta name=\\\"qrichtext\\\" content=\\\"1\\\" /><meta charset=\\\"utf-8\\\" /><style type=\\\"text/css\\\">\\np, li { white-space: pre-wrap; }\\nhr { height: 1px; border-width: 0; }\\nli.unchecked::marker { content: \\\"\\\\2610\\\"; }\\nli.checked::marker { content: \\\"\\\\2612\\\"; }\\n</style></head><body style=\\\" font-family:'Aptos'; font-size:11pt; font-weight:400; font-style:normal;\\\"></body></html>\",\n        \"Data Type\": \"projects\"\n    },\n    {\n        \"Type\": \"Email\",\n        \"Name\": \"Attachment\",\n        \"Invitees\": \"Attachment Only\",\n        \"Subject\": \"[$project_locations.project_number.1] [$project_locations.project_name.1] - [$project_locations.location_description.1]\",\n        \"Template\": \"<!DOCTYPE HTML PUBLIC \\\"-//W3C//DTD HTML 4.0//EN\\\" \\\"http://www.w3.org/TR/REC-html40/strict.dtd\\\">\\n<html><head><meta name=\\\"qrichtext\\\" content=\\\"1\\\" /><meta charset=\\\"utf-8\\\" /><style type=\\\"text/css\\\">\\np, li { white-space: pre-wrap; }\\nhr { height: 1px; border-width: 0; }\\nli.unchecked::marker { content: \\\"\\\\2610\\\"; }\\nli.checked::marker { content: \\\"\\\\2612\\\"; }\\n</style></head><body style=\\\" font-family:'Aptos'; font-size:11pt; font-weight:400; font-style:normal;\\\"></body></html>\",\n        \"Data Type\": \"project_locations\"\n    },\n    {\n        \"Type\": \"Email\",\n        \"Name\": \"Team Member\",\n        \"Invitees\": \"Individual\",\n        \"Subject\": \"[$project_people.project_number.1] [$project_people.project_name.1] - \",\n        \"Template\": \"<!DOCTYPE HTML PUBLIC \\\"-//W3C//DTD HTML 4.0//EN\\\" \\\"http://www.w3.org/TR/REC-html40/strict.dtd\\\">\\n<html><head><meta name=\\\"qrichtext\\\" content=\\\"1\\\" /><meta charset=\\\"utf-8\\\" /><style type=\\\"text/css\\\">\\np, li { white-space: pre-wrap; }\\nhr { height: 1px; border-width: 0; }\\nli.unchecked::marker { content: \\\"\\\\2610\\\"; }\\nli.checked::marker { content: \\\"\\\\2612\\\"; }\\n</style></head><body style=\\\" font-family:'Aptos'; font-size:11pt; font-weight:400; font-style:normal;\\\"></body></html>\",\n        \"Data Type\": \"project_people\"\n    },\n    {\n        \"Type\": \"Email\",\n        \"Name\": \"Internal Project Team\",\n        \"Invitees\": \"Internal Project Team\",\n        \"Subject\": \"[$projects.project_number.1] [$projects.project_name.1] - \",\n        \"Template\": \"<!DOCTYPE HTML PUBLIC \\\"-//W3C//DTD HTML 4.0//EN\\\" \\\"http://www.w3.org/TR/REC-html40/strict.dtd\\\">\\n<html><head><meta name=\\\"qrichtext\\\" content=\\\"1\\\" /><meta charset=\\\"utf-8\\\" /><style type=\\\"text/css\\\">\\np, li { white-space: pre-wrap; }\\nhr { height: 1px; border-width: 0; }\\nli.unchecked::marker { content: \\\"\\\\2610\\\"; }\\nli.checked::marker { content: \\\"\\\\2612\\\"; }\\n</style></head><body style=\\\" font-family:'Aptos'; font-size:11pt; font-weight:400; font-style:normal;\\\"></body></html>\",\n        \"Data Type\": \"projects\"\n    },\n    {\n        \"Type\": \"Meeting\",\n        \"Name\": \"Project Status (Internal)\",\n        \"Invitees\": \"Exclude Client\",\n        \"Subject\": \"[$projects.project_number.1] [$projects.project_name.1] - Project Status (Internal)\",\n        \"Template\": \"<!DOCTYPE HTML PUBLIC \\\"-//W3C//DTD HTML 4.0//EN\\\" \\\"http://www.w3.org/TR/REC-html40/strict.dtd\\\">\\n<html><head><meta name=\\\"qrichtext\\\" content=\\\"1\\\" /><meta charset=\\\"utf-8\\\" /><style type=\\\"text/css\\\">\\np, li { white-space: pre-wrap; }\\nhr { height: 1px; border-width: 0; }\\nli.unchecked::marker { content: \\\"\\\\2610\\\"; }\\nli.checked::marker { content: \\\"\\\\2612\\\"; }\\n</style></head><body style=\\\" font-family:'Segoe UI'; font-size:10pt; font-weight:400; font-style:normal;\\\">\\n<p style=\\\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Aptos Display','sans-serif'; font-weight:700;\\\">Status Meeting Agenda (Internal)</span><span style=\\\" font-family:'Aptos Display','sans-serif';\\\"><br />The purpose of this meeting is to make sure all work is progressing, everyone understands their assignments, and to identify any roadblocks that are holding up work or could hold up work.\\u00a0 We also want to review how we are tracking against the schedule and determine if we are still on track. </span></p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span><span style=\\\" font-family:'Aptos Display','sans-serif';\\\">Review Action Items From Prior Meeting</span> </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span><span style=\\\" font-family:'Aptos Display','sans-serif';\\\">Provide Updates On Assigned Tasks</span> </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span><span style=\\\" font-family:'Aptos Display','sans-serif';\\\">Identify Any Roadblocks</span> </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span><span style=\\\" font-family:'Aptos Display','sans-serif';\\\">Review Tasks To Start</span> </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span><span style=\\\" font-family:'Aptos Display','sans-serif';\\\">Review Status Report</span> </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span><span style=\\\" font-family:'Aptos Display','sans-serif';\\\">Review Schedule</span> </p></body></html>\",\n        \"Data Type\": \"projects\"\n    },\n    {\n        \"Type\": \"Meeting\",\n        \"Name\": \"Project Kickoff\",\n        \"Invitees\": \"Full Project Team\",\n        \"Subject\": \"[$projects.project_number.1] [$projects.project_name.1] - Project Kickoff\",\n        \"Template\": \"<!DOCTYPE HTML PUBLIC \\\"-//W3C//DTD HTML 4.0//EN\\\" \\\"http://www.w3.org/TR/REC-html40/strict.dtd\\\">\\n<html><head><meta name=\\\"qrichtext\\\" content=\\\"1\\\" /><meta charset=\\\"utf-8\\\" /><style type=\\\"text/css\\\">\\np, li { white-space: pre-wrap; }\\nhr { height: 1px; border-width: 0; }\\nli.unchecked::marker { content: \\\"\\\\2610\\\"; }\\nli.checked::marker { content: \\\"\\\\2612\\\"; }\\n</style></head><body style=\\\" font-family:'Segoe UI'; font-size:10pt; font-weight:400; font-style:normal;\\\">\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-weight:700;\\\">Project Kick Off Agenda </span></p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">The purpose of this meeting is to ensure that all team members have a comprehensive understanding of the project, we will conduct a thorough review of the current proposal. This review will cover the overall scope and the specific deliverables expected from the project. </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">During the proposal review, we will actively identify and highlight any potential risks associated with the project. Recognizing these risks early will help us prepare effective mitigation strategies and foster team alignment. </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-weight:700;\\\">Meeting Outline</span> </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Review Team Roles / Introductions </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Review Project Business Drivers </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Review Scope of Work </p>\\n<ul style=\\\"margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;\\\">\\n<li style=\\\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Deliverables </li>\\n<li style=\\\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Assumptions &amp; Constraints </li>\\n<li style=\\\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Invoicing </li>\\n<li style=\\\" margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Identify Risks </li></ul>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Review Key Schedule Drivers and Schedule Risks </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Review Communication Plan </p>\\n<ul style=\\\"margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;\\\">\\n<li style=\\\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Discuss Approval Authority </li>\\n<li style=\\\" margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Discuss Primary Contact </li></ul>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Address Security and Safety Items </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Project Methodology </p>\\n<ul style=\\\"margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;\\\">\\n<li style=\\\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">DeltaV Waterfall Approach </li>\\n<li style=\\\" margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Syncade Workshops &amp; Workstreams </li></ul>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Review Company Standards </p>\\n<ul style=\\\"margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;\\\">\\n<li style=\\\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Drafting </li>\\n<li style=\\\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Programming </li>\\n<li style=\\\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Testing </li>\\n<li style=\\\" margin-top:0px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Other Corporate </li></ul>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Additional Items? </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Next Steps <br />\\u00a0\\u00a0\\u00a0 </p></body></html>\",\n        \"Data Type\": \"projects\"\n    },\n    {\n        \"Type\": \"Meeting\",\n        \"Name\": \"Project Kickoff (Internal)\",\n        \"Invitees\": \"Exclude Client\",\n        \"Subject\": \"[$projects.project_number.1] [$projects.project_name.1] - Project Kickoff (Internal)\",\n        \"Template\": \"<!DOCTYPE HTML PUBLIC \\\"-//W3C//DTD HTML 4.0//EN\\\" \\\"http://www.w3.org/TR/REC-html40/strict.dtd\\\">\\n<html><head><meta name=\\\"qrichtext\\\" content=\\\"1\\\" /><meta charset=\\\"utf-8\\\" /><style type=\\\"text/css\\\">\\np, li { white-space: pre-wrap; }\\nhr { height: 1px; border-width: 0; }\\nli.unchecked::marker { content: \\\"\\\\2610\\\"; }\\nli.checked::marker { content: \\\"\\\\2612\\\"; }\\n</style></head><body style=\\\" font-family:'Segoe UI'; font-size:10pt; font-weight:400; font-style:normal;\\\">\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-weight:700;\\\">Customer Project Kick Off Agenda (Internal) </span><br />The purpose of this meeting is to ensure that all team members have a comprehensive understanding of the project, we will conduct a thorough review of the current proposal. This review will cover the overall scope and the specific deliverables expected from the project. </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">During the proposal review, we will actively identify and highlight any potential risks associated with the project. Recognizing these risks early will help us prepare effective mitigation strategies and foster team alignment. </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Team members who have previous experience working with the client are encouraged to share their insights. These perspectives will provide valuable context on what it is like to collaborate with this client and may highlight important considerations or best practices for a successful partnership. </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">At the conclusion of the meeting, we will outline the actionable next steps for the team. This will ensure everyone is clear on their responsibilities and the path forward for the project. </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-weight:700;\\\">Meeting Outline</span> </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Review Team Roles </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Sales Overview of Client &amp; Estimate </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Project Business Purpose </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Key Business Drivers </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Stakeholders Involved: People, Partners &amp; Vendors </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Future Sales Items/Sales Strategy </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Review Proposal </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Scope Of Work </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Deliverables </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Invoicing </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Assumptions &amp; Constraints </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Review Lessons Learned From Prior Projects </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Identify Risks </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Review Client Standards </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Drafting </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Programming </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Testing </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Other Corporate </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Additional Items? </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">Next Steps </p></body></html>\",\n        \"Data Type\": \"projects\"\n    },\n    {\n        \"Type\": \"Meeting\",\n        \"Name\": \"Project Status\",\n        \"Invitees\": \"Full Project Team\",\n        \"Subject\": \"[$projects.project_number.1] [$projects.project_name.1] - Project Status\",\n        \"Template\": \"<!DOCTYPE HTML PUBLIC \\\"-//W3C//DTD HTML 4.0//EN\\\" \\\"http://www.w3.org/TR/REC-html40/strict.dtd\\\">\\n<html><head><meta name=\\\"qrichtext\\\" content=\\\"1\\\" /><meta charset=\\\"utf-8\\\" /><style type=\\\"text/css\\\">\\np, li { white-space: pre-wrap; }\\nhr { height: 1px; border-width: 0; }\\nli.unchecked::marker { content: \\\"\\\\2610\\\"; }\\nli.checked::marker { content: \\\"\\\\2612\\\"; }\\n</style></head><body style=\\\" font-family:'Segoe UI'; font-size:10pt; font-weight:400; font-style:normal;\\\">\\n<p style=\\\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Aptos Display','sans-serif'; font-weight:700;\\\">Status Meeting Agenda</span><span style=\\\" font-family:'Aptos Display','sans-serif';\\\"> <br />The purpose of this meeting is to make sure all work is progressing, everyone understands their assignments, and to identify any roadblocks that are holding up work or could hold up work.\\u00a0 We also want to review how we are tracking against the schedule and determine if we are still on track. </span></p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span><span style=\\\" font-family:'Aptos Display','sans-serif';\\\">Review Action Items From Prior Meeting</span> </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span><span style=\\\" font-family:'Aptos Display','sans-serif';\\\">Provide Updates On Assigned Tasks</span> </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span><span style=\\\" font-family:'Aptos Display','sans-serif';\\\">Identify Any Roadblocks</span> </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span><span style=\\\" font-family:'Aptos Display','sans-serif';\\\">Review Tasks To Start</span> </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span><span style=\\\" font-family:'Aptos Display','sans-serif';\\\">Review Status Report</span> </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span><span style=\\\" font-family:'Aptos Display','sans-serif';\\\">Review Schedule</span> </p></body></html>\",\n        \"Data Type\": \"projects\"\n    },\n    {\n        \"Type\": \"Meeting\",\n        \"Name\": \"Lessons Learned (Internal)\",\n        \"Invitees\": \"Exclude Client\",\n        \"Subject\": \"[$projects.project_number.1] [$projects.project_name.1] - Lessons Learned (Internal)\",\n        \"Template\": \"<!DOCTYPE HTML PUBLIC \\\"-//W3C//DTD HTML 4.0//EN\\\" \\\"http://www.w3.org/TR/REC-html40/strict.dtd\\\">\\n<html><head><meta name=\\\"qrichtext\\\" content=\\\"1\\\" /><meta charset=\\\"utf-8\\\" /><style type=\\\"text/css\\\">\\np, li { white-space: pre-wrap; }\\nhr { height: 1px; border-width: 0; }\\nli.unchecked::marker { content: \\\"\\\\2610\\\"; }\\nli.checked::marker { content: \\\"\\\\2612\\\"; }\\n</style></head><body style=\\\" font-family:'Segoe UI'; font-size:10pt; font-weight:400; font-style:normal;\\\">\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-weight:700;\\\">Lessons Learned Meeting Agenda (Internal)</span></p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">The purpose of the meeting is to have a discussion and collectively identify lessons learned during the project, so future projects may benefit from our experience.\\u00a0 During our discussion we want to recognize and document what things went well, and why they were so successful.\\u00a0 We also want to identify areas that may need improvement, and how we might improve them on the next project. </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">During our time we will cover the following areas: </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Project Planning </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Project Execution </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Testing </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Project Communication </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Obstacles </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>On-Site Implementation </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Vendor Management </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Schedule And Budget </p></body></html>\",\n        \"Data Type\": \"projects\"\n    },\n    {\n        \"Type\": \"Meeting\",\n        \"Name\": \"Lessons Learned\",\n        \"Invitees\": \"Full Project Team\",\n        \"Subject\": \"[$projects.project_number.1] [$projects.project_name.1] - Lessons Learned\",\n        \"Template\": \"<!DOCTYPE HTML PUBLIC \\\"-//W3C//DTD HTML 4.0//EN\\\" \\\"http://www.w3.org/TR/REC-html40/strict.dtd\\\">\\n<html><head><meta name=\\\"qrichtext\\\" content=\\\"1\\\" /><meta charset=\\\"utf-8\\\" /><style type=\\\"text/css\\\">\\np, li { white-space: pre-wrap; }\\nhr { height: 1px; border-width: 0; }\\nli.unchecked::marker { content: \\\"\\\\2610\\\"; }\\nli.checked::marker { content: \\\"\\\\2612\\\"; }\\n</style></head><body style=\\\" font-family:'Segoe UI'; font-size:10pt; font-weight:400; font-style:normal;\\\">\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-weight:700;\\\">Lessons Learned Meeting Agenda </span></p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">The purpose of the meeting is to have a discussion and collectively identify lessons learned during the project, so future projects may benefit from our experience.\\u00a0 During our discussion we want to recognize and document what things went well, and why they were so successful.\\u00a0 We also want to identify areas that may need improvement, and how we might improve them on the next project. </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\">During our time we will cover the following areas: </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Project Planning </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Project Execution </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Testing </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Project Communication </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Obstacles </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>On-Site Implementation </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Vendor Management </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span>Schedule And Budget </p></body></html>\",\n        \"Data Type\": \"projects\"\n    },\n    {\n        \"Type\": \"Meeting\",\n        \"Name\": \"Proposal Working\",\n        \"Invitees\": \"Exclude Client\",\n        \"Subject\": \"[$projects.project_number.1] [$projects.project_name.1] - Proposal Working Meeting\",\n        \"Template\": \"<!DOCTYPE HTML PUBLIC \\\"-//W3C//DTD HTML 4.0//EN\\\" \\\"http://www.w3.org/TR/REC-html40/strict.dtd\\\">\\n<html><head><meta name=\\\"qrichtext\\\" content=\\\"1\\\" /><meta charset=\\\"utf-8\\\" /><style type=\\\"text/css\\\">\\np, li { white-space: pre-wrap; }\\nhr { height: 1px; border-width: 0; }\\nli.unchecked::marker { content: \\\"\\\\2610\\\"; }\\nli.checked::marker { content: \\\"\\\\2612\\\"; }\\n</style></head><body style=\\\" font-family:'Segoe UI'; font-size:10pt; font-weight:400; font-style:normal;\\\">\\n<p style=\\\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Aptos Display','sans-serif'; font-weight:700;\\\">Working Proposal Meeting</span><span style=\\\" font-family:'Aptos Display','sans-serif';\\\"> <br />Review open items needed to complete the proposal. </span></p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span><span style=\\\" font-family:'Aptos Display','sans-serif';\\\">Review Action Items From Prior Meeting</span> </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span><span style=\\\" font-family:'Aptos Display','sans-serif';\\\">Provide Updates On Assigned Tasks</span> </p>\\n<p style=\\\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\\\"><span style=\\\" font-family:'Symbol';\\\">\\u00b7</span><span style=\\\" font-family:'Times New Roman'; font-size:7pt;\\\">\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0\\u00a0 </span><span style=\\\" font-family:'Aptos Display','sans-serif';\\\">Identify Any Roadblocks</span> </p></body></html>\",\n        \"Data Type\": \"projects\"\n    }\n]"}}'''
-
-def setup_default_meeting_email_types_settings():
-    pnc_tmp = ProjectNotesCommon()
-    settings_pluginname = "Meeting and Email Types"
-
-    if pnc_tmp.get_plugin_setting("MeetingEmailTypes", settings_pluginname) is None:
-        defaults = json.loads(_MEETING_EMAIL_TYPES_DEFAULTS)
-        pnc_tmp.set_plugin_setting("MeetingEmailTypes", settings_pluginname,
-                                   defaults["Meeting and Email Types"]["MeetingEmailTypes"])
 
 def setup_default_outlook_settings():
     pnc_tmp = ProjectNotesCommon()
@@ -1000,8 +752,6 @@ def setup_default_outlook_settings():
         pnc_tmp.set_plugin_setting("BackupSentFolder", settings_pluginname, "Project Management/Correspondence/Sent Items")
     if pnc_tmp.get_plugin_setting("SendO365", settings_pluginname) is None:
         pnc_tmp.set_plugin_setting("SendO365", settings_pluginname, "false")
-    if pnc_tmp.get_plugin_setting("ScheduleO365", settings_pluginname) is None:
-        pnc_tmp.set_plugin_setting("ScheduleO365", settings_pluginname, "false")
 
 def setup_default_icloud_settings():
     pnc_tmp = ProjectNotesCommon()
@@ -1012,12 +762,10 @@ def setup_default_icloud_settings():
         pnc_tmp.set_plugin_setting("ExportNewContacts", settings_pluginname, "false")
 
 setup_default_editor_settings()
-setup_default_meeting_email_types_settings()
 setup_default_outlook_settings()
 setup_default_icloud_settings()
 
 pnc = ProjectNotesCommon()
-mets = MeetingEmailTypesSettings(pnc.get_main_window())
 sm = SettingsMigrator(pnc.get_main_window())
 mss = MyShortcutSettings(pnc.get_main_window())
 ois = OutlookIntegrationSettings(pnc.get_main_window())
@@ -1029,6 +777,5 @@ if __name__ == '__main__':
     print("Entered __main__")
     app = QApplication(sys.argv)
     os.chdir("..")
-    #menu_outlook_integration_settings("") 
-    menu_meeting_email_types_settings("")
+    menu_outlook_integration_settings("")
     sys.exit(app.exec())

@@ -45,18 +45,15 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 # Adjust these to match your Qt Creator build directory names. PN_BUILD_DIR is
-# the top-level CMake build dir. The QML frontend is the default target and the
-# one shipped here; it builds to its own subdirectory:
-#   ${PN_BUILD_DIR}/ProjectNotesDesktop/Project Notes.app — QML frontend (shipped)
-#   ${PN_BUILD_DIR}/Project Notes.app                 — legacy Widgets frontend,
-#       only present when configured with -DBUILD_WIDGETS_LEGACY=ON (off by
-#       default). ProjectNotesDesktop's CMakeLists.txt pins its
-#       RUNTIME_OUTPUT_DIRECTORY to the subdirectory so the two never collide.
+# the top-level CMake build dir. The QML frontend is the only desktop target and
+# builds to its own subdirectory (ProjectNotesDesktop's CMakeLists.txt pins its
+# RUNTIME_OUTPUT_DIRECTORY there):
+#   ${PN_BUILD_DIR}/ProjectNotesDesktop/Project Notes.app — the shipped app
 PN_BUILD_DIR="${PN_BUILD_DIR:-${PROJECT_ROOT}/build/Qt_6_11_1_for_macOS_Release}"
 
 PN_APP="${PN_BUILD_DIR}/ProjectNotesDesktop/Project Notes.app"
 
-PN_VERSION="6.1.0"
+PN_VERSION="6.3.0"
 INSTALLER_VERSION="${PN_VERSION}"
 
 STAGING_DIR="${SCRIPT_DIR}/staging"
@@ -94,8 +91,14 @@ Build the project in Release first, or set PN_BUILD_DIR / SA_BUILD_DIR."
 sign_bundle() {
     local bundle="$1"
     local entitlements="${2:-}"
+    local webengine_entitlements=""
 
     log "Signing: ${bundle}"
+
+    # Qt WebEngine's Chromium helper requires Qt's own entitlement set. It
+    # must not inherit the application's Python-oriented entitlements merely
+    # because both happen to be nested .app bundles.
+    webengine_entitlements="$(find "${bundle}/Contents" -path '*/QtWebEngineProcess.app/Contents/Resources/QtWebEngineProcess.entitlements' -type f -print -quit 2>/dev/null || true)"
 
     # Strip build-system artifacts from nested frameworks.  Static archives
     # (.a), object files (.o), pkg-config files (.pc), and shell config scripts
@@ -153,7 +156,13 @@ sign_bundle() {
     while IFS= read -r item; do printf '%d\t%s\n' "${#item}" "$item"; done | \
     sort -rn | cut -f2- | \
     while IFS= read -r item; do
-        if [[ "${item}" == *.app && -n "${entitlements}" ]]; then
+        if [[ "${item}" == *QtWebEngineProcess.app && -n "${webengine_entitlements}" ]]; then
+            codesign --force --sign "${SIGN_IDENTITY}" \
+                --options runtime \
+                --timestamp \
+                --entitlements "${webengine_entitlements}" \
+                "${item}" 2>&1 | grep -v "replacing existing signature" || true
+        elif [[ "${item}" == *.app && -n "${entitlements}" ]]; then
             codesign --force --sign "${SIGN_IDENTITY}" \
                 --options runtime \
                 --timestamp \
@@ -240,6 +249,14 @@ IFS_PLUGIN_FILES=(
 
 RETIRED_PLUGIN_FILES=(
     "threads/filefinder_thread.py"
+    "plugins/exportnotes_plugin.py"
+    "plugins/exportstatusreport_plugin.py"
+    "plugins/exporttrackeritems_plugin.py"
+    "plugins/forms/dialogExportNotesOptions.ui"
+    "plugins/forms/dialogExportStatusReportOptions.ui"
+    "plugins/forms/dialogExportTrackerOptions.ui"
+    "plugins/forms/dialogMeetingEmailTemplate.ui"
+    "plugins/forms/dialogMeetingEmailTypes.ui"
     "plugins/forms/dialogFileFinder.ui"
     "plugins/forms/dialogClassification.ui"
 )

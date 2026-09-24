@@ -51,6 +51,7 @@ Rectangle {
 
             AppMenu {
                 id: appMenu
+                objectName: "appMenu"
                 x: Theme.railWidth - 8
                 y: 0
                 // Keep the in-scene popup inside the window (rail.height is the
@@ -69,6 +70,19 @@ Rectangle {
         RailButton { icon: "search";      section: "search" }
 
         Item { Layout.fillHeight: true }
+
+        // Show / hide the project folder panel — the rail counterpart of
+        // View ▸ Show Project Folders. Only the projects section shows the
+        // panel, so the button is disabled (dimmed) elsewhere rather than
+        // moving around as sections change.
+        RailButton {
+            icon: DesktopAppController.showProjectSidebar ? "left_panel_close" : "left_panel_open"
+            selectable: false
+            enabled: rail.currentSection === "projects"
+            onClicked: DesktopAppController.showProjectSidebar = !DesktopAppController.showProjectSidebar
+            tooltip: DesktopAppController.showProjectSidebar ? qsTr("Hide project folders")
+                                                             : qsTr("Show project folders")
+        }
 
         // Cloud sync indicator + trigger
         SyncRailButton {}
@@ -105,6 +119,7 @@ Rectangle {
         property string icon: ""
         property string section: ""
         property bool selectable: true
+        property string tooltip: ""
         signal clicked()
 
         readonly property bool active: selectable && rail.currentSection === section
@@ -112,6 +127,7 @@ Rectangle {
         Layout.alignment: Qt.AlignHCenter
         implicitWidth: Theme.railButtonSize
         implicitHeight: Theme.railButtonSize
+        opacity: btn.enabled ? 1.0 : 0.4
 
         Rectangle {
             anchors.centerIn: parent
@@ -136,6 +152,10 @@ Rectangle {
                 btn.clicked()
             }
         }
+
+        ToolTip.visible: btn.tooltip !== "" && hover.hovered
+        ToolTip.text: btn.tooltip
+        ToolTip.delay: 300
     }
 
     // Sync indicator: state-colored cloud icon with a circular progress ring

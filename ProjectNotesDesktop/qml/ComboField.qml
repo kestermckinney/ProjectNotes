@@ -148,6 +148,7 @@ ColumnLayout {
         }
 
         contentItem: TextField {
+            id: comboEditor
             leftPadding: 9
             rightPadding: 26
             text: combo.editable ? combo.editText : combo.displayText
@@ -177,6 +178,15 @@ ColumnLayout {
                 combo._acceptTypedText()
                 event.accepted = true
             }
+            // Only an editable combo has text of its own to cut and paste; on a
+            // fixed list the box is a label, so it keeps the list's own clicks.
+            Loader {
+                active: combo.editable
+                anchors.fill: parent
+                // The Loader, not the field, is this item's parent, so the
+                // editor is named rather than defaulted.
+                sourceComponent: SpellCheckField { target: comboEditor; spellCheckEnabled: false }
+            }
         }
         background: Rectangle {
             radius: Theme.radiusSm
@@ -191,7 +201,12 @@ ColumnLayout {
             anchors.right: parent.right
             anchors.rightMargin: 7
         }
+        // A pick (or a click away) must not also reach what's under the list —
+        // see ClickShield.qml. z: 1 keeps the list, and its shield at 0.5, above
+        // a dialog the combo sits in.
         popup: Popup {
+            id: listPopup
+            z: 1
             y: combo.height + 2
             width: combo.width
             implicitHeight: Math.min(contentItem.implicitHeight + 2, 280)
@@ -207,8 +222,26 @@ ColumnLayout {
                 model: combo.popup.visible ? combo.delegateModel : null
                 ScrollIndicator.vertical: ScrollIndicator {}
             }
+            ClickShield { host: listPopup }
         }
-        delegate: ItemDelegate {
+
+        // Mouse pick from the list. Deferred to the next tick: closing the popup
+        // nulls the list model above, destroying the clicked row mid-click, and
+        // the orphaned release then falls through to whatever sat under the list.
+        function _pick(i) {
+            var text = textAt(i)
+            Qt.callLater(function() {
+                combo.currentIndex = i
+                combo.popup.close()
+                combo._commit(text)
+                combo._syncFromValue()
+            })
+        }
+
+        // A plain Item, not an ItemDelegate: ComboBox closes its popup
+        // synchronously when a button delegate is clicked, which is the leak
+        // _pick() avoids. Keyboard selection still goes through onActivated.
+        delegate: Rectangle {
             id: itemDelegate
             width: combo.width
             required property int index
@@ -217,17 +250,23 @@ ColumnLayout {
             readonly property bool _match: combo._filter === ""
                 || String(modelData).toLowerCase().indexOf(combo._filter.toLowerCase()) >= 0
             visible: _match
-            height: _match ? implicitHeight : 0
-            contentItem: Text {
+            height: _match ? Math.max(rowText.implicitHeight + 16, 30) : 0
+            color: itemHover.hovered || combo.highlightedIndex === index ? Theme.accentSoft : "transparent"
+            Text {
+                id: rowText
+                anchors.fill: parent
+                leftPadding: 12; rightPadding: 12
                 text: itemDelegate.modelData
                 color: Theme.text
                 font.pixelSize: Theme.fontBody
+                elide: Text.ElideRight
                 verticalAlignment: Text.AlignVCenter
             }
-            background: Rectangle {
-                color: itemDelegate.highlighted ? Theme.accentSoft : "transparent"
+            HoverHandler { id: itemHover }
+            TapHandler {
+                gesturePolicy: TapHandler.ReleaseWithinBounds
+                onTapped: combo._pick(itemDelegate.index)
             }
-            highlighted: combo.highlightedIndex === itemDelegate.index
         }
     }
 }

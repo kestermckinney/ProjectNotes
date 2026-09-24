@@ -43,6 +43,7 @@ When a record with its own plugin menus is open (for example a project with an *
 | Show Internal / Budget Items | Shows or hides notes and tracker items marked **Internal**, and the earned value/budget figures on the [Project List Page](<ProjectListPage.md>) and [Project Page](<ProjectPage.md>). See [Presenting to Clients](<PresentingToClients.md>) for a typical use of this toggle. | — |
 | Show Closed Projects | Shows or hides projects whose **Project Status** is **Closed** on the [Project List Page](<ProjectListPage.md>). | — |
 | Show Resolved Items | Shows or hides tracker items whose **Status** is **Resolved** on the [Item Tracker Page](<ItemTrackerPage.md>). | — |
+| Show Project Folders | Shows or hides the project sidebar beside the icon rail — see [Project Folders](<ProjectFolders.md>). The panel button near the bottom of the icon rail does the same thing. | — |
 | Zoom controls | A single row with **−**, the current zoom percentage, and **+** to step [UI Zoom](<VectorZoom.md>) in and out, plus a fullscreen toggle. | See [UI Zoom](<VectorZoom.md>) |
 | Log Viewer | Opens the Log Viewer window — see [Error Log](<ErrorLog.md>). | — |
 

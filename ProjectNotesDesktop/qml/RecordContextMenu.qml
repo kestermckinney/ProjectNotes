@@ -24,9 +24,17 @@ Popup {
     // a menu added later. Pages still override it where the action doesn't apply.
     property bool   canDuplicate: menu._tableSupportsDuplicate
     property bool   canMoveTo: false
+    // Optional page-specific action for preparing a meeting note for delivery.
+    property bool   canReviewEmail: false
     property bool   canExport: true
     property bool   canFilter: true
     property bool   canRefresh: true
+    // Optional page-specific reports. Each entry is { label, value }; when
+    // present they appear in a Reports flyout alongside the record actions.
+    property var    reportItems: []
+    readonly property bool canReport: reportItems.length > 0
+    // Optional project action that opens the Schedule Meeting review.
+    property bool   canScheduleMeeting: false
     // Quick Filter: pre-filled column-filter shortcuts for the row this menu
     // was opened for — set by the page (from the clicked row's own field
     // values) just before calling openAt(). Each entry: {icon, label, field,
@@ -77,6 +85,7 @@ Popup {
     signal deleteRequested()
     signal duplicateRequested()
     signal moveToRequested()
+    signal reviewEmailRequested()
     signal exportRequested()
     signal filterRequested()
     // Carries the menu's own scene position (Overlay.overlay space, same as
@@ -85,6 +94,8 @@ Popup {
     // than an Item reference (see SortMenu.qml's doc comment).
     signal sortRequested(real sx, real sy)
     signal refreshRequested()
+    signal reportRequested(string value)
+    signal scheduleMeetingRequested()
     // Navigation signals for jumping to related records
     signal goToPersonRequested(string personId)
     signal goToClientRequested(string clientId)
@@ -186,20 +197,47 @@ Popup {
     // version raced the pointer crossing from the row to the flyout and would
     // often vanish before it could be clicked).
     property bool pluginOpen: false
-    Timer {
-        id: openDelay
-        interval: 300
-        onTriggered: menu._activatePluginGroup()
-    }
     function _activatePluginGroup() {
         if (!menu.pluginGroup) return
+        menu._closeFlyoutsExcept("plugins")
         menu.pluginOpen = true
         flyout.openBeside(pluginTriggerRow)
     }
+
+    // One hover timer for every row in this menu, so the three flyouts
+    // (Quick Filter, Reports, Plugins) behave like a single native submenu:
+    // resting on a trigger row opens its flyout and closes any other; resting
+    // on a plain action row closes whichever flyout is open. Leaving the row
+    // before the delay elapses cancels it, so crossing diagonally over a
+    // sibling row on the way into an open flyout doesn't dismiss it.
+    Timer {
+        id: hoverDelay
+        interval: 300
+        property string pendingKind: ""
+        onTriggered: menu._openSub(pendingKind)
+    }
+    function _rowHover(kind, hovered) {
+        if (hovered) { hoverDelay.pendingKind = kind; hoverDelay.restart() }
+        else if (hoverDelay.pendingKind === kind) hoverDelay.stop()
+    }
+    function _openSub(kind) {
+        if (kind === "plugins") menu._activatePluginGroup()
+        else if (kind === "quickfilter") menu._activateQuickFilter()
+        else if (kind === "reports") menu._activateReports()
+        else menu._closeFlyoutsExcept("")
+    }
+    function _closeFlyoutsExcept(kind) {
+        if (kind !== "plugins") {
+            pluginSubOpenDelay.stop()
+            pluginSubFlyout.close(); flyout.close()
+            pluginOpen = false; pluginSubIndex = -1
+        }
+        if (kind !== "quickfilter") { qfFlyout.close(); quickFilterOpen = false }
+        if (kind !== "reports") { reportFlyout.close(); reportOpen = false }
+    }
     onClosed: {
-        openDelay.stop(); pluginSubOpenDelay.stop(); qfOpenDelay.stop()
-        flyout.close(); pluginSubFlyout.close(); qfFlyout.close()
-        pluginOpen = false; pluginSubIndex = -1; quickFilterOpen = false
+        hoverDelay.stop()
+        _closeFlyoutsExcept("")
     }
 
     // ── Quick Filter ─────────────────────────────────────────────────────────
@@ -207,13 +245,9 @@ Popup {
     // column-filter shortcuts plus a trailing "Clear Filters" row. Mirrors the
     // Plugins trigger/flyout pattern above.
     property bool quickFilterOpen: false
-    Timer {
-        id: qfOpenDelay
-        interval: 300
-        onTriggered: menu._activateQuickFilter()
-    }
     function _activateQuickFilter() {
         if (!menu.canQuickFilter) return
+        menu._closeFlyoutsExcept("quickfilter")
         menu.quickFilterOpen = true
         qfFlyout.openBeside(quickFilterTriggerRow)
     }
@@ -264,6 +298,27 @@ Popup {
         }
     }
 
+    // Page-provided reports use the same flyout interaction as Plugins, but
+    // are intentionally a first-class Reports submenu rather than plugins.
+    property bool reportOpen: false
+    function _activateReports() {
+        if (!menu.canReport) return
+        menu._closeFlyoutsExcept("reports")
+        menu.reportOpen = true
+        reportFlyout.openBeside(reportTriggerRow)
+    }
+    MenuFlyout {
+        id: reportFlyout
+        items: menu.reportItems.map(function(item) {
+            return { icon: "description", label: item.label || "", trailingText: "", toggle: false, checked: false }
+        })
+        onItemActivated: (i) => {
+            var item = menu.reportItems[i]
+            menu.close()
+            if (item) menu.reportRequested(item.value || "")
+        }
+    }
+
     MenuFlyout {
         id: flyout
         // Plugins entry items are either plain leaf entries ({icon,label,index})
@@ -275,7 +330,7 @@ Popup {
             return { icon: it.icon || "extension", label: it.label || "", trailingText: "", toggle: false, checked: false }
         })
         onItemActivated: (i) => menu._runPlugin(menu.pluginGroup.items[i].index)
-        onGroupHoverChanged: (i, hovered) => {
+        onRowHoverChanged: (i, hovered) => {
             if (hovered) { pluginSubOpenDelay.pendingIndex = i; pluginSubOpenDelay.restart() }
             else if (pluginSubOpenDelay.pendingIndex === i) pluginSubOpenDelay.stop()
         }
@@ -294,7 +349,12 @@ Popup {
     }
     function _activatePluginSub(idx) {
         var raw = menu.pluginGroup ? menu.pluginGroup.items[idx] : null
-        if (!raw || !raw.group) return
+        if (!raw || !raw.group) {
+            // A plain plugin entry was hovered — drop the nested submenu
+            // that belonged to some other group row.
+            pluginSubFlyout.close(); menu.pluginSubIndex = -1
+            return
+        }
         menu.pluginSubIndex = idx
         pluginSubFlyout.openBeside(flyout.rowItemAt(idx))
     }
@@ -333,24 +393,34 @@ Popup {
         }
         Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.borderSoft; Layout.bottomMargin: 3 }
 
-        MenuRow { icon: "open_in_full"; label: qsTr("Open");        visible: menu.canOpen;      onActivated: menu._fire(menu.openRequested) }
-        MenuRow { icon: "add";          label: qsTr("New");         visible: menu.canNew;       onActivated: menu._fire(menu.newRequested) }
-        MenuRow { icon: "content_copy"; label: qsTr("Duplicate");   visible: menu.canDuplicate; onActivated: menu._fire(menu.duplicateRequested) }
-        MenuRow { icon: "drive_file_move"; label: qsTr("Move To…"); visible: menu.canMoveTo;   onActivated: menu._fire(menu.moveToRequested) }
-        MenuRow { icon: "delete";       label: qsTr("Delete");      visible: menu.canDelete;    danger: true; onActivated: menu._fire(menu.deleteRequested) }
+        MenuRow { icon: "open_in_full"; label: qsTr("Open");        visible: menu.canOpen;      onActivated: menu._fire(menu.openRequested)
+                   onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "add";          label: qsTr("New");         visible: menu.canNew;       onActivated: menu._fire(menu.newRequested)
+                   onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "content_copy"; label: qsTr("Duplicate");   visible: menu.canDuplicate; onActivated: menu._fire(menu.duplicateRequested)
+                   onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "drive_file_move"; label: qsTr("Move To…"); visible: menu.canMoveTo;   onActivated: menu._fire(menu.moveToRequested)
+                   onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "email";        label: qsTr("Send Notes"); visible: menu.canReviewEmail; onActivated: menu._fire(menu.reviewEmailRequested)
+                   onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "delete";       label: qsTr("Delete");      visible: menu.canDelete;    danger: true; onActivated: menu._fire(menu.deleteRequested)
+                   onHoveredChanged: menu._rowHover("", hovered) }
         Rectangle {
             visible: menu._hasTopGroup || menu.canGoToPerson || menu.canGoToClient
             Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.borderSoft
             Layout.topMargin: 3; Layout.bottomMargin: 3
         }
-        MenuRow { icon: "person";       label: qsTr("Go To Person"); visible: menu.canGoToPerson; onActivated: { menu.close(); menu.goToPersonRequested(menu.personId) } }
-        MenuRow { icon: "apartment";    label: qsTr("Go To Client"); visible: menu.canGoToClient; onActivated: { menu.close(); menu.goToClientRequested(menu.clientId) } }
+        MenuRow { icon: "person";       label: qsTr("Go To Person"); visible: menu.canGoToPerson; onActivated: { menu.close(); menu.goToPersonRequested(menu.personId) }
+                   onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "apartment";    label: qsTr("Go To Client"); visible: menu.canGoToClient; onActivated: { menu.close(); menu.goToClientRequested(menu.clientId) }
+                   onHoveredChanged: menu._rowHover("", hovered) }
         Rectangle {
             visible: (menu.canGoToPerson || menu.canGoToClient) && (menu.canExport || menu.canFilter)
             Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.borderSoft
             Layout.topMargin: 3; Layout.bottomMargin: 3
         }
-        MenuRow { icon: "ios_share";    label: qsTr("Export XML…"); visible: menu.canExport;  onActivated: menu._fire(menu.exportRequested) }
+        MenuRow { icon: "ios_share";    label: qsTr("Export XML…"); visible: menu.canExport;  onActivated: menu._fire(menu.exportRequested)
+                   onHoveredChanged: menu._rowHover("", hovered) }
         MenuRow {
             id: quickFilterTriggerRow
             icon: "filter_alt"
@@ -358,22 +428,38 @@ Popup {
             visible: menu.canQuickFilter
             showChevron: true
             highlighted: menu.quickFilterOpen
-            onHoveredChanged: {
-                if (hovered) qfOpenDelay.restart()
-                else qfOpenDelay.stop()
-            }
+            onHoveredChanged: menu._rowHover("quickfilter", hovered)
             onActivated: {
-                qfOpenDelay.stop()
+                hoverDelay.stop()
                 menu._activateQuickFilter()
             }
         }
-        MenuRow { icon: "filter_list";  label: qsTr("Filter…");     visible: menu.canFilter;  onActivated: menu._fire(menu.filterRequested) }
+        MenuRow { icon: "filter_list";  label: qsTr("Filter…");     visible: menu.canFilter;  onActivated: menu._fire(menu.filterRequested)
+                   onHoveredChanged: menu._rowHover("", hovered) }
         MenuRow {
             icon: "swap_vert"; label: qsTr("Sort…")
             visible: menu.canFilter
+            onHoveredChanged: menu._rowHover("", hovered)
             onActivated: { menu.close(); menu.sortRequested(menu.x, menu.y) }
         }
-        MenuRow { icon: "refresh";      label: qsTr("Refresh");     visible: menu.canRefresh; onActivated: menu._fire(menu.refreshRequested) }
+        MenuRow { icon: "refresh";      label: qsTr("Refresh");     visible: menu.canRefresh; onActivated: menu._fire(menu.refreshRequested)
+                   onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow {
+            id: reportTriggerRow
+            icon: "description"
+            label: qsTr("Reports")
+            visible: menu.canReport
+            showChevron: true
+            highlighted: menu.reportOpen
+            onHoveredChanged: menu._rowHover("reports", hovered)
+            onActivated: {
+                hoverDelay.stop()
+                menu._activateReports()
+            }
+        }
+        MenuRow { icon: "event"; label: qsTr("Schedule Meeting…"); visible: menu.canScheduleMeeting
+                   onActivated: menu._fire(menu.scheduleMeetingRequested)
+                   onHoveredChanged: menu._rowHover("", hovered) }
 
         // Plugin menus for this table (dataexport == model table), like the
         // Widgets right-click, collapsed into a single "Plugins" trigger row
@@ -395,12 +481,9 @@ Popup {
                 label: menu.pluginGroup ? menu.pluginGroup.name : ""
                 showChevron: true
                 highlighted: menu.pluginOpen
-                onHoveredChanged: {
-                    if (hovered) openDelay.restart()
-                    else openDelay.stop()
-                }
+                onHoveredChanged: menu._rowHover("plugins", hovered)
                 onActivated: {
-                    openDelay.stop()
+                    hoverDelay.stop()
                     menu._activatePluginGroup()
                 }
             }

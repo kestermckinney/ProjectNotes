@@ -20,6 +20,7 @@
 #include <QUuid>
 
 #include "DesktopAppController.h"
+#include "ProjectNotesEmail/RecipientSelectionModel.h"
 
 namespace {
 
@@ -235,7 +236,7 @@ private slots:
                     c->itemPriorityOptions().first(),
                     c->itemStatusOptions().first(),
                     m_personId, m_personId, kDate1, kDate2,
-                    "Follow up on the deliverable.", QString(), QString()),
+                    "Follow up on the deliverable.", kDate1, QString()),
                  qPrintable(c->lastSaveError()));
         QCOMPARE(c->notesActionItemsModel()->rowCount(), before + 1);
     }
@@ -303,6 +304,24 @@ private slots:
         QVERIFY2(c->saveTeamMember(row, memberId, "Analyst", true),
                  qPrintable(c->lastSaveError()));
         QCOMPARE(c->projectTeamMembersModel()->rowCount(), before + 1);
+    }
+
+    void test_10b_sendNotesLoadsRecipientsWithoutEmailBackend()
+    {
+        const QString previousManager = c->projectManagerId();
+        c->setProjectManagerId(QString());
+        QVERIFY(c->prepareMeetingNotesReview(m_projectId, m_noteId));
+        QObject *review = c->communicationsController();
+        QTRY_VERIFY_WITH_TIMEOUT(review->property("stageName").toString() != QStringLiteral("editing"), 5000);
+        QVERIFY2(review->property("stageName").toString() == QStringLiteral("reviewing"),
+                 qPrintable(review->property("diagnostic").toString()));
+        auto *recipients = qobject_cast<PN::Comm::RecipientSelectionModel *>(c->recipientSelectionModel());
+        QVERIFY(recipients);
+        QVERIFY(recipients->rowCount() >= 2);
+        QCOMPARE(recipients->selectedRecipientCount(), 1);
+        QCOMPARE(recipients->toRecipientCount(), 1);
+        QCOMPARE(recipients->ccRecipientCount(), 0);
+        c->setProjectManagerId(previousManager);
     }
 
     void test_11_projectLocations()
@@ -447,6 +466,13 @@ private slots:
         c->setNewAndAssignedOnly(!d);
         QCOMPARE(c->newAndAssignedOnly(), !d);
         c->setNewAndAssignedOnly(d);
+
+        // Show Project Folders defaults to on, and round-trips like the rest.
+        QVERIFY(c->showProjectSidebar());
+        c->setShowProjectSidebar(false);
+        QCOMPARE(c->showProjectSidebar(), false);
+        c->setShowProjectSidebar(true);
+        QCOMPARE(c->showProjectSidebar(), true);
     }
 
     // Regression: toggling a view option has to re-query the models it filters.
@@ -725,7 +751,7 @@ private slots:
 
     void test_21_appVersion()
     {
-        QCOMPARE(c->appVersion(), QStringLiteral("6.1.0"));
+        QCOMPARE(c->appVersion(), QStringLiteral("6.3.0"));
     }
 
     // installUpdate with no prior successful check must fail gracefully (no crash,
@@ -746,10 +772,12 @@ private slots:
             QStandardPaths::writableLocation(QStandardPaths::DesktopLocation),
             QDir::tempPath()
         };
-        const QString pattern = QStringLiteral("ProjectNotes-logs-*.zip");
+        // The archive and the .eml draft opened for it both land here.
+        const QStringList patterns = { QStringLiteral("ProjectNotes-logs-*.zip"),
+                                       QStringLiteral("ProjectNotes-logs-*.eml") };
         QMap<QString, QStringList> before;
         for (const QString& d : dirs)
-            before[d] = QDir(d).entryList({ pattern }, QDir::Files);
+            before[d] = QDir(d).entryList(patterns, QDir::Files);
 
         QSignalSpy info(c, &DesktopAppController::infoOccurred);
         QSignalSpy err(c,  &DesktopAppController::errorOccurred);
@@ -758,7 +786,7 @@ private slots:
 
         // Clean up any bundle this test created.
         for (const QString& d : dirs)
-            for (const QString& f : QDir(d).entryList({ pattern }, QDir::Files))
+            for (const QString& f : QDir(d).entryList(patterns, QDir::Files))
                 if (!before[d].contains(f))
                     QFile::remove(QDir(d).filePath(f));
     }

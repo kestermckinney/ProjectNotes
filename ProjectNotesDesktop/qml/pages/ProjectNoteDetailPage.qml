@@ -61,7 +61,7 @@ Item {
         internalCheck.checked = (d.internal_item || "0") !== "0"
         // Imperative assignment breaks the binding so TextFormatter edits to the
         // QTextDocument are not overwritten by a re-evaluation.
-        noteEdit.text = (d.note || "").toString()
+        noteEditor.value = (d.note || "").toString()
         page._changed = false
     }
 
@@ -69,7 +69,7 @@ Item {
         if (!page._changed) return true
         var ok = DesktopAppController.saveProjectNote(
             page.noteRow, titleField.text, dateField.text,
-            TextFormatter.documentHtml(noteEdit.textDocument), internalCheck.checked)
+            noteEditor.documentHtml(), internalCheck.checked)
         if (ok) page._changed = false
         else _reload()   // revert fields to last valid values when an edit is rejected
         return ok
@@ -91,12 +91,6 @@ Item {
         onClicked: (mouse) => page._openSelfMenu(mouse.x, mouse.y)
     }
 
-    // Ctrl+F opens the note's find & replace bar while this page is active.
-    Shortcut {
-        sequences: [ StandardKey.Find ]
-        onActivated: findBar.open()
-    }
-
     ScrollView {
         id: pageScroll
         anchors.fill: parent
@@ -107,6 +101,17 @@ Item {
         ColumnLayout {
             width: pageScroll.availableWidth
             spacing: 10
+
+            // Names the project this note belongs to — the breadcrumb only says
+            // "Note", and a note reached from search has no other on-screen clue
+            // which project's minutes are open. Doubles as a jump back to the
+            // project.
+            ProjectChip {
+                objectName: "projectChip"
+                Layout.alignment: Qt.AlignLeft
+                projectId: page.projectId
+                onActivated: page.projectActivated(page.projectId)
+            }
 
             // Title + date + internal
             RowLayout {
@@ -164,7 +169,7 @@ Item {
                 }
             }
 
-            // Note body: toolbar + editor
+            // Note body uses the application-wide rich-text editing surface.
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 6
@@ -175,66 +180,11 @@ Item {
                     font.weight: Font.DemiBold
                     Layout.fillWidth: true
                 }
-                // Find & Replace toggle (also Ctrl+F while editing the note).
-                Rectangle {
-                    implicitHeight: 22
-                    implicitWidth: frRow.implicitWidth + 12
-                    radius: Theme.radiusSm
-                    color: findBar.visible ? Theme.accentSoft : (frHover.hovered ? Theme.surface2 : "transparent")
-                    RowLayout {
-                        id: frRow
-                        anchors.centerIn: parent
-                        spacing: 3
-                        MaterialIcon { name: "find_replace"; size: 12; color: findBar.visible ? Theme.accent : Theme.text2 }
-                        Text {
-                            text: qsTr("Find / Replace")
-                            color: findBar.visible ? Theme.accent : Theme.text2
-                            font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold
-                        }
-                    }
-                    HoverHandler { id: frHover }
-                    TapHandler { onTapped: findBar.toggle() }
-                }
             }
-            FindReplaceBar {
-                id: findBar
-                editor: noteEdit
-            }
-            NoteFormatToolbar {
-                Layout.fillWidth: true
-                editor: noteEdit
-                dialog: spellDialog
-                spell: noteSpell.spell
-            }
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: Math.max(190, noteEdit.contentHeight + 32)
-                radius: Theme.radiusSm
-                color: Theme.surface
-                border.color: noteEdit.activeFocus ? Theme.accent : Theme.border
-                TextArea {
-                    id: noteEdit
-                    anchors.fill: parent
-                    anchors.margins: 9
-                    anchors.bottomMargin: 14
-                    color: Theme.text
-                    textFormat: TextEdit.RichText
-                    wrapMode: TextEdit.WordWrap
-                    selectByMouse: true
-                    persistentSelection: true
-                    background: null
-                    font.family: "Arial"
-                    // Match TextFormatter's Normal Text style exactly. Using
-                    // pixelSize here made the unformatted default (~9pt at
-                    // 96 DPI) visibly smaller than Normal Text's 12pt.
-                    font.pointSize: 12
-                    font.weight: Font.Normal
-                    onTextChanged: page._changed = true
-
-                    // Inline spell-check: red squiggle + right-click suggestions +
-                    // "Check Spelling…" (opens the shared full-field dialog).
-                    SpellCheckField { id: noteSpell; dialog: spellDialog }
-                }
+            RichTextEditor {
+                id: noteEditor
+                minimumHeight: 190
+                onValueEdited: page._changed = true
             }
 
             // Panels
@@ -525,6 +475,7 @@ Item {
                                                 cursorPosition = 0
                                             }
                                             onEditingFinished: ai._saveName()
+                                            SpellCheckField { dialog: spellDialog }
                                         }
                                         Text {
                                             text: {
@@ -611,7 +562,9 @@ Item {
                                     Text { text: qsTr("Description"); color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
                                     Rectangle {
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: Math.max(56, aiDesc.contentHeight + 14)
+                                        Layout.preferredHeight: Math.max(56, aiDesc.contentHeight
+                                                                         + aiDesc.topPadding
+                                                                         + aiDesc.bottomPadding + 14)
                                         radius: Theme.radiusSm
                                         color: Theme.surface
                                         border.color: aiDesc.activeFocus ? Theme.accent : Theme.border
@@ -631,6 +584,7 @@ Item {
                                                 ai._save()
                                             }
                                             SpellCheckField { dialog: spellDialog }
+                                            CaretFollow {}
                                         }
                                     }
                                 }
@@ -656,6 +610,9 @@ Item {
     // Attendee row menus use the attendee's person_id to open the corresponding
     // People detail page, matching ProjectDetailPage's Team member menu.
     signal goToPersonRequested(string personId)
+    // The project badge at the top of the page was clicked — routed through
+    // Main.openProject so the project opens with its own breadcrumb.
+    signal projectActivated(string projectId)
 
     // Shared record/plugin menu for the Attendees and Action Items lists.
     // Move To… is only ever offered for Action Items (see ai._menu()'s
@@ -688,6 +645,7 @@ Item {
         canNew: false
         canMoveTo: false
         canFilter: false
+        canReviewEmail: page.noteId !== ""
         onDeleteRequested: page.deleteRequested()
         onDuplicateRequested: {
             // Copy what's on screen, not what was last written.
@@ -699,6 +657,16 @@ Item {
         }
         onExportRequested: page.exportRequested(page.exportTable, page.exportId)
         onRefreshRequested: page._reload()
+        onReviewEmailRequested: {
+            if (page._saveNow() && DesktopAppController.prepareMeetingNotesReview(page.projectId, page.noteId))
+                emailReview.open()
+        }
+    }
+
+    MeetingNotesReviewDialog {
+        id: emailReview
+        controller: DesktopAppController.communicationsController
+        recipientModel: DesktopAppController.recipientSelectionModel
     }
 
     // Shared full-field spell-check dialog (opened by fields / the toolbar).

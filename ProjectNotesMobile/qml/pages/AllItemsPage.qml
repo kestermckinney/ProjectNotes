@@ -7,7 +7,7 @@ import QtQuick.Layouts
 import ProjectNotesMobile
 
 // AllItemsPage — master item list across all projects.
-// Mirrors the desktop All Items view (allitemspage.cpp / allitemsview.cpp).
+// Mirrors the desktop All Items view (ProjectNotesDesktop/qml/pages/ItemsPage.qml).
 // Column indices from trackeritemsmodel.cpp:
 //   0=id, 1=item_number, 2=item_type, 3=item_name, 4=identified_by,
 //   5=date_identified, 6=description, 7=assigned_to, 8=priority,

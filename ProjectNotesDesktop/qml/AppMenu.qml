@@ -84,6 +84,9 @@ Popup {
               key: "", action: "toggle_closed", toggle: true, on: DesktopAppController.showClosedProjects },
             { icon: "task_alt", label: qsTr("Show Resolved Items"),
               key: "", action: "toggle_resolved", toggle: true, on: !DesktopAppController.newAndAssignedOnly },
+            { icon: DesktopAppController.showProjectSidebar ? "left_panel_close" : "left_panel_open",
+              label: qsTr("Show Project Folders"),
+              key: "", action: "toggle_sidebar", toggle: true, on: DesktopAppController.showProjectSidebar },
             // Brave-style zoom control (− / percent / + / fullscreen), replacing
             // the old separate Zoom In / Zoom Out / Reset Zoom rows — rendered by
             // ZoomMenuRow, see MenuFlyout's `custom: "zoom"` handling. Its own
@@ -206,7 +209,7 @@ Popup {
             return menu._mapLeaf(it)
         })
         onItemActivated: (i) => menu._act(menu._openRawItems[i].action)
-        onGroupHoverChanged: (i, hovered) => {
+        onRowHoverChanged: (i, hovered) => {
             if (hovered) { pluginSubOpenDelay.pendingIndex = i; pluginSubOpenDelay.restart() }
             else if (pluginSubOpenDelay.pendingIndex === i) pluginSubOpenDelay.stop()
         }
@@ -227,7 +230,11 @@ Popup {
     }
     function _activatePluginSub(idx) {
         var raw = menu._openRawItems[idx]
-        if (!raw || !raw.group) return
+        if (!raw || !raw.group) {
+            // Hovering a leaf row drops the nested submenu of another row.
+            pluginSubFlyout.close(); menu.pluginSubIndex = -1
+            return
+        }
         menu.pluginSubIndex = idx
         pluginSubFlyout.openBeside(flyout.rowItemAt(idx))
     }
@@ -249,6 +256,7 @@ Popup {
         case "toggle_internal": DesktopAppController.showInternalItems = !DesktopAppController.showInternalItems; return
         case "toggle_closed":   DesktopAppController.showClosedProjects = !DesktopAppController.showClosedProjects; return
         case "toggle_resolved": DesktopAppController.newAndAssignedOnly = !DesktopAppController.newAndAssignedOnly; return
+        case "toggle_sidebar":  DesktopAppController.showProjectSidebar = !DesktopAppController.showProjectSidebar; return
         // Zoom acts in place and keeps the menu open so it can be nudged repeatedly.
         case "zoom_in":         Theme.zoomIn();    return
         case "zoom_out":        Theme.zoomOut();   return

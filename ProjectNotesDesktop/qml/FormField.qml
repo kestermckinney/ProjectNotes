@@ -11,6 +11,7 @@ ColumnLayout {
     id: root
     property string label: ""
     property alias text: field.text
+    property alias inputMethodHints: field.inputMethodHints
     property string placeholder: ""
     property bool readOnly: false
     // Opt-in inline spell-check (off for codes/numbers/IDs). When on, pass the
@@ -19,6 +20,8 @@ ColumnLayout {
     property var  spellDialog: null
     signal edited(string text)
     signal editingFinished()
+
+    function clear() { field.clear() }
 
     spacing: 3
     Layout.fillWidth: true
@@ -52,13 +55,10 @@ ColumnLayout {
             onTextEdited: root.edited(text)
             onEditingFinished: root.editingFinished()
 
-            Loader {
-                active: root.spellCheck
-                anchors.fill: parent
-                sourceComponent: SpellCheckField {
-                    target: field
-                    dialog: root.spellDialog
-                }
+            SpellCheckField {
+                target: field
+                spellCheckEnabled: root.spellCheck
+                dialog: root.spellDialog
             }
         }
     }

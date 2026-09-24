@@ -133,6 +133,7 @@ Rectangle {
                 else parent.accepted()
             }
             Keys.onEscapePressed: bar.close()
+            SpellCheckField { spellCheckEnabled: false }
         }
     }
 

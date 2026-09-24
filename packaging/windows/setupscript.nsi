@@ -7,7 +7,7 @@ RequestExecutionLevel user
 
 ; ── Product defines ───────────────────────────────────────────────────────────
 !define PRODUCT_NAME      "Project Notes"
-!define PRODUCT_VERSION   "6.1.0"
+!define PRODUCT_VERSION   "6.3.0"
 !define PRODUCT_PUBLISHER "Paul McKinney"
 !define PRODUCT_WEB_SITE  "https://www.projectnotespro.com"
 !define PRODUCT_DIR_REGKEY  "Software\Microsoft\Windows\CurrentVersion\App Paths\Project Notes.exe"
@@ -96,14 +96,11 @@ Section "MainSection" SEC01
     FileClose $1
   waitdone:
 
-  ; File Finder is native as of 6.0. Remove the retired Python worker and any
-  ; cached bytecode before copying the current payload so an in-place upgrade
-  ; cannot load the legacy implementation.
-  Delete "$INSTDIR\threads\filefinder_thread.py"
-  Delete "$INSTDIR\threads\__pycache__\filefinder_thread*.pyc"
-  Delete "$INSTDIR\threads\__pycache__\filefinder_thread*.pyo"
-  Delete "$INSTDIR\plugins\forms\dialogFileFinder.ui"
-  Delete "$INSTDIR\plugins\forms\dialogClassification.ui"
+  ; Remove every plugin an earlier release shipped and this one dropped (the
+  ; report plugins, the Python File Finder, the old email and meeting plugins
+  ; and the rest) before copying the current payload, so an in-place upgrade
+  ; cannot load them or show their menus again.
+  !include "remove_retired_plugins.nsh"
 
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
@@ -135,6 +132,7 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\Qt6Qml.dll"
   File "${DEPLOY_DIR}\Qt6QmlMeta.dll"
   File "${DEPLOY_DIR}\Qt6QmlModels.dll"
+  File "${DEPLOY_DIR}\Qt6QmlCore.dll"
   File "${DEPLOY_DIR}\Qt6QmlWorkerScript.dll"
   File "${DEPLOY_DIR}\Qt6Quick.dll"
   File "${DEPLOY_DIR}\Qt6QuickControls2.dll"
@@ -162,6 +160,27 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\Qt6Svg.dll"
   File "${DEPLOY_DIR}\Qt6Widgets.dll"
   File "${DEPLOY_DIR}\Qt6Xml.dll"
+
+  ; Qt WebEngine renders the report and email previews. It needs its helper
+  ; process, the Chromium resource packs and locales, and the WebChannel and
+  ; Positioning modules it links against. Without them the app will not start.
+  File "${DEPLOY_DIR}\Qt6Positioning.dll"
+  File "${DEPLOY_DIR}\Qt6WebChannel.dll"
+  File "${DEPLOY_DIR}\Qt6WebChannelQuick.dll"
+  File "${DEPLOY_DIR}\Qt6WebEngineCore.dll"
+  File "${DEPLOY_DIR}\Qt6WebEngineQuick.dll"
+  File "${DEPLOY_DIR}\QtWebEngineProcess.exe"
+
+  SetOutPath "$INSTDIR\resources"
+  File /r "${DEPLOY_DIR}\resources\*.*"
+
+  SetOutPath "$INSTDIR\translations"
+  File /r "${DEPLOY_DIR}\translations\*.*"
+
+  SetOutPath "$INSTDIR\position"
+  File /r "${DEPLOY_DIR}\position\*.*"
+
+  SetOutPath "$INSTDIR"
 
   ; QML modules (QtQuick, QtQuick.Controls incl. all built-in styles, Layouts,
   ; Dialogs, etc.) — recursive include since windeployqt's --qmldir scan
@@ -264,9 +283,6 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\plugins\base_plugin.py"
   File "${DEPLOY_DIR}\plugins\base_plugin_settings.py"
   File "${DEPLOY_DIR}\plugins\excelkill_plugin.py"
-  File "${DEPLOY_DIR}\plugins\exportnotes_plugin.py"
-  File "${DEPLOY_DIR}\plugins\exportstatusreport_plugin.py"
-  File "${DEPLOY_DIR}\plugins\exporttrackeritems_plugin.py"
    File "${DEPLOY_DIR}\plugins\myshortcuts_plugin.py"
   File "${DEPLOY_DIR}\plugins\newchangeorder_plugin.py"
   File "${DEPLOY_DIR}\plugins\newmsproject_plugin.py"
@@ -291,11 +307,6 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\plugins\forms\dialogDuplicateFilesFound.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogEditor.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogExportLocation.ui"
-  File "${DEPLOY_DIR}\plugins\forms\dialogExportNotesOptions.ui"
-  File "${DEPLOY_DIR}\plugins\forms\dialogExportStatusReportOptions.ui"
-  File "${DEPLOY_DIR}\plugins\forms\dialogExportTrackerOptions.ui"
-   File "${DEPLOY_DIR}\plugins\forms\dialogMeetingEmailTemplate.ui"
-  File "${DEPLOY_DIR}\plugins\forms\dialogMeetingEmailTypes.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogMyShortcuts.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogOutlookIntegrationOptions.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogSettingsMigrator.ui"
@@ -429,13 +440,13 @@ Section Uninstall
   Delete "$INSTDIR\dictionary\index.ini"
   RMDir  "$INSTDIR\dictionary"
 
+  ; ── Retired plugins (shared with the install section) ────────────────────────
+  !include "remove_retired_plugins.nsh"
+
   ; ── Plugins ──────────────────────────────────────────────────────────────────
   Delete "$INSTDIR\plugins\base_plugin.py"
   Delete "$INSTDIR\plugins\base_plugin_settings.py"
   Delete "$INSTDIR\plugins\excelkill_plugin.py"
-  Delete "$INSTDIR\plugins\exportnotes_plugin.py"
-  Delete "$INSTDIR\plugins\exportstatusreport_plugin.py"
-  Delete "$INSTDIR\plugins\exporttrackeritems_plugin.py"
   Delete "$INSTDIR\plugins\ifscloud_plugin_settings.py"
   Delete "$INSTDIR\plugins\ifs_ssrs_generate_plugin.py"
   Delete "$INSTDIR\plugins\myshortcuts_plugin.py"
@@ -464,12 +475,7 @@ Section Uninstall
   Delete "$INSTDIR\plugins\forms\dialogDuplicateFilesFound.ui"
   Delete "$INSTDIR\plugins\forms\dialogEditor.ui"
   Delete "$INSTDIR\plugins\forms\dialogExportLocation.ui"
-  Delete "$INSTDIR\plugins\forms\dialogExportNotesOptions.ui"
-  Delete "$INSTDIR\plugins\forms\dialogExportStatusReportOptions.ui"
-  Delete "$INSTDIR\plugins\forms\dialogExportTrackerOptions.ui"
   Delete "$INSTDIR\plugins\forms\dialogIFSCloud.ui"
-  Delete "$INSTDIR\plugins\forms\dialogMeetingEmailTemplate.ui"
-  Delete "$INSTDIR\plugins\forms\dialogMeetingEmailTypes.ui"
   Delete "$INSTDIR\plugins\forms\dialogMyShortcuts.ui"
   Delete "$INSTDIR\plugins\forms\dialogOutlookIntegrationOptions.ui"
   Delete "$INSTDIR\plugins\forms\dialogSettingsMigrator.ui"
@@ -488,7 +494,6 @@ Section Uninstall
   RMDir  "$INSTDIR\plugins"
 
   ; ── Threads ──────────────────────────────────────────────────────────────────
-  Delete "$INSTDIR\threads\filefinder_thread.py"
   Delete "$INSTDIR\threads\icloudsync_thread.py"
   Delete "$INSTDIR\threads\ifssync_thread.py"
   Delete "$INSTDIR\threads\outlooksync_thread.py"
@@ -541,6 +546,7 @@ Section Uninstall
   Delete "$INSTDIR\Qt6Qml.dll"
   Delete "$INSTDIR\Qt6QmlMeta.dll"
   Delete "$INSTDIR\Qt6QmlModels.dll"
+  Delete "$INSTDIR\Qt6QmlCore.dll"
   Delete "$INSTDIR\Qt6QmlWorkerScript.dll"
   Delete "$INSTDIR\Qt6Quick.dll"
   Delete "$INSTDIR\Qt6QuickControls2.dll"
@@ -568,6 +574,15 @@ Section Uninstall
   Delete "$INSTDIR\Qt6Svg.dll"
   Delete "$INSTDIR\Qt6Widgets.dll"
   Delete "$INSTDIR\Qt6Xml.dll"
+  Delete "$INSTDIR\Qt6Positioning.dll"
+  Delete "$INSTDIR\Qt6WebChannel.dll"
+  Delete "$INSTDIR\Qt6WebChannelQuick.dll"
+  Delete "$INSTDIR\Qt6WebEngineCore.dll"
+  Delete "$INSTDIR\Qt6WebEngineQuick.dll"
+  Delete "$INSTDIR\QtWebEngineProcess.exe"
+  RMDir /r "$INSTDIR\resources"
+  RMDir /r "$INSTDIR\translations"
+  RMDir /r "$INSTDIR\position"
 
   RMDir /r "$INSTDIR\qml"
 

@@ -10,11 +10,15 @@ import ProjectNotesDesktop
 // Settings screen: category tabs on the left, selected settings on the right.
 Item {
     id: page
+    objectName: "settingsPage"
 
     property var _clients: []
     property var _people: []
     readonly property var _finder: DesktopAppController.fileFinder
+    readonly property var _office365: DesktopAppController.office365SettingsModel
     property int currentTab: 0
+    readonly property int emailTemplatesTabIndex: 3
+    readonly property int meetingTemplatesTabIndex: 4
     Component.onCompleted: {
         _clients = DesktopAppController.clientList()
         _people  = DesktopAppController.peopleList()
@@ -30,12 +34,28 @@ Item {
         syncPhraseField.commit()
         officeTenantField.commit()
         officeClientField.commit()
+        // Closing the application must be held at this same commit point too.
+        // saveAndValidate() records incomplete drafts, then returns false so
+        // the shell can abort navigation/close and let the user correct them.
+        return emailTemplates.saveAndValidate() && meetingTemplates.saveAndValidate()
     }
 
     function _clientNames() { return _clients.map(function(c){ return c.name }) }
     function _peopleNames() { return _people.map(function(p){ return p.name }) }
     function _idForName(list, n) { for (var i=0;i<list.length;i++) if (list[i].name===n) return list[i].id; return "" }
     function _nameForId(list, id){ for (var i=0;i<list.length;i++) if (list[i].id===id) return list[i].name; return "" }
+    function selectTab(index) {
+        if (index === page.currentTab)
+            return true
+        if (page.currentTab === page.emailTemplatesTabIndex
+                && !emailTemplates.saveAndValidate())
+            return false
+        if (page.currentTab === page.meetingTemplatesTabIndex
+                && !meetingTemplates.saveAndValidate())
+            return false
+        page.currentTab = index
+        return true
+    }
 
     RowLayout {
         anchors.fill: parent
@@ -61,6 +81,8 @@ Item {
                     { key: "appearance", label: qsTr("Appearance") },
                     { key: "cloudSync", label: qsTr("Cloud Sync") },
                     { key: "office365", label: qsTr("Office 365 Integration") },
+                    { key: "emailTemplates", label: qsTr("Email Templates") },
+                    { key: "meetingTemplates", label: qsTr("Meeting Templates") },
                     { key: "fileFinder", label: qsTr("File Finder") },
                     { key: "projectFolders", label: qsTr("Project Folders") },
                     { key: "preferences", label: qsTr("Preferences") },
@@ -69,6 +91,7 @@ Item {
                 ]
 
                 delegate: Rectangle {
+                    id: tabDelegate
                     required property var modelData
                     required property int index
                     objectName: "settingsTab_" + modelData.key
@@ -93,7 +116,7 @@ Item {
                     HoverHandler { id: tabHover }
                     TapHandler {
                         gesturePolicy: TapHandler.ReleaseWithinBounds
-                        onTapped: page.currentTab = parent.index
+                        onTapped: page.selectTab(tabDelegate.index)
                     }
                 }
             }
@@ -268,14 +291,14 @@ Item {
                     SyncField {
                         id: officeTenantField
                         label: qsTr("Microsoft Entra tenant ID")
-                        value: page._finder ? page._finder.office365TenantId : "organizations"
-                        onCommitted: (v) => { if (page._finder) page._finder.office365TenantId = v }
+                        value: page._office365 ? page._office365.tenantId : "organizations"
+                        onCommitted: (v) => { if (page._office365) page._office365.tenantId = v }
                     }
                     SyncField {
                         id: officeClientField
                         label: qsTr("Application (client) ID")
-                        value: page._finder ? page._finder.office365ClientId : ""
-                        onCommitted: (v) => { if (page._finder) page._finder.office365ClientId = v }
+                        value: page._office365 ? page._office365.clientId : ""
+                        onCommitted: (v) => { if (page._office365) page._office365.clientId = v }
                     }
 
                     Rectangle {
@@ -291,16 +314,16 @@ Item {
                             spacing: 5
                             Text {
                                 Layout.fillWidth: true
-                                text: page._finder ? page._finder.office365AuthenticationStatus : qsTr("Not initialized")
-                                color: page._finder && page._finder.office365Authenticated ? Theme.green : Theme.text2
+                                text: page._office365 ? page._office365.authenticationStatus : qsTr("Not initialized")
+                                color: page._office365 && page._office365.authenticated ? Theme.green : Theme.text2
                                 font.pixelSize: Theme.fontBody
                                 wrapMode: Text.WordWrap
                             }
                             RowLayout {
-                                visible: page._finder && page._finder.office365UserCode !== ""
+                                visible: page._office365 && page._office365.userCode !== ""
                                 spacing: 8
                                 Text {
-                                    text: qsTr("Code: %1").arg(page._finder ? page._finder.office365UserCode : "")
+                                    text: qsTr("Code: %1").arg(page._office365 ? page._office365.userCode : "")
                                     color: Theme.text
                                     font.pixelSize: Theme.fontXl
                                     font.weight: Font.Bold
@@ -308,14 +331,14 @@ Item {
                                 Button {
                                     implicitHeight: 28
                                     text: qsTr("Copy code")
-                                    onClicked: DesktopAppController.copyTextToClipboard(page._finder.office365UserCode)
+                                    onClicked: DesktopAppController.copyTextToClipboard(page._office365.userCode)
                                 }
                             }
                             Button {
-                                visible: page._finder && page._finder.office365VerificationUrl.toString() !== ""
+                                visible: page._office365 && page._office365.verificationUrl.toString() !== ""
                                 implicitHeight: 28
                                 text: qsTr("Open Microsoft sign-in page")
-                                onClicked: Qt.openUrlExternally(page._finder.office365VerificationUrl)
+                                onClicked: Qt.openUrlExternally(page._office365.verificationUrl)
                             }
                         }
                     }
@@ -325,20 +348,20 @@ Item {
                         Button {
                             primary: true
                             implicitHeight: 30
-                            text: page._finder && page._finder.office365AuthenticationInProgress
+                            text: page._office365 && page._office365.authenticationInProgress
                                   ? qsTr("Waiting for sign-in…") : qsTr("Sign in to Microsoft 365")
-                            enabled: page._finder && !page._finder.office365AuthenticationInProgress
+                            enabled: page._office365 && !page._office365.authenticationInProgress
                             onClicked: {
                                 officeTenantField.commit()
                                 officeClientField.commit()
-                                page._finder.startOffice365SignIn()
+                                page._office365.startSignIn()
                             }
                         }
                         Button {
                             implicitHeight: 30
                             text: qsTr("Sign out")
-                            enabled: page._finder && page._finder.office365Authenticated
-                            onClicked: page._finder.signOutOffice365()
+                            enabled: page._office365 && page._office365.authenticated
+                            onClicked: page._office365.signOut()
                         }
                     }
 
@@ -347,6 +370,31 @@ Item {
                         checked: page._finder ? page._finder.office365OpenLinksInDesktop : true
                         onToggledValue: (v) => { if (page._finder) page._finder.office365OpenLinksInDesktop = v }
                     }
+                    Text {
+                        Layout.fillWidth: true
+                        text: qsTr("Signing in requests permission to create Outlook email drafts and draft calendar events. It never requests permission to send mail.")
+                        color: Theme.text3
+                        font.pixelSize: Theme.fontSm
+                        wrapMode: Text.WordWrap
+                    }
+                }
+            }
+
+            SettingsTab {
+                // Email Templates
+                TemplateSettingsPane {
+                    id: emailTemplates
+                    Layout.fillWidth: true
+                    templateModel: DesktopAppController.templateEditorModel
+                }
+            }
+
+            SettingsTab {
+                // Meeting Templates
+                MeetingTemplateSettingsPane {
+                    id: meetingTemplates
+                    Layout.fillWidth: true
+                    templateModel: DesktopAppController.meetingTemplateEditorModel
                 }
             }
 
@@ -902,6 +950,7 @@ Item {
                             font.pixelSize: Theme.fontBody
                             verticalAlignment: Text.AlignVCenter
                             onAccepted: page._createFolder()
+                            SpellCheckField { spellCheckEnabled: false }
                         }
                     }
 
@@ -1022,7 +1071,12 @@ Item {
                 // Preferences
                 SettingsSection {
                 title: "Preferences"
-                subtitle: "Defaults applied to new projects and status reports."
+                subtitle: "Defaults applied to new projects and reports."
+                SettingsCheck {
+                    label: qsTr("View report after save")
+                    checked: DesktopAppController.viewReportAfterSave
+                    onToggledValue: (v) => DesktopAppController.viewReportAfterSave = v
+                }
                 GridLayout {
                     Layout.fillWidth: true
                     columns: 2
@@ -1045,6 +1099,80 @@ Item {
                 }
             }
 
+                SettingsSection {
+                    id: integrationSection
+                    title: qsTr("Email and Scheduling Integration")
+                    subtitle: qsTr("Choose how Project Notes hands emails and meeting invitations to you for review. Nothing is sent until you send it yourself.")
+                    readonly property var backends: {
+                        var list = [
+                            { value: "default-app", label: qsTr("Default Application") },
+                            { value: "thunderbird", label: qsTr("Thunderbird") },
+                            { value: "graph", label: qsTr("Microsoft 365 drafts") }
+                        ]
+                        if (Qt.platform.os === "osx")
+                            list.splice(1, 0, { value: "mac-mail", label: qsTr("MacOS Email and Calendar") })
+                        if (Qt.platform.os === "windows")
+                            list.splice(1, 0, { value: "outlook", label: qsTr("Outlook") },
+                                              { value: "outlook-classic", label: qsTr("Outlook (Classic)") })
+                        return list
+                    }
+                    function labelFor(value) {
+                        for (var i = 0; i < backends.length; ++i)
+                            if (backends[i].value === value) return backends[i].label
+                        return backends[0].label
+                    }
+                    function valueFor(label) {
+                        for (var i = 0; i < backends.length; ++i)
+                            if (backends[i].label === label) return backends[i].value
+                        return backends[0].value
+                    }
+                    ComboField {
+                        Layout.preferredWidth: 360
+                        Layout.fillWidth: false
+                        label: qsTr("Integration")
+                        options: integrationSection.backends.map(function(backend) { return backend.label })
+                        value: integrationSection.labelFor(DesktopAppController.preferredEmailBackend)
+                        onActivated: (v) => DesktopAppController.preferredEmailBackend = integrationSection.valueFor(v)
+                    }
+                    FormField {
+                        visible: DesktopAppController.preferredEmailBackend === "thunderbird"
+                        Layout.fillWidth: true
+                        label: qsTr("Thunderbird executable")
+                        placeholder: qsTr("Path or command, such as flatpak run org.mozilla.Thunderbird")
+                        text: DesktopAppController.thunderbirdExecutable
+                        onEditingFinished: DesktopAppController.thunderbirdExecutable = text
+                    }
+                    Text {
+                        Layout.fillWidth: true
+                        wrapMode: Text.WordWrap
+                        color: Theme.text3
+                        font.pixelSize: Theme.fontSm
+                        text: {
+                            switch (DesktopAppController.preferredEmailBackend) {
+                            case "graph":
+                                return qsTr("Emails become drafts in your Microsoft 365 mailbox, and meetings become draft events in your Microsoft 365 calendar. Both open in Outlook for review. Sign in under Office 365 Integration first.")
+                            case "outlook":
+                                return qsTr("Emails and meetings open in the new Outlook, even when another app handles .eml and .ics files. The new Outlook drops the attendees when it opens a meeting, so use Copy Attendees in the Schedule meeting window and paste them into the event before you send it.")
+                            case "outlook-classic":
+                                return qsTr("Emails and meetings open in Outlook (classic), even when another app handles .eml and .ics files. Meetings open as an unsent meeting window with the attendees filled in, ready to review and send.")
+                            case "thunderbird":
+                                return qsTr("Emails open in a Thunderbird compose window with any attachments. Meetings are passed to Thunderbird as a calendar file to import, then you send the invitations from the event.")
+                            case "mac-mail":
+                                return qsTr("Emails open a native Mail compose window with your message rendered as real HTML, ready to review and send. Meetings create an event directly in your default calendar; for your safety, invitees are never added automatically, since Calendar would send the invitations the moment you did that. Use Copy Attendees in the Schedule meeting window, then paste them into the event and send it yourself. Bcc recipients and attachments are not supported in this mode; choose Default Application if you need either.")
+                            default:
+                                return qsTr("Emails open in your default mail application as a draft message (.eml) with any attachments. Meetings open in your default calendar application as a calendar (.ics) file.")
+                            }
+                        }
+                    }
+                    Text {
+                        Layout.fillWidth: true
+                        wrapMode: Text.WordWrap
+                        color: Theme.text3
+                        font.pixelSize: Theme.fontSm
+                        text: qsTr("Temporary email messages, attachments and calendar files are kept in the application cache and removed when Project Notes closes.")
+                    }
+                }
+
             }
 
             SettingsTab {
@@ -1053,19 +1181,25 @@ Item {
                 title: "View Options"
                 subtitle: "Control what the lists show. Changes apply immediately."
                 SettingsCheck {
+                    objectName: "viewOptionShowClosed"
                     label: qsTr("Show closed projects")
                     checked: DesktopAppController.showClosedProjects
                     onToggledValue: (v) => DesktopAppController.showClosedProjects = v
                 }
                 SettingsCheck {
+                    objectName: "viewOptionShowInternal"
                     label: qsTr("Show internal items")
                     checked: DesktopAppController.showInternalItems
                     onToggledValue: (v) => DesktopAppController.showInternalItems = v
                 }
                 SettingsCheck {
-                    label: qsTr("Only New and Assigned tracker items")
-                    checked: DesktopAppController.newAndAssignedOnly
-                    onToggledValue: (v) => DesktopAppController.newAndAssignedOnly = v
+                    // Same name and same sense as the View menu's own row —
+                    // the controller property is the inverse of both, so this
+                    // is the one view option that binds through a negation.
+                    objectName: "viewOptionShowResolved"
+                    label: qsTr("Show resolved items")
+                    checked: !DesktopAppController.newAndAssignedOnly
+                    onToggledValue: (v) => DesktopAppController.newAndAssignedOnly = !v
                 }
             }
 
@@ -1119,11 +1253,21 @@ Item {
         spacing: 8
         CheckBox {
             id: cb
+            // Named after the row so tests can drive the actual control.
+            objectName: chk.objectName !== "" ? chk.objectName + "Box" : ""
             checked: chk.checked
             padding: 0
             implicitWidth: 16; implicitHeight: 16
             Layout.alignment: Qt.AlignVCenter
-            onToggled: chk.toggledValue(checked)
+            onToggled: {
+                chk.toggledValue(checked)
+                // A click writes `checked` on the control itself, so until the
+                // source property next changes the row shows a value nothing
+                // has accepted yet — and it stays that way for good if the
+                // setter declines the change. Re-assert the binding so the row
+                // always ends up showing whatever the controller really holds.
+                checked = Qt.binding(function() { return chk.checked })
+            }
             indicator: Rectangle {
                 implicitWidth: 16; implicitHeight: 16; radius: 4
                 x: 0; y: cb.height/2 - height/2
@@ -1180,6 +1324,7 @@ Item {
                 echoMode: sf.password ? TextInput.PasswordEchoOnEdit : TextInput.Normal
                 Component.onCompleted: text = sf.value
                 onEditingFinished: sf.committed(text)
+                SpellCheckField { spellCheckEnabled: false }
             }
         }
     }
@@ -1207,6 +1352,7 @@ Item {
                 text = value
         }
         onEditingFinished: committedValue(text)
+        SpellCheckField { spellCheckEnabled: false }
     }
 
     FileDialog {

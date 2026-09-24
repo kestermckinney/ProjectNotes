@@ -86,7 +86,7 @@ Lists the action items associated with a specific meeting note. Tap an item to o
 
 ### Project Tracker Page
 
-Lists all tracker items (risks, issues, action items, work items, change requests) for a project. The list respects the **Show Internal Items** and **New and Assigned Only** settings in [View Options](#view-options).
+Lists all tracker items (risks, issues, action items, work items, change requests) for a project. The list respects the **Show Internal Items** and **Show Resolved Items** settings in [View Options](#view-options).
 
 ### Tracker Item Detail Page
 
@@ -248,7 +248,7 @@ View options control which records are shown in list pages throughout the app. C
 | :--- | :---: | :--- |
 | Show Closed Projects | On | When enabled, projects with a **Closed** status appear in the Projects list. Turn this off to hide completed projects and reduce clutter. |
 | Show Internal Items | Off | When enabled, tracker items and notes that are marked **Internal** are visible. Turn this on to see items that are not intended for client distribution. |
-| New and Assigned Only | Off | When enabled, the tracker and All Items pages show only items with a status of **New** or **Assigned**. This is useful for focusing on open work items. |
+| Show Resolved Items | Off | When off, the tracker and All Items pages show only items with a status of **New** or **Assigned** — **Resolved**, **Deferred** and **Canceled** items stay hidden, which keeps the focus on open work. Turn it on to see every item. Matches **Show Resolved Items** in the desktop app's View menu. |
 
 ---
 

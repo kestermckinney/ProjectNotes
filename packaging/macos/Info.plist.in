@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleExecutable</key>
+	<string>@MACOSX_BUNDLE_EXECUTABLE_NAME@</string>
+	<key>CFBundleIconFile</key>
+	<string>@MACOSX_BUNDLE_ICON_FILE@</string>
+	<key>CFBundleIdentifier</key>
+	<string>@MACOSX_BUNDLE_GUI_IDENTIFIER@</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>@MACOSX_BUNDLE_BUNDLE_NAME@</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>@MACOSX_BUNDLE_SHORT_VERSION_STRING@</string>
+	<key>CFBundleVersion</key>
+	<string>@MACOSX_BUNDLE_BUNDLE_VERSION@</string>
+	<key>CSResourcesFileMapped</key>
+	<true/>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<!-- Required the first time the "MacOS Email and Calendar" integration
+	     creates a Calendar.app event: macOS shows this text in its one-time
+	     Automation consent prompt for controlling Calendar (and, if the
+	     user has separately granted Accessibility access, System Events). -->
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Project Notes uses Calendar to create meeting events you review before sending invitations.</string>
+	<!-- Calendar also refuses scripted commands from apps without Calendars
+	     access, so the same integration asks for it (via EventKit) before
+	     creating the event. NSCalendarsUsageDescription covers macOS 13. -->
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Project Notes adds the meetings you schedule to your calendar so you can review them before sending invitations.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Project Notes adds the meetings you schedule to your calendar so you can review them before sending invitations.</string>
+</dict>
+</plist>

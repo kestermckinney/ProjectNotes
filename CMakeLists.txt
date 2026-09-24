@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(ProjectNotes VERSION 6.1.0 LANGUAGES CXX)
+project(ProjectNotes VERSION 6.3.0 LANGUAGES CXX)
 
 if(APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0" CACHE STRING "Minimum macOS deployment version")
@@ -25,8 +25,15 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Widgets Sql Xml Network Charts)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets Sql Xml Network Charts)
+# Qt::Widgets is still required even though the frontend is pure QML: the app
+# runs a QApplication so that Python plugins can open PyQt6.QtWidgets dialogs
+# (see plugins/includes/common.py), and ProjectNotesCore reports database
+# errors through QMessageBox.
+# Charts is not used by this project's own code, but SqliteSyncProLib links
+# Qt::Charts. Finding it here, at top-level scope, is what makes the imported
+# target visible to the consumers that walk SqliteSyncProLib's dependencies.
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Widgets Sql Xml Network Charts WebEngineCore WebEngineQuick)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets Sql Xml Network Charts WebEngineCore WebEngineQuick)
 # CorePrivate exposes QtCore's private QZipWriter (qzipwriter_p.h), used by the
 # "Send Logs to Support" log bundler.
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS CorePrivate)
@@ -76,136 +83,6 @@ message(STATUS "Hunspell library: ${HUNSPELL_LIBRARIES}")
 # in a full vcpkg Qt rebuild, and a source build of QuaZip needs the Qt5Compat
 # module which is not part of this Qt install.)
 
-set(PROJECT_SOURCES
-    main.cpp
-    mainwindow.cpp 
-    aboutdialog.cpp
-    helpdialog.cpp
-    filterdatadialog.cpp 
-    findreplacedialog.cpp 
-
-    preferencesdialog.cpp
-    spellcheckdialog.cpp
-    aboutdialog.ui
-    helpdialog.h
-    helpdialog.ui
-    filterdatadialog.ui 
-    findreplacedialog.ui 
-    mainwindow.ui 
-
-    preferencesdialog.ui 
-    spellcheckdialog.ui
-    Resources.qrc
-)
-
-if(WIN32)
-    set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/appicon.rc")
-elseif(APPLE)
-    set(MACOSX_BUNDLE_ICON_FILE AppIcon.icns)
-    set(APP_ICON_MACOS "${CMAKE_CURRENT_SOURCE_DIR}/AppIcon.icns")
-endif()
-
-# ── Legacy Qt Widgets frontend (deprecated) ──────────────────────────────────
-# The QML frontend in ProjectNotesDesktop/ is the default target and the one the
-# macOS, Windows, and Linux/Flatpak builds ship. The Widgets app is kept
-# buildable for now but is OFF by default, so a plain `cmake --build .`
-# produces only the QML app. Its own install(TARGETS) rule below is guarded by
-# this option; the QML target's Linux install rule (further down, alongside
-# the freedesktop assets) is unconditional.
-option(BUILD_WIDGETS_LEGACY "Build the legacy Qt Widgets desktop frontend (deprecated)" OFF)
-
-if(BUILD_WIDGETS_LEGACY)
-
-if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_add_executable(ProjectNotesWidgets
-        MANUAL_FINALIZATION
-        ${PROJECT_SOURCES}
-        ${APP_ICON_RESOURCE_WINDOWS}
-        ${APP_ICON_MACOS}
-
-        # ── Desktop-only UI sources ────────────────────────────────────────────
-        # Core data layer (models, database, logging) now lives in ProjectNotesCore.
-
-        appsettings.cpp appsettings.h
-        basepage.cpp basepage.h
-        checkboxdelegate.cpp checkboxdelegate.h
-        clientslistview.cpp clientslistview.h
-        clientspage.cpp clientspage.h
-        columnview.cpp columnview.h
-        combobox.cpp combobox.h
-        comboboxdelegate.cpp comboboxdelegate.h
-        dateeditdelegate.cpp dateeditdelegate.h
-        dateeditex.cpp dateeditex.h
-        filterdatadialog.cpp filterdatadialog.h filterdatadialog.ui
-        inlinespellchecker.cpp inlinespellchecker.h
-        itemdetailsdelegate.cpp itemdetailsdelegate.h
-        itemdetailspage.cpp itemdetailspage.h
-        lineeditfilebutton.cpp lineeditfilebutton.h
-        lineeditfilebuttondelegate.cpp lineeditfilebuttondelegate.h
-        logviewer.cpp logviewer.h
-        meetingattendeesview.cpp meetingattendeesview.h
-        notesactionitemsview.cpp notesactionitemsview.h
-        peoplelistview.cpp peoplelistview.h
-        peoplepage.cpp peoplepage.h
-        plaintextedit.cpp plaintextedit.h
-        plaintexteditdelegate.cpp plaintexteditdelegate.h
-        plugin.cpp plugin.h
-        pluginmanager.cpp pluginmanager.h
-        projectdetailsdelegate.cpp projectdetailsdelegate.h
-        projectdetailspage.cpp projectdetailspage.h
-        projectlocationsview.cpp projectlocationsview.h
-        projectnotesdelegate.cpp projectnotesdelegate.h
-        projectnotespage.cpp projectnotespage.h
-        projectnotesview.cpp projectnotesview.h
-        projectslistpage.cpp projectslistpage.h
-        projectslistview.cpp projectslistview.h
-        projectteammembersview.cpp projectteammembersview.h
-        pythonworker.cpp pythonworker.h
-        runguard.cpp runguard.h
-        searchpage.cpp searchpage.h
-        searchresultsview.cpp searchresultsview.h
-        spellchecker.cpp spellchecker.h
-        sqlcomboboxdelegate.cpp sqlcomboboxdelegate.h
-        statusreportitemsview.cpp statusreportitemsview.h
-        tableview.cpp tableview.h
-        textedit.cpp textedit.h
-        texteditdelegate.cpp texteditdelegate.h
-        trackeritemcommentsview.cpp trackeritemcommentsview.h
-        trackeritemsview.cpp trackeritemsview.h
-        valuesview.cpp valuesview.h
-        vcardparser.h
-        allitemsview.cpp allitemsview.h
-        allitemspage.cpp allitemspage.h
-        spellcheckdialog.cpp spellcheckdialog.h spellcheckdialog.ui
-        cloudsyncsettingsdialog.cpp cloudsyncsettingsdialog.h cloudsyncsettingsdialog.ui
-        credentialstore.cpp credentialstore.h
-        supportbundle.cpp supportbundle.h
-        updatemanager.cpp updatemanager.h
-    )
-
-# Define target properties for Android with Qt 6 as:
-#    set_property(TARGET ProjectNotesWidgets APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
-#                 ${CMAKE_CURRENT_SOURCE_DIR}/android)
-# For more information, see https://doc.qt.io/qt-6/qt-add-executable.html#target-creation
-else()
-    if(ANDROID)
-        add_library(ProjectNotesWidgets SHARED
-            ${PROJECT_SOURCES}
-        )
-# Define properties for Android with Qt 5 after find_package() calls as:
-#    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
-    else()
-        add_executable(ProjectNotesWidgets
-            ${PROJECT_SOURCES}
-        )
-    endif()
-endif()
-
-if(APPLE)
-    set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/AppIcon.icns" PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
-endif()
-
-endif() # BUILD_WIDGETS_LEGACY — legacy target definition
 
 # see what libraries we are really using for python
 message(STATUS "Python3 executable: ${Python3_EXECUTABLE}")
@@ -216,18 +93,6 @@ message(STATUS "Python3 include dir: ${Python3_INCLUDE_DIRS}")
 # link_directories must remain at directory level for linker
 link_directories(${Python3_LIBRARY_DIRS})
 
-if(BUILD_WIDGETS_LEGACY)
-    # Include the source directory in the include directories for the executable
-    target_include_directories(ProjectNotesWidgets PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${Python3_INCLUDE_DIRS}
-    )
-
-    # Hunspell headers are only needed by the desktop spellcheck code
-    if(Hunspell_INCLUDE_DIRS AND NOT "${Hunspell_INCLUDE_DIRS}" MATCHES "NOTFOUND")
-        target_include_directories(ProjectNotesWidgets PRIVATE ${Hunspell_INCLUDE_DIRS})
-    endif()
-endif() # BUILD_WIDGETS_LEGACY — include directories
 
 if(APPLE AND NOT OPENSSL_ROOT_DIR)
     if(EXISTS "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/libcrypto.a")
@@ -249,12 +114,19 @@ endif()
 set(SQLITESYNCPRO_SRC_DIR "../SqliteSyncPro/src" CACHE STRING "Path to SqliteSyncPro/src")
 add_subdirectory(${SQLITESYNCPRO_SRC_DIR} SqliteSyncPro)
 add_subdirectory(ProjectNotesCore)
+# Shared integration contracts also provide File Finder's existing OAuth
+# implementation. Email/rendering remain desktop-only below.
+add_subdirectory(ProjectNotesIntegrations)
 add_subdirectory(ProjectNotesFileFinder EXCLUDE_FROM_ALL)
+if(NOT ANDROID AND NOT IOS)
+    add_subdirectory(ProjectNotesEmail)
+    add_subdirectory(ProjectNotesEmailRendering)
+    add_subdirectory(ProjectNotesMeetings)
+endif()
 
-# ── QML desktop frontend (UI overhaul, Phase 1) ──────────────────────────────
-# Built as a separate ProjectNotesDesktop target that reuses ProjectNotesCore.
-# ON by default on desktop platforms; the existing Widgets ProjectNotes target
-# is not affected either way.
+# ── QML desktop frontend ─────────────────────────────────────────────────────
+# The ProjectNotesDesktop target is the desktop app; it reuses ProjectNotesCore.
+# ON by default on desktop platforms.
 option(BUILD_QML_DESKTOP "Build the new QML (Qt Quick) desktop frontend" ON)
 if(BUILD_QML_DESKTOP AND NOT ANDROID AND NOT IOS)
     add_subdirectory(ProjectNotesDesktop)
@@ -270,210 +142,24 @@ if(BUILD_QML_DESKTOP_TESTS AND NOT ANDROID AND NOT IOS)
     add_subdirectory(tests/desktop)
 endif()
 
-# Needed by the legacy install(TARGETS) rule below *and* by the Linux asset and
-# freedesktop install rules further down, which are frontend-independent — so it
-# must stay outside the BUILD_WIDGETS_LEGACY guard.
+# Needed by the Linux asset and freedesktop install rules further down.
 include(GNUInstallDirs)
 
-if(BUILD_WIDGETS_LEGACY)
 
-target_link_libraries(ProjectNotesWidgets PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${Python3_LIBRARIES} Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Charts "${HUNSPELL_LIBRARIES}" Qt${QT_VERSION_MAJOR}::CorePrivate SqliteSyncProLib ProjectNotesCore)
-if(UNIX AND NOT APPLE AND NOT ANDROID)
-    target_link_libraries(ProjectNotesWidgets PRIVATE Qt${QT_VERSION_MAJOR}::DBus)
-elseif(APPLE)
-    target_link_libraries(ProjectNotesWidgets PRIVATE "-framework Security")
-elseif(WIN32)
-    target_link_libraries(ProjectNotesWidgets PRIVATE Advapi32)
-endif()
-
-# Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
-# If you are developing for iOS or macOS you should consider setting an
-# explicit, fixed bundle identifier manually though.
-# Debug builds on macOS skip the bundle to speed up the build/run cycle.
-if(APPLE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(_macos_bundle FALSE)
-else()
-    set(_macos_bundle TRUE)
-endif()
-
-set_target_properties(ProjectNotesWidgets PROPERTIES
-    MACOSX_BUNDLE_GUI_IDENTIFIER "com.projectnotespro.ProjectNotes"
-    MACOSX_BUNDLE_BUNDLE_NAME "Project Notes"
-    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
-    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
-    MACOSX_BUNDLE ${_macos_bundle}
-    WIN32_EXECUTABLE TRUE
-)
-
-if(APPLE OR WIN32)
-    set_target_properties(ProjectNotesWidgets PROPERTIES OUTPUT_NAME "Project Notes")
-else()
-    # Linux/Flatpak: the .desktop Exec and the Flatpak manifest invoke
-    # "projectnotes", so the installed binary must use that name.
-    set_target_properties(ProjectNotesWidgets PROPERTIES OUTPUT_NAME "projectnotes")
-endif()
-
-install(TARGETS ProjectNotesWidgets
-    BUNDLE DESTINATION .
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
-
-if(QT_VERSION_MAJOR EQUAL 6)
-    qt_finalize_executable(ProjectNotesWidgets)
-endif()
-
-if(APPLE)
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        # ── Debug: no bundle — symlink resources for fast iteration ───────────
-        # No-op target so Qt Creator's "Build → sync_plugins" step doesn't fail.
-        add_custom_target(sync_plugins
-            COMMENT "sync_plugins: no-op in debug (plugins are symlinked)"
-        )
-
-        add_custom_command(TARGET ProjectNotesWidgets POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E create_symlink
-                "${CMAKE_CURRENT_SOURCE_DIR}/plugins"
-                "$<TARGET_FILE_DIR:ProjectNotesWidgets>/plugins"
-            COMMENT "Symlinking plugins (debug)"
-        )
-        add_custom_command(TARGET ProjectNotesWidgets POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E create_symlink
-                "${CMAKE_CURRENT_SOURCE_DIR}/threads"
-                "$<TARGET_FILE_DIR:ProjectNotesWidgets>/threads"
-            COMMENT "Symlinking threads (debug)"
-        )
-        add_custom_command(TARGET ProjectNotesWidgets POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E remove_directory "$<TARGET_FILE_DIR:ProjectNotesWidgets>/dictionary"
-            COMMAND ${CMAKE_COMMAND} -E create_symlink
-                "${CMAKE_CURRENT_SOURCE_DIR}/dictionary"
-                "$<TARGET_FILE_DIR:ProjectNotesWidgets>/dictionary"
-            COMMENT "Symlinking dictionary (debug)"
-        )
-    else()
-        # ── Release: full app bundle ──────────────────────────────────────────
-        # Fast plugin-only sync target — build just this when only .py files changed.
-        # In Qt Creator: right-click project → Build → sync_plugins,
-        # or add a custom Build Step with "Make arguments: sync_plugins".
-        add_custom_target(sync_plugins
-            COMMAND rsync -rv --checksum --delete
-                "${CMAKE_CURRENT_SOURCE_DIR}/plugins/"
-                "$<TARGET_BUNDLE_DIR:ProjectNotesWidgets>/Contents/Resources/plugins/"
-            COMMAND rsync -rv --checksum --delete
-                "${CMAKE_CURRENT_SOURCE_DIR}/threads/"
-                "$<TARGET_BUNDLE_DIR:ProjectNotesWidgets>/Contents/Resources/threads/"
-            COMMENT "Syncing Python plugins to app bundle (changed files only)"
-            VERBATIM
-        )
-
-        # $<TARGET_FILE_DIR:ProjectNotesWidgets> resolves to .app/Contents/MacOS at build time.
-        set(BUNDLE_RESOURCES   "$<TARGET_FILE_DIR:ProjectNotesWidgets>/../Resources")
-        set(BUNDLE_FRAMEWORKS  "$<TARGET_FILE_DIR:ProjectNotesWidgets>/../Frameworks")
-
-        # Compute the Python.framework root from the version-specific root dir.
-        # Python3_ROOT_DIR = /Library/Frameworks/Python.framework/Versions/X.Y
-        get_filename_component(_python_framework_root "${Python3_ROOT_DIR}/../.." REALPATH)
-
-        # Locate macdeployqt next to qmake.
-        get_target_property(_qmake_loc Qt${QT_VERSION_MAJOR}::qmake IMPORTED_LOCATION)
-        get_filename_component(_qt_bin "${_qmake_loc}" DIRECTORY)
-
-        # ── 1. Copy plugins (real files — symlinks are rejected by notarization) ──
-        add_custom_command(TARGET ProjectNotesWidgets POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E remove_directory "${BUNDLE_RESOURCES}/plugins"
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-                "${CMAKE_CURRENT_SOURCE_DIR}/plugins"
-                "${BUNDLE_RESOURCES}/plugins"
-            COMMENT "Copying plugins into bundle Resources"
-        )
-
-        # ── 2. Copy threads ────────────────────────────────────────────────────────
-        add_custom_command(TARGET ProjectNotesWidgets POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E remove_directory "${BUNDLE_RESOURCES}/threads"
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-                "${CMAKE_CURRENT_SOURCE_DIR}/threads"
-                "${BUNDLE_RESOURCES}/threads"
-            COMMENT "Copying threads into bundle Resources"
-        )
-
-        # ── 3. Copy dictionary ─────────────────────────────────────────────────────
-        add_custom_command(TARGET ProjectNotesWidgets POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E remove_directory "${BUNDLE_RESOURCES}/dictionary"
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-                "${CMAKE_CURRENT_SOURCE_DIR}/dictionary"
-                "${BUNDLE_RESOURCES}/dictionary"
-            COMMENT "Copying dictionary into bundle Resources"
-        )
-
-        # ── 4. Deploy Qt frameworks into the bundle ────────────────────────────────
-        add_custom_command(TARGET ProjectNotesWidgets POST_BUILD
-            COMMAND "${_qt_bin}/macdeployqt"
-                "$<TARGET_BUNDLE_DIR:ProjectNotesWidgets>"
-                -always-overwrite
-            COMMENT "Deploying Qt into app bundle (macdeployqt)"
-            VERBATIM
-        )
-
-        # ── 5. Bundle Python.framework ─────────────────────────────────────────────
-        add_custom_command(TARGET ProjectNotesWidgets POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E make_directory "${BUNDLE_FRAMEWORKS}"
-            COMMAND ${CMAKE_COMMAND}
-                "-DPYTHON_FRAMEWORK_SRC=${_python_framework_root}"
-                "-DFRAMEWORKS=${BUNDLE_FRAMEWORKS}"
-                "-DEXECUTABLE=$<TARGET_FILE:ProjectNotesWidgets>"
-                "-DPYTHON_VERSION=${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}"
-                -P "${CMAKE_CURRENT_SOURCE_DIR}/packaging/macos/BundlePythonFramework.cmake"
-            COMMENT "Bundling Python.framework into Contents/Frameworks"
-            VERBATIM
-        )
-    endif()
-else()
-    # Dev convenience: when building out-of-source, expose the runtime assets
-    # next to the build-tree binary (symlinks for plugins/threads, a copy for
-    # dictionary). Skipped for in-source builds (e.g. the Flatpak, which builds
-    # in the source tree) where these directories already exist and symlinking
-    # onto them would fail.
-    if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)
-        add_custom_command(TARGET ProjectNotesWidgets POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E create_symlink
-                "${CMAKE_CURRENT_SOURCE_DIR}/plugins"
-                "${CMAKE_CURRENT_BINARY_DIR}/plugins"
-            COMMENT "Creating symbolic link to plugins folder"
-        )
-
-        add_custom_command(TARGET ProjectNotesWidgets POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E create_symlink
-                "${CMAKE_CURRENT_SOURCE_DIR}/threads"
-                "${CMAKE_CURRENT_BINARY_DIR}/threads"
-            COMMENT "Creating symbolic link to threads folder"
-        )
-
-        add_custom_command(TARGET ProjectNotesWidgets POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E remove_directory "${CMAKE_CURRENT_BINARY_DIR}/dictionary"
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-                "${CMAKE_CURRENT_SOURCE_DIR}/dictionary"
-                "${CMAKE_CURRENT_BINARY_DIR}/dictionary"
-            COMMENT "Copying dictionary"
-        )
-    endif()
-endif() # APPLE
-
-endif() # BUILD_WIDGETS_LEGACY — post-build resource staging
-
-# ── Frontend-independent install rules (Linux/Flatpak) ───────────────────────
-# These stage runtime assets and freedesktop metadata for the *installed* tree
-# and do not reference any executable target, so they must run whichever
-# frontend was built — hence outside the BUILD_WIDGETS_LEGACY guard above.
+# ── Install rules (Linux/Flatpak) ────────────────────────────────────────────
+# These stage runtime assets and freedesktop metadata for the *installed* tree.
 if(NOT APPLE)
-    # CMake directory installs merge into an existing prefix. Run a targeted
-    # cleanup first so upgrades cannot retain the retired Python File Finder
-    # worker (or its importable bytecode) now that File Finder is native C++.
+    # CMake directory installs merge into an existing prefix. Remove every
+    # plugin, thread and form an earlier release shipped and this one dropped,
+    # so an upgrade never leaves a retired script behind for PluginManager to
+    # load (the report plugins, the Python File Finder, the old email and
+    # meeting plugins, and so on).
     configure_file(
-        "${CMAKE_CURRENT_SOURCE_DIR}/packaging/RemoveLegacyFileFinder.cmake.in"
-        "${CMAKE_CURRENT_BINARY_DIR}/RemoveLegacyFileFinder.cmake"
+        "${CMAKE_CURRENT_SOURCE_DIR}/packaging/RemoveRetiredPlugins.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/RemoveRetiredPlugins.cmake"
         @ONLY
     )
-    install(SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/RemoveLegacyFileFinder.cmake")
+    install(SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/RemoveRetiredPlugins.cmake")
 
     # Install runtime assets alongside the executable so packaged builds
     # (e.g. Flatpak installs to /app/bin) can find them via appResourcesPath().
@@ -495,10 +181,8 @@ if(NOT APPLE)
     if(NOT WIN32)
         set(_linux_pkg "${CMAKE_CURRENT_SOURCE_DIR}/packaging/linux")
 
-        # Install the QML desktop binary itself. The Widgets target has its own
-        # install(TARGETS) above (guarded by BUILD_WIDGETS_LEGACY); this is the
-        # QML frontend's equivalent, needed since it's now what Linux/Flatpak
-        # ships. Guarded by TARGET so a -DBUILD_QML_DESKTOP=OFF configure (e.g.
+        # Install the QML desktop binary itself — what Linux/Flatpak ships.
+        # Guarded by TARGET so a -DBUILD_QML_DESKTOP=OFF configure (e.g.
         # tests/desktop's dedicated build) doesn't fail to generate.
         if(TARGET ProjectNotes)
             install(TARGETS ProjectNotes
@@ -540,7 +224,7 @@ if(WIN32)
     get_target_property(_qmake_loc Qt${QT_VERSION_MAJOR}::qmake IMPORTED_LOCATION)
     get_filename_component(_qt_bin "${_qmake_loc}" DIRECTORY)
 
-    # Locate dxcompiler.dll/dxil.dll from the Windows SDK (needed by Qt Charts / RHI)
+    # Locate dxcompiler.dll/dxil.dll from the Windows SDK (needed by Qt Quick's RHI)
     file(GLOB _dxc_candidates
         "C:/Program Files (x86)/Windows Kits/10/bin/*/x64/dxcompiler.dll"
     )
@@ -551,14 +235,14 @@ if(WIN32)
         set(_dxil_dll "${_dxc_dir}/dxil.dll")
         message(STATUS "Found dxcompiler.dll: ${_dxcompiler_dll}")
     else()
-        message(WARNING "dxcompiler.dll not found in Windows SDK — Qt Charts may not render at runtime")
+        message(WARNING "dxcompiler.dll not found in Windows SDK — Qt Quick may not render at runtime")
     endif()
 
     set(DEPLOY_DIR  "${CMAKE_BINARY_DIR}/deploy")
     set(NSIS_DIR    "${CMAKE_CURRENT_SOURCE_DIR}/packaging/windows")
 
-    # Only meaningful when the QML desktop target actually exists — stages
-    # its binary via $<TARGET_FILE:ProjectNotes>. Guarded so a
+    # Only meaningful when the desktop target actually exists — stages its
+    # binary via $<TARGET_FILE:ProjectNotes>. Guarded so a
     # -DBUILD_QML_DESKTOP=OFF configure (e.g. tests/desktop's dedicated
     # "-DBUILD_QML_DESKTOP=OFF -DBUILD_QML_DESKTOP_TESTS=ON" build) doesn't
     # fail to generate over a target that was never built.
@@ -571,11 +255,10 @@ if(WIN32)
         COMMAND ${CMAKE_COMMAND} -E make_directory   "${DEPLOY_DIR}"
 
         # 2. Application executables
-        # Ships the QML (Qt Quick) desktop frontend, not the legacy Widgets
-        # "ProjectNotes" target. The QML target already builds as
-        # "Project Notes.exe" (OUTPUT_NAME), matching the Widgets binary, so
-        # shortcuts, registry entries, and the installer script don't change;
-        # this copy just stages it (from its own build subdir) into DEPLOY_DIR.
+        # The QML target builds as "Project Notes.exe" (OUTPUT_NAME), the same
+        # name earlier releases shipped, so shortcuts, registry entries, and the
+        # installer script don't change; this copy just stages it (from its own
+        # build subdir) into DEPLOY_DIR.
         COMMAND ${CMAKE_COMMAND} -E copy
             "$<TARGET_FILE:ProjectNotes>"
             "${DEPLOY_DIR}/Project Notes.exe"
@@ -632,16 +315,25 @@ if(WIN32)
         # 8. Application content
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/plugins"    "${DEPLOY_DIR}/plugins"
+
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/threads"    "${DEPLOY_DIR}/threads"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/dictionary" "${DEPLOY_DIR}/dictionary"
 
+        # A native Qt WebEngine renderer is linked into the QML executable.
+        # Do not let a PyQt wheel under site-packages mask a missing native
+        # Chromium helper/resources/locales deployment.
+        COMMAND ${CMAKE_COMMAND}
+            "-DPN_PLATFORM=windows"
+            "-DPN_PACKAGE_ROOT=${DEPLOY_DIR}"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/packaging/verify_native_webengine_package.cmake"
+
         DEPENDS ProjectNotes
         VERBATIM
     )
 
-    # Copy DirectX Shader Compiler DLLs required by Qt Charts (RHI backend)
+    # Copy DirectX Shader Compiler DLLs required by Qt Quick (RHI backend)
     if(_dxcompiler_dll AND EXISTS "${_dxcompiler_dll}")
         add_custom_command(TARGET deploy POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy "${_dxcompiler_dll}" "${DEPLOY_DIR}/dxcompiler.dll"

@@ -169,6 +169,16 @@ Item {
 
             RowLayout {
                 Layout.fillWidth: true
+                // Names the project this item belongs to — the breadcrumb only
+                // says "Item", and an item opened from the master Items list or
+                // from search carries no other on-screen clue. Doubles as a jump
+                // back to the project.
+                ProjectChip {
+                    objectName: "projectChip"
+                    Layout.alignment: Qt.AlignVCenter
+                    projectId: page.projectId
+                    onActivated: page.projectActivated(page.projectId)
+                }
                 Item { Layout.fillWidth: true }
                 Rectangle {
                     implicitHeight: 28; implicitWidth: moveRow.implicitWidth + 18
@@ -212,7 +222,8 @@ Item {
             Text { text: qsTr("Description"); color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: Math.max(76, descArea.contentHeight + 16)
+                Layout.preferredHeight: Math.max(76, descArea.contentHeight + descArea.topPadding
+                                                 + descArea.bottomPadding + 14)
                 radius: Theme.radiusSm
                 color: Theme.surface
                 border.color: descArea.activeFocus ? Theme.accent : Theme.border
@@ -227,6 +238,7 @@ Item {
                     font.pixelSize: Theme.fontBody
                     onTextChanged: page._markChanged()
                     SpellCheckField { dialog: spellDialog }
+                    CaretFollow {}
                 }
             }
 
@@ -412,6 +424,7 @@ Item {
                             background: null
                             font.pixelSize: Theme.fontBody
                             SpellCheckField { dialog: spellDialog }
+                            CaretFollow {}
                             onEditingFinished: cCard._saveComment()
                         }
                     }
@@ -435,6 +448,9 @@ Item {
     // Duplicate on selfMenu opens the copy — routed through Main so it gets a
     // breadcrumb and a history entry like any other item.
     signal itemActivated(string itemId)
+    // The project badge at the top of the page was clicked — routed through
+    // Main.openProject so the project opens with its own breadcrumb.
+    signal projectActivated(string projectId)
 
     // Shared record/plugin menu for the comments list.
     RecordRowMenu {

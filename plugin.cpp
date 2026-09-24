@@ -5,7 +5,6 @@
 #include "plugin.h"
 #include "QLogger.h"
 #include "databaseobjects.h"
-#include "appsettings.h"
 
 Plugin::Plugin(QObject *parent, bool isthread)
     : QObject{parent}

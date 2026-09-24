@@ -1,6 +1,7 @@
 // Copyright (C) 2026 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
+#include "version.h"
 #include "DesktopAppController.h"
 #include "FolderManager.h"
 #include "HelpController.h"
@@ -8,7 +9,7 @@
 #include "runguard.h"
 #include "SpellCheck.h"
 #include "TextFormatter.h"
-#include "version.h"
+#include "ProjectNotesIntegrations/CommunicationTypes.h"
 
 #include <QApplication>
 #include <QCommandLineParser>
@@ -24,6 +25,7 @@
 #include <QStandardPaths>
 #include <QTextStream>
 #include <QWindow>
+#include <QtWebEngineQuick/QtWebEngineQuick>
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -96,6 +98,11 @@ void applyWindowsTaskbarIdentity(QWindow* window)
 
 int main(int argc, char* argv[])
 {
+    // WebEngine Quick must initialise before QApplication/QML construction so
+    // native report rendering and any future in-app HTML preview use the same
+    // deployed QtWebEngine helper rather than a Python wheel's runtime.
+    QtWebEngineQuick::initialize();
+    PN::Comm::registerCommunicationMetaTypes();
 #if defined(_WIN32)
     // Give the QML desktop app its own taskbar / Task Manager identity. Both this
     // app and the legacy Widgets build ship as "Project Notes.exe"; without a
@@ -108,11 +115,10 @@ int main(int argc, char* argv[])
 #endif
 
     // Must be set before QApplication is constructed, or any Python plugin that
-    // imports PyQt6.QtWebEngineWidgets (exportnotes_plugin.py,
-    // exportstatusreport_plugin.py, exporttrackeritems_plugin.py) fails to load
-    // with "QtWebEngineWidgets must be imported or Qt.AA_ShareOpenGLContexts
-    // must be set before a QCoreApplication instance is created" — matches the
-    // Widgets app's main.cpp, which sets this for the same reason.
+    // imports PyQt6.QtWebEngineWidgets fails to load with "QtWebEngineWidgets
+    // must be imported or Qt.AA_ShareOpenGLContexts must be set before a
+    // QCoreApplication instance is created". No bundled plugin still does this
+    // now that the report plugins are native, but user plugins may.
     QCoreApplication::setAttribute(Qt::ApplicationAttribute::AA_ShareOpenGLContexts);
 
     // QApplication (not QGuiApplication): ProjectNotesCore surfaces database
@@ -170,41 +176,20 @@ int main(int argc, char* argv[])
         return 0;
     }
 
+#ifndef Q_OS_MACOS
+    // Windows/Linux taskbar and window-manager icon hints come from the window's
+    // own icon (see applyWindowsTaskbarIdentity above for Windows specifics), so
+    // this is required there. On macOS, QApplication::setWindowIcon also becomes
+    // the running app's Dock tile — which would override the bundle's
+    // icons/projectnotes.icns (MACOSX_BUNDLE_ICON_FILE, set in CMakeLists.txt)
+    // shown at launch with this un-backgrounded .ico as soon as the main window
+    // appears. Skipping it on macOS keeps the Dock icon the bundle one throughout.
     app.setWindowIcon(QIcon(":/qt/qml/ProjectNotesDesktop/icons/projectnotes.ico"));
+#endif
 
-    // Point Qt WebEngine at the PyQt6 runtime bundled with the installer
-    // (ported from the Widgets main.cpp, which has always done this). Python
-    // export plugins import PyQt6.QtWebEngineWidgets when the plugin engine
-    // boots; in a deployed install the only WebEngine runtime is PyQt6's own,
-    // and without these overrides WebEngine looks for QtWebEngineProcess next
-    // to the app executable, fails, and qFatal()s — on Windows release builds
-    // that is a fail-fast abort: the app dies at startup with no dialog and
-    // nothing in the logs. Dev runs never hit it because the system Python's
-    // PyQt6 install is complete.
-#if defined(Q_OS_WIN)
-    const QString pyqtQtDir = QCoreApplication::applicationDirPath()
-                              + QStringLiteral("/site-packages/PyQt6/Qt6");
-    const QString webengineProcess = pyqtQtDir + QStringLiteral("/bin/QtWebEngineProcess.exe");
-    const QString webengineResources = pyqtQtDir + QStringLiteral("/resources");
-#elif defined(Q_OS_MACOS)
-    const QString pyqtQtDir = QCoreApplication::applicationDirPath()
-                              + QStringLiteral("/site-packages/PyQt6/Qt6");
-    const QString webengineProcess = pyqtQtDir
-        + QStringLiteral("/lib/QtWebEngineCore.framework/Versions/A/Helpers/"
-                         "QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess");
-    const QString webengineResources = pyqtQtDir
-        + QStringLiteral("/lib/QtWebEngineCore.framework/Versions/A/Resources");
-#endif
-#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
-    if (QFileInfo::exists(webengineProcess)) {
-        qputenv("QTWEBENGINEPROCESS_PATH", webengineProcess.toUtf8());
-        qputenv("QTWEBENGINE_RESOURCES_PATH", webengineResources.toUtf8());
-        qputenv("QTWEBENGINE_LOCALES_PATH",
-                (pyqtQtDir + QStringLiteral("/translations/qtwebengine_locales")).toUtf8());
-        QCoreApplication::addLibraryPath(pyqtQtDir + QStringLiteral("/bin"));
-        QCoreApplication::addLibraryPath(pyqtQtDir + QStringLiteral("/plugins"));
-    }
-#endif
+    // The executable links QtWebEngine directly.  Deployment must therefore
+    // provide Qt's matching helper/resources; never redirect it into a PyQt
+    // wheel, which can silently mix incompatible Qt runtimes.
 
     // Basic style is fully themeable (no platform palette overrides), which the
     // custom light/dark design system in Theme.qml relies on.

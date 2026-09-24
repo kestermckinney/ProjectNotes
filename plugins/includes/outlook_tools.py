@@ -429,54 +429,6 @@ class ProjectNotesOutlookTools:
 
         return ""
 
-    def schedule_meeting(self, addresses, subject, body):
-        try:
-            outlook = win32com.client.Dispatch("Outlook.Application")
-            message = outlook.CreateItem(1)
-
-            for address in addresses:
-                message.Recipients.Add(address["emailAddress"]["address"])
-
-            message.Recipients.ResolveAll()
-
-            # create a temporary email item to convert the HTML to RTF
-            temp_mail = outlook.CreateItem(0)
-            temp_mail.HTMLBody = body
-
-            rtf_body = temp_mail.GetInspector.WordEditor.Content.FormattedText
-
-            message.MeetingStatus = 1
-            message.Duration = 60
-            message.Subject = subject
-
-            message.Display()
-
-            # Activate the Inspector window for THIS message
-            inspector = message.GetInspector
-            inspector.Activate()
-
-            word_editor = message.GetInspector.WordEditor
-            word_editor.Range(0, 0).FormattedText = rtf_body
-
-            temp_mail.Close(1)  # 1 = olDiscard — discard without saving to Drafts
-            del temp_mail
-
-        except Exception as e:  # catches any Python exception
-            # If it's a COM error, the details are in e.args
-            msg = f'Error: {e} Attempting to schedule meeting {subject} in Outlook.'
-            print(msg)
-            QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
-            if hasattr(e, 'args') and e.args:
-                print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
-
-        outlook = None
-        message = None
-        gc.collect()
-
-        self.bring_window_to_front(subject)
-
-        return None
-
     def send_email(self, addresses, subject, content, attachments):
         try:
             outlook = win32com.client.Dispatch("Outlook.Application")

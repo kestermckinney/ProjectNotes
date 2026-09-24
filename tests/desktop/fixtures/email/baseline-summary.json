@@ -1,0 +1,21 @@
+{
+  "recipients": {
+    "meeting_notes_report": "context-derived",
+    "send_meeting_notes": "Full Project Team",
+    "status_report": "Receives Status",
+    "tracker_items_report": "context-derived"
+  },
+  "sha256": {
+    "meeting-notes-report.html": "e13a3d104e79dac32a11aa3c1c8828ccd3c4e80cd3ad3a800ecc204ce15e3d76",
+    "send-meeting-notes.html": "5b1de3f83665a694e043ff0d70549637aa7d2385aa9e5d5307b4dae0d7e6ae4d",
+    "status-report.html": "27e61022d6009fcceb350f1186892e8a445a00314ef5df0d69df048626aa760b",
+    "tracker-items-report.html": "34f79fa50de91260235f2f4a0afac26daeafaefcb83caeee542b6f0afab353d1"
+  },
+  "source_revision": "0507b5393a4e878e85d2079f568519c7e29a6d13",
+  "subjects": {
+    "meeting_notes_report": "DEMO-042 Northwind Upgrade & Safety Review - 09/15/2026",
+    "send_meeting_notes": "DEMO-042 Northwind Upgrade & Safety Review - 09/10/2026 Kickoff & risk review Notes",
+    "status_report": "DEMO-042 Northwind Upgrade & Safety Review - Status Report 09/15/2026",
+    "tracker_items_report": "DEMO-042 Northwind Upgrade & Safety Review - Tracker Items 09/15/2026"
+  }
+}
