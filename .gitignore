@@ -22,3 +22,4 @@ packaging/macos/staging*
 .opencode/
 *.aps
 .codegraph/
+packaging/linux/.com.projectnotespro.ProjectNotes.resolved.yml

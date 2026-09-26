@@ -31,6 +31,78 @@ DISABLE_ROFILES_FUSE="${DISABLE_ROFILES_FUSE:-0}"
 BUILDER_FLAGS=()
 [ "$DISABLE_ROFILES_FUSE" = "1" ] && BUILDER_FLAGS+=("--disable-rofiles-fuse")
 
+# USE_BUILDER_FLATPAK  auto (default): build with the org.flatpak.Builder flatpak
+#                      when it's installed, else the host flatpak-builder. 1/0
+#                      force one or the other. The host flatpak 1.18.2 on
+#                      Fedora 44 fails `build-init --base` with
+#                      "lsetxattr(security.selinux): Operation not supported":
+#                      it copies each BaseApp file's label via /proc/self/fd with
+#                      lgetxattr, so it reads the /proc symlink's own label and
+#                      can't write it back. The Builder flatpak's copy is unaffected.
+USE_BUILDER_FLATPAK="${USE_BUILDER_FLATPAK:-auto}"
+FLATPAK_BUILDER=(flatpak-builder)
+if [ "$USE_BUILDER_FLATPAK" = "1" ] || \
+   { [ "$USE_BUILDER_FLATPAK" = "auto" ] && flatpak info org.flatpak.Builder &>/dev/null; }; then
+    FLATPAK_BUILDER=(flatpak run --command=flatpak-builder org.flatpak.Builder)
+    # The Builder sandbox has no /dev/fuse, so rofiles-fuse can't mount.
+    [ "$DISABLE_ROFILES_FUSE" = "1" ] || BUILDER_FLAGS+=("--disable-rofiles-fuse")
+fi
+
+# ── Source pins ──────────────────────────────────────────────────────────────
+# PN_REF  Which ProjectNotes source build/install/repo compile:
+#           latest  (default) the newest v* tag on GitHub
+#           pinned  the `commit:` values committed in the manifest, untouched
+#           <tag|branch|sha>  that ref, e.g. v6.1.0, main, or a full commit SHA
+#         Unless pinned, SqliteSyncPro follows its default-branch tip, matching
+#         the release workflow. The resolved pins go into a generated copy of
+#         the manifest; the committed manifest is never edited.
+PN_REF="${PN_REF:-latest}"
+PN_GIT_URL="https://github.com/kestermckinney/ProjectNotes.git"
+SS_GIT_URL="https://github.com/kestermckinney/SqliteSyncPro.git"
+# Must sit next to the real manifest so its relative module includes resolve.
+RESOLVED_MANIFEST="$SCRIPT_DIR/.${APP_ID}.resolved.yml"
+
+# Print the commit SHA that <ref> names on remote <url>. Annotated tags are
+# peeled to the commit they point at.
+remote_sha() {
+    local url="$1" ref="$2" out
+    if [[ "$ref" =~ ^[0-9a-f]{40}$ ]]; then
+        echo "$ref"
+        return
+    fi
+    out="$(git ls-remote "$url" "refs/tags/$ref^{}" "refs/tags/$ref" "refs/heads/$ref" "$ref")"
+    # Prefer the peeled tag line, then whatever matched first.
+    { grep -F "refs/tags/$ref^{}" <<<"$out" || head -n1 <<<"$out"; } | awk 'NR==1 {print $1}'
+}
+
+# Set MANIFEST to the manifest build/install/repo should use, per PN_REF.
+resolve_manifest() {
+    [ "$PN_REF" = "pinned" ] && { echo "==> Using committed manifest pins (PN_REF=pinned)"; return; }
+
+    local pn_ref="$PN_REF" pn_sha ss_sha
+    if [ "$pn_ref" = "latest" ]; then
+        pn_ref="$(git ls-remote --tags "$PN_GIT_URL" 'v*' | awk '{print $2}' \
+            | sed -e 's#^refs/tags/##' -e 's#\^{}$##' | sort -uV | tail -n1)"
+        [ -n "$pn_ref" ] || { echo "Error: no v* tags found on $PN_GIT_URL"; exit 1; }
+    fi
+    pn_sha="$(remote_sha "$PN_GIT_URL" "$pn_ref")"
+    ss_sha="$(remote_sha "$SS_GIT_URL" HEAD)"
+    [[ "$pn_sha" =~ ^[0-9a-f]{40}$ ]] || { echo "Error: could not resolve ProjectNotes ref '$pn_ref'"; exit 1; }
+    [[ "$ss_sha" =~ ^[0-9a-f]{40}$ ]] || { echo "Error: could not resolve SqliteSyncPro HEAD"; exit 1; }
+
+    # Same rewrite as the release workflow's "Pin sources" step.
+    awk -v pn="$pn_sha" -v ss="$ss_sha" '
+        /url: .*kestermckinney\/ProjectNotes\.git/  { inpn = 1 }
+        inpn && /^[[:space:]]*commit:/ { sub(/commit:.*/, "commit: " pn); inpn = 0 }
+        /url: .*kestermckinney\/SqliteSyncPro\.git/ { inss = 1 }
+        inss && /^[[:space:]]*commit:/ { sub(/commit:.*/, "commit: " ss); inss = 0 }
+        { print }
+    ' "$MANIFEST" > "$RESOLVED_MANIFEST"
+    MANIFEST="$RESOLVED_MANIFEST"
+    echo "==> ProjectNotes  -> $pn_ref ($pn_sha)"
+    echo "==> SqliteSyncPro -> HEAD ($ss_sha)"
+}
+
 # Build the shared --gpg-sign/--gpg-homedir argument list into the named array.
 # Usage: gpg_sign_args MYARRAY ; then expand "${MYARRAY[@]}".
 gpg_sign_args() {
@@ -49,10 +121,10 @@ DESKTOP_FILE="$SCRIPT_DIR/${APP_ID}.desktop"
 usage() {
     echo "Usage: $0 [setup|build|lint|verify-webengine|run|install|repo|bundle|regen-pip|clean]"
     echo ""
-    echo "  NOTE: the manifest now uses pinned git sources (Flathub-compatible),"
-    echo "        so build/repo clone ProjectNotes + SqliteSyncPro from GitHub at"
-    echo "        the pinned commits. A new release means: commit, push, then bump"
-    echo "        the 'commit:' fields in the manifest before building."
+    echo "  NOTE: build/install/repo clone ProjectNotes + SqliteSyncPro from GitHub."
+    echo "        By default they build the newest v* tag (with SqliteSyncPro HEAD)."
+    echo "        Override with PN_REF=<tag|branch|sha>, or PN_REF=pinned to use the"
+    echo "        manifest's committed 'commit:' values. Push before building."
     echo ""
     echo "  setup      Install flatpak-builder, KDE runtime/SDK, and lint tooling"
     echo "  build      Build the Flatpak (runs setup check first)"
@@ -160,7 +232,8 @@ cmd_build() {
     echo "==> Building Flatpak..."
     echo "    (clones ProjectNotes + SqliteSyncPro from GitHub at pinned commits;"
     echo "     ensure those commits are pushed to origin first)"
-    flatpak-builder "${BUILDER_FLAGS[@]}" --force-clean "$BUILD_DIR" "$MANIFEST"
+    resolve_manifest
+    "${FLATPAK_BUILDER[@]}" "${BUILDER_FLAGS[@]}" --force-clean "$BUILD_DIR" "$MANIFEST"
     cmd_verify_webengine
     echo "==> Build complete. Output in $BUILD_DIR"
 }
@@ -190,12 +263,21 @@ cmd_run() {
         exit 1
     fi
     echo "==> Running $APP_ID..."
-    flatpak-builder --run "$BUILD_DIR" "$MANIFEST" projectnotes
+    # flatpak-builder --run mounts the Wayland socket but, unlike `flatpak run`,
+    # leaves WAYLAND_DISPLAY unset; fallback-x11 also hides DISPLAY, so Qt
+    # would fall back to xcb and abort. Pass the host's value through.
+    if [ -n "${WAYLAND_DISPLAY:-}" ]; then
+        flatpak-builder --run "$BUILD_DIR" "$MANIFEST" \
+            env WAYLAND_DISPLAY="$WAYLAND_DISPLAY" projectnotes
+    else
+        flatpak-builder --run "$BUILD_DIR" "$MANIFEST" projectnotes
+    fi
 }
 
 cmd_install() {
     echo "==> Installing Flatpak for current user..."
-    flatpak-builder "${BUILDER_FLAGS[@]}" --user --install --force-clean "$BUILD_DIR" "$MANIFEST"
+    resolve_manifest
+    "${FLATPAK_BUILDER[@]}" "${BUILDER_FLAGS[@]}" --user --install --force-clean "$BUILD_DIR" "$MANIFEST"
     echo "==> Installed. Run with: flatpak run $APP_ID"
 }
 
@@ -206,6 +288,7 @@ cmd_repo() {
     fi
     # Gate the publishable artifact on the Flathub-style lint. Honors STRICT=1.
     cmd_lint
+    resolve_manifest
     local sign_args
     gpg_sign_args sign_args
     if [ -n "$GPG_KEY_ID" ]; then
@@ -213,7 +296,7 @@ cmd_repo() {
     else
         echo "==> Exporting to repository at $REPO_DIR (unsigned; set GPG_KEY_ID to sign)..."
     fi
-    flatpak-builder "${BUILDER_FLAGS[@]}" --repo="$REPO_DIR" "${sign_args[@]}" --force-clean "$BUILD_DIR" "$MANIFEST"
+    "${FLATPAK_BUILDER[@]}" "${BUILDER_FLAGS[@]}" --repo="$REPO_DIR" "${sign_args[@]}" --force-clean "$BUILD_DIR" "$MANIFEST"
     echo "==> Repository created at $REPO_DIR"
 }
 

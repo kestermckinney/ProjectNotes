@@ -142,9 +142,13 @@ jobs:
           GPG_KEY_ID: ${{ secrets.FLATPAK_GPG_KEY_ID }}
           GPG_HOMEDIR: ${{ env.GNUPGHOME }}
           RUNTIME_REPO_URL: ${{ env.FLATPAKREPO_URL }}
+          # Sources were pinned by the step above; don't re-resolve to the newest tag.
+          PN_REF: pinned
           STRICT: '0'
           # rofiles-fuse (FUSE) can't spawn inside the CI container; opt out.
           DISABLE_ROFILES_FUSE: '1'
+          # The container's own flatpak-builder is the one to use here.
+          USE_BUILDER_FLATPAK: '0'
         run: |
           ./build-flatpak.sh build
           ./build-flatpak.sh repo

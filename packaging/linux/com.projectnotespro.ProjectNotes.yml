@@ -77,9 +77,10 @@ modules:
       #
       # NOTE: the release workflow (.github/workflows/flatpak-release.yml)
       # overwrites the projectnotes `commit:` below with the tag's own SHA at
-      # build time, so a tagged release always builds its own commit. The value
-      # here is only used for local/manual `build-flatpak.sh` runs — keep it
-      # pointing at the latest released commit.
+      # build time, so a tagged release always builds its own commit.
+      # build-flatpak.sh does the same for local runs (newest v* tag by default;
+      # see PN_REF in that script). The value here is only used with
+      # PN_REF=pinned or when building the manifest directly.
       - type: git
         url: https://github.com/kestermckinney/ProjectNotes.git
         commit: 82d522d5c9807f838b06c53aca698a83e7b143b3
@@ -87,8 +88,8 @@ modules:
       # Cloned into SqliteSyncPro/ to match the cmake config-opt
       # -DSQLITESYNCPRO_SRC_DIR=SqliteSyncPro/src. The release workflow resolves
       # its default-branch (HEAD) tip at build time and overwrites the `commit:`
-      # below, so a release always pairs with the latest sync code. The value
-      # here is only the fallback for local/manual build-flatpak.sh runs.
+      # below, so a release always pairs with the latest sync code. build-flatpak.sh
+      # does the same unless PN_REF=pinned.
       - type: git
         url: https://github.com/kestermckinney/SqliteSyncPro.git
         commit: 115f295251548779fa2bfb6720c8f4149e52a4d2

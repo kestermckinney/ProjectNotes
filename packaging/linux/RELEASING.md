@@ -47,14 +47,14 @@ In **ProjectNotes → Settings → Secrets and variables → Actions**:
 
 ## Per-release routine
 
-1. Make sure all app changes are committed **and pushed** to the public remote —
-   the manifest builds from pinned commits, so unpushed work won't be included.
-2. Bump both `commit:` fields in `com.projectnotespro.ProjectNotes.yml`
-   (ProjectNotes and SqliteSyncPro) to the new commits.
-3. Add a `<release version="X.Y.Z" date="…"/>` entry to
+1. Make sure all app changes are committed **and pushed** to the public remote.
+   The build clones from GitHub, so unpushed work won't be included. There is
+   no need to bump the manifest's `commit:` fields: the workflow pins
+   ProjectNotes to the tagged commit and SqliteSyncPro to its default-branch tip.
+2. Add a `<release version="X.Y.Z" date="…"/>` entry to
    `com.projectnotespro.ProjectNotes.metainfo.xml`.
-4. Commit and push those packaging changes.
-5. Tag and push:
+3. Commit and push that change.
+4. Tag and push:
    ```bash
    git tag vX.Y.Z
    git push origin vX.Y.Z
@@ -66,12 +66,22 @@ GitHub Release with the bundle attached.
 
 ## Local testing (optional)
 
-> **The local build is NOT your working tree.** `build-flatpak.sh` clones the
-> `commit:` pins in `com.projectnotespro.ProjectNotes.yml` from GitHub — it does
-> not build local or uncommitted changes. If a local build produces an old
-> version, the pins are stale: bump both `commit:` fields (step 2 of the
-> per-release routine) to the pushed commits you want, then rebuild. The
-> generated version comes from `CMakeLists.txt VERSION` at the pinned commit.
+> **The local build is NOT your working tree.** `build-flatpak.sh` clones from
+> GitHub and never builds local or uncommitted changes. By default `build`,
+> `install` and `repo` build the newest `v*` tag, paired with SqliteSyncPro's
+> default-branch tip, the same pairing a release uses. Pick something else with
+> `PN_REF`:
+>
+> ```bash
+> ./build-flatpak.sh build                 # newest v* tag (default)
+> PN_REF=main ./build-flatpak.sh build     # tip of main, to test before tagging
+> PN_REF=v6.0.0 ./build-flatpak.sh build   # a specific tag, branch or full SHA
+> PN_REF=pinned ./build-flatpak.sh build   # the manifest's committed commit: values
+> ```
+>
+> The resolved pins go into `.com.projectnotespro.ProjectNotes.resolved.yml`
+> (git-ignored); the committed manifest is left alone. The app's version comes
+> from `CMakeLists.txt VERSION` at the commit that gets built.
 
 `build-flatpak.sh` honors the same knobs as CI, so you can dry-run a signed
 build locally:
