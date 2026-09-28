@@ -14,6 +14,8 @@ Item {
 
     property var _clients: []
     property var _people: []
+    readonly property var _contactSync: DesktopAppController.contactSyncSettingsModel
+    readonly property bool contactsNeedReview: _contactSync && _contactSync.reviews.length > 0
     readonly property var _finder: DesktopAppController.fileFinder
     readonly property var _office365: DesktopAppController.office365SettingsModel
     property int currentTab: 0
@@ -112,6 +114,15 @@ Item {
                         color: parent.index === page.currentTab ? Theme.accent : Theme.text2
                         font.pixelSize: Theme.menuFont
                         font.weight: parent.index === page.currentTab ? Font.DemiBold : Font.Normal
+                    }
+                    Rectangle {
+                        objectName: "preferencesContactReviewDot"
+                        width: 8; height: 8; radius: 4
+                        color: Theme.red
+                        anchors.top: parent.top
+                        anchors.right: parent.right
+                        anchors.margins: 4
+                        visible: tabDelegate.modelData.key === "preferences" && page.contactsNeedReview
                     }
                     HoverHandler { id: tabHover }
                     TapHandler {
@@ -1101,8 +1112,8 @@ Item {
 
                 SettingsSection {
                     id: integrationSection
-                    title: qsTr("Email and Scheduling Integration")
-                    subtitle: qsTr("Choose how Project Notes hands emails and meeting invitations to you for review. Nothing is sent until you send it yourself.")
+                    title: qsTr("Email, Contact and Calendar Integration")
+                    subtitle: qsTr("Choose the application for email, contact synchronization, and calendar invitations. Emails and invitations open for your review before you send them.")
                     readonly property var backends: {
                         var list = [
                             { value: "default-app", label: qsTr("Default Application") },
@@ -1170,6 +1181,16 @@ Item {
                         color: Theme.text3
                         font.pixelSize: Theme.fontSm
                         text: qsTr("Temporary email messages, attachments and calendar files are kept in the application cache and removed when Project Notes closes.")
+                    }
+                    Text {
+                        text: qsTr("Contact Synchronization")
+                        color: Theme.text
+                        font.bold: true
+                        Layout.fillWidth: true
+                    }
+                    ContactSyncSettingsPane {
+                        Layout.fillWidth: true
+                        syncModel: DesktopAppController.contactSyncSettingsModel
                     }
                 }
 

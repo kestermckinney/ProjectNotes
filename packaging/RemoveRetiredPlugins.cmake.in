@@ -23,6 +23,7 @@ endif()
 
 # Scripts, listed without .py so their cached bytecode goes too.
 set(_pn_retired_scripts
+    "threads/icloudsync_thread"
     "plugins/archivenotes_plugin"
     "plugins/cci_connectdrives_plugin"
     "plugins/cci_ifs_projects_import_plugin"

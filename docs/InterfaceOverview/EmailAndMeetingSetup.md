@@ -19,7 +19,7 @@ You cannot type an address into a review dialog. If someone needs a copy, add th
 
 ## Choose how mail and meetings leave Project Notes
 
-Open **Settings > Preferences** and find **Email and Scheduling Integration**. One choice covers both email and meeting invitations.
+Open **Settings > Preferences** and find **Email, Contact and Calendar Integration**. One choice covers both email and meeting invitations.
 
 | Integration | Email becomes | Meeting becomes | Works on |
 | :--- | :--- | :--- | :--- |
@@ -42,7 +42,7 @@ If your settings came from another computer and name a choice this one lacks, su
 
 ## Windows with Outlook Classic
 
-1. Open **Settings > Preferences > Email and Scheduling Integration** and set **Integration** to **Outlook (Classic)**.
+1. Open **Settings > Preferences > Email, Contact and Calendar Integration** and set **Integration** to **Outlook (Classic)**.
 2. Start Outlook and leave it running. Handoff is faster when Outlook is already open.
 
 Project Notes starts Outlook (classic) itself, so the `.eml` and `.ics` file associations don't matter.

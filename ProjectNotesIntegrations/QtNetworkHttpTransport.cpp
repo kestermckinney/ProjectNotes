@@ -23,6 +23,8 @@ void QtNetworkHttpTransport::send(HttpRequest request, Completion completion)
     cancel(request.operationId);
 
     QNetworkRequest networkRequest(request.url);
+    if (request.manualRedirects)
+        networkRequest.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::ManualRedirectPolicy);
     for (auto it = request.headers.cbegin(); it != request.headers.cend(); ++it)
         networkRequest.setRawHeader(it.key(), it.value());
 

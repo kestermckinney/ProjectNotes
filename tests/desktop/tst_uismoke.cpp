@@ -22,6 +22,11 @@
 
 #include "DesktopAppController.h"
 #include "ProjectNotesIntegrations/MeetingTemplateStore.h"
+#include "ProjectNotesContacts/ContactSyncSettingsModel.h"
+#include "databaseobjects.h"
+#include <QQmlComponent>
+#include <QTemporaryDir>
+#include <QSqlQuery>
 
 class UiSmokeTest : public QObject
 {
@@ -201,6 +206,82 @@ private slots:
         QCOMPARE(tabList->property("count").toInt(), 10);
         QCOMPARE(pages->property("count").toInt(), 10);
         assertClean("settings category tabs");
+    }
+
+    void test_02c_nativeContactsReviewPane()
+    {
+        using namespace PN::Contacts;
+        class ReviewProvider final : public ContactProvider {
+        public:
+            bool clientReview=false;
+            void fetch(const QVariantMap &, const QJsonObject &, Completion done) override {
+                Contact contact; contact.id=clientReview?"client-missing-name":"missing-name"; contact.book="book";
+                if(clientReview){contact.company="Review Test Company - Boston";contact.fields["company"]=contact.company;}
+                Snapshot snapshot; snapshot.account="review-test"; snapshot.contacts={contact};
+                snapshot.books={QVariantMap{{"id","book"},{"name","Contacts"},{"writable",true}}};
+                done(snapshot);
+            }
+            void create(const QVariantMap &,const Contact &,const QString &,Created done) override {done({},"Unexpected export");}
+            void cancel() override {}
+        } provider;
+        QTemporaryDir state;
+        ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ProjectNotesqmltest",state.path());
+        model.setProviderForTesting(&provider);model.setDatabase(global_DBObjects.getDatabaseFile());
+        model.setOption("startup",false);model.setOption("enabled",true);model.syncNow();
+        QTRY_VERIFY(!model.busy());QCOMPARE(model.reviews().size(),1);
+        clearWarnings();
+        QQmlComponent component(engine,QUrl("qrc:/qt/qml/ProjectNotesDesktop/qml/ContactSyncSettingsPane.qml"));
+        std::unique_ptr<QObject> pane(component.createWithInitialProperties({{"syncModel",QVariant::fromValue(static_cast<QObject*>(&model))}}));
+        QVERIFY2(pane,qPrintable(component.errorString()));
+        QVERIFY(!pane->findChild<QObject *>(QStringLiteral("contactSourceCombo")));
+        for (auto *item : pane->findChildren<QQuickItem *>()) {
+            QVERIFY(item->property("text").toString() != QStringLiteral("Sign in for contacts"));
+            QVERIFY(item->property("text").toString() != QStringLiteral("Export destination"));
+        }
+        auto *paneItem = qobject_cast<QQuickItem *>(pane.get());
+        auto *window = qobject_cast<QQuickWindow *>(root);
+        QVERIFY(paneItem);
+        QVERIFY(window);
+        paneItem->setParentItem(window->contentItem());
+        auto *reviewButton = pane->findChild<QObject *>(QStringLiteral("reviewContactConflictsButton"));
+        auto *reviewDialog = pane->findChild<QObject *>(QStringLiteral("contactConflictReviewDialog"));
+        QVERIFY(reviewButton);
+        QVERIFY(reviewDialog);
+        auto *reviewDot = reviewButton->findChild<QObject *>(QStringLiteral("reviewContactsDot"));
+        QVERIFY(reviewDot);
+        QVERIFY(reviewDot->property("visible").toBool());
+        QVERIFY(reviewButton->property("enabled").toBool());
+        QVERIFY(!reviewDialog->property("visible").toBool());
+        QVERIFY(QMetaObject::invokeMethod(reviewButton, "clicked"));
+        QTRY_VERIFY(reviewDialog->property("visible").toBool());
+        auto *reviews = reviewDialog->findChild<QObject *>(QStringLiteral("contactConflictRepeater"));
+        QVERIFY(reviews);
+        QCOMPARE(reviews->property("count").toInt(), 1);
+        model.resolve(model.reviews().first().toMap().value("key").toString(), "ignore", "", "", "");
+        QTRY_VERIFY(model.reviews().isEmpty());
+        QTRY_VERIFY(!reviewButton->property("enabled").toBool());
+        QTRY_VERIFY(!reviewDot->property("visible").toBool());
+        QTRY_COMPARE(reviews->property("count").toInt(), 0);
+        QSqlQuery client(global_DBObjects.getDb());
+        QVERIFY(client.exec("INSERT INTO clients(id,client_name) VALUES('review-stage-client','Review Test Company')"));
+        provider.clientReview=true;model.syncNow();QTRY_VERIFY(!model.busy());
+        QTRY_VERIFY(reviewDialog->property("clientStage").toBool());
+        QTRY_COMPARE(reviews->property("count").toInt(),1);
+        auto *useClient=findVisualChild(window->contentItem(),QStringLiteral("useExistingClientButton"));
+        QVERIFY(useClient);QVERIFY(useClient->isVisible());QVERIFY(useClient->isEnabled());
+        QVERIFY(QMetaObject::invokeMethod(useClient,"clicked"));
+        QTRY_VERIFY(!reviewDialog->property("clientStage").toBool());
+        QTRY_VERIFY(!model.busy());QCOMPARE(model.reviews().size(),1);
+        QVERIFY(model.reviews().first().toMap().value("reason").toString().contains("missing"));
+        model.resolve(model.reviews().first().toMap().value("key").toString(),"ignore","","","");
+        QTRY_COMPARE(reviews->property("count").toInt(),0);
+        QVERIFY(client.exec("DELETE FROM clients WHERE id='review-stage-client'"));
+        QVERIFY(reviewDialog->property("visible").toBool());
+        QVERIFY(QMetaObject::invokeMethod(reviewDialog, "close"));
+        QTRY_VERIFY(!reviewDialog->property("visible").toBool());
+        QTest::qWait(60);
+        assertClean("native contact conflict review dialog");
+        pane.reset();model.setOption("enabled",false);
     }
 
     // The Settings "View Options" checks and the app menu's View group drive the

@@ -34,6 +34,7 @@ private slots:
     void qualifiesDeveloperProfileSecretsOnly();
     void requiresExplicitFeatureScopes();
     void emailDraftConsentPreservesFileFinderSession();
+    void contactsRequestTheirOwnCapabilities();
     void facadeAddsAuthorizationWithoutExposingToken();
     void refreshFailureAndSignOutClearCredentialState();
     void sharedServiceOwnsIdentitySettings();
@@ -227,6 +228,28 @@ void MicrosoftOAuthManagerTest::emailDraftConsentPreservesFileFinderSession()
     QVERIFY(service.account().authenticated);
     QVERIFY(service.account().grantedScopes.contains(
         QStringLiteral("https://graph.microsoft.com/Files.Read.All")));
+}
+
+void MicrosoftOAuthManagerTest::contactsRequestTheirOwnCapabilities()
+{
+    MicrosoftOAuthManager manager;
+    Office365Service service;
+    service.setOAuthManager(&manager);
+    service.requestContactConsent(false);
+    QVERIFY(manager.requestedScopeList().contains(QStringLiteral("Contacts.Read")));
+    QVERIFY(!manager.requestedScopeList().contains(QStringLiteral("Contacts.ReadWrite")));
+    QVERIFY(!manager.requestedScopeList().contains(QStringLiteral("Mail.Send")));
+    service.requestContactConsent(true);
+    QVERIFY(manager.requestedScopeList().contains(QStringLiteral("Contacts.ReadWrite")));
+    QVERIFY(!manager.requestedScopeList().contains(QStringLiteral("Mail.ReadWrite")));
+    service.requestCommunicationsConsent(true, false);
+    QVERIFY(manager.requestedScopeList().contains(QStringLiteral("Mail.ReadWrite")));
+    QVERIFY(manager.requestedScopeList().contains(QStringLiteral("Calendars.ReadWrite")));
+    QVERIFY(manager.requestedScopeList().contains(QStringLiteral("Contacts.Read")));
+    QVERIFY(!manager.requestedScopeList().contains(QStringLiteral("Contacts.ReadWrite")));
+    service.requestCommunicationsConsent(true, true);
+    QVERIFY(manager.requestedScopeList().contains(QStringLiteral("Contacts.ReadWrite")));
+    QVERIFY(!manager.requestedScopeList().contains(QStringLiteral("Mail.Send")));
 }
 
 void MicrosoftOAuthManagerTest::refreshFailureAndSignOutClearCredentialState()

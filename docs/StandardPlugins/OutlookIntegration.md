@@ -1,6 +1,6 @@
 # Outlook Integration
 
-The **Outlook Integration** plugin keeps your Project Notes people, emails and assigned items in step with Outlook. It can work through Microsoft 365 on any platform, or drive Outlook (classic) directly on Windows. It runs on a timer in the background and also adds menu items you can trigger yourself.
+The **Outlook Integration** plugin downloads project-related emails and synchronizes assigned items. Contact import and export have moved to native [Contact Synchronization](../InterfaceOverview/Preferences.md#contact-synchronization); use that preferences section for Outlook, Office 365, Thunderbird, or iCloud contacts. The plugin's remaining Microsoft 365 functions run on a background timer and offer manual menu actions.
 
 It does **not** send project email and it does not schedule meetings. Those are built into Project Notes and are set up on the main **Settings** page. See [Email and Meeting Setup](<../InterfaceOverview/EmailAndMeetingSetup.md>).
 
@@ -11,7 +11,7 @@ The **Integration Type** setting picks the route.
 | Integration Type | Works on | What it can do |
 | :--- | :--- | :--- |
 | **Office 365 Application** | Windows, macOS, Linux | Everything below, through the Microsoft Graph API. Runs on a five-minute timer as well as from the menu. |
-| **Outlook Automation** | Windows only, with Outlook (classic) installed | Import contacts, export new contacts and download project email, by controlling Outlook (classic) on your computer. Menu items only; it does not sync assigned items. |
+| **Outlook Automation** | Windows only, with Outlook (classic) installed | Download project email. Contact synchronization is configured in native Preferences. Menu items only; it does not sync assigned items. |
 
 **Outlook Automation** is the default for a new installation. It has no effect on macOS or Linux, so choose **Office 365 Application** there.
 

@@ -341,7 +341,7 @@ The maintainer approved these routes, replacing the "no calendar POST" hold abov
 - **Thunderbird**: stage the same `.ics` file and launch the configured Thunderbird command with it, so Thunderbird offers to import it into a calendar.
 - **Microsoft 365**: `POST /me/events` with `isDraft: true`, matching the Python plug-in, then open the returned Outlook `webLink`. `Calendars.ReadWrite` is added to the Office 365 consent bundle. The invitation risk described above is accepted by the maintainer's decision and must still be verified with a test mailbox and throwaway attendee before release.
 
-One preference (Settings > Preferences > Email and Scheduling Integration) selects the route for both email and meetings. Saved audiences are shared: Required attendees are stored as To and Optional as Cc in `project_email_audiences`, and `default_workflows_json` may hold `schedule-meeting`. Older builds that read that value treat the preset as corrupt, so mixed-version sync can hide such an audience in the older build.
+One preference (Settings > Preferences > Email, Contact and Calendar Integration) selects the route for both email and meetings. Saved audiences are shared: Required attendees are stored as To and Optional as Cc in `project_email_audiences`, and `default_workflows_json` may hold `schedule-meeting`. Older builds that read that value treat the preset as corrupt, so mixed-version sync can hide such an audience in the older build.
 
 ### Scheduling exit gates
 

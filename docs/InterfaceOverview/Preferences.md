@@ -60,9 +60,30 @@ The **Managing Company** setting, also under the **Preferences** section of Sett
 
 **View report after save**, at the top of the **Preferences** section, opens a saved report in its default application as soon as it is written. Leave it off if you only want the file on disk. It has no effect on emailed reports.
 
-## Email and Scheduling Integration
+## Contact Synchronization
 
-The **Email and Scheduling Integration** section, below **Preferences**, decides how Project Notes hands finished emails and meeting invitations to you. One choice covers both.
+Contact synchronization is part of **Preferences → Email, Contact and Calendar Integration** and follows its **Integration** selection. Thunderbird uses Thunderbird contacts; Outlook (Classic) uses classic Outlook contacts; Outlook and Microsoft 365 drafts use the shared Office 365 account; MacOS Email and Calendar uses iCloud. Default Application does not provide contact synchronization. There is no separate contact-source selector.
+
+- **Outlook** is offered only on Windows and reads classic Outlook's active profile. New Outlook and other platforms use Office 365 for Microsoft cloud contacts.
+- **Office 365** uses the shared account configured under **Office 365 Integration**. Enable contact synchronization here, then sign in from that tab to grant Contacts.Read. After enabling export, sign in there again to grant Contacts.ReadWrite. Preferences has no separate Microsoft sign-in.
+- **Thunderbird** requires Thunderbird 128 or newer, the bundled Project Notes Contacts add-on, and the native host. Use **Set up Thunderbird bridge**, then install `projectnotes-contacts.xpi` from the application folder through Thunderbird's Add-ons menu and restart Thunderbird. Only local writable books are export destinations. Sandboxed Thunderbird needs access to the native host inside its sandbox; ordinary desktop installations are supported directly.
+- **iCloud** uses your Apple Account and an app-specific password saved in your operating system credential store. A blank password leaves the stored password unchanged.
+
+Use **Test Connection** to discover books without importing or exporting. Select import books, or leave all unchecked to import all books. Enable **Export missing contacts** to create missing Project Notes contacts directly in the selected application—no destination selection is needed. Outlook and Office 365 use their default Contacts folder. Thunderbird and iCloud use a provider-designated default writable address book when available, otherwise the first writable book ordered by stable ID (not display name). Thunderbird exports only to local writable books. If no writable book is available, imports continue and export reports the problem. Duplicate checking covers all discovered books, including books not selected for import. New configurations start paused, with export disabled and a five-minute interval. The interval can be changed from 1 to 1,440 minutes; startup sync is optional.
+
+Contact synchronization runs on a dedicated background thread, including matching and database writes. Settings and review actions remain in the main interface; progress and refreshed records are delivered back to it safely.
+
+The source's supplied values replace corresponding Project Notes fields, including explicit empty values. Omitted fields are retained. Remote deletions never delete local records, and deleted linked local people are never restored. Optional export creates missing contacts; it does not update existing external contacts.
+
+Names are compared using normalization, token reordering, edit distance, and company legal suffix variants. Saved source identities take precedence. Strong matches reuse existing IDs. **Review Contact Conflicts** enables when uncertain clients or contacts need attention and opens a separate review dialog. First resolve duplicate clients: choose **Use Selected Client** to associate the source company with an existing client, or **Keep as a Separate Client** to create a distinct client. Each company choice applies to all its source contacts and is saved for later synchronization. Once all client choices are resolved, contact matching resumes using those clients. Uncertain contacts then wait before people are created: choose **Use This One** under either contact, or **Use Both** to retain the existing person and import a separate person. Both sides show name, company, email, and phone details. The client association follows the saved client choice, and the display name comes from the chosen contact; when keeping both identical names, a unique display name is derived automatically from the source company. Existing duplicate records are not merged. Review includes the external fields that will be applied.
+
+An export whose outcome is uncertain is not retried automatically. After a fresh sync, check the destination address book before choosing **I checked the destination; allow retry**. Local state and credentials are scoped to this computer and developer profile; moving a database may require matching its contacts again.
+
+Legacy contact actions have moved out of Python plugins. Existing iCloud account settings and valid links are carried forward where available, but synchronization stays paused until enabled here. Other plugin functions remain available.
+
+## Email, Contact and Calendar Integration
+
+The **Email, Contact and Calendar Integration** section, below **Preferences**, decides how Project Notes hands finished emails and meeting invitations to you. One choice covers email, contacts, and calendars.
 
 The **Integration** list only offers what your operating system supports:
 
@@ -152,7 +173,7 @@ When you use the [Filter Tool](FilterTool.md) or the **Show Internal / Budget It
 
 The **Project Manager** and **Managing Company** settings are saved in the `application_settings` table inside the Project Notes database (`ProjectNotes.db`). This means they travel with the database — if you share a database or copy it to another machine, your preferences move with it. They are also included in cloud sync when synchronization is enabled.
 
-The **Email and Scheduling Integration** choice and the Thunderbird path are stored in your local OS profile instead, so each machine can use a different mail application. See [Plugin Settings — Where Settings Are Stored](<../StandardPlugins/PluginSettings.md>) for the full breakdown.
+The **Email, Contact and Calendar Integration** choice and the Thunderbird path are stored in your local OS profile instead, so each machine can use a different mail application. See [Plugin Settings — Where Settings Are Stored](<../StandardPlugins/PluginSettings.md>) for the full breakdown.
 
 ## Related Documentation
 

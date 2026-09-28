@@ -2,7 +2,7 @@
 
 ## Built-In Standard Plugins
 
-Project Notes ships with a small set of Python plugins, installed and enabled out of the box. They extend the application with contact synchronization, document templates and enterprise connections.
+Project Notes ships with a small set of Python plugins for document templates and enterprise connections. Contact synchronization is a native application service configured under [Preferences](../InterfaceOverview/Preferences.md#contact-synchronization).
 
 Email, meeting invitations and the four project reports are **not** plugins. They are built into Project Notes and are configured on the main **Settings** page. See [Email and Meeting Setup](<../InterfaceOverview/EmailAndMeetingSetup.md>), [Reports and Email](<../InterfaceOverview/ReportsAndEmail.md>) and [Scheduling Meetings](<../InterfaceOverview/ScheduleMeeting.md>).
 
@@ -13,8 +13,7 @@ File Finder and the native Office 365 connection are application services rather
 ### Standard Plugins Overview
 
 **Contacts and enterprise connections:**
-- Outlook Integration — Import and export contacts, download project-related email, and sync assigned items, through Microsoft 365 on any platform or Outlook (classic) on Windows. See [Outlook Integration](<OutlookIntegration.md>).
-- iCloud Contacts — Import iCloud contacts and optionally export new Project Notes contacts
+- Outlook Integration — Download project-related email and sync assigned items. See [Outlook Integration](<OutlookIntegration.md>).
 - IFS Cloud — Connect to a customized IFS Cloud ERP instance
 
 **Documents and team:**
@@ -265,10 +264,9 @@ The variable `[$projects.project_number.1]` in the URL is replaced with the actu
 | Settings Entry | Plugin | Description |
 | :--- | :--- | :--- |
 | **Editor** | Base Plugins Settings | Set the path to the Python script editor used by the Script Editor utility. |
-| **Outlook Integration** | Base Plugins Settings | Choose Microsoft 365 or Outlook (classic), and set the credentials and options used for contact, email and item synchronization. See [Outlook Integration](<OutlookIntegration.md>). |
+| **Outlook Integration** | Base Plugins Settings | Configure the remaining email and item synchronization functions. Contacts use native Preferences. See [Outlook Integration](<OutlookIntegration.md>). |
 | **My Shortcuts** | Base Plugins Settings | Configure custom URL shortcuts that appear in the Plugins or right-click menus. See [My Shortcuts](<MyShortcuts.md>). |
 | **Settings Migrator** | Base Plugins Settings | Migrate plugin settings between machines or installations. |
-| **iCloud Contacts** | Base Plugins Settings | Configure the Apple Account email and app-specific password used for scheduled iCloud contact sync. See [iCloud Contacts](<iCloudContacts.md>). |
 | **IFS Cloud Settings** | IFS Cloud Plugins Settings | Configure IFS Cloud ERP integration credentials and options. See [IFS Cloud](<IFSCloud.md>). |
 | **New Change Order** | New Change Order | Configure the sub-folder for new change order documents. |
 | **New MS Project** | New MS Project | Configure the sub-folder for new MS Project files. |

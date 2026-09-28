@@ -123,6 +123,9 @@ set(DESKTOP_QML_FILES
     qml/MeetingNotesReportReviewDialog.qml
     qml/ScheduleMeetingDialog.qml
     qml/TemplateSettingsPane.qml
+    qml/ContactConflictReviewDialog.qml
+    qml/ContactSyncCombo.qml
+    qml/ContactSyncSettingsPane.qml
     qml/MeetingTemplateSettingsPane.qml
     qml/ThemedMessageDialog.qml
     qml/pages/ProjectsListPage.qml
@@ -189,7 +192,18 @@ target_link_libraries(ProjectNotes PRIVATE
     ProjectNotesEmail
     ProjectNotesEmailRendering
     ProjectNotesMeetings
+    ProjectNotesContacts
 )
+
+add_dependencies(ProjectNotes ProjectNotesThunderbirdContacts thunderbird_contacts_addon)
+add_custom_command(TARGET ProjectNotes POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ProjectNotesThunderbirdContacts> $<TARGET_FILE_DIR:ProjectNotes>
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/ProjectNotesContacts/projectnotes-contacts.xpi $<TARGET_FILE_DIR:ProjectNotes>)
+if(WIN32)
+    add_dependencies(ProjectNotes ProjectNotesOutlookContacts)
+    add_custom_command(TARGET ProjectNotes POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ProjectNotesOutlookContacts> $<TARGET_FILE_DIR:ProjectNotes>)
+endif()
 
 # Platform credential backend used by the plugin secret API (credentialstore).
 if(UNIX AND NOT APPLE AND NOT ANDROID)
@@ -269,6 +283,7 @@ if(APPLE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
         COMMAND "${_desktop_qt_bin}/macdeployqt"
             "$<TARGET_BUNDLE_DIR:ProjectNotes>"
             "-qmldir=${CMAKE_CURRENT_SOURCE_DIR}/qml"
+            "-executable=$<TARGET_FILE_DIR:ProjectNotes>/ProjectNotesThunderbirdContacts"
             -always-overwrite
         COMMENT "Deploying Qt into app bundle (macdeployqt)"
         VERBATIM)

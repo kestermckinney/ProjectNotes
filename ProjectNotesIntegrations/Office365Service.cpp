@@ -122,7 +122,7 @@ void Office365Service::requestFileFinderConsent()
     }
 }
 
-void Office365Service::requestCommunicationsConsent()
+void Office365Service::requestCommunicationsConsent(bool includeContacts, bool exportContacts)
 {
     if (m_oauth) {
         m_oauth->setRequestedScopes({QStringLiteral("offline_access"),
@@ -131,6 +131,22 @@ void Office365Service::requestCommunicationsConsent()
                                      // Scheduled meetings are created as draft
                                      // events in the signed-in calendar.
                                      QStringLiteral("Calendars.ReadWrite")});
+        if (includeContacts) {
+            auto scopes = m_oauth->requestedScopeList();
+            scopes.append(exportContacts ? QStringLiteral("Contacts.ReadWrite") : QStringLiteral("Contacts.Read"));
+            m_oauth->setRequestedScopes(scopes);
+        }
+    }
+}
+
+void Office365Service::requestContactConsent(bool exportEnabled)
+{
+    if (m_oauth) {
+        QStringList scopes = m_oauth->grantedScopeList();
+        scopes.append({QStringLiteral("offline_access"), QStringLiteral("User.Read"),
+                       exportEnabled ? QStringLiteral("Contacts.ReadWrite") : QStringLiteral("Contacts.Read")});
+        scopes.removeDuplicates();
+        m_oauth->setRequestedScopes(scopes);
     }
 }
 
@@ -201,6 +217,12 @@ void Office365Service::sendGraphRequest(HttpRequest request, HttpTransport::Comp
     request.headers.remove("Authorization");
     request.headers.insert("Authorization", "Bearer " + m_accessToken.toUtf8());
     m_transport->send(std::move(request), std::move(completion));
+}
+
+void Office365Service::cancelGraphRequest(const QUuid &operationId)
+{
+    if (m_transport)
+        m_transport->cancel(operationId);
 }
 
 void Office365Service::sendUploadRequest(HttpRequest request, HttpTransport::Completion completion)

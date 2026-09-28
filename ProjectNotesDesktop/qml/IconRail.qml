@@ -11,6 +11,9 @@ Rectangle {
     id: rail
     color: Theme.rail
 
+    readonly property var contactSyncModel: DesktopAppController.contactSyncSettingsModel
+    readonly property bool contactsNeedReview: contactSyncModel && contactSyncModel.reviews.length > 0
+
     property string currentSection: "projects"
     // Forwarded to AppMenu so it can add the current record's table-scoped
     // plugin menus (e.g. Export / Templates) alongside the global ones.
@@ -142,6 +145,15 @@ Rectangle {
                 weight: Font.Light
                 color: btn.active ? Theme.accent : Theme.text2
             }
+        }
+
+        Rectangle {
+            objectName: "railContactReviewDot"
+            width: 8; height: 8; radius: 4
+            color: Theme.red
+            visible: btn.section === "settings" && rail.contactsNeedReview
+            x: (btn.width + Theme.railIconSize) / 2 - 3
+            y: (btn.height - Theme.railIconSize) / 2 - 3
         }
 
         HoverHandler { id: hover }

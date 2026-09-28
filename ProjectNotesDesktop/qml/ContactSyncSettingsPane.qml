@@ -1,0 +1,231 @@
+// SPDX-License-Identifier: GPL-3.0-only
+import QtQuick
+import QtQuick.Controls.Basic
+import QtQuick.Layouts
+import ProjectNotesDesktop
+
+ColumnLayout {
+    id: pane
+    property var syncModel: null
+    readonly property var config: syncModel ? syncModel.configuration : ({})
+    readonly property bool supported: config.provider && config.provider !== "none"
+    spacing: 10
+    component ContactCheck: CheckBox {
+        id: control
+        indicator: Rectangle {
+            width: 18
+            height: 18
+            radius: 3
+            y: (control.height - height) / 2
+            color: control.checked ? Theme.accent : Theme.surface
+            border.color: control.checked ? Theme.accent : Theme.border
+            Text {
+                anchors.centerIn: parent
+                text: "✓"
+                color: "white"
+                visible: control.checked
+            }
+        }
+        contentItem: Text {
+            text: control.text
+            color: Theme.text
+            font.pixelSize: Theme.fontBody
+            leftPadding: 26
+            verticalAlignment: Text.AlignVCenter
+        }
+    }
+    function option(key, value) {
+        if (syncModel)
+            syncModel.setOption(key, value);
+    }
+    function selectBook(id, checked) {
+        let list = Array.from(config.sourceBooks || []);
+        if (checked && list.indexOf(id) < 0)
+            list.push(id);
+        if (!checked)
+            list = list.filter(value => value !== id);
+        option("sourceBooks", list);
+    }
+    Text {
+        text: qsTr("External contact values replace mapped fields. Possible duplicates wait for review. Deletions are not propagated.")
+        color: Theme.text2
+        wrapMode: Text.Wrap
+        Layout.fillWidth: true
+    }
+    Text {
+        visible: !pane.supported
+        text: qsTr("Default Application does not provide contact synchronization. Choose an application under Email, Contact and Calendar Integration to synchronize contacts.")
+        color: Theme.text2
+        wrapMode: Text.Wrap
+        Layout.fillWidth: true
+    }
+    ContactCheck {
+        text: qsTr("Enable synchronization")
+        enabled: pane.supported
+        checked: !!pane.config.enabled
+        onClicked: pane.option("enabled", checked)
+    }
+    Text {
+        visible: Qt.platform.os === "windows" && pane.config.provider === "outlook"
+        text: qsTr("Requires classic Outlook and its active profile. Use Office 365 for new Outlook cloud contacts.")
+        color: Theme.text2
+        wrapMode: Text.Wrap
+        Layout.fillWidth: true
+    }
+    Text {
+        visible: pane.config.provider === "office365"
+        text: qsTr("Uses the shared account in Office 365 Integration. Enable contact synchronization here, then sign in from that tab to grant contact access. Sign in there again after enabling export.")
+        color: Theme.text2
+        wrapMode: Text.Wrap
+        Layout.fillWidth: true
+    }
+    ColumnLayout {
+        visible: pane.config.provider === "icloud"
+        Layout.fillWidth: true
+        FormField {
+            label: qsTr("Apple Account")
+            text: pane.config.account || ""
+            onEditingFinished: pane.option("account", text)
+        }
+        RowLayout {
+            TextField {
+                id: password
+                placeholderText: qsTr("App-specific password (blank keeps stored password)")
+                echoMode: TextInput.Password
+                Layout.fillWidth: true
+                color: Theme.text
+                background: Rectangle { color: Theme.surface; border.color: Theme.border; radius: Theme.radiusSm }
+                SpellCheckField { target: password; spellCheckEnabled: false }
+            }
+            Button {
+                text: qsTr("Save password")
+                onClicked: {
+                    pane.syncModel.savePassword(password.text);
+                    password.clear();
+                }
+            }
+        }
+    }
+    RowLayout {
+        visible: pane.config.provider === "thunderbird"
+        Button {
+            text: qsTr("Set up Thunderbird bridge")
+            onClicked: pane.syncModel.installThunderbirdHost()
+        }
+        Text {
+            text: qsTr("Thunderbird must be running with the Project Notes Contacts add-on.")
+            color: Theme.text2
+            wrapMode: Text.Wrap
+            Layout.fillWidth: true
+        }
+    }
+    RowLayout {
+        ContactCheck {
+            text: qsTr("Sync at startup")
+            checked: !!pane.config.startup
+            onClicked: pane.option("startup", checked)
+        }
+        Text {
+            text: qsTr("Interval (minutes)")
+            color: Theme.text
+        }
+        SpinBox {
+            id: interval
+            from: 1
+            to: 1440
+            value: pane.config.interval || 5
+            editable: true
+            contentItem: TextField {
+                id: intervalEditor
+                text: interval.textFromValue(interval.value, interval.locale)
+                validator: interval.validator
+                inputMethodHints: Qt.ImhDigitsOnly
+                horizontalAlignment: Text.AlignHCenter
+                color: Theme.text
+                background: Rectangle { color: Theme.surface; border.color: Theme.border }
+                onEditingFinished: {
+                    interval.value = interval.valueFromText(text, interval.locale)
+                    pane.option("interval", interval.value)
+                }
+                SpellCheckField { target: intervalEditor; spellCheckEnabled: false }
+            }
+            onValueModified: pane.option("interval", value)
+        }
+        Button {
+            text: qsTr("Test Connection")
+            enabled: pane.supported && pane.syncModel && !pane.syncModel.busy
+            onClicked: pane.syncModel.testConnection()
+        }
+    }
+    Text {
+        text: qsTr("Import address books (none selected means all)")
+        color: Theme.text
+        visible: bookRepeater.count > 0
+    }
+    Repeater {
+        id: bookRepeater
+        model: pane.syncModel ? pane.syncModel.books : []
+        ContactCheck {
+            required property var modelData
+            text: modelData.name || modelData.id
+            checked: (pane.config.sourceBooks || []).indexOf(modelData.id) >= 0
+            onClicked: pane.selectBook(modelData.id, checked)
+        }
+    }
+    RowLayout {
+        ContactCheck {
+            text: qsTr("Export missing contacts")
+            checked: !!pane.config.export
+            onClicked: pane.option("export", checked)
+        }
+        Text {
+            text: qsTr("Create missing Project Notes contacts directly in the selected application's automatically chosen address book.")
+            color: Theme.text2
+            wrapMode: Text.Wrap
+            Layout.fillWidth: true
+        }
+    }
+    RowLayout {
+        Button {
+            text: qsTr("Sync Now")
+            primary: true
+            enabled: pane.supported && pane.syncModel && !pane.syncModel.busy
+            onClicked: pane.syncModel.syncNow()
+        }
+        Button {
+            text: qsTr("Cancel")
+            visible: pane.syncModel && pane.syncModel.busy
+            onClicked: pane.syncModel.cancelSync()
+        }
+        Text {
+            text: qsTr("Last success: %1").arg(pane.syncModel && pane.syncModel.lastSuccess ? pane.syncModel.lastSuccess : qsTr("Never"))
+            color: Theme.text2
+        }
+    }
+    Text {
+        text: pane.syncModel ? pane.syncModel.status : ""
+        color: Theme.text2
+        wrapMode: Text.Wrap
+        Layout.fillWidth: true
+    }
+    Button {
+        objectName: "reviewContactConflictsButton"
+        text: qsTr("Review Contact Conflicts (%1)").arg(pane.syncModel ? pane.syncModel.reviews.length : 0)
+        enabled: pane.syncModel && pane.syncModel.reviews.length > 0
+        onClicked: conflictDialog.open()
+        Rectangle {
+            objectName: "reviewContactsDot"
+            width: 8; height: 8; radius: 4
+            color: Theme.red
+            anchors.top: parent.top
+            anchors.right: parent.right
+            anchors.margins: 3
+            visible: pane.syncModel && pane.syncModel.reviews.length > 0
+        }
+    }
+    ContactConflictReviewDialog {
+        id: conflictDialog
+        objectName: "contactConflictReviewDialog"
+        syncModel: pane.syncModel
+    }
+}

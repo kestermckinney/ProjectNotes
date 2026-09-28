@@ -40,7 +40,7 @@ Saved audiences are shared with the project's reports. An audience saved here ap
 
 ## What happens after Open Invite
 
-The route depends on **Settings > Preferences > Email and Scheduling Integration**. The list there only offers the choices your platform supports; see [Email and Meeting Setup](<EmailAndMeetingSetup.md>) for which appear where.
+The route depends on **Settings > Preferences > Email, Contact and Calendar Integration**. The list there only offers the choices your platform supports; see [Email and Meeting Setup](<EmailAndMeetingSetup.md>) for which appear where.
 
 Some routes cannot carry the attendees. For those, the Schedule meeting window shows a **Copy Attendees** button that puts every required and optional attendee on the clipboard, ready to paste into the event.
 

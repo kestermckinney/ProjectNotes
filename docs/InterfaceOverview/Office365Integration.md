@@ -4,7 +4,7 @@ The **Office 365 Integration** settings page connects Project Notes to Microsoft
 
 Two features use this connection. The **Microsoft 365 drafts** integration creates email drafts and draft calendar events in your mailbox. File Finder discovers project channels in Microsoft Teams and the documents in their SharePoint-backed folders.
 
-Contact synchronization is not part of this connection. It uses the separately configured [Outlook Integration](<../StandardPlugins/OutlookIntegration.md>) plugin.
+Native [Contact Synchronization](Preferences.md#contact-synchronization) also shares this account. Enable Office 365 contact synchronization in Preferences, then use this tab's single sign-in action to grant `Contacts.Read` alongside email and calendar access. After enabling optional contact export, sign in here again to grant `Contacts.ReadWrite`.
 
 ## Before You Sign In
 
@@ -72,7 +72,7 @@ See [File Finder](<FileFinder.md>) for discovery, matching, classification setti
 After authentication succeeds:
 
 1. Open **Settings > Preferences**.
-2. Under **Email and Scheduling Integration**, set **Integration** to **Microsoft 365 drafts**.
+2. Under **Email, Contact and Calendar Integration**, set **Integration** to **Microsoft 365 drafts**.
 
 Reports then become drafts in your mailbox and meetings become draft events in your calendar, both opened in Outlook on the web for review. Nothing is sent by Project Notes.
 

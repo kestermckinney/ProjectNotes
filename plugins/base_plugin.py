@@ -156,8 +156,6 @@ def populate_dynamic_menu():
     use_graph_api = ((pnc.get_plugin_setting("IntegrationType", "Outlook Integration") or "") == "Office 365 Application")
 
     if (platform.system() == 'Windows' and not use_graph_api):
-        pluginmenus.append({"menutitle" : "Export Contacts to Outlook", "function" : "menu_export_contacts_to_outlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : ""})
-        pluginmenus.append({"menutitle" : "Import Contacts from Outlook", "function" : "menu_import_contacts_from_outlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : ""})
         pluginmenus.append({"menutitle" : "Download Emails from Outlook", "function" : "menu_download_emails_from_outlook", "tablefilter" : "projects/project_locations", "submenu" : "Utilities", "dataexport" : "projects", "parameter" : ""})
 
 
@@ -189,19 +187,6 @@ def menu_open_editor(parameter):
 
     return ""
 
-def menu_import_contacts_from_outlook(parameter):
-    pnot = ProjectNotesOutlookTools()
-    return pnot.import_contacts("")
-
-def menu_export_contacts_to_outlook(parameter):
-    pnot = ProjectNotesOutlookTools()
-
-    xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table name="people" />\n</projectnotes>\n'
-    xmlresult = projectnotes.get_data(xmldoc)
-
-    pnot.export_contacts(xmlresult)
-
-    return ""
 
 def menu_download_emails_from_outlook(xmlstr, parameter):
     pnot = ProjectNotesOutlookTools()

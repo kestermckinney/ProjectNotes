@@ -409,7 +409,7 @@ void MeetingsTest::cacheCleanerKeepsPluginState()
     QVERIFY(TransientCacheCleaner(cache.path()).clean().isEmpty());
     QVERIFY(!root.exists(QStringLiteral("communications/staging")));
     QVERIFY(!root.exists(QStringLiteral("20260915P100statusreport.html")));
-    QVERIFY(!root.exists(QStringLiteral("icloud_contacts_abc.json")));
+    QVERIFY(root.exists(QStringLiteral("icloud_contacts_abc.json")));
     QVERIFY(root.exists(QStringLiteral("token_cache.json")));
     QVERIFY(root.exists(QStringLiteral("ifs_sso_token_cache.json")));
     QVERIFY(root.exists(QStringLiteral("projectnotes_saved_state.json")));

@@ -51,6 +51,7 @@
 #endif
 #include "ProjectNotesIntegrations/MeetingTemplateStore.h"
 #include "ProjectNotesIntegrations/Office365Service.h"
+#include "ProjectNotesContacts/ContactSyncSettingsModel.h"
 #include "ProjectNotesIntegrations/QtNetworkHttpTransport.h"
 #include "ProjectNotesIntegrations/TemplateEditorModel.h"
 #include "ProjectNotesIntegrations/MeetingTemplateEditorModel.h"
@@ -233,6 +234,11 @@ DesktopAppController::DesktopAppController(QObject* parent)
     m_meetingTemplateEditorModel = std::make_unique<PN::Comm::MeetingTemplateEditorModel>();
     m_office365SettingsModel = std::make_unique<Office365SettingsModel>(
         m_fileFinder, m_office365Service, this);
+    m_contactSyncSettingsModel = std::make_unique<PN::Contacts::ContactSyncSettingsModel>(
+        &global_DBObjects, m_office365Service, QStringLiteral("ProjectNotes") + s_developerProfile,
+        dataLocation(), this);
+    m_office365SettingsModel->setContactSyncModel(m_contactSyncSettingsModel.get());
+    m_contactSyncSettingsModel->setIntegrationBackend(preferredEmailBackend());
     m_webEngineRenderer = new PN::Comm::WebEngineReportRenderer(this);
     // A previous session that crashed never reached its quit-time cleanup.
     // Only one instance runs at a time (RunGuard), so nothing in the cache is
@@ -306,6 +312,7 @@ QString DesktopAppController::dataLocation()
 
 DesktopAppController::~DesktopAppController()
 {
+    m_contactSyncSettingsModel.reset();
     cleanupTransientCache();
 
     // Join its read-only worker before closing the shared database connection.
@@ -505,6 +512,7 @@ bool DesktopAppController::openOrCreateDatabase()
     m_communicationRepository = std::make_unique<PN::Comm::AsyncSqliteCommunicationRepository>(
         dbPath, &db_rwlock, ++m_communicationDatabaseGeneration);
     m_templateEditorModel->setDatabaseKey(dbPath);
+    m_contactSyncSettingsModel->setDatabase(dbPath);
     m_meetingTemplateEditorModel->setDatabaseKey(dbPath);
 
     m_databaseOpen = true;
@@ -543,6 +551,9 @@ QObject* DesktopAppController::meetingTemplateEditorModel() const
 QObject* DesktopAppController::office365SettingsModel() const
 { return m_office365SettingsModel.get(); }
 
+QObject* DesktopAppController::contactSyncSettingsModel() const
+{ return m_contactSyncSettingsModel.get(); }
+
 QString DesktopAppController::preferredEmailBackend() const
 {
     QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
@@ -555,6 +566,7 @@ void DesktopAppController::setPreferredEmailBackend(const QString &backend)
     if (!parsed || !PN::Comm::isBackendAvailableOnThisPlatform(*parsed)) return;
     QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
     PN::Comm::EmailSettingsStore(settings).setPreferredBackend(*parsed);
+    m_contactSyncSettingsModel->setIntegrationBackend(PN::Comm::toStableString(*parsed));
     emit emailSettingsChanged();
 }
 
@@ -1329,7 +1341,7 @@ bool DesktopAppController::prepareMeetingReview(const QString &projectId, const 
                                      result.error.displayText.isEmpty() ? result.error.code : result.error.displayText);
             return;
         }
-        // Meetings follow the Email and Scheduling Integration preference.
+        // Meetings follow the Email, Contact and Calendar Integration preference.
         QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
         const PN::Comm::BackendId backend = PN::Comm::EmailSettingsStore(settings).preferredBackend();
         PN::Comm::ValidationResult validation;
@@ -1594,13 +1606,13 @@ QString DesktopAppController::meetingErrorText(const QString &code, const QStrin
         {QStringLiteral("organizer-address-invalid"), QT_TR_NOOP("The project manager's email address is not valid. Correct it on the People page.")},
         {QStringLiteral("review-source-changed"), QT_TR_NOOP("The project data changed. Close this review and schedule the meeting again.")},
         {QStringLiteral("meeting-operation-busy"), QT_TR_NOOP("Another meeting is still being scheduled.")},
-        {QStringLiteral("meeting-backend-unavailable"), QT_TR_NOOP("The selected Email and Scheduling Integration cannot schedule meetings. Choose another in Settings > Preferences.")},
-        {QStringLiteral("thunderbird-unavailable"), QT_TR_NOOP("Thunderbird was not found. Check its path in Settings > Preferences > Email and Scheduling Integration.")},
+        {QStringLiteral("meeting-backend-unavailable"), QT_TR_NOOP("The selected Email, Contact and Calendar Integration cannot schedule meetings. Choose another in Settings > Preferences.")},
+        {QStringLiteral("thunderbird-unavailable"), QT_TR_NOOP("Thunderbird was not found. Check its path in Settings > Preferences > Email, Contact and Calendar Integration.")},
         {QStringLiteral("thunderbird-launch-failed"), QT_TR_NOOP("Thunderbird could not be started.")},
-        {QStringLiteral("outlook-open-failed"), QT_TR_NOOP("The meeting file was created, but the new Outlook did not open it. Check that the new Outlook is installed, or choose another Email and Scheduling Integration.")},
-        {QStringLiteral("outlook-classic-unavailable"), QT_TR_NOOP("Outlook (classic) was not found. Check that it is installed, or choose another Email and Scheduling Integration.")},
+        {QStringLiteral("outlook-open-failed"), QT_TR_NOOP("The meeting file was created, but the new Outlook did not open it. Check that the new Outlook is installed, or choose another Email, Contact and Calendar Integration.")},
+        {QStringLiteral("outlook-classic-unavailable"), QT_TR_NOOP("Outlook (classic) was not found. Check that it is installed, or choose another Email, Contact and Calendar Integration.")},
         {QStringLiteral("outlook-classic-failed"), QT_TR_NOOP("Outlook (classic) could not create the meeting. Close any Outlook dialog that is waiting for an answer, then try again.")},
-        {QStringLiteral("calendar-open-failed"), QT_TR_NOOP("The meeting file was created, but no calendar app opened it. Set a default app for .ics files, or choose another Email and Scheduling Integration.")},
+        {QStringLiteral("calendar-open-failed"), QT_TR_NOOP("The meeting file was created, but no calendar app opened it. Set a default app for .ics files, or choose another Email, Contact and Calendar Integration.")},
         {QStringLiteral("office365-not-authenticated"), QT_TR_NOOP("Sign in to Microsoft 365 in Settings > Office 365 Integration, then try again.")},
         {QStringLiteral("account-generation-changed"), QT_TR_NOOP("The Microsoft 365 account changed. Try again.")},
         {QStringLiteral("graph-calendar-consent-required"), QT_TR_NOOP("Microsoft 365 did not allow calendar access. Sign out and sign in again in Settings > Office 365 Integration to grant calendar permission.")},

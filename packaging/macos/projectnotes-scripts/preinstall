@@ -22,6 +22,7 @@ plugins/cci_scheduleoneononeattendee_plugin
 plugins/cci_scheduleoneononeteam_plugin
 plugins/contactexport_plugin
 plugins/contactimport_plugin
+threads/icloudsync_thread
 plugins/copy_email_member_plugin
 plugins/copy_email_plugin
 plugins/copy_filepath_plugin

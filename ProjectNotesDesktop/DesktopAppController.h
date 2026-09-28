@@ -36,6 +36,7 @@ class PluginManager;
 class Plugin;
 class FileFinderService;
 class Office365SettingsModel;
+namespace PN::Contacts { class ContactSyncSettingsModel; }
 namespace PN::Comm {
 class AsyncSqliteCommunicationRepository;
 class WebEngineReportRenderer;
@@ -98,6 +99,7 @@ class DesktopAppController : public QObject
     Q_PROPERTY(QObject* templateEditorModel READ templateEditorModel CONSTANT)
     Q_PROPERTY(QObject* meetingTemplateEditorModel READ meetingTemplateEditorModel CONSTANT)
     Q_PROPERTY(QObject* office365SettingsModel READ office365SettingsModel CONSTANT)
+    Q_PROPERTY(QObject* contactSyncSettingsModel READ contactSyncSettingsModel CONSTANT)
     Q_PROPERTY(QString preferredEmailBackend READ preferredEmailBackend WRITE setPreferredEmailBackend NOTIFY emailSettingsChanged)
     Q_PROPERTY(QString thunderbirdExecutable READ thunderbirdExecutable WRITE setThunderbirdExecutable NOTIFY emailSettingsChanged)
     Q_PROPERTY(QString emailSenderAddress READ emailSenderAddress WRITE setEmailSenderAddress NOTIFY emailSettingsChanged)
@@ -180,6 +182,7 @@ public:
     QObject* templateEditorModel() const;
     QObject* meetingTemplateEditorModel() const;
     QObject* office365SettingsModel() const;
+    QObject* contactSyncSettingsModel() const;
     QString preferredEmailBackend() const;
     void setPreferredEmailBackend(const QString &backend);
     QString thunderbirdExecutable() const;
@@ -918,6 +921,7 @@ private:
     std::unique_ptr<PN::Comm::TemplateEditorModel> m_templateEditorModel;
     std::unique_ptr<PN::Comm::MeetingTemplateEditorModel> m_meetingTemplateEditorModel;
     std::unique_ptr<Office365SettingsModel> m_office365SettingsModel;
+    std::unique_ptr<PN::Contacts::ContactSyncSettingsModel> m_contactSyncSettingsModel;
     PN::Comm::WebEngineReportRenderer *m_webEngineRenderer = nullptr;
     // Bound to the currently open database only. It owns worker threads, so it
     // must be destroyed before global_DBObjects closes that database.

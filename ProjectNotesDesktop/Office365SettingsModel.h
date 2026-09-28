@@ -9,6 +9,7 @@
 class FileFinderService;
 
 namespace PN::Comm { class Office365Service; }
+namespace PN::Contacts { class ContactSyncSettingsModel; }
 
 // Token-free QML facade for the one shared Microsoft account.  File Finder
 // remains the compatibility owner of its scanner enablement, but no QML view
@@ -44,6 +45,7 @@ public:
     Q_INVOKABLE void startSignIn();
     Q_INVOKABLE void requestCommunicationsConsent();
     Q_INVOKABLE void signOut();
+    void setContactSyncModel(PN::Contacts::ContactSyncSettingsModel *model) { m_contacts = model; }
 
 signals:
     void changed();
@@ -51,4 +53,5 @@ signals:
 private:
     FileFinderService *m_fileFinder = nullptr;
     PN::Comm::Office365Service *m_service = nullptr;
+    PN::Contacts::ContactSyncSettingsModel *m_contacts = nullptr;
 };

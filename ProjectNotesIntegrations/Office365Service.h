@@ -53,7 +53,8 @@ public:
     [[nodiscard]] QUrl verificationUrl() const;
     void restoreSession();
     void requestFileFinderConsent();
-    void requestCommunicationsConsent();
+    void requestCommunicationsConsent(bool includeContacts = false, bool exportContacts = false);
+    void requestContactConsent(bool exportEnabled);
     void startSignIn();
     void signOut();
     // Internal File Finder capability. It is intentionally not a Q_PROPERTY or
@@ -62,6 +63,7 @@ public:
     [[nodiscard]] Office365Account account() const;
     void refreshIdentity();
     void sendGraphRequest(HttpRequest request, HttpTransport::Completion completion);
+    void cancelGraphRequest(const QUuid &operationId);
     // Upload-session URLs are returned by Graph and must not receive the
     // OAuth Authorization header. The facade still owns transport access.
     void sendUploadRequest(HttpRequest request, HttpTransport::Completion completion);

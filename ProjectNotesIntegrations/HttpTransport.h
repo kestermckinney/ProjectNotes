@@ -20,6 +20,7 @@ struct HttpRequest {
     QUrl url;
     QHash<QByteArray, QByteArray> headers;
     QByteArray body;
+    bool manualRedirects = false;
 };
 
 struct HttpResponse {
