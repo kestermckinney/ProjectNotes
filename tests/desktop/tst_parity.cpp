@@ -16,10 +16,14 @@
 #include <QFileInfo>
 #include <QMap>
 #include <QSignalSpy>
+#include <QSqlQuery>
+#include <QSqlError>
+#include <QDomDocument>
 #include <QStandardPaths>
 #include <QUuid>
 
 #include "DesktopAppController.h"
+#include "databaseobjects.h"
 #include "ProjectNotesEmail/RecipientSelectionModel.h"
 
 namespace {
@@ -525,6 +529,19 @@ private slots:
 
     void test_17_xmlExportImport()
     {
+        const QString audienceId = uniq("audience_");
+        const QString audienceName = uniq("Audience_");
+        QSqlQuery insert(global_DBObjects.getDb());
+        insert.prepare("INSERT INTO project_email_audiences "
+                       "(id, project_id, workflow, audience_name, people_source, company_filter, "
+                       "selected_person_ids_json, default_workflows_json) "
+                       "VALUES (?, ?, 'project', ?, 'chosen-people', 'all', ?, '[\"status\"]')");
+        insert.addBindValue(audienceId);
+        insert.addBindValue(m_projectId);
+        insert.addBindValue(audienceName);
+        insert.addBindValue(QString("[\"%1\"]").arg(m_personId));
+        QVERIFY2(insert.exec(), qPrintable(insert.lastError().text()));
+
         const QString table = c->tableNameForModel(c->projectsListModel());
         QVERIFY2(!table.isEmpty(), "could not resolve source table for the projects model");
 
@@ -535,8 +552,34 @@ private slots:
         QVERIFY(fi.exists());
         QVERIFY(fi.size() > 0);
 
+        QFile exported(path);
+        QVERIFY(exported.open(QFile::ReadOnly));
+        QDomDocument xml;
+        QVERIFY(xml.setContent(&exported));
+        exported.close();
+        const auto audiences = xml.elementsByTagName("table");
+        bool foundAudience = false;
+        for (int i = 0; i < audiences.count(); ++i)
+            foundAudience |= audiences.at(i).toElement().attribute("name") == "project_email_audiences";
+        QVERIFY2(foundAudience, "project XML omitted audience groups");
+
+        QSqlQuery remove(global_DBObjects.getDb());
+        remove.prepare("DELETE FROM project_email_audiences WHERE id = ?");
+        remove.addBindValue(audienceId);
+        QVERIFY2(remove.exec(), qPrintable(remove.lastError().text()));
+
         // Re-importing the exported record must succeed (round-trip).
         QVERIFY2(c->importXmlFile(path), "re-import of exported project failed");
+        QSqlQuery restored(global_DBObjects.getDb());
+        restored.prepare("SELECT project_id, audience_name, selected_person_ids_json, default_workflows_json "
+                         "FROM project_email_audiences WHERE id = ? AND deleted = 0");
+        restored.addBindValue(audienceId);
+        QVERIFY2(restored.exec(), qPrintable(restored.lastError().text()));
+        QVERIFY(restored.next());
+        QCOMPARE(restored.value(0).toString(), m_projectId);
+        QCOMPARE(restored.value(1).toString(), audienceName);
+        QCOMPARE(restored.value(2).toString(), QString("[\"%1\"]").arg(m_personId));
+        QCOMPARE(restored.value(3).toString(), QString("[\"status\"]"));
         QFile::remove(path);
     }
 
