@@ -2,9 +2,9 @@
 
 The **Office 365 Integration** settings page connects Project Notes to Microsoft 365 through Microsoft Graph. It is separate from File Finder so the same authenticated connection can support additional Project Notes features in the future.
 
-Two features use this connection. The **Microsoft 365 drafts** integration creates email drafts and draft calendar events in your mailbox. File Finder discovers project channels in Microsoft Teams and the documents in their SharePoint-backed folders.
+The **Microsoft 365 drafts** integration creates email drafts and draft calendar events in your mailbox. File Finder discovers project channels in Microsoft Teams and the documents in their SharePoint-backed folders.
 
-Native [Contact Synchronization](Preferences.md#contact-synchronization) also shares this account. Enable Office 365 contact synchronization in Preferences, then use this tab's single sign-in action to grant `Contacts.Read` alongside email and calendar access. After enabling optional contact export, sign in here again to grant `Contacts.ReadWrite`.
+Native [Contact Synchronization](Preferences.md#contact-synchronization) and **Full Contact Export** also use this account. Use this tab's single sign-in action to grant `Contacts.ReadWrite` alongside email and calendar access. Contact export remains available when scheduled and manual synchronization are disabled.
 
 ## Before You Sign In
 
@@ -35,7 +35,7 @@ Open the app menu, choose **Settings**, and select **Office 365 Integration**.
 | :--- | :--- |
 | **Microsoft Entra tenant ID** | The directory (tenant) ID for the organization that owns the app registration. The default `organizations` allows sign-in with a work or school account from any Microsoft Entra organization. Use a specific tenant ID when access should be restricted to one organization. |
 | **Application (client) ID** | The application ID assigned to the Microsoft Entra app registration. |
-| **Sign in to Microsoft 365** | Begins device-code sign-in and requests the email and calendar draft permissions. Project Notes displays a code and a button that opens Microsoft's sign-in page. Copy the code, open the page, and complete sign-in in your browser. |
+| **Sign in to Microsoft 365** | Begins device-code sign-in and requests email, calendar, and contact permissions. Project Notes displays a code and a button that opens Microsoft's sign-in page. Copy the code, open the page, and complete sign-in in your browser. |
 | **Sign out** | Removes the saved refresh token and invalidates cached Office 365 File Finder state. It does not remove local File Finder settings or existing **Files & Folders** entries. |
 
 The status panel reports whether Project Notes is signed in and shows the device code and verification-page button while authentication is in progress.

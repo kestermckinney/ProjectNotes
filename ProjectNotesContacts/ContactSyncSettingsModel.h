@@ -14,6 +14,8 @@ class ContactSyncSettingsModel final : public QObject {
     Q_PROPERTY(bool busy READ busy NOTIFY changed)
     Q_PROPERTY(QString status READ status NOTIFY changed)
     Q_PROPERTY(QString lastSuccess READ lastSuccess NOTIFY changed)
+    Q_PROPERTY(bool thunderbirdFlatpakInstalled READ thunderbirdFlatpakInstalled CONSTANT)
+    Q_PROPERTY(bool thunderbirdSetupBusy READ thunderbirdSetupBusy NOTIFY changed)
 public:
     ContactSyncSettingsModel(DatabaseObjects *database,PN::Comm::Office365Service *office,
                              QString organization,QString dataRoot,QObject *parent=nullptr);
@@ -24,11 +26,14 @@ public:
     bool busy() const {return m_busy;}
     QString status() const {return m_status;}
     QString lastSuccess() const {return m_lastSuccess;}
+    bool thunderbirdFlatpakInstalled() const;
+    bool thunderbirdSetupBusy() const {return m_thunderbirdSetupBusy;}
     void setDatabase(const QString &path);
     void setIntegrationBackend(const QString &backend);
     Q_INVOKABLE void setOption(const QString &key,const QVariant &value);
     Q_INVOKABLE void savePassword(const QString &password);
     Q_INVOKABLE void syncNow();
+    Q_INVOKABLE void fullExport();
     Q_INVOKABLE void testConnection();
     Q_INVOKABLE void cancel();
     Q_INVOKABLE void cancelSync();
@@ -39,8 +44,13 @@ public:
     void setProviderForTesting(ContactProvider *provider);
 signals:
     void changed();
+    void recordsChanged();
+    void thunderbirdSetupFinished(const QString &message, bool success);
+    void fullExportFinished(const QString &message, bool success);
 private:
     void post(std::function<void(ContactSyncWorker &)> action);
+    void finishThunderbirdSetup(const QString &message,bool success);
+    void enableThunderbirdFlatpak(QStringList ids,const QString &instructions);
     QThread m_thread;
     ContactSyncWorker *m_worker = nullptr;
     DatabaseObjects *m_database;
@@ -49,6 +59,7 @@ private:
     QVariantMap m_config;
     QVariantList m_books,m_reviews;
     bool m_busy = false, m_refreshQueued = false;
+    bool m_thunderbirdSetupBusy = false;
     QString m_status,m_lastSuccess,m_databasePath,m_root,m_integrationProvider;
 };
 }

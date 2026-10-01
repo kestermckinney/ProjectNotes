@@ -15,6 +15,7 @@
 #include "ProjectNotesContacts/ContactRepository.h"
 #include "ProjectNotesContacts/ContactSyncSettingsModel.h"
 #include "ProjectNotesContacts/VCard.h"
+#include "ProjectNotesContacts/ThunderbirdBridge.h"
 using namespace PN::Contacts;
 
 class FakeContacts final : public ContactProvider {
@@ -85,6 +86,51 @@ private slots:
         model.syncNow();QTRY_VERIFY(!model.busy());QVERIFY(model.status().contains("Choose an application"));
         model.setDatabase(global_DBObjects.getDatabaseFile());QCOMPARE(model.configuration().value("provider").toString(),QString("none"));
     }
+    void thunderbirdSetupValidatesBundledFiles(){
+        QTemporaryDir root;const QString app=root.filePath("app");QDir().mkpath(app);
+        auto result=installThunderbirdBridge(root.path(),app,root.filePath("manifests"));
+        QVERIFY(result.error.contains("native host"));
+        QFile helper(app+"/ProjectNotesThunderbirdContacts");
+#ifdef Q_OS_WIN
+        helper.setFileName(helper.fileName()+".exe");
+#endif
+        QVERIFY(helper.open(QIODevice::WriteOnly));helper.write("fixture");helper.close();
+        QVERIFY(helper.setPermissions(QFile::ReadOwner|QFile::WriteOwner|QFile::ExeOwner));
+        result=installThunderbirdBridge(root.path(),app,root.filePath("manifests"));
+        QVERIFY(result.error.contains("add-on"));
+        QVERIFY(!QFileInfo::exists(root.filePath("manifests/org.projectnotes.contacts.json")));
+    }
+    void thunderbirdSetupRegistersDesktopAndFlatpak(){
+#ifndef Q_OS_LINUX
+        QSKIP("Flatpak is Linux-only");
+#else
+        QTemporaryDir root;const QString app=root.filePath("app with ' quotes");QDir().mkpath(app);
+        QFile helper(app+"/ProjectNotesThunderbirdContacts");QVERIFY(helper.open(QIODevice::WriteOnly));helper.write("fixture");helper.close();
+        QVERIFY(helper.setPermissions(QFile::ReadOwner|QFile::WriteOwner|QFile::ExeOwner));
+        QFile addon(app+"/projectnotes-contacts.xpi");QVERIFY(addon.open(QIODevice::WriteOnly));addon.write("addon fixture");addon.close();
+        for(const auto &id:QStringList{"org.mozilla.thunderbird","org.mozilla.Thunderbird"})QVERIFY(QDir().mkpath(root.filePath(".var/app/"+id)));
+        const auto native=root.filePath("native");
+        auto result=installThunderbirdBridge(root.path(),app,native);
+        QVERIFY2(result.error.isEmpty(),qPrintable(result.error));QCOMPARE(result.flatpakIds.size(),2);
+        auto read=[](const QString &path){QFile file(path);if(!file.open(QIODevice::ReadOnly))return QByteArray{};return file.readAll();};
+        QCOMPARE(QJsonDocument::fromJson(read(native+"/org.projectnotes.contacts.json")).object()["path"].toString(),helper.fileName());
+        for(const auto &id:result.flatpakIds){
+            const auto dir=root.filePath(".var/app/"+id+"/.mozilla/native-messaging-hosts");
+            const auto wrapper=dir+"/projectnotes-contacts-host.sh";
+            QCOMPARE(QJsonDocument::fromJson(read(dir+"/org.projectnotes.contacts.json")).object()["path"].toString(),wrapper);
+            QVERIFY(QFileInfo(wrapper).isExecutable());
+            const auto script=read(wrapper);QVERIFY(script.contains("flatpak-spawn --host"));QVERIFY(script.contains("'\\''"));QVERIFY(script.endsWith(" \"$@\"\n"));
+            QCOMPARE(read(root.filePath(".var/app/"+id+"/data/projectnotes-contacts.xpi")),QByteArray("addon fixture"));
+        }
+        // Repeated setup replaces only our files and also supports a packaged
+        // Project Notes helper whose /app path is not visible on the host.
+        result=installThunderbirdBridge(root.path(),app,native,"com.projectnotespro.ProjectNotes");
+        QVERIFY2(result.error.isEmpty(),qPrintable(result.error));
+        const auto nativeScript=read(native+"/projectnotes-contacts-host.sh");
+        QVERIFY(nativeScript.contains("flatpak run --command=ProjectNotesThunderbirdContacts 'com.projectnotespro.ProjectNotes'"));
+        QVERIFY(read(root.filePath(".var/app/org.mozilla.thunderbird/.mozilla/native-messaging-hosts/projectnotes-contacts-host.sh")).contains("flatpak-spawn --host /usr/bin/flatpak run"));
+#endif
+    }
     void companyNormalization(){
         QCOMPARE(ContactMatcher::normalize("  ACME, Inc. ",true),QString("acme"));
         auto m=ContactMatcher::company("Acme LLC",{{"client","Acme Corporation",false}});QCOMPARE(m.id,QString("client"));
@@ -145,6 +191,23 @@ private slots:
         c=incoming("José Martin");auto p=existing("p","Jose Martin");QCOMPARE(ContactMatcher::person(c,"client",{p}).id,QString("p"));
     }
     void nameOnlyNeedsReview(){auto c=incoming();c.emails.clear();c.phones.clear();auto m=ContactMatcher::person(c,"client",{existing()});QVERIFY(m.review);QVERIFY(m.id.isEmpty());}
+    void exactThunderbirdFieldsPreferExactPerson(){
+        auto c=incoming(" Jane  Smith "," jane@example.test "," Acme Corporation ");
+        c.fields={{"name",c.name},{"company",c.company},{"email"," jane@example.test "},
+                  {"office_phone"," 212 555 1234 "},{"cell_phone"," "},{"role"," Manager "}};
+        c.phones={" 212 555 1234 "};
+        auto p=existing();p.fields["office_phone"]="212 555 1234";p.fields["role"]="Manager";
+        auto similar=existing("similar");similar.name="Jane Smith";similar.fields["role"]="Director";
+        auto m=ContactMatcher::person(c,"client",{similar,p});
+        QCOMPARE(m.id,QString("person"));QVERIFY(!m.review);
+    }
+    void exactThunderbirdFieldsWithoutIdentifiers(){
+        auto c=incoming();c.emails.clear();c.phones.clear();c.fields["email"]="";c.fields["office_phone"]="";
+        auto p=existing();p.company="Acme Inc.";p.fields["email"]="";p.fields["office_phone"]="";p.fields["role"]="Manager";
+        QCOMPARE(ContactMatcher::person(c,"client",{p}).id,QString("person"));
+        auto duplicate=p;duplicate.id="duplicate";
+        QVERIFY(ContactMatcher::person(c,"client",{p,duplicate}).review);
+    }
     void fuzzyPhoneAndCompany(){auto c=incoming("Jacqueline Smithe","");auto m=ContactMatcher::person(c,"client",{existing("person","Jacqueline Smith")});QCOMPARE(m.id,QString("person"));}
     void sharedIdentifiersNeedReview(){auto p=existing("p2","Jane Smithe");auto m=ContactMatcher::person(incoming(),"client",{existing(),p});QVERIFY(m.review);}
     void contradictoryCompanyNeedsReview(){auto c=incoming();auto m=ContactMatcher::person(c,"other",{existing()});QVERIFY(m.review);c.company="Different Business";QVERIFY(ContactMatcher::person(c,"",{existing()}).review);}
@@ -334,12 +397,10 @@ private slots:
         QCOMPARE(exportBook(books,"readonly",true),QString());
         QCOMPARE(exportBook(books,"missing-default",true),QString());
     }
-    void optionalExportAndLegacyDestinationIgnored(){
+    void synchronizationNeverExports(){
         seed();QTemporaryDir state;FakeContacts provider;ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);
-        model.syncNow();QTRY_VERIFY(!model.busy());QCOMPARE(provider.creates,0);
-        model.setOption("destination","obsolete-folder");QVERIFY(!model.configuration().contains("destination"));
-        provider.snapshot.books.append(QVariantMap{{"id","another"},{"writable",true}});provider.snapshot.defaultExportBookId="contacts";
-        model.setOption("export",true);model.syncNow();QTRY_VERIFY(!model.busy());QCOMPARE(provider.creates,1);QCOMPARE(provider.lastExportBook,QString("contacts"));
+        model.setOption("export",true);model.syncNow();QTRY_VERIFY(!model.busy());QCOMPARE(provider.creates,0);
+        QVERIFY(!model.configuration().contains("export"));
     }
     void legacyDestinationDoesNotOverrideAutomaticRouting(){
         seed();QTemporaryDir state;FakeContacts provider;
@@ -351,28 +412,36 @@ private slots:
         auto config=journal["configuration"].toObject();config["destination"]="obsolete-folder";config["export"]=true;journal["configuration"]=config;
         QVERIFY(file.open(QIODevice::WriteOnly|QIODevice::Truncate));auto bytes=QJsonDocument(journal).toJson();QCOMPARE(file.write(bytes),bytes.size());file.close();
         ContactSyncSettingsModel restarted(&global_DBObjects,nullptr,"ContactTest",state.path());restarted.setProviderForTesting(&provider);restarted.setDatabase(global_DBObjects.getDatabaseFile());
-        QVERIFY(restarted.configuration().value("export").toBool());QVERIFY(!restarted.configuration().contains("destination"));restarted.syncNow();QTRY_VERIFY(!restarted.busy());
-        QCOMPARE(provider.creates,1);QCOMPARE(provider.lastExportBook,QString("contacts"));
+        QVERIFY(!restarted.configuration().contains("export"));QVERIFY(!restarted.configuration().contains("destination"));restarted.syncNow();QTRY_VERIFY(!restarted.busy());
+        QCOMPARE(provider.creates,0);
     }
-    void noWritableBookStillImports(){
+    void fullExportRequiresWritableBookButNotSyncEnabled(){
         QTemporaryDir state;FakeContacts provider;provider.snapshot.contacts={incoming()};ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);
-        provider.snapshot.books={QVariantMap{{"id","contacts"},{"writable",false}}};model.setOption("export",true);model.syncNow();QTRY_VERIFY(!model.busy());
-        QCOMPARE(count("people"),1);QCOMPARE(provider.creates,0);QVERIFY(model.status().contains("no writable address book"));
+        model.setOption("enabled",false);provider.snapshot.books={QVariantMap{{"id","contacts"},{"writable",false}}};
+        QSignalSpy result(&model,&ContactSyncSettingsModel::fullExportFinished);
+        model.fullExport();QTRY_VERIFY(!model.busy());QCOMPARE(count("people"),0);QCOMPARE(provider.creates,0);QVERIFY(model.status().contains("no writable address book"));
+        QTRY_COMPARE(result.size(),1);QVERIFY(!result.first().at(1).toBool());
     }
-    void duplicateInUnselectedBookNotExported(){
-        seed();QTemporaryDir state;FakeContacts provider;auto c=incoming();c.book="other";provider.snapshot.contacts={c};
+    void fullExportCreatesAllContactsIncludingLinkedOrMatching(){
+        seed();QTemporaryDir state;FakeContacts provider;provider.snapshot.contacts={incoming()};
         ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);
-        provider.snapshot.books.append(QVariantMap{{"id","other"},{"writable",true}});model.setOption("sourceBooks",QStringList{"contacts"});model.setOption("export",true);model.syncNow();QTRY_VERIFY(!model.busy());
-        QCOMPARE(provider.creates,0);QCOMPARE(count("people"),1);
+        QSignalSpy result(&model,&ContactSyncSettingsModel::fullExportFinished);
+        model.setOption("enabled",false);model.fullExport();QTRY_VERIFY(!model.busy());
+        QCOMPARE(provider.creates,1);QCOMPARE(provider.lastExportBook,QString("contacts"));QCOMPARE(count("people"),1);
+        QTRY_COMPARE(result.size(),1);QVERIFY(result.first().at(1).toBool());
+        QVERIFY(result.first().at(0).toString().contains("1 contacts exported to Contacts"));
+        model.fullExport();QTRY_VERIFY(!model.busy());QCOMPARE(provider.creates,2);
     }
-    void repeatedExportsDoNotCreateDuplicates(){
-        seed();QTemporaryDir state;FakeContacts provider;ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);model.setOption("export",true);model.syncNow();QTRY_VERIFY(!model.busy());QCOMPARE(provider.creates,1);QCOMPARE(provider.lastExportBook,QString("contacts"));model.syncNow();QTRY_VERIFY(!model.busy());QCOMPARE(provider.creates,1);
+    void disconnectedFullExportReportsFailure(){
+        seed();QTemporaryDir state;FakeContacts provider;provider.snapshot.error="Thunderbird bridge is disconnected.";
+        ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);
+        QSignalSpy result(&model,&ContactSyncSettingsModel::fullExportFinished);
+        model.fullExport();QTRY_COMPARE(result.size(),1);
+        QVERIFY(!result.first().at(1).toBool());QVERIFY(result.first().at(0).toString().contains("disconnected"));
+        QCOMPARE(provider.creates,0);QVERIFY(!model.busy());
     }
-    void uncertainExportNotRetried(){
-        seed();QTemporaryDir state;FakeContacts provider;provider.createError="Connection lost after create";ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);model.setOption("export",true);model.syncNow();QTRY_VERIFY(!model.busy());QCOMPARE(provider.creates,1);model.syncNow();QTRY_VERIFY(!model.busy());QCOMPARE(provider.creates,1);QVERIFY(!model.reviews().isEmpty());
-    }
-    void deletedRemoteContactNotReexported(){
-        QTemporaryDir state;FakeContacts provider;provider.snapshot.contacts={incoming()};ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);model.syncNow();QTRY_VERIFY(!model.busy());model.setOption("export",true);provider.snapshot.contacts.clear();model.syncNow();QTRY_VERIFY(!model.busy());QCOMPARE(count("people"),1);QCOMPARE(provider.creates,0);
+    void uncertainFullExportStopsWithoutAutomaticRetry(){
+        seed();QTemporaryDir state;FakeContacts provider;provider.createError="Connection lost after create";ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);model.fullExport();QTRY_VERIFY(!model.busy());QCOMPARE(provider.creates,1);QVERIFY(model.status().contains("may be uncertain"));
     }
     void staleCompletionIsIgnored(){
         QTemporaryDir state;FakeContacts provider;provider.deferred=true;provider.snapshot.contacts={incoming()};ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);model.syncNow();QVERIFY(model.busy());QTRY_VERIFY(bool(provider.pending));model.setOption("provider","icloud");provider.pending(provider.snapshot);QCOMPARE(count("people"),0);QVERIFY(!model.busy());

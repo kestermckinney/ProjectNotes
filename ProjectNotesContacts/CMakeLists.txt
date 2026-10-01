@@ -3,6 +3,7 @@ add_library(ProjectNotesContacts STATIC
     ContactTypes.cpp ContactTypes.h ContactMatcher.cpp ContactMatcher.h
     ContactRepository.cpp ContactRepository.h ContactProvider.cpp ContactProvider.h
     ContactSyncSettingsModel.cpp ContactSyncSettingsModel.h ContactSyncWorker.cpp ContactSyncWorker.h
+    ThunderbirdBridge.cpp ThunderbirdBridge.h
     VCard.cpp VCard.h ../credentialstore.cpp)
 target_include_directories(ProjectNotesContacts PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 target_link_libraries(ProjectNotesContacts PUBLIC ProjectNotesIntegrations ProjectNotesCore Qt6::Network)

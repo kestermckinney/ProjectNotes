@@ -231,7 +231,7 @@ Created: 03/23/2026
 | Setting | Example Value | Purpose |
 | :--- | :--- | :--- |
 | **Integration Type** | Office 365 Application | Work through Microsoft 365. **Outlook Automation** drives Outlook (classic) instead, on Windows only |
-| **Application ID** | a1b2c3d4-e5f6-47a8-b9c0-d1e2f3a4b5c6 | Microsoft Entra app ID used for contact synchronization |
+| **Application ID** | a1b2c3d4-e5f6-47a8-b9c0-d1e2f3a4b5c6 | Microsoft Entra app ID used for the plugin’s email archive and task sync |
 | **Tenant ID** | f1e2d3c4-b5a6-4978-c9d0-e1f2a3b4c5d6 | Microsoft Entra tenant for your organization |
 
 File Finder's settings (search locations, folder exclusions, classification rules) are on the main **Settings > File Finder** page, not in a plugin dialog, so they aren't repeated here. See [File Finder](<../InterfaceOverview/FileFinder.md>) for the full settings reference.

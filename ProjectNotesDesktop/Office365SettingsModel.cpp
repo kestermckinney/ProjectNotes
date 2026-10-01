@@ -87,8 +87,8 @@ void Office365SettingsModel::requestCommunicationsConsent()
     if (!m_service)
         return;
     const auto config = m_contacts ? m_contacts->configuration() : QVariantMap{};
-    const bool contactsEnabled = config.value("provider").toString() == "office365" && config.value("enabled").toBool();
-    m_service->requestCommunicationsConsent(contactsEnabled, config.value("export").toBool());
+    const bool contactsEnabled = config.value("provider").toString() == "office365";
+    m_service->requestCommunicationsConsent(contactsEnabled, contactsEnabled);
     m_service->startSignIn();
 }
 

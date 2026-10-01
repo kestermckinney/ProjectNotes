@@ -2,6 +2,7 @@
 #include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QDir>
+#include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLocalServer>
@@ -12,6 +13,7 @@
 #include <QUuid>
 #include <cstdio>
 #include <thread>
+#include "../ThunderbirdBridge.h"
 #ifdef Q_OS_WIN
 #include <fcntl.h>
 #include <io.h>
@@ -25,9 +27,10 @@ int main(int argc,char **argv){
 #endif
     auto send=[](const QJsonObject&o){QByteArray bytes=QJsonDocument(o).toJson(QJsonDocument::Compact);quint32 n=quint32(bytes.size());std::fwrite(&n,4,1,stdout);std::fwrite(bytes.constData(),1,n,stdout);std::fflush(stdout);};
     QLocalServer server;server.setSocketOptions(QLocalServer::UserAccessOption);
-    QString name="projectnotes-contacts-"+QString::fromLatin1(QCryptographicHash::hash(QDir::homePath().toUtf8(),QCryptographicHash::Sha256).toHex()).left(20);
+    QString name=PN::Contacts::thunderbirdBridgeSocket();
     if(app.arguments().size()==3&&app.arguments()[1]=="--test-socket")name=app.arguments()[2];
-    QLockFile lock(QDir::tempPath()+"/projectnotes-contacts-host-"+QString::fromLatin1(QCryptographicHash::hash(name.toUtf8(),QCryptographicHash::Sha256).toHex())+".lock");
+    if(QDir::isAbsolutePath(name)&&!QDir().mkpath(QFileInfo(name).absolutePath()))return 1;
+    QLockFile lock(QDir::isAbsolutePath(name)?name+".lock":QDir::tempPath()+"/projectnotes-contacts-host-"+QString::fromLatin1(QCryptographicHash::hash(name.toUtf8(),QCryptographicHash::Sha256).toHex())+".lock");
     lock.setStaleLockTime(0);if(!lock.tryLock())return 1;
     // Only the lock owner can remove the stale socket after a host crash.
     QLocalServer::removeServer(name);

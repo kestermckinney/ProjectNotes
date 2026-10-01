@@ -19,7 +19,10 @@ ComboBox {
 
     property var    options:     []
     property bool   includeNone: false
+    property bool   searchable:  false
     property string noneLabel:   qsTr("(none)")
+    property string _filter: ""
+    property bool _syncingSearch: false
 
     readonly property int _offset: includeNone ? 1 : 0
 
@@ -34,11 +37,72 @@ ComboBox {
     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
 
     model: includeNone ? [noneLabel].concat(options) : options
+    editable: searchable
+
+    // Keep the model stable while typing so optionIndex continues to refer to
+    // the original list (and callers can still save the corresponding ID).
+    onEditTextChanged: {
+        if (searchable && activeFocus && !_syncingSearch) {
+            _filter = editText.toLowerCase()
+            if (!popup.visible)
+                popup.open()
+        }
+    }
+    delegate: ItemDelegate {
+        required property int index
+        required property var modelData
+        readonly property bool matches: control._filter === ""
+            || String(modelData).toLowerCase().indexOf(control._filter) >= 0
+        width: control.width
+        visible: matches
+        height: matches ? implicitHeight : 0
+        text: String(modelData)
+    }
+
+    function acceptSearch() {
+        _syncingSearch = true
+        var typed = editText.trim().toLowerCase()
+        var match = -1
+        if (typed === "" && includeNone)
+            match = 0
+        else {
+            for (var i = _offset; i < model.length; ++i) {
+                if (String(model[i]).toLowerCase() === typed) {
+                    match = i
+                    break
+                }
+            }
+            if (match < 0) {
+                for (var j = _offset; j < model.length; ++j) {
+                    if (String(model[j]).toLowerCase().indexOf(typed) >= 0) {
+                        match = j
+                        break
+                    }
+                }
+            }
+        }
+        _filter = ""
+        popup.close()
+        if (match >= 0) {
+            currentIndex = match
+            activated(match)
+        } else {
+            editText = currentIndex >= 0 ? textAt(currentIndex) : ""
+        }
+        _syncingSearch = false
+    }
+    onAccepted: if (searchable) acceptSearch()
+    onActiveFocusChanged: {
+        if (!activeFocus && searchable && _filter !== "")
+            acceptSearch()
+    }
 
     // Select options[i]. i < 0 lands on the "(none)" row, or on no selection at
     // all for a combo that doesn't have one.
     function selectOption(i) {
+        _syncingSearch = true
         currentIndex = (i >= 0) ? i + _offset : (includeNone ? 0 : -1)
+        _syncingSearch = false
     }
 
     // Select by value. A value that isn't in `options` selects `fallbackIndex`,

@@ -2,7 +2,7 @@
 
 ## Managing Your List Of People
 
-Project Notes keeps a list of people that can be associated with projects. You can use the Outlook contact sync utilities to keep your list of people in sync with Outlook. See [Outlook Integration](<../StandardPlugins/OutlookIntegration.md>) for details. You can also sync your list of people with every address book in iCloud. See [iCloud Contacts](<../StandardPlugins/iCloudContacts.md>) for details. Project Notes may have a customization that imports and exports names from other enterprise applications such as an accounting system or customer relationship manager. To avoid duplicate records Project Notes uses the name as a unique identifier when importing. It is important to name people in Outlook the same as they are in the other enterprise systems that are synchronized.
+Project Notes keeps a list of people that can be associated with projects. Native [contact synchronization](Preferences.md#contact-synchronization) imports from Outlook (classic), Microsoft 365, Thunderbird, or iCloud according to your integration choice. You can select source address books and review uncertain person or client matches. Project Notes may have a customization that imports and exports names from other enterprise applications such as an accounting system or customer relationship manager. Native matching uses saved source identities and asks you to review uncertain matches before creating a person.
 
 ## The People List Page Layout
 

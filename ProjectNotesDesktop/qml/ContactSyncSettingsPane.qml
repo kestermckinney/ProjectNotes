@@ -74,7 +74,7 @@ ColumnLayout {
     }
     Text {
         visible: pane.config.provider === "office365"
-        text: qsTr("Uses the shared account in Office 365 Integration. Enable contact synchronization here, then sign in from that tab to grant contact access. Sign in there again after enabling export.")
+        text: qsTr("Uses the shared account in Office 365 Integration. Sign in there to grant contact access for synchronization and full export.")
         color: Theme.text2
         wrapMode: Text.Wrap
         Layout.fillWidth: true
@@ -109,8 +109,10 @@ ColumnLayout {
     RowLayout {
         visible: pane.config.provider === "thunderbird"
         Button {
+            objectName: "thunderbirdBridgeSetupButton"
             text: qsTr("Set up Thunderbird bridge")
-            onClicked: pane.syncModel.installThunderbirdHost()
+            enabled: pane.syncModel && !pane.syncModel.thunderbirdSetupBusy
+            onClicked: thunderbirdSetupConfirm.open()
         }
         Text {
             text: qsTr("Thunderbird must be running with the Project Notes Contacts add-on.")
@@ -118,6 +120,48 @@ ColumnLayout {
             wrapMode: Text.Wrap
             Layout.fillWidth: true
         }
+    }
+    ThemedMessageDialog {
+        id: thunderbirdSetupConfirm
+        objectName: "thunderbirdBridgeSetupConfirm"
+        title: qsTr("Set up Thunderbird bridge")
+        width: 520
+        iconName: "info"
+        iconColor: Theme.accent
+        confirmText: qsTr("Set up bridge")
+        message: qsTr("This registers the contact bridge helper. You will then install the Project Notes Contacts add-on in Thunderbird; the next screen gives the file path and steps.")
+                 + (pane.syncModel && pane.syncModel.thunderbirdFlatpakInstalled
+                    ? qsTr("\n\nFlatpak Thunderbird was detected. Setup also enables permission for it to launch programs on this computer so it can run the bridge helper. This permission applies to Thunderbird as a whole.") : "")
+        onConfirmed: if (pane.syncModel) pane.syncModel.installThunderbirdHost()
+    }
+    ThemedMessageDialog {
+        id: thunderbirdSetupResult
+        objectName: "thunderbirdBridgeSetupResult"
+        title: qsTr("Thunderbird bridge setup")
+        width: 600
+        selectableMessage: true
+    }
+    Connections {
+        target: pane.syncModel
+        function onFullExportFinished(message, success) {
+            fullExportResult.message = message;
+            fullExportResult.iconName = success ? "info" : "error";
+            fullExportResult.iconColor = success ? Theme.accent : Theme.red;
+            fullExportResult.open();
+        }
+        function onThunderbirdSetupFinished(message, success) {
+            thunderbirdSetupResult.message = message;
+            thunderbirdSetupResult.iconName = success ? "info" : "error";
+            thunderbirdSetupResult.iconColor = success ? Theme.accent : Theme.red;
+            thunderbirdSetupResult.open();
+        }
+    }
+    ThemedMessageDialog {
+        id: fullExportResult
+        objectName: "fullContactExportResult"
+        title: qsTr("Contact export result")
+        width: 520
+        selectableMessage: true
     }
     RowLayout {
         ContactCheck {
@@ -173,17 +217,29 @@ ColumnLayout {
         }
     }
     RowLayout {
-        ContactCheck {
-            text: qsTr("Export missing contacts")
-            checked: !!pane.config.export
-            onClicked: pane.option("export", checked)
+        Button {
+            objectName: "fullContactExportButton"
+            text: qsTr("Full Contact Export")
+            enabled: pane.supported && pane.syncModel && !pane.syncModel.busy
+            onClicked: fullExportWarning.open()
         }
         Text {
-            text: qsTr("Create missing Project Notes contacts directly in the selected application's automatically chosen address book.")
+            text: qsTr("Creates a contact for every active Project Notes contact in the selected application's default address book.")
             color: Theme.text2
             wrapMode: Text.Wrap
             Layout.fillWidth: true
         }
+    }
+    ThemedMessageDialog {
+        id: fullExportWarning
+        objectName: "fullContactExportWarning"
+        title: qsTr("Full Contact Export")
+        message: qsTr("This is a full export, not a sync. It creates a new contact for every active Project Notes contact, so duplicate contacts could be created in the selected system.")
+        iconName: "warning"
+        iconColor: Theme.red
+        confirmText: qsTr("Export Contacts")
+        destructive: true
+        onConfirmed: if (pane.syncModel) pane.syncModel.fullExport()
     }
     RowLayout {
         Button {

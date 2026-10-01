@@ -38,6 +38,7 @@ Page {
                     id: companyCombo
                     options: root._clientNames()
                     includeNone: true
+                    searchable: true
                     Component.onCompleted: {
                         root._clients = AppController.clientList()
                         selectOption(root._indexForId(root._clients, AppController.managingCompanyId()))
@@ -56,6 +57,7 @@ Page {
                     id: managerCombo
                     options: root._peopleNames()
                     includeNone: true
+                    searchable: true
                     Component.onCompleted: {
                         root._people = AppController.peopleList()
                         selectOption(root._indexForId(root._people, AppController.projectManagerId()))

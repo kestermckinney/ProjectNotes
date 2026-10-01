@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include "ContactSyncWorker.h"
 #include "ContactMatcher.h"
+#include "ThunderbirdBridge.h"
 #include "credentialstore.h"
 #include "ProjectNotesIntegrations/Office365Service.h"
 #include <QCryptographicHash>
@@ -57,7 +58,11 @@ ContactSyncWorker::ContactSyncWorker(PN::Comm::Office365Service*office,QString o
 void ContactSyncWorker::setOfficeAccount(PN::Comm::Office365Account account,bool inProgress) {
     m_account=std::move(account);
     if(auto *provider=dynamic_cast<NativeContactProvider*>(m_provider))provider->setOfficeAccount(m_account);
-    if(m_busy&&m_config.value("provider")=="office365"&&m_account.generation!=m_officeGeneration){cancel();m_status="Office 365 account changed; synchronization canceled.";schedule();emit changed();}
+    if(m_busy&&m_config.value("provider")=="office365"&&m_account.generation!=m_officeGeneration){
+        const bool fullExport=m_runningFullExport;const int exported=m_exported;cancel();
+        m_status=fullExport?QString("Office 365 account changed; full export canceled after %1 contacts.").arg(exported):QString("Office 365 account changed; synchronization canceled.");
+        schedule();emit changed();
+    }
     if(m_authFailed&&m_config.value("provider")=="office365"&&m_account.authenticated&&!inProgress){m_authFailed=false;schedule();}
     emit changed();
 }
@@ -84,11 +89,11 @@ QVariantList ContactSyncWorker::reviews() const {
     return out;
 }
 QString ContactSyncWorker::scope(const QString &account)const{return m_config.value("provider").toString()+"/"+account;}
-void ContactSyncWorker::cancel(){++m_generation;m_timer.stop();if(m_provider)m_provider->cancel();m_busy=false;emit changed();}
-void ContactSyncWorker::cancelSync(){cancel();m_status="Contact synchronization canceled.";schedule();emit changed();}
+void ContactSyncWorker::cancel(){++m_generation;m_timer.stop();if(m_provider)m_provider->cancel();m_busy=false;m_runningFullExport=false;emit changed();}
+void ContactSyncWorker::cancelSync(){const bool fullExport=m_runningFullExport;const int exported=m_exported;cancel();m_status=fullExport?QString("Full contact export canceled after %1 contacts.").arg(exported):QString("Contact synchronization canceled.");schedule();emit changed();}
 void ContactSyncWorker::setDatabase(const QString &path){
     cancel();m_repository.close();m_databasePath=path;m_path.clear();m_journal={};m_books.clear();m_authFailed=false;
-    m_config={{"provider","office365"},{"enabled",false},{"startup",true},{"interval",5},{"export",false},{"account",""},{"sourceBooks",QStringList{}}};
+    m_config={{"provider","office365"},{"enabled",false},{"startup",true},{"interval",5},{"account",""},{"sourceBooks",QStringList{}}};
     m_config["credentialService"]=m_organization=="ProjectNotes"?QString("Project Notes iCloud Contacts"):QString("Project Notes iCloud Contacts/")+m_organization;
     if(path.isEmpty()){m_status="Open a database to configure contact synchronization.";emit changed();return;}
     QString databaseError;
@@ -104,7 +109,7 @@ void ContactSyncWorker::setDatabase(const QString &path){
     }else {
         QSettings legacy(m_organization,"PluginSettings");legacy.setFallbacksEnabled(false);
         QString account=legacy.value("iCloud Contacts/Account").toString();
-        if(!account.isEmpty()){m_config["provider"]="icloud";m_config["account"]=account;m_config["export"]=legacy.value("iCloud Contacts/ExportNewContacts",false).toBool();}
+        if(!account.isEmpty()){m_config["provider"]="icloud";m_config["account"]=account;}
         else if(legacy.value("Outlook Integration/IntegrationType").toString()=="Outlook Application")m_config["provider"]="outlook";
         m_journal["version"]=1;m_status="Settings migrated where available. Confirm the source and enable native sync.";
         if(!account.isEmpty()){
@@ -125,8 +130,12 @@ void ContactSyncWorker::setDatabase(const QString &path){
     }
     // Export routing is now resolved from the current provider snapshot.
     m_config.remove("destination");
+    // Older releases stored an automatic sync-export toggle. It must never
+    // turn into an implicit full export after upgrading.
+    const bool hadLegacyExport=m_config.remove("export");
     // Socket name is per OS user; access is further restricted by QLocalServer.
-    m_config["bridgeSocket"]="projectnotes-contacts-"+hash(QDir::homePath()).left(20);
+    m_config["bridgeSocket"]=thunderbirdBridgeSocket();
+    if(hadLegacyExport&&!persist())return;
     schedule();emit changed();
     if(m_config.value("enabled").toBool()&&m_config.value("startup").toBool())QTimer::singleShot(0,this,&ContactSyncWorker::syncNow);
 }
@@ -142,7 +151,7 @@ bool ContactSyncWorker::persist(){
 }
 void ContactSyncWorker::schedule(){m_timer.stop();if(m_config.value("enabled").toBool()&&!m_authFailed&&!m_path.isEmpty()&&m_config.value("provider")!="none")m_timer.start(qBound(1,m_config.value("interval").toInt(),1440)*60000);}
 void ContactSyncWorker::setOption(const QString&key,const QVariant&value){
-    if(!QStringList{"provider","enabled","startup","interval","export","account","sourceBooks"}.contains(key))return;
+    if(!QStringList{"provider","enabled","startup","interval","account","sourceBooks"}.contains(key))return;
     if(key=="provider"&&!QStringList{"outlook","office365","thunderbird","icloud","none"}.contains(value.toString()))return;
     cancel();m_authFailed=false;
     if(key=="provider"&&value!=m_config.value(key)){m_config["sourceBooks"]=QStringList{};m_books.clear();}
@@ -163,6 +172,33 @@ void ContactSyncWorker::savePassword(const QString&password){
     else {m_authFailed=false;m_status="App-specific password saved in the operating system credential store.";schedule();}emit changed();
 }
 void ContactSyncWorker::syncNow(){run(false);}
+void ContactSyncWorker::fullExport(){
+    if(m_busy)return;
+    m_runningFullExport=true;m_exported=0;m_snapshot={};
+    if(m_config.value("provider")=="none"){complete("Choose an application in Email, Contact and Calendar Integration to export contacts.");return;}
+    if(m_path.isEmpty()||!m_repository.isOpen()){complete("Open a database first.");return;}
+    if(m_provider&&m_provider!=m_testProvider){m_provider->cancel();m_provider->deleteLater();}
+    m_provider=m_testProvider?m_testProvider:new NativeContactProvider(m_config.value("provider").toString(),m_office,this);
+    if(auto *provider=dynamic_cast<NativeContactProvider*>(m_provider))provider->setOfficeAccount(m_account);
+    m_busy=true;m_runningFullExport=true;m_exported=0;m_status="Preparing full contact export…";emit changed();auto gen=++m_generation;
+    m_officeGeneration=m_account.generation;
+    m_provider->fetch(m_config,m_journal,[this,guard=QPointer<ContactSyncWorker>(this),gen](Snapshot snapshot){
+        if(!guard||gen!=m_generation)return;
+        m_authFailed=snapshot.authenticationError;
+        if(!snapshot.error.isEmpty()){complete(snapshot.error);return;}
+        if(!snapshot.complete){complete("The contact source returned incomplete data; no contacts were exported.");return;}
+        if(snapshot.account.isEmpty()){complete("Contact provider did not return an account identity.");return;}
+        auto provider=m_config.value("provider").toString();
+        snapshot.defaultExportBookId=exportBook(snapshot.books,snapshot.defaultExportBookId,provider=="office365"||provider=="outlook");
+        m_books=snapshot.books;m_snapshot=std::move(snapshot);
+        if(m_snapshot.defaultExportBookId.isEmpty()){complete("Full export unavailable: no writable address book is available.");return;}
+        QString error;m_people.clear();m_clients.clear();
+        if(!m_repository.read(m_people,m_clients,error)){complete(error);return;}
+        m_fullExportIds.clear();for(const auto &person:m_people)if(!person.deleted)m_fullExportIds<<person.id;
+        m_fullExportIndex=0;m_status=QString("Exporting %1 contacts…").arg(m_fullExportIds.size());emit changed();
+        fullExportNext();
+    });
+}
 void ContactSyncWorker::testConnection(){run(true);}
 void ContactSyncWorker::run(bool test){
     if(m_busy)return;
@@ -289,52 +325,43 @@ void ContactSyncWorker::importNext(){
     }
     auto providerStates=m_journal["providerStates"].toObject();providerStates[m_scope]=m_snapshot.cursors;m_journal["providerStates"]=providerStates;
     if(!persist()){complete(m_status);return;}
-    m_exportIds.clear();m_people.clear();m_clients.clear();if(!m_repository.read(m_people,m_clients,error)){complete(error);return;}
-    if(m_config.value("export").toBool()){
-        if(m_snapshot.defaultExportBookId.isEmpty()){complete(QString("Applied %1 contacts; export unavailable: no writable address book is available for automatic export.").arg(m_imported));return;}
-        for(const auto&p:m_people)if(!p.deleted)m_exportIds<<p.id;
-    }exportNext();
+    m_people.clear();m_clients.clear();if(!m_repository.read(m_people,m_clients,error)){complete(error);return;}
+    finishSync();
 }
-void ContactSyncWorker::exportNext(){
-    while(!m_exportIds.isEmpty()){
-        QString id=m_exportIds.takeFirst();Person person;for(const auto&p:m_people)if(p.id==id)person=p;
-        if(m_journal["suppressed"].toObject()[m_scope+"/"+id].toBool())continue;
-        Contact contact;contact.name=person.name;contact.company=person.company;contact.fields=person.fields;contact.fields["company"]=person.company;contact.fields["id"]=person.id;
-        contact.emails={person.fields.value("email").toString()};contact.phones={person.fields.value("office_phone").toString(),person.fields.value("cell_phone").toString()};
-        bool found=false,uncertain=false;QString foundKey;
-        for(const auto&remote:m_snapshot.contacts){
-            QString key=sourceKey(m_scope,remote);if(m_journal["links"].toObject()[key].toString()==id){found=true;foundKey=key;break;}
-            auto match=ContactMatcher::person(remote,person.clientId,QList<Person>{person});
-            if(match.id==id){found=true;foundKey=key;break;}if(match.review)uncertain=true;
-        }
-        auto pending=m_journal["reviews"].toObject();for(auto it=pending.begin();it!=pending.end();++it)if(!it.key().startsWith("export/")&&it.value().toObject()["scope"].toString()==m_scope) {
-            auto entry=it.value().toObject();auto incoming=decode(entry["contact"].toObject());if(ContactMatcher::person(incoming,person.clientId,QList<Person>{person}).review)uncertain=true;
-        }
-        auto intents=m_journal["exports"].toObject();QString intentKey=m_scope+"/"+id;
-        if(found){auto links=m_journal["links"].toObject();bool changed=links[foundKey].toString()!=id||intents.contains(intentKey);links[foundKey]=id;m_journal["links"]=links;intents.remove(intentKey);m_journal["exports"]=intents;
-            auto reviews=m_journal["reviews"].toObject();QString reviewKey="export/"+hash(intentKey);if(reviews.contains(reviewKey)){reviews.remove(reviewKey);m_journal["reviews"]=reviews;changed=true;}
-            if(changed&&!persist()){complete(m_status);return;}continue;}
-        if(m_journal["ignored"].toObject()["export/"+hash(intentKey)].toBool())continue;
-        if(uncertain){addReview("export/"+hash(intentKey),contact,{}, {},"Possible external duplicate; export is held.");continue;}
-        if(intents.contains(intentKey)){
-            addReview("export/"+hash(intentKey),contact,{}, {},"An earlier export has an uncertain outcome. Check the external address book before retrying.");continue;
-        }
-        QString intentId=QUuid::createUuid().toString(QUuid::WithoutBraces);intents[intentKey]=intentId;m_journal["exports"]=intents;
-        if(!persist()){complete(m_status);return;}auto gen=m_generation;
-        auto exportConfig=m_config;exportConfig["exportBookId"]=m_snapshot.defaultExportBookId;
-        m_provider->create(exportConfig,contact,intentId,[this,guard=QPointer<ContactSyncWorker>(this),gen,id,intentKey](Contact created,QString error){if(!guard||gen!=m_generation)return;
-            if(!error.isEmpty()||created.id.isEmpty()){complete("Export outcome needs reconciliation before retry: "+error);return;}
-            auto links=m_journal["links"].toObject();links[sourceKey(m_scope,created)]=id;m_journal["links"]=links;
-            auto intents=m_journal["exports"].toObject();intents.remove(intentKey);m_journal["exports"]=intents;
-            m_snapshot.contacts<<created;++m_exported;if(!persist()){complete(m_status);return;}exportNext();
-        });return;
-    }
+void ContactSyncWorker::finishSync(){
     m_journal["lastSuccess"]=QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
-    if(!persist()){complete(m_status);return;}complete();
+    if(!persist()){complete(m_status);return;}
+    complete();
 }
-void ContactSyncWorker::complete(const QString&error){m_busy=false;
+void ContactSyncWorker::fullExportNext(){
+    if(m_fullExportIndex>=m_fullExportIds.size()){
+        QString bookName=m_snapshot.defaultExportBookId;
+        for(const auto &value:m_snapshot.books){const auto book=value.toMap();if(book.value("id")==m_snapshot.defaultExportBookId){bookName=book.value("name").toString();break;}}
+        complete(QString("Full contact export complete: %1 contacts exported to %2.").arg(m_exported).arg(bookName),true);return;
+    }
+    const QString id=m_fullExportIds.at(m_fullExportIndex++);Person person;
+    for(const auto &candidate:m_people)if(candidate.id==id){person=candidate;break;}
+    Contact contact;contact.name=person.name;contact.company=person.company;contact.fields=person.fields;
+    contact.fields["company"]=person.company;contact.fields["id"]=person.id;
+    contact.emails={person.fields.value("email").toString()};
+    contact.phones={person.fields.value("office_phone").toString(),person.fields.value("cell_phone").toString()};
+    auto exportConfig=m_config;exportConfig["exportBookId"]=m_snapshot.defaultExportBookId;
+    const auto gen=m_generation;
+    m_provider->create(exportConfig,contact,QUuid::createUuid().toString(QUuid::WithoutBraces),
+        [this,guard=QPointer<ContactSyncWorker>(this),gen](Contact created,QString error){
+            if(!guard||gen!=m_generation)return;
+            if(!error.isEmpty()||created.id.isEmpty()){
+                complete(QString("Full contact export stopped after %1 contacts. The last result may be uncertain; check the address book before exporting again. %2")
+                         .arg(m_exported).arg(error));return;
+            }
+            ++m_exported;fullExportNext();
+        });
+}
+void ContactSyncWorker::complete(const QString&error,bool exportSuccess){m_busy=false;
     m_status=error.isEmpty()?QString("Applied %1 contacts; %2 unchanged; exported %3; %4 awaiting review.").arg(m_imported).arg(m_unchanged).arg(m_exported).arg(reviews().size()):error;
-    schedule();emit changed();
+    const bool wasExport=m_runningFullExport;
+    m_runningFullExport=false;schedule();emit changed();
+    if(wasExport)emit fullExportFinished(m_status,exportSuccess);
 }
 void ContactSyncWorker::resolve(const QString&key,const QString&action,const QString&personId,const QString&clientId,const QString&displayName){
     if(m_busy)return;auto entries=m_journal["reviews"].toObject();if(!entries.contains(key))return;auto entry=entries[key].toObject();

@@ -1,6 +1,6 @@
 # Client List Page
 
-Project Notes keeps a list of your clients. You can use the Outlook contact sync utilities to keep your client names in sync with Outlook. See [Outlook Integration](<../StandardPlugins/OutlookIntegration.md>) for details. Your edition of Project Notes may have a customization that imports and exports client names from other enterprise applications such as an accounting system or customer relationship manager. To avoid duplicate records Project Notes uses the name as a unique identifier when importing. It is important to name your clients in Outlook the same as they are in the other enterprise system you synchronize client names with.
+Project Notes keeps a list of your clients. Native [contact synchronization](Preferences.md#contact-synchronization) can associate a contact company with an existing client or create a separate client after you review an uncertain match. Your edition of Project Notes may have a customization that imports and exports client names from other enterprise applications such as an accounting system or customer relationship manager. Native matching uses saved source identities and asks you to review uncertain client matches.
 
 ### The Client List Page Layout
 

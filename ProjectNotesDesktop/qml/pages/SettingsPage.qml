@@ -22,10 +22,17 @@ Item {
     readonly property int emailTemplatesTabIndex: 3
     readonly property int meetingTemplatesTabIndex: 4
     Component.onCompleted: {
+        refreshContactOptions()
+    }
+    function refreshContactOptions() {
         _clients = DesktopAppController.clientList()
         _people  = DesktopAppController.peopleList()
         mgmtCombo.value = _nameForId(_clients, DesktopAppController.managingCompanyId())
         pmCombo.value   = _nameForId(_people,  DesktopAppController.projectManagerId())
+    }
+    Connections {
+        target: page._contactSync
+        function onRecordsChanged() { page.refreshContactOptions() }
     }
     // Called by the shell before it navigates away from this page (the same
     // _saveNow() contract the detail pages implement). Flushes the cloud-sync
@@ -1184,11 +1191,13 @@ Item {
                     }
                     Text {
                         text: qsTr("Contact Synchronization")
+                        visible: DesktopAppController.preferredEmailBackend !== "default-app"
                         color: Theme.text
                         font.bold: true
                         Layout.fillWidth: true
                     }
                     ContactSyncSettingsPane {
+                        visible: DesktopAppController.preferredEmailBackend !== "default-app"
                         Layout.fillWidth: true
                         syncModel: DesktopAppController.contactSyncSettingsModel
                     }

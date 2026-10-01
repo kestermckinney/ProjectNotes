@@ -27,6 +27,7 @@ public:
     Q_INVOKABLE void setOption(const QString &key,const QVariant &value);
     Q_INVOKABLE void savePassword(const QString &password);
     Q_INVOKABLE void syncNow();
+    Q_INVOKABLE void fullExport();
     Q_INVOKABLE void testConnection();
     Q_INVOKABLE void cancel();
     Q_INVOKABLE void cancelSync();
@@ -39,6 +40,7 @@ public:
     quint64 revision = 0;
 signals: void changed();
     void recordsChanged(const QString &databasePath);
+    void fullExportFinished(const QString &message, bool success);
 private:
     bool persist();
     void schedule();
@@ -48,8 +50,9 @@ private:
     Match companyMatch(const QString &name,const QList<Client> &clients) const;
     bool prepareClientReviews();
     void importNext();
-    void exportNext();
-    void complete(const QString &error={});
+    void finishSync();
+    void fullExportNext();
+    void complete(const QString &error={}, bool exportSuccess=false);
     void addReview(const QString &key,const Contact &contact,const Match &people,const Match &clients,const QString &reason);
     QString scope(const QString &account) const;
     QString m_databasePath;
@@ -64,12 +67,13 @@ private:
     ContactProvider *m_provider=nullptr,*m_testProvider=nullptr;
     quint64 m_generation=0;
     quint64 m_officeGeneration=0;
-    bool m_busy=false,m_authFailed=false;
+    bool m_busy=false,m_authFailed=false,m_runningFullExport=false;
     Snapshot m_snapshot;
     QString m_scope;
     QList<Person> m_people;
     QList<Client> m_clients;
-    QStringList m_exportIds;
+    QStringList m_fullExportIds;
+    int m_fullExportIndex=0;
     int m_imported=0,m_exported=0;
     int m_unchanged=0;
     int m_importIndex=0;

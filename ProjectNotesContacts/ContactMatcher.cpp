@@ -88,12 +88,23 @@ Match ContactMatcher::person(const Contact &c,const QString&clientId,const QList
         bool differentCompany=(!clientId.isEmpty() && !p.clientId.isEmpty() && clientId!=p.clientId) ||
             (clientId.isEmpty() && !c.company.isEmpty() && !p.company.isEmpty() && normalize(c.company,true)!=normalize(p.company,true));
         bool shortName=normalize(c.name).size()<6 || normalize(p.name).split(' ').size()<2;
+        // A complete Thunderbird card can have no usable email or phone. Treat
+        // identical visible fields as stronger evidence than a fuzzy candidate.
+        const auto sameText=[](const QString &a,const QString &b){return a.simplified().toCaseFolded()==b.simplified().toCaseFolded();};
+        bool exactProfile=sameText(c.name,p.name) && !shortName && !differentCompany && !differentEmail &&
+            !c.company.trimmed().isEmpty() && sameText(c.company,p.company) &&
+            c.fields.contains("email") && c.fields.contains("office_phone") &&
+            c.fields.contains("cell_phone") && c.fields.contains("role") &&
+            sameText(c.fields.value("email").toString(),p.fields.value("email").toString()) &&
+            sameText(c.fields.value("office_phone").toString(),p.fields.value("office_phone").toString()) &&
+            sameText(c.fields.value("cell_phone").toString(),p.fields.value("cell_phone").toString()) &&
+            sameText(c.fields.value("role").toString(),p.fields.value("role").toString());
         bool strong=!differentCompany && !shortName && ((email && score>=.80) ||
-                    (!differentEmail && score>=.92 && telephone && !clientId.isEmpty() && clientId==p.clientId));
+                    (!differentEmail && score>=.92 && telephone && !clientId.isEmpty() && clientId==p.clientId) || exactProfile);
         if(score>=.80 || email || telephone) {
-            QString reason=email?"Exact email":telephone?"Exact phone":"Name similarity";
+            QString reason=exactProfile?"Exact contact fields":email?"Exact email":telephone?"Exact phone":"Name similarity";
             if(differentCompany || differentEmail) reason+="; conflicting identity fields";
-            cs.append({p.id,p.name+" — "+p.company+" — "+pe,reason,strong?1.0:score,strong});
+            cs.append({p.id,p.name+" — "+p.company+" — "+pe,reason,exactProfile?1.1:(strong?1.0:score),strong});
         }
     }
     return finish(cs);
