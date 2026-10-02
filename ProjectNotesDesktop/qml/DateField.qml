@@ -12,6 +12,9 @@ ColumnLayout {
     id: root
     property string label: ""
     property string text: ""          // MM/DD/YYYY
+    readonly property Item inputItem: field
+    property Item tabNext: null
+    property Item tabPrevious: null
     signal edited(string value)
 
     // Live contents of the box. `text` only catches up when editing finishes,
@@ -58,6 +61,9 @@ ColumnLayout {
             spacing: 3
             TextField {
                 id: field
+                objectName: root.label + "Input"
+                KeyNavigation.tab: root.tabNext
+                KeyNavigation.backtab: root.tabPrevious
                 Layout.fillWidth: true
                 verticalAlignment: Text.AlignVCenter
                 text: root.text

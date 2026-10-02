@@ -22,6 +22,9 @@ ColumnLayout {
     property bool includeNone: false
     property bool searchable: false
     property string noneLabel: qsTr("(none)")
+    readonly property Item inputItem: root.searchable ? comboEditor : combo
+    property Item tabNext: null
+    property Item tabPrevious: null
     signal activated(string value)
 
     // The model shown — options, optionally with the none entry first. This stays
@@ -41,6 +44,9 @@ ColumnLayout {
 
     ComboBox {
         id: combo
+        objectName: root.label + "Input"
+        KeyNavigation.tab: root.tabNext
+        KeyNavigation.backtab: root.tabPrevious
         Layout.fillWidth: true
         implicitHeight: 30
         editable: root.searchable
@@ -149,6 +155,8 @@ ColumnLayout {
 
         contentItem: TextField {
             id: comboEditor
+            KeyNavigation.tab: root.tabNext
+            KeyNavigation.backtab: root.tabPrevious
             leftPadding: 9
             rightPadding: 26
             text: combo.editable ? combo.editText : combo.displayText

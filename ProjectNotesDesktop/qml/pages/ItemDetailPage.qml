@@ -229,6 +229,9 @@ Item {
                 border.color: descArea.activeFocus ? Theme.accent : Theme.border
                 TextArea {
                     id: descArea
+                    objectName: "ItemDescriptionInput"
+                    Keys.onTabPressed: nextItemInFocusChain().forceActiveFocus(Qt.TabFocusReason)
+                    Keys.onBacktabPressed: nextItemInFocusChain(false).forceActiveFocus(Qt.BacktabFocusReason)
                     anchors.fill: parent
                     anchors.margins: 7
                     color: Theme.text
@@ -416,6 +419,8 @@ Item {
                         // Editable comment text
                         TextArea {
                             id: noteArea
+                            Keys.onTabPressed: nextItemInFocusChain().forceActiveFocus(Qt.TabFocusReason)
+                            Keys.onBacktabPressed: nextItemInFocusChain(false).forceActiveFocus(Qt.BacktabFocusReason)
                             Layout.fillWidth: true
                             text: (cCard.model.update_note || "").toString()
                             color: Theme.text

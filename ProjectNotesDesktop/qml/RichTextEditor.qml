@@ -100,6 +100,8 @@ ColumnLayout {
         border.color: textEdit.activeFocus ? Theme.accent : Theme.border
         TextArea {
             id: textEdit
+            Keys.onTabPressed: nextItemInFocusChain().forceActiveFocus(Qt.TabFocusReason)
+            Keys.onBacktabPressed: nextItemInFocusChain(false).forceActiveFocus(Qt.BacktabFocusReason)
             anchors.fill: parent
             anchors.margins: 9
             anchors.bottomMargin: 14

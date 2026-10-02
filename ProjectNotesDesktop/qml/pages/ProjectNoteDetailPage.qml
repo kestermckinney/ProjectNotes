@@ -570,6 +570,8 @@ Item {
                                         border.color: aiDesc.activeFocus ? Theme.accent : Theme.border
                                         TextArea {
                                             id: aiDesc
+                                            Keys.onTabPressed: nextItemInFocusChain().forceActiveFocus(Qt.TabFocusReason)
+                                            Keys.onBacktabPressed: nextItemInFocusChain(false).forceActiveFocus(Qt.BacktabFocusReason)
                                             anchors.fill: parent
                                             anchors.margins: 7
                                             color: Theme.text

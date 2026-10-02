@@ -174,13 +174,52 @@ private slots:
 
     void test_02_projectDetailAndChildren()
     {
-        const QString pid = firstId(c->projectsListModel());
+        const QString pid = projectWithNote();
         QVERIFY2(!pid.isEmpty(), "no seeded project to open");
 
         clearWarnings();
         nav("selectSection", "projects");
         nav("openProject", pid);
         assertClean("openProject");
+        {
+            auto *window = qobject_cast<QQuickWindow*>(root);
+            auto *first = findVisualChild(window->contentItem(), "Project NumberInput");
+            QVERIFY(first);
+            const bool showInternal = c->showInternalItems();
+            c->setShowInternalItems(true);
+            const QStringList order = {"Project NumberInput", "Project NameInput", "StatusInput",
+                                       "ClientInput", "Primary ContactInput", "Status DateInput",
+                                       "Invoice DateInput", "Invoicing PeriodInput",
+                                       "Status Report PeriodInput", "BudgetInput", "Actual (ACWP)Input",
+                                       "BCWPInput", "BCWSInput", "BACInput"};
+            auto focusedWithin = [window](const QString& name) {
+                for (auto *item = window->activeFocusItem(); item; item = item->parentItem())
+                    if (item->objectName() == name) return true;
+                return false;
+            };
+            first->forceActiveFocus();
+            for (const QString& name : order) {
+                QVERIFY2(focusedWithin(name), qPrintable("Tab focus missed " + name));
+                QTest::keyClick(window, Qt::Key_Tab);
+            }
+            auto *last = findVisualChild(window->contentItem(), "BACInput");
+            QVERIFY(last);
+            last->forceActiveFocus();
+            for (auto it = order.crbegin(); it != order.crend(); ++it) {
+                QVERIFY2(focusedWithin(*it), qPrintable("Shift+Tab focus missed " + *it));
+                QTest::keyClick(window, Qt::Key_Backtab);
+            }
+            const QSize originalSize = window->size();
+            window->resize(850, originalSize.height());
+            QTest::qWait(50);
+            first->forceActiveFocus();
+            for (const QString& name : order) {
+                QVERIFY2(focusedWithin(name), qPrintable("Narrow layout Tab focus missed " + name));
+                QTest::keyClick(window, Qt::Key_Tab);
+            }
+            window->resize(originalSize);
+            c->setShowInternalItems(showInternal);
+        }
 
         // Open a note under the project.
         c->setProjectFilter(pid);
@@ -397,6 +436,21 @@ private slots:
         if (!itemId.isEmpty()) {
             nav("openItem", itemId);
             assertClean("openItem");
+            auto *window = qobject_cast<QQuickWindow*>(root);
+            auto *first = findVisualChild(window->contentItem(), "Item NumberInput");
+            QVERIFY(first);
+            auto focusedWithin = [window](const QString& name) {
+                for (auto *item = window->activeFocusItem(); item; item = item->parentItem())
+                    if (item->objectName() == name) return true;
+                return false;
+            };
+            first->forceActiveFocus();
+            const QStringList order = {"Item NumberInput", "TypeInput", "Item NameInput",
+                                       "ItemDescriptionInput", "Identified ByInput"};
+            for (const QString& name : order) {
+                QVERIFY2(focusedWithin(name), qPrintable("Tab focus missed " + name));
+                QTest::keyClick(window, Qt::Key_Tab);
+            }
         }
     }
 
@@ -409,7 +463,7 @@ private slots:
         QQuickWindow* window = qobject_cast<QQuickWindow*>(root);
         QVERIFY(window);
 
-        const QString pid = firstId(c->projectsListModel());
+        const QString pid = projectWithNote();
         QVERIFY2(!pid.isEmpty(), "no seeded project to open");
         const QString number = c->projectNumberForId(pid);
         QVERIFY2(!number.isEmpty(), "seeded project has no project number");
@@ -680,6 +734,18 @@ private:
     {
         if (!m || m->rowCount() < 1) return {};
         return m->data(m->index(0, 0)).toString();
+    }
+
+    QString projectWithNote()
+    {
+        auto *projects = c->projectsListModel();
+        for (int row = 0; projects && row < projects->rowCount(); ++row) {
+            const QString id = projects->data(projects->index(row, 0)).toString();
+            c->setProjectFilter(id);
+            if (!c->projectNoteIdAtRow(0).isEmpty())
+                return id;
+        }
+        return {};
     }
 };
 

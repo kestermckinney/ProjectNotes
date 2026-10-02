@@ -327,6 +327,7 @@ Item {
                     spacing: 9
                     FormField {
                         id: numberField
+                        tabNext: nameField.inputItem
                         label: qsTr("Project Number")
                         Layout.preferredWidth: 110
                         Layout.fillWidth: false
@@ -344,6 +345,8 @@ Item {
                     }
                     FormField {
                         id: nameField
+                        tabPrevious: numberField.inputItem
+                        tabNext: statusCombo.inputItem
                         label: qsTr("Project Name")
                         Layout.fillWidth: true
                         spellCheck: true
@@ -353,6 +356,8 @@ Item {
                     }
                     ComboField {
                         id: statusCombo
+                        tabPrevious: nameField.inputItem
+                        tabNext: clientCombo.inputItem
                         label: qsTr("Status")
                         Layout.preferredWidth: 150
                         Layout.fillWidth: false
@@ -394,6 +399,8 @@ Item {
                     rowSpacing: 9
                     ComboField {
                         id: clientCombo
+                        tabPrevious: statusCombo.inputItem
+                        tabNext: contactCombo.inputItem
                         label: qsTr("Client")
                         options: page._clientNames()
                         includeNone: true
@@ -402,22 +409,28 @@ Item {
                     }
                     ComboField {
                         id: contactCombo
+                        tabPrevious: clientCombo.inputItem
+                        tabNext: statusDate.inputItem
                         label: qsTr("Primary Contact")
                         options: page._peopleNames()
                         includeNone: true
                         searchable: true
                         onActivated: (v) => { page._contactId = page._idForName(page._people, v); page._changed = true }
                     }
-                    DateField { id: statusDate;  label: qsTr("Status Date");  onEdited: page._changed = true }
-                    DateField { id: invoiceDate; label: qsTr("Invoice Date"); onEdited: page._changed = true }
+                    DateField { id: statusDate;  label: qsTr("Status Date"); tabPrevious: contactCombo.inputItem; tabNext: invoiceDate.inputItem; onEdited: page._changed = true }
+                    DateField { id: invoiceDate; label: qsTr("Invoice Date"); tabPrevious: statusDate.inputItem; tabNext: invoicingCombo.inputItem; onEdited: page._changed = true }
                     ComboField {
                         id: invoicingCombo
+                        tabPrevious: invoiceDate.inputItem
+                        tabNext: reportCombo.inputItem
                         label: qsTr("Invoicing Period")
                         options: DesktopAppController.invoicingPeriodOptions()
                         onActivated: page._changed = true
                     }
                     ComboField {
                         id: reportCombo
+                        tabPrevious: invoicingCombo.inputItem
+                        tabNext: budgetField.visible ? budgetField.inputItem : null
                         label: qsTr("Status Report Period")
                         options: DesktopAppController.statusReportPeriodOptions()
                         onActivated: page._changed = true
@@ -437,11 +450,11 @@ Item {
                     // Commit on editingFinished (focus leaves the field) so the
                     // calculated EVM tiles below refresh as each value is entered,
                     // rather than only when navigating away.
-                    FormField { id: budgetField; label: qsTr("Budget");        onEdited: page._changed = true; onEditingFinished: page._saveNow() }
-                    FormField { id: actualField; label: qsTr("Actual (ACWP)"); onEdited: page._changed = true; onEditingFinished: page._saveNow() }
-                    FormField { id: bcwpField;   label: qsTr("BCWP");          onEdited: page._changed = true; onEditingFinished: page._saveNow() }
-                    FormField { id: bcwsField;   label: qsTr("BCWS");          onEdited: page._changed = true; onEditingFinished: page._saveNow() }
-                    FormField { id: bacField;    label: qsTr("BAC");           onEdited: page._changed = true; onEditingFinished: page._saveNow() }
+                    FormField { id: budgetField; label: qsTr("Budget"); tabPrevious: reportCombo.inputItem; tabNext: actualField.inputItem; onEdited: page._changed = true; onEditingFinished: page._saveNow() }
+                    FormField { id: actualField; label: qsTr("Actual (ACWP)"); tabPrevious: budgetField.inputItem; tabNext: bcwpField.inputItem; onEdited: page._changed = true; onEditingFinished: page._saveNow() }
+                    FormField { id: bcwpField;   label: qsTr("BCWP"); tabPrevious: actualField.inputItem; tabNext: bcwsField.inputItem; onEdited: page._changed = true; onEditingFinished: page._saveNow() }
+                    FormField { id: bcwsField;   label: qsTr("BCWS"); tabPrevious: bcwpField.inputItem; tabNext: bacField.inputItem; onEdited: page._changed = true; onEditingFinished: page._saveNow() }
+                    FormField { id: bacField;    label: qsTr("BAC"); tabPrevious: bcwsField.inputItem; onEdited: page._changed = true; onEditingFinished: page._saveNow() }
                 }
 
                 // Calculated (read-only) tiles shown below the entered values.
