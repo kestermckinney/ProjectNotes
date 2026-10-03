@@ -35,6 +35,16 @@ public:
             });
         },Qt::QueuedConnection);
     }
+    void update(const QVariantMap &config,const Contact &existing,const Contact &contact,Updated done) override {
+        auto target=m_target;QPointer<QueuedContactProvider> self(this);
+        if(!target){done({},"Contact provider is unavailable.");return;}
+        QMetaObject::invokeMethod(target,[target,self,config,existing,contact,done=std::move(done)]()mutable{
+            if(!target||!self)return;
+            target->update(config,existing,contact,[self,done=std::move(done)](Contact result,QString error)mutable{
+                if(self)QMetaObject::invokeMethod(self,[self,done=std::move(done),result=std::move(result),error=std::move(error)]()mutable{if(self)done(std::move(result),std::move(error));},Qt::QueuedConnection);
+            });
+        },Qt::QueuedConnection);
+    }
     void cancel() override {
         auto target=m_target;if(target)QMetaObject::invokeMethod(target,[target]{if(target)target->cancel();},Qt::QueuedConnection);
     }
@@ -51,12 +61,16 @@ ContactSyncSettingsModel::ContactSyncSettingsModel(DatabaseObjects *database,PN:
             if(revision==m_revision)emit fullExportFinished(message,success);
         },Qt::QueuedConnection);
     });
+    connect(m_worker,&ContactSyncWorker::exportReviewReady,m_worker,[this]{
+        const auto revision=m_worker->revision;
+        QMetaObject::invokeMethod(this,[this,revision]{if(revision==m_revision)emit exportReviewReady();},Qt::QueuedConnection);
+    });
     connect(m_worker,&ContactSyncWorker::changed,m_worker,[this]{
-        auto revision=m_worker->revision;auto config=m_worker->configuration();auto books=m_worker->books();auto reviews=m_worker->reviews();
+        auto revision=m_worker->revision;auto config=m_worker->configuration();auto books=m_worker->books();auto reviews=m_worker->reviews();auto exportReviews=m_worker->exportReviews();
         auto busy=m_worker->busy();auto status=m_worker->status();auto success=m_worker->lastSuccess();
-        QMetaObject::invokeMethod(this,[this,revision,config,books,reviews,busy,status,success]{
+        QMetaObject::invokeMethod(this,[this,revision,config,books,reviews,exportReviews,busy,status,success]{
             if(revision!=m_revision)return;
-            m_config=config;m_books=books;m_reviews=reviews;m_busy=busy;m_status=status;m_lastSuccess=success;emit changed();
+            m_config=config;m_books=books;m_reviews=reviews;m_exportReviews=exportReviews;m_busy=busy;m_status=status;m_lastSuccess=success;emit changed();
         },Qt::QueuedConnection);
     });
     connect(m_worker,&ContactSyncWorker::recordsChanged,this,[this](const QString &path){
@@ -85,13 +99,13 @@ void ContactSyncSettingsModel::post(std::function<void(ContactSyncWorker &)> act
 }
 void ContactSyncSettingsModel::setDatabase(const QString &path){
     m_databasePath=path;auto revision=++m_revision;
-    QVariantMap config;QVariantList books,reviews;QString status,success;bool busy=false;
+    QVariantMap config;QVariantList books,reviews,exportReviews;QString status,success;bool busy=false;
     QMetaObject::invokeMethod(m_worker,[&]{
         m_worker->revision=revision;m_worker->setDatabase(path);
         if(!m_integrationProvider.isNull())m_worker->setOption("provider",m_integrationProvider);
-        config=m_worker->configuration();books=m_worker->books();reviews=m_worker->reviews();busy=m_worker->busy();status=m_worker->status();success=m_worker->lastSuccess();
+        config=m_worker->configuration();books=m_worker->books();reviews=m_worker->reviews();exportReviews=m_worker->exportReviews();busy=m_worker->busy();status=m_worker->status();success=m_worker->lastSuccess();
     },Qt::BlockingQueuedConnection);
-    m_config=config;m_books=books;m_reviews=reviews;m_busy=busy;m_status=status;m_lastSuccess=success;emit changed();
+    m_config=config;m_books=books;m_reviews=reviews;m_exportReviews=exportReviews;m_busy=busy;m_status=status;m_lastSuccess=success;emit changed();
 }
 void ContactSyncSettingsModel::setIntegrationBackend(const QString &backend){
     QString provider="none";
@@ -115,6 +129,9 @@ void ContactSyncSettingsModel::fullExport(){if(m_busy)return;m_busy=true;emit ch
 void ContactSyncSettingsModel::testConnection(){if(m_busy)return;m_busy=true;emit changed();post([](auto &worker){worker.testConnection();});}
 void ContactSyncSettingsModel::cancel(){m_busy=false;emit changed();post([](auto &worker){worker.cancel();});}
 void ContactSyncSettingsModel::cancelSync(){m_busy=false;emit changed();post([](auto &worker){worker.cancelSync();});}
+void ContactSyncSettingsModel::resolveExport(const QString &person,const QString &action,const QString &external){
+    post([person,action,external](auto &worker){worker.resolveExport(person,action,external);});
+}
 void ContactSyncSettingsModel::savePassword(const QString &password){post([password](auto &worker){worker.savePassword(password);});}
 void ContactSyncSettingsModel::resolve(const QString &key,const QString &action,const QString &person,const QString &client,const QString &name){
     post([key,action,person,client,name](auto &worker){worker.resolve(key,action,person,client,name);});

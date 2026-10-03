@@ -14,9 +14,11 @@ class ContactProvider : public QObject {
 public:
     using Completion=std::function<void(Snapshot)>;
     using Created=std::function<void(Contact,QString)>;
+    using Updated=std::function<void(Contact,QString)>;
     using QObject::QObject;
     virtual void fetch(const QVariantMap &config,const QJsonObject &state,Completion done)=0;
     virtual void create(const QVariantMap &config,const Contact &contact,const QString &intentId,Created done)=0;
+    virtual void update(const QVariantMap &config,const Contact &existing,const Contact &contact,Updated done)=0;
     virtual void cancel()=0;
 };
 class NativeContactProvider final : public ContactProvider {
@@ -25,6 +27,7 @@ public:
     ~NativeContactProvider() override;
     void fetch(const QVariantMap &config,const QJsonObject &state,Completion done) override;
     void create(const QVariantMap &config,const Contact &contact,const QString &intentId,Created done) override;
+    void update(const QVariantMap &config,const Contact &existing,const Contact &contact,Updated done) override;
     void cancel() override;
     void setOfficeAccount(PN::Comm::Office365Account account) {m_officeAccount=std::move(account);}
     void setCardDAVTransportForTesting(PN::Comm::HttpTransport *transport,
@@ -36,7 +39,7 @@ private:
     void graphPage(QUrl url);
     void graphBook(int index);
     void graphFolders(QUrl url);
-    void dav(QByteArray method,QUrl url,QByteArray body,int depth,std::function<void(PN::Comm::HttpResponse)> done,int redirects=0);
+    void dav(QByteArray method,QUrl url,QByteArray body,int depth,std::function<void(PN::Comm::HttpResponse)> done,int redirects=0,QByteArray condition={});
     void davDiscover(int step,QUrl url);
     void davBook(int index);
     void local(QJsonObject request,std::function<void(QJsonObject,QString)> done);

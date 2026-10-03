@@ -27,6 +27,25 @@ function contact(node, book) {
     phones: [...new Set([office, cell, ...phones.map(e => e.value)].filter(Boolean))],
     fields };
 }
+function mergeCard(card, c, previous) {
+  const f = c.fields || {}, unfolded = String(card || "").replace(/\r?\n[ \t]/g, "");
+  const old = previous.fields || {}, digits = value => String(value || "").replace(/[^0-9]/g, "");
+  const kept = unfolded.split(/\r?\n/).filter(line => {
+    const colon = line.indexOf(":"), left = line.slice(0, Math.max(0, colon)).toUpperCase();
+    const key = left.split(";", 1)[0].split(".").pop();
+    const value = colon < 0 ? "" : line.slice(colon + 1).replace(/\\([nN,;\\])/g, (_, ch) => /n/i.test(ch) ? " " : ch);
+    if (["BEGIN", "END", "FN", "N", "ORG", "TITLE"].includes(key)) return false;
+    if (key === "EMAIL" && left.includes("WORK") && old.email && value.toLowerCase() === String(old.email).trim().toLowerCase()) return false;
+    if (key === "TEL" && left.includes("WORK") && digits(old.office_phone) && digits(value) === digits(old.office_phone)) return false;
+    if (key === "TEL" && /CELL|MOBILE/.test(left) && digits(old.cell_phone) && digits(value) === digits(old.cell_phone)) return false;
+    return !!line;
+  });
+  if (!kept.some(line => /^VERSION:/i.test(line))) kept.unshift("VERSION:3.0");
+  const managed = ["FN:" + escapeCard(c.name), "N:;" + escapeCard(c.name) + ";;;",
+    "ORG:" + escapeCard(c.company), "TITLE:" + escapeCard(f.role), "EMAIL;TYPE=WORK:" + escapeCard(f.email),
+    "TEL;TYPE=WORK:" + escapeCard(f.office_phone), "TEL;TYPE=CELL:" + escapeCard(f.cell_phone)].filter(line => !line.endsWith(":"));
+  return ["BEGIN:VCARD", ...kept, ...managed, "END:VCARD", ""].join("\r\n");
+}
 async function handle(request) {
   if (request.version !== 1) throw new Error("Incompatible Project Notes bridge version.");
   let { profileId } = await messenger.storage.local.get("profileId");
@@ -45,6 +64,13 @@ async function handle(request) {
       "TEL;TYPE=WORK:" + escapeCard(f.office_phone), "TEL;TYPE=CELL:" + escapeCard(f.cell_phone), "END:VCARD", ""];
     const id = await messenger.contacts.create(request.book, { vCard: lines.join("\r\n") });
     return { contact: contact(await messenger.contacts.get(id), request.book) };
+  }
+  if (request.action === "update") {
+    const book = await messenger.addressBooks.get(request.book);
+    if (book.readOnly || book.remote) throw new Error("The selected Thunderbird address book is not writable.");
+    const node = await messenger.contacts.get(request.existing.id);
+    await messenger.contacts.update(request.existing.id, { vCard: mergeCard(node.properties?.vCard || node.vCard, request.contact, request.existing) });
+    return { contact: contact(await messenger.contacts.get(request.existing.id), request.book) };
   }
   throw new Error("Unsupported contact bridge action.");
 }

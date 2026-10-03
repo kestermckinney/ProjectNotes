@@ -10,6 +10,7 @@ class ContactSyncWorker final : public QObject {
     Q_PROPERTY(QVariantMap configuration READ configuration NOTIFY changed)
     Q_PROPERTY(QVariantList books READ books NOTIFY changed)
     Q_PROPERTY(QVariantList reviews READ reviews NOTIFY changed)
+    Q_PROPERTY(QVariantList exportReviews READ exportReviews NOTIFY changed)
     Q_PROPERTY(bool busy READ busy NOTIFY changed)
     Q_PROPERTY(QString status READ status NOTIFY changed)
     Q_PROPERTY(QString lastSuccess READ lastSuccess NOTIFY changed)
@@ -20,6 +21,7 @@ public:
     QVariantMap configuration() const {return m_config;}
     QVariantList books() const {return m_books;}
     QVariantList reviews() const;
+    QVariantList exportReviews() const;
     bool busy() const {return m_busy;}
     QString status() const {return m_status;}
     QString lastSuccess() const {return m_journal["lastSuccess"].toString();}
@@ -31,6 +33,7 @@ public:
     Q_INVOKABLE void testConnection();
     Q_INVOKABLE void cancel();
     Q_INVOKABLE void cancelSync();
+    Q_INVOKABLE void resolveExport(const QString &personId,const QString &action,const QString &externalId);
     Q_INVOKABLE void resolve(const QString &key,const QString &action,const QString &personId,
                              const QString &clientId,const QString &displayName);
     Q_INVOKABLE void rejectCandidate(const QString &key,const QString &personId);
@@ -41,6 +44,7 @@ public:
 signals: void changed();
     void recordsChanged(const QString &databasePath);
     void fullExportFinished(const QString &message, bool success);
+    void exportReviewReady();
 private:
     bool persist();
     void schedule();
@@ -52,6 +56,7 @@ private:
     void importNext();
     void finishSync();
     void fullExportNext();
+    void prepareFullExport();
     void complete(const QString &error={}, bool exportSuccess=false);
     void addReview(const QString &key,const Contact &contact,const Match &people,const Match &clients,const QString &reason);
     QString scope(const QString &account) const;
@@ -72,9 +77,11 @@ private:
     QString m_scope;
     QList<Person> m_people;
     QList<Client> m_clients;
-    QStringList m_fullExportIds;
+    struct ExportCandidate { Contact contact; QString reason; bool writable=false; QString bookName; };
+    struct ExportItem { QString personId; Contact contact; QList<ExportCandidate> candidates; QString action,targetId; };
+    QList<ExportItem> m_exportPlan;
     int m_fullExportIndex=0;
-    int m_imported=0,m_exported=0;
+    int m_imported=0,m_exported=0,m_updated=0,m_skipped=0;
     int m_unchanged=0;
     int m_importIndex=0;
 };

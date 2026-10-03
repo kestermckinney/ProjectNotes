@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include "ContactProvider.h"
 #include "VCard.h"
+#include "ContactMatcher.h"
 #include "credentialstore.h"
 #include "ProjectNotesIntegrations/Office365Service.h"
 #include "ProjectNotesIntegrations/QtNetworkHttpTransport.h"
@@ -137,20 +138,20 @@ void NativeContactProvider::graphPage(QUrl url){
         auto next=o["@odata.nextLink"].toString();if(!next.isEmpty())graphPage(QUrl(next));else {m_tokens[book]=o["@odata.deltaLink"].toString();graphBook(m_config.value("bookIndex").toInt()+1);}
     });
 }
-void NativeContactProvider::dav(QByteArray method,QUrl url,QByteArray body,int depth,std::function<void(PN::Comm::HttpResponse)> done,int redirects){
+void NativeContactProvider::dav(QByteArray method,QUrl url,QByteArray body,int depth,std::function<void(PN::Comm::HttpResponse)> done,int redirects,QByteArray condition){
     if(!cloudUrl(url)){PN::Comm::HttpResponse r;r.error.code="unsafe-url";r.error.displayText="iCloud returned an unsafe URL.";done(r);return;}
     QString error;auto password=m_password?m_password():CredentialStore::read(m_config.value("credentialService","Project Notes iCloud Contacts").toString(),m_config.value("account").toString().trimmed(),&error);
     if(password.isEmpty()){PN::Comm::HttpResponse r;r.statusCode=401;r.error.code="credentials";r.error.displayText="Store an iCloud app-specific password first.";done(r);return;}
     PN::Comm::HttpRequest r;r.operationId=QUuid::createUuid();r.method=method;r.url=url;r.body=body;r.manualRedirects=true;
     r.headers["Authorization"]="Basic "+(m_config.value("account").toString().trimmed()+":"+password).toUtf8().toBase64();
     r.headers["Content-Type"]=method=="PUT"?"text/vcard; charset=utf-8":"application/xml; charset=utf-8";
-    r.headers["Depth"]=QByteArray::number(depth);if(method=="PUT")r.headers["If-None-Match"]="*";
+    r.headers["Depth"]=QByteArray::number(depth);if(method=="PUT")r.headers[condition.isEmpty()?"If-None-Match":"If-Match"]=condition.isEmpty()?QByteArray("*"):condition;
     m_requests<<r.operationId;auto gen=m_generation;
     auto transport=m_davTransport?m_davTransport:m_transport;
-    transport->send(r,[this,guard=QPointer<NativeContactProvider>(this),gen,method,url,body,depth,done,redirects](auto response){if(!guard||gen!=m_generation)return;
+    transport->send(r,[this,guard=QPointer<NativeContactProvider>(this),gen,method,url,body,depth,done,redirects,condition](auto response){if(!guard||gen!=m_generation)return;
         if(QList<int>{301,302,307,308}.contains(response.statusCode)){
             auto target=url.resolved(QUrl(QString::fromUtf8(response.headers.value("Location",response.headers.value("location")))));
-            if(redirects<5&&cloudUrl(target))dav(method,target,body,depth,done,redirects+1);
+            if(redirects<5&&cloudUrl(target))dav(method,target,body,depth,done,redirects+1,condition);
             else {response.error.code="redirect";response.error.displayText="Unsafe or excessive iCloud redirects.";done(response);}return;
         }done(response);
     });
@@ -212,6 +213,36 @@ void NativeContactProvider::create(const QVariantMap&config,const Contact&contac
         QUrl url=QUrl(book.endsWith('/')?book:book+'/').resolved(QUrl(intentId+".vcf"));
         dav("PUT",url,writeVCard(contact,intentId),0,[done,contact,book,url](auto r){auto c=contact;c.id=url.toString();c.book=book;done(c,(r.statusCode==201||r.statusCode==204)?QString():httpError(r));});
     }else local({{"version",1},{"action","create"},{"book",book},{"intentId",intentId},{"contact",encode(contact)}},
+        [done](auto o,QString e){done(decode(o["contact"].toObject()),e);});
+}
+void NativeContactProvider::update(const QVariantMap&config,const Contact&existing,const Contact&contact,Updated done){
+    m_config=config;
+    if(existing.id.isEmpty()||existing.book.isEmpty()){done({},"The existing contact has no stable identity.");return;}
+    if(m_provider=="office365"){
+        QString path=existing.book=="default"?"/me/contacts/":"/me/contactFolders/"+QString::fromLatin1(QUrl::toPercentEncoding(existing.book))+"/contacts/";
+        PN::Comm::HttpRequest r;r.operationId=QUuid::createUuid();r.method="PATCH";r.url=QUrl(graphRoot()+path+QString::fromLatin1(QUrl::toPercentEncoding(existing.id)));
+        r.headers["Content-Type"]="application/json";r.headers["Prefer"]="IdType=\"ImmutableId\"";
+        QJsonArray emails,phones;const auto newEmail=contact.fields.value("email").toString(),oldEmail=existing.fields.value("email").toString();
+        if(!newEmail.isEmpty())emails<<QJsonObject{{"address",newEmail}};
+        for(const auto &email:existing.emails)if(email.compare(oldEmail,Qt::CaseInsensitive)!=0&&email.compare(newEmail,Qt::CaseInsensitive)!=0)emails<<QJsonObject{{"address",email}};
+        const auto newOffice=contact.fields.value("office_phone").toString(),oldOffice=ContactMatcher::phone(existing.fields.value("office_phone").toString()),oldCell=ContactMatcher::phone(existing.fields.value("cell_phone").toString());
+        if(!newOffice.isEmpty())phones<<newOffice;
+        for(const auto &phone:existing.phones){const auto normalized=ContactMatcher::phone(phone);if(normalized!=oldOffice&&normalized!=oldCell&&normalized!=ContactMatcher::phone(newOffice))phones<<phone;}
+        r.body=QJsonDocument(QJsonObject{{"displayName",contact.name},{"companyName",contact.company},{"jobTitle",contact.fields.value("role").toString()},
+            {"mobilePhone",contact.fields.value("cell_phone").toString()},{"emailAddresses",emails},{"businessPhones",phones}}).toJson(QJsonDocument::Compact);
+        auto gen=m_generation;m_requests<<r.operationId;
+        sendGraph(r,[this,guard=QPointer<NativeContactProvider>(this),gen,done,contact,existing](auto response){if(!guard||gen!=m_generation)return;
+            auto c=contact;c.id=existing.id;c.book=existing.book;c.etag=QJsonDocument::fromJson(response.body).object()["changeKey"].toString();
+            done(c,response.statusCode==200?QString():httpError(response));});
+    }else if(m_provider=="icloud"){
+        if(existing.etag.isEmpty()){done({},"The iCloud contact changed or has no revision token; refresh the export review.");return;}
+        dav("GET",QUrl(existing.id),{},0,[this,done,contact,existing](auto fetched){
+            if(fetched.statusCode!=200){done({},httpError(fetched));return;}
+            auto body=mergeVCard(fetched.body,contact,existing);
+            dav("PUT",QUrl(existing.id),body,0,[done,contact,existing](auto saved){auto c=contact;c.id=existing.id;c.book=existing.book;
+                done(c,(saved.statusCode==200||saved.statusCode==204)?QString():httpError(saved));},0,existing.etag.toUtf8());
+        });
+    }else local({{"version",1},{"action","update"},{"book",existing.book},{"existing",encode(existing)},{"contact",encode(contact)}},
         [done](auto o,QString e){done(decode(o["contact"].toObject()),e);});
 }
 void NativeContactProvider::local(QJsonObject request,std::function<void(QJsonObject,QString)> done){

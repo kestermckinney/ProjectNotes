@@ -261,6 +261,7 @@ private slots:
                 done(snapshot);
             }
             void create(const QVariantMap &,const Contact &,const QString &,Created done) override {done({},"Unexpected export");}
+            void update(const QVariantMap &,const Contact &,const Contact &,Updated done) override {done({},"Unexpected update");}
             void cancel() override {}
         } provider;
         QTemporaryDir state;
@@ -286,14 +287,16 @@ private slots:
         auto *reviewDialog = pane->findChild<QObject *>(QStringLiteral("contactConflictReviewDialog"));
         auto *exportButton = pane->findChild<QObject *>(QStringLiteral("fullContactExportButton"));
         auto *exportWarning = pane->findChild<QObject *>(QStringLiteral("fullContactExportWarning"));
+        auto *exportReview = pane->findChild<QObject *>(QStringLiteral("contactExportReviewDialog"));
         QVERIFY(reviewButton);
         QVERIFY(reviewDialog);
         QVERIFY(exportButton);
         QCOMPARE(exportButton->property("text").toString(),QStringLiteral("Full Contact Export"));
         QVERIFY(exportWarning);
+        QVERIFY(exportReview);
         QVERIFY(QMetaObject::invokeMethod(exportButton,"clicked"));
         QTRY_VERIFY(exportWarning->property("visible").toBool());
-        QVERIFY(exportWarning->property("message").toString().contains(QStringLiteral("duplicate contacts could be created")));
+        QVERIFY(exportWarning->property("message").toString().contains(QStringLiteral("update, skip, or create a new contact")));
         QVERIFY(QMetaObject::invokeMethod(exportWarning,"close"));
         auto *bridgeButton = pane->findChild<QObject *>(QStringLiteral("thunderbirdBridgeSetupButton"));
         auto *bridgeConfirm = pane->findChild<QObject *>(QStringLiteral("thunderbirdBridgeSetupConfirm"));

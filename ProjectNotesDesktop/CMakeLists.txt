@@ -124,6 +124,7 @@ set(DESKTOP_QML_FILES
     qml/ScheduleMeetingDialog.qml
     qml/TemplateSettingsPane.qml
     qml/ContactConflictReviewDialog.qml
+    qml/ContactExportReviewDialog.qml
     qml/ContactSyncCombo.qml
     qml/ContactSyncSettingsPane.qml
     qml/MeetingTemplateSettingsPane.qml

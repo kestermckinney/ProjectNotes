@@ -22,6 +22,7 @@ class FakeContacts final : public ContactProvider {
 public:
     Snapshot snapshot;
     int creates = 0;
+    int updates = 0;
     QString createError;
     QString lastExportBook;
     bool deferred = false;
@@ -32,6 +33,11 @@ public:
     void create(const QVariantMap &config,const Contact &contact,const QString &,Created done) override {
         ++creates;auto c=contact;c.id="exported";c.book=config.value("exportBookId").toString();lastExportBook=c.book;
         if(createError.isEmpty())snapshot.contacts<<c;done(c,createError);
+    }
+    void update(const QVariantMap &,const Contact &existing,const Contact &contact,Updated done) override {
+        ++updates;auto c=contact;c.id=existing.id;c.book=existing.book;
+        for(auto &current:snapshot.contacts)if(current.id==existing.id&&current.book==existing.book){current=c;break;}
+        done(c,{});
     }
     void cancel() override {} // Deliberately delivers stale completions to test generation guards.
 };
@@ -422,15 +428,34 @@ private slots:
         model.fullExport();QTRY_VERIFY(!model.busy());QCOMPARE(count("people"),0);QCOMPARE(provider.creates,0);QVERIFY(model.status().contains("no writable address book"));
         QTRY_COMPARE(result.size(),1);QVERIFY(!result.first().at(1).toBool());
     }
-    void fullExportCreatesAllContactsIncludingLinkedOrMatching(){
+    void fullExportReviewsExistingContactsAndSupportsAllActions(){
         seed();QTemporaryDir state;FakeContacts provider;provider.snapshot.contacts={incoming()};
         ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);
         QSignalSpy result(&model,&ContactSyncSettingsModel::fullExportFinished);
-        model.setOption("enabled",false);model.fullExport();QTRY_VERIFY(!model.busy());
-        QCOMPARE(provider.creates,1);QCOMPARE(provider.lastExportBook,QString("contacts"));QCOMPARE(count("people"),1);
-        QTRY_COMPARE(result.size(),1);QVERIFY(result.first().at(1).toBool());
-        QVERIFY(result.first().at(0).toString().contains("1 contacts exported to Contacts"));
-        model.fullExport();QTRY_VERIFY(!model.busy());QCOMPARE(provider.creates,2);
+        model.setOption("enabled",false);model.fullExport();QTRY_COMPARE(model.exportReviews().size(),1);QVERIFY(model.busy());
+        QCOMPARE(provider.creates,0);model.resolveExport("person","update","remote");QTRY_VERIFY(!model.busy());
+        QCOMPARE(provider.updates,1);QCOMPARE(provider.creates,0);QTRY_COMPARE(result.size(),1);QVERIFY(result.first().at(1).toBool());
+        QVERIFY(result.first().at(0).toString().contains("1 updated"));
+        provider.snapshot.contacts[0].fields["role"]="Changed externally";
+        model.fullExport();QTRY_COMPARE(model.exportReviews().size(),1);model.resolveExport("person","skip","");QTRY_VERIFY(!model.busy());
+        QCOMPARE(provider.updates,1);QCOMPARE(provider.creates,0);QVERIFY(model.status().contains("1 skipped"));
+        model.fullExport();QTRY_COMPARE(model.exportReviews().size(),1);model.resolveExport("person","create","");QTRY_VERIFY(!model.busy());
+        QCOMPARE(provider.creates,1);QCOMPARE(provider.lastExportBook,QString("contacts"));QVERIFY(model.status().contains("1 created"));
+    }
+    void fullExportSkipsIdenticalContactsWithoutReview(){
+        seed();QTemporaryDir state;FakeContacts provider;auto same=incoming("Jane Smith","jane@example.test","Acme Corporation");
+        same.fields["company"]="Acme Corporation";same.fields["role"]="";provider.snapshot.contacts={same};
+        ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);
+        model.fullExport();QTRY_VERIFY(!model.busy());QVERIFY(model.exportReviews().isEmpty());
+        QCOMPARE(provider.creates,0);QCOMPARE(provider.updates,0);QVERIFY(model.status().contains("1 skipped"));
+
+        // An automatic identical match becomes a durable export link. A later
+        // external change must therefore be reviewed rather than silently skipped.
+        provider.snapshot.contacts[0].fields["role"]="Changed externally";
+        model.fullExport();QTRY_COMPARE(model.exportReviews().size(),1);
+        const auto candidates=model.exportReviews().first().toMap().value("candidates").toList();QCOMPARE(candidates.size(),1);
+        QCOMPARE(candidates.first().toMap().value("reason").toString(),QString("Previously exported contact"));
+        model.resolveExport("person","skip","remote");QTRY_VERIFY(!model.busy());
     }
     void disconnectedFullExportReportsFailure(){
         seed();QTemporaryDir state;FakeContacts provider;provider.snapshot.error="Thunderbird bridge is disconnected.";

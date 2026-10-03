@@ -37,6 +37,10 @@ static QJsonObject contact(IDispatch*c,const QString&book){
     return {{"id",string(c,L"EntryID")},{"book",book},{"name",name},{"company",company},{"emails",emails},{"phones",phones},
         {"fields",QJsonObject{{"name",name},{"company",company},{"email",email},{"office_phone",office},{"cell_phone",cell},{"role",string(c,L"JobTitle")}}}};
 }
+static void applyContact(IDispatch *item,const QJsonObject &c){
+    auto f=c["fields"].toObject();set(item,L"FullName",c["name"].toString());set(item,L"CompanyName",c["company"].toString());set(item,L"Email1Address",f["email"].toString());
+    set(item,L"BusinessTelephoneNumber",f["office_phone"].toString());set(item,L"MobileTelephoneNumber",f["cell_phone"].toString());set(item,L"JobTitle",f["role"].toString());
+}
 static void folders(IDispatch*folder,QJsonArray&books,QJsonArray&contacts){
     if(integer(folder,L"DefaultItemType")==2){QString id=string(folder,L"StoreID")+"\n"+string(folder,L"EntryID");books<<QJsonObject{{"id",id},{"name",string(folder,L"FolderPath")},{"writable",writable(folder)}};
         auto items=object(folder,L"Items");int count=integer(items.Get(),L"Count");for(int i=1;i<=count;++i){auto item=object(items.Get(),L"Item",{number(i)});if(integer(item.Get(),L"Class")==40)contacts<<contact(item.Get(),id);}}
@@ -61,10 +65,16 @@ int main(int argc,char**argv){QCoreApplication app(argc,argv);QFile input;input.
             auto ids=request["book"].toString().split('\n');if(ids.size()!=2)throw QString("Invalid Outlook export folder.");
             auto folder=object(session.Get(),L"GetFolderFromID",{text(ids[1]),text(ids[0])});if(integer(folder.Get(),L"DefaultItemType")!=2)throw QString("Choose a contact folder.");
             if(!writable(folder.Get()))throw QString("The selected Outlook folder does not permit creating contacts.");
-            auto items=object(folder.Get(),L"Items");auto item=object(items.Get(),L"Add",{text("IPM.Contact")});auto c=request["contact"].toObject(),f=c["fields"].toObject();
-            set(item.Get(),L"FullName",c["name"].toString());set(item.Get(),L"CompanyName",c["company"].toString());set(item.Get(),L"Email1Address",f["email"].toString());
-            set(item.Get(),L"BusinessTelephoneNumber",f["office_phone"].toString());set(item.Get(),L"MobileTelephoneNumber",f["cell_phone"].toString());set(item.Get(),L"JobTitle",f["role"].toString());
+            auto items=object(folder.Get(),L"Items");auto item=object(items.Get(),L"Add",{text("IPM.Contact")});auto c=request["contact"].toObject();applyContact(item.Get(),c);
             auto v=call(item.Get(),L"Save",DISPATCH_METHOD);VariantClear(&v);result["contact"]=contact(item.Get(),request["book"].toString());
+        }else if(action=="update"){
+            auto ids=request["book"].toString().split('\n');if(ids.size()!=2)throw QString("Invalid Outlook contact folder.");
+            auto folder=object(session.Get(),L"GetFolderFromID",{text(ids[1]),text(ids[0])});
+            if(integer(folder.Get(),L"DefaultItemType")!=2||!writable(folder.Get()))throw QString("The selected Outlook contact folder is not writable.");
+            auto existing=request["existing"].toObject();auto item=object(session.Get(),L"GetItemFromID",{text(existing["id"].toString()),text(ids[0])});
+            if(!item.Get()||integer(item.Get(),L"Class")!=40)throw QString("The selected Outlook contact no longer exists.");
+            applyContact(item.Get(),request["contact"].toObject());auto v=call(item.Get(),L"Save",DISPATCH_METHOD);VariantClear(&v);
+            result["contact"]=contact(item.Get(),request["book"].toString());
         }else throw QString("Unsupported Outlook contact operation.");
     }catch(const QString&error){result["error"]=error;}
     if(SUCCEEDED(initialized))CoUninitialize();auto bytes=QJsonDocument(result).toJson(QJsonDocument::Compact);std::fwrite(bytes.constData(),1,size_t(bytes.size()),stdout);return 0;

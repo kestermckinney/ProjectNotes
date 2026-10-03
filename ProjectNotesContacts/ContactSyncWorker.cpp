@@ -88,9 +88,23 @@ QVariantList ContactSyncWorker::reviews() const {
     }
     return out;
 }
+QVariantList ContactSyncWorker::exportReviews() const {
+    QVariantList out;
+    for(const auto &item:m_exportPlan){
+        if(!item.action.isEmpty()||item.candidates.isEmpty())continue;
+        QVariantList candidates;
+        for(const auto &candidate:item.candidates)candidates<<QVariantMap{
+            {"id",candidate.contact.id},{"book",candidate.contact.book},{"bookName",candidate.bookName},
+            {"writable",candidate.writable},{"reason",candidate.reason},
+            {"label",candidate.contact.name+" — "+candidate.contact.company+" — "+candidate.bookName},
+            {"contact",encode(candidate.contact).toVariantMap()}};
+        out<<QVariantMap{{"personId",item.personId},{"contact",encode(item.contact).toVariantMap()},{"candidates",candidates}};
+    }
+    return out;
+}
 QString ContactSyncWorker::scope(const QString &account)const{return m_config.value("provider").toString()+"/"+account;}
-void ContactSyncWorker::cancel(){++m_generation;m_timer.stop();if(m_provider)m_provider->cancel();m_busy=false;m_runningFullExport=false;emit changed();}
-void ContactSyncWorker::cancelSync(){const bool fullExport=m_runningFullExport;const int exported=m_exported;cancel();m_status=fullExport?QString("Full contact export canceled after %1 contacts.").arg(exported):QString("Contact synchronization canceled.");schedule();emit changed();}
+void ContactSyncWorker::cancel(){++m_generation;m_timer.stop();if(m_provider)m_provider->cancel();m_busy=false;m_runningFullExport=false;m_exportPlan.clear();emit changed();}
+void ContactSyncWorker::cancelSync(){const bool fullExport=m_runningFullExport;const int changedCount=m_exported+m_updated;cancel();m_status=fullExport?QString("Full contact export canceled after %1 contacts were changed.").arg(changedCount):QString("Contact synchronization canceled.");schedule();emit changed();}
 void ContactSyncWorker::setDatabase(const QString &path){
     cancel();m_repository.close();m_databasePath=path;m_path.clear();m_journal={};m_books.clear();m_authFailed=false;
     m_config={{"provider","office365"},{"enabled",false},{"startup",true},{"interval",5},{"account",""},{"sourceBooks",QStringList{}}};
@@ -173,8 +187,8 @@ void ContactSyncWorker::savePassword(const QString&password){
 }
 void ContactSyncWorker::syncNow(){run(false);}
 void ContactSyncWorker::fullExport(){
-    if(m_busy)return;
-    m_runningFullExport=true;m_exported=0;m_snapshot={};
+    if(m_busy||m_runningFullExport)return;
+    m_runningFullExport=true;m_exported=0;m_updated=0;m_skipped=0;m_snapshot={};m_exportPlan.clear();
     if(m_config.value("provider")=="none"){complete("Choose an application in Email, Contact and Calendar Integration to export contacts.");return;}
     if(m_path.isEmpty()||!m_repository.isOpen()){complete("Open a database first.");return;}
     if(m_provider&&m_provider!=m_testProvider){m_provider->cancel();m_provider->deleteLater();}
@@ -190,14 +204,80 @@ void ContactSyncWorker::fullExport(){
         if(snapshot.account.isEmpty()){complete("Contact provider did not return an account identity.");return;}
         auto provider=m_config.value("provider").toString();
         snapshot.defaultExportBookId=exportBook(snapshot.books,snapshot.defaultExportBookId,provider=="office365"||provider=="outlook");
-        m_books=snapshot.books;m_snapshot=std::move(snapshot);
+        m_books=snapshot.books;m_snapshot=std::move(snapshot);m_scope=scope(m_snapshot.account);
         if(m_snapshot.defaultExportBookId.isEmpty()){complete("Full export unavailable: no writable address book is available.");return;}
         QString error;m_people.clear();m_clients.clear();
         if(!m_repository.read(m_people,m_clients,error)){complete(error);return;}
-        m_fullExportIds.clear();for(const auto &person:m_people)if(!person.deleted)m_fullExportIds<<person.id;
-        m_fullExportIndex=0;m_status=QString("Exporting %1 contacts…").arg(m_fullExportIds.size());emit changed();
-        fullExportNext();
+        prepareFullExport();
     });
+}
+void ContactSyncWorker::prepareFullExport(){
+    QHash<QString,QVariantMap> books;
+    for(const auto &value:m_snapshot.books){const auto book=value.toMap();books.insert(book.value("id").toString(),book);}
+    const auto sameText=[](const QString &left,const QString &right){
+        return left.normalized(QString::NormalizationForm_KC).simplified().toCaseFolded()==
+               right.normalized(QString::NormalizationForm_KC).simplified().toCaseFolded();
+    };
+    const auto samePhone=[&](const QString &left,const QString &right){
+        const auto normalizedLeft=ContactMatcher::phone(left),normalizedRight=ContactMatcher::phone(right);
+        if(!normalizedLeft.isEmpty()||!normalizedRight.isEmpty())return !normalizedLeft.isEmpty()&&normalizedLeft==normalizedRight;
+        return sameText(left,right);
+    };
+    const auto identical=[&](const Contact &left,const Contact &right){
+        return sameText(left.name,right.name) && sameText(left.company,right.company) &&
+               sameText(left.fields.value("email").toString(),right.fields.value("email").toString()) &&
+               samePhone(left.fields.value("office_phone").toString(),right.fields.value("office_phone").toString()) &&
+               samePhone(left.fields.value("cell_phone").toString(),right.fields.value("cell_phone").toString()) &&
+               sameText(left.fields.value("role").toString(),right.fields.value("role").toString());
+    };
+    const auto savedLinks=m_journal["exportLinks"].toObject();int conflicts=0;
+    for(const auto &person:m_people){
+        if(person.deleted)continue;
+        ExportItem item;item.personId=person.id;item.contact.name=person.name;item.contact.company=person.company;item.contact.fields=person.fields;
+        item.contact.fields["company"]=person.company;item.contact.fields["id"]=person.id;
+        const auto email=person.fields.value("email").toString();if(!email.isEmpty())item.contact.emails={email};
+        for(const auto &phone:QStringList{person.fields.value("office_phone").toString(),person.fields.value("cell_phone").toString()})if(!phone.isEmpty())item.contact.phones<<phone;
+        const auto saved=savedLinks.value(m_scope+"/"+person.id).toObject();
+        const auto add=[&](const Contact &remote,const QString &reason){
+            const auto book=books.value(remote.book);item.candidates<<ExportCandidate{remote,reason,book.value("writable").toBool(),book.value("name",remote.book).toString()};};
+        for(const auto &remote:m_snapshot.contacts)if(!saved.isEmpty()&&remote.id==saved["id"].toString()&&remote.book==saved["book"].toString()){
+            const bool unchanged=identical(item.contact,remote);add(remote,unchanged?"Identical managed fields":"Previously exported contact");
+            if(unchanged){item.action="skip";item.targetId=remote.id;}break;
+        }
+        if(item.candidates.isEmpty())for(const auto &remote:m_snapshot.contacts)if(identical(item.contact,remote)){
+            add(remote,"Identical managed fields");item.action="skip";item.targetId=remote.id;break;
+        }
+        if(item.candidates.isEmpty())for(const auto &remote:m_snapshot.contacts){
+            bool emailMatch=false,phoneMatch=false;
+            for(const auto &left:item.contact.emails)for(const auto &right:remote.emails)if(!left.trimmed().isEmpty()&&left.trimmed().compare(right.trimmed(),Qt::CaseInsensitive)==0)emailMatch=true;
+            for(const auto &left:item.contact.phones)for(const auto &right:remote.phones)if(!ContactMatcher::phone(left).isEmpty()&&ContactMatcher::phone(left)==ContactMatcher::phone(right))phoneMatch=true;
+            const bool sameName=ContactMatcher::normalize(item.contact.name)==ContactMatcher::normalize(remote.name);
+            const bool sameCompany=ContactMatcher::normalize(item.contact.company,true)==ContactMatcher::normalize(remote.company,true);
+            const bool similarName=ContactMatcher::similarity(ContactMatcher::normalize(item.contact.name),ContactMatcher::normalize(remote.name))>=.92;
+            bool exactProfile=sameName&&sameCompany;
+            for(const auto &field:QStringList{"email","office_phone","cell_phone","role"})exactProfile=exactProfile&&item.contact.fields.value(field).toString().trimmed().compare(remote.fields.value(field).toString().trimmed(),Qt::CaseInsensitive)==0;
+            if(emailMatch||phoneMatch||exactProfile||(similarName&&sameCompany&&!item.contact.company.trimmed().isEmpty()))
+                add(remote,emailMatch?"Exact email":phoneMatch?"Exact phone":exactProfile?"Exact contact fields":"Name and company similarity");
+        }
+        if(item.candidates.isEmpty())item.action="create";else if(item.action.isEmpty())++conflicts;
+        m_exportPlan<<item;
+    }
+    m_fullExportIndex=0;
+    if(conflicts){m_status=QString("Review %1 possible existing contacts before export.").arg(conflicts);emit changed();emit exportReviewReady();return;}
+    m_status=QString("Exporting %1 contacts…").arg(m_exportPlan.size());emit changed();fullExportNext();
+}
+void ContactSyncWorker::resolveExport(const QString &personId,const QString &action,const QString &externalId){
+    if(!m_runningFullExport||!QStringList{"update","skip","create"}.contains(action))return;
+    for(auto &item:m_exportPlan)if(item.personId==personId&&item.action.isEmpty()){
+        if(action=="update"||(action=="skip"&&!externalId.isEmpty())){
+            bool valid=false;for(const auto &candidate:item.candidates)if(candidate.contact.id==externalId&&(action!="update"||candidate.writable))valid=true;
+            if(!valid){m_status=action=="update"?"Choose a writable existing contact to update.":"Choose an existing contact to keep.";emit changed();return;}
+            item.targetId=externalId;
+        }
+        item.action=action;break;
+    }
+    if(!exportReviews().isEmpty()){m_status=QString("Review %1 remaining possible contacts.").arg(exportReviews().size());emit changed();return;}
+    m_status=QString("Exporting %1 contacts…").arg(m_exportPlan.size());m_fullExportIndex=0;emit changed();fullExportNext();
 }
 void ContactSyncWorker::testConnection(){run(true);}
 void ContactSyncWorker::run(bool test){
@@ -334,28 +414,36 @@ void ContactSyncWorker::finishSync(){
     complete();
 }
 void ContactSyncWorker::fullExportNext(){
-    if(m_fullExportIndex>=m_fullExportIds.size()){
+    if(m_fullExportIndex>=m_exportPlan.size()){
         QString bookName=m_snapshot.defaultExportBookId;
         for(const auto &value:m_snapshot.books){const auto book=value.toMap();if(book.value("id")==m_snapshot.defaultExportBookId){bookName=book.value("name").toString();break;}}
-        complete(QString("Full contact export complete: %1 contacts exported to %2.").arg(m_exported).arg(bookName),true);return;
+        complete(QString("Contact export complete: %1 created in %2, %3 updated, %4 skipped.").arg(m_exported).arg(bookName).arg(m_updated).arg(m_skipped),true);return;
     }
-    const QString id=m_fullExportIds.at(m_fullExportIndex++);Person person;
-    for(const auto &candidate:m_people)if(candidate.id==id){person=candidate;break;}
-    Contact contact;contact.name=person.name;contact.company=person.company;contact.fields=person.fields;
-    contact.fields["company"]=person.company;contact.fields["id"]=person.id;
-    contact.emails={person.fields.value("email").toString()};
-    contact.phones={person.fields.value("office_phone").toString(),person.fields.value("cell_phone").toString()};
+    const auto item=m_exportPlan.at(m_fullExportIndex++);
+    if(item.action=="skip"){
+        if(!item.targetId.isEmpty())for(const auto &candidate:item.candidates)if(candidate.contact.id==item.targetId){
+            auto links=m_journal["exportLinks"].toObject();links[m_scope+"/"+item.personId]=QJsonObject{{"id",candidate.contact.id},{"book",candidate.contact.book}};m_journal["exportLinks"]=links;
+            if(!persist()){complete(m_status);return;}break;
+        }
+        ++m_skipped;fullExportNext();return;
+    }
     auto exportConfig=m_config;exportConfig["exportBookId"]=m_snapshot.defaultExportBookId;
-    const auto gen=m_generation;
-    m_provider->create(exportConfig,contact,QUuid::createUuid().toString(QUuid::WithoutBraces),
-        [this,guard=QPointer<ContactSyncWorker>(this),gen](Contact created,QString error){
+    const auto gen=m_generation;auto completed=[this,guard=QPointer<ContactSyncWorker>(this),gen,item](Contact result,QString error){
             if(!guard||gen!=m_generation)return;
-            if(!error.isEmpty()||created.id.isEmpty()){
-                complete(QString("Full contact export stopped after %1 contacts. The last result may be uncertain; check the address book before exporting again. %2")
-                         .arg(m_exported).arg(error));return;
+            if(!error.isEmpty()||result.id.isEmpty()){
+                complete(QString("Contact export stopped after %1 contacts were changed. The last result may be uncertain; refresh the address book before retrying. %2")
+                         .arg(m_exported+m_updated).arg(error));return;
             }
-            ++m_exported;fullExportNext();
-        });
+            auto links=m_journal["exportLinks"].toObject();links[m_scope+"/"+item.personId]=QJsonObject{{"id",result.id},{"book",result.book}};m_journal["exportLinks"]=links;
+            if(!persist()){complete(m_status);return;}
+            if(item.action=="update")++m_updated;else ++m_exported;fullExportNext();
+        };
+    if(item.action=="update"){
+        for(const auto &candidate:item.candidates)if(candidate.contact.id==item.targetId){m_provider->update(exportConfig,candidate.contact,item.contact,std::move(completed));return;}
+        complete("The selected existing contact is no longer available; start the export again.");return;
+    }
+    const auto intent=hash(m_scope+QChar(0)+item.personId).left(32);
+    m_provider->create(exportConfig,item.contact,intent,std::move(completed));
 }
 void ContactSyncWorker::complete(const QString&error,bool exportSuccess){m_busy=false;
     m_status=error.isEmpty()?QString("Applied %1 contacts; %2 unchanged; exported %3; %4 awaiting review.").arg(m_imported).arg(m_unchanged).arg(m_exported).arg(reviews().size()):error;

@@ -48,6 +48,13 @@ private slots:
             QMetaObject::invokeMethod(this,[&,contact,message,onWorker]{created=contact;error=message;correctCallbackThread=onWorker;finished=true;},Qt::QueuedConnection);
         });},Qt::QueuedConnection);
         QTRY_VERIFY(finished);QVERIFY2(error.isEmpty(),qPrintable(error));QCOMPARE(created.id,QString("created"));QVERIFY(correctCallbackThread);QVERIFY(correctTransportThread);
+        finished=false;Contact updated;
+        QMetaObject::invokeMethod(provider,[&]{Contact desired;desired.name="Jane Jones";provider->update({{"exportBookId","default"}},created,desired,[&](Contact contact,QString message){
+            bool onWorker=QThread::currentThread()==&workerThread;
+            QMetaObject::invokeMethod(this,[&,contact,message,onWorker]{updated=contact;error=message;correctCallbackThread=onWorker;finished=true;},Qt::QueuedConnection);
+        });},Qt::QueuedConnection);
+        QTRY_VERIFY(finished);QVERIFY2(error.isEmpty(),qPrintable(error));QCOMPARE(updated.id,QString("created"));QCOMPARE(transport.requests.last().method,QByteArray("PATCH"));
+        QCOMPARE(transport.requests.last().url.path(),QString("/v1.0/me/contacts/created"));QVERIFY(correctCallbackThread);
         QMetaObject::invokeMethod(provider,[provider]{provider->cancel();},Qt::BlockingQueuedConnection);
     }
     void graphPaginationDeltaAndDeletion(){
@@ -100,6 +107,21 @@ private slots:
         RoutingTransport transport;transport.route=[](const HttpRequest&){return davXml("",201);};NativeContactProvider provider("icloud",nullptr);provider.setCardDAVTransportForTesting(&transport,[]{return QString("synthetic-password");});
         Contact c;c.name="Alice Smith";QString error;Contact result;provider.create({{"account","test@example.test"},{"exportBookId","https://contacts.icloud.com/books/"}},c,"intent",[&](Contact v,QString e){result=v;error=e;});
         QVERIFY(error.isEmpty());QCOMPARE(result.id,QString("https://contacts.icloud.com/books/intent.vcf"));QCOMPARE(transport.requests.first().headers.value("If-None-Match"),QByteArray("*"));
+    }
+    void carddavUpdatePreservesUnmanagedFieldsAndUsesRevision(){
+        RoutingTransport transport;transport.route=[](const HttpRequest&r){
+            if(r.method=="GET"){HttpResponse response;response.statusCode=200;response.body="BEGIN:VCARD\r\nVERSION:3.0\r\nUID:stable\r\nFN:Alice Smith\r\nEMAIL;TYPE=WORK:old@example.test\r\nEMAIL;TYPE=HOME:home@example.test\r\nNOTE:Keep this note\r\nEND:VCARD\r\n";return response;}
+            return davXml("",204);
+        };
+        NativeContactProvider provider("icloud",nullptr);provider.setCardDAVTransportForTesting(&transport,[]{return QString("synthetic-password");});
+        Contact existing;existing.id="https://contacts.icloud.com/books/a.vcf";existing.book="https://contacts.icloud.com/books/";existing.etag="\"revision-1\"";existing.fields["email"]="old@example.test";
+        Contact desired;desired.name="Alice Jones";desired.fields["email"]="new@example.test";QString error;Contact result;
+        provider.update({{"account","test@example.test"}},existing,desired,[&](Contact value,QString message){result=value;error=message;});
+        QVERIFY2(error.isEmpty(),qPrintable(error));QCOMPARE(result.id,existing.id);QCOMPARE(transport.requests.size(),2);
+        QCOMPARE(transport.requests.last().method,QByteArray("PUT"));QCOMPARE(transport.requests.last().headers.value("If-Match"),QByteArray("\"revision-1\""));
+        QVERIFY(transport.requests.last().body.contains("UID:stable"));QVERIFY(transport.requests.last().body.contains("NOTE:Keep this note"));
+        QVERIFY(transport.requests.last().body.contains("home@example.test"));QVERIFY(!transport.requests.last().body.contains("EMAIL;TYPE=WORK:old@example.test"));
+        QVERIFY(transport.requests.last().body.contains("FN:Alice Jones"));QVERIFY(transport.requests.last().body.contains("EMAIL;TYPE=WORK:new@example.test"));
     }
 };
 QTEST_GUILESS_MAIN(ContactProvidersTest)

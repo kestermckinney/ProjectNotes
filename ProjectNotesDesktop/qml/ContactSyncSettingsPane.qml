@@ -149,6 +149,7 @@ ColumnLayout {
             fullExportResult.iconColor = success ? Theme.accent : Theme.red;
             fullExportResult.open();
         }
+        function onExportReviewReady() { exportReviewDialog.open(); }
         function onThunderbirdSetupFinished(message, success) {
             thunderbirdSetupResult.message = message;
             thunderbirdSetupResult.iconName = success ? "info" : "error";
@@ -224,7 +225,7 @@ ColumnLayout {
             onClicked: fullExportWarning.open()
         }
         Text {
-            text: qsTr("Creates a contact for every active Project Notes contact in the selected application's default address book.")
+            text: qsTr("Checks for existing contacts before creating, updating, or skipping each active Project Notes contact.")
             color: Theme.text2
             wrapMode: Text.Wrap
             Layout.fillWidth: true
@@ -234,12 +235,17 @@ ColumnLayout {
         id: fullExportWarning
         objectName: "fullContactExportWarning"
         title: qsTr("Full Contact Export")
-        message: qsTr("This is a full export, not a sync. It creates a new contact for every active Project Notes contact, so duplicate contacts could be created in the selected system.")
+        message: qsTr("Project Notes will check the selected contact system first. You will review possible matches and choose whether to update, skip, or create a new contact.")
         iconName: "warning"
         iconColor: Theme.red
         confirmText: qsTr("Export Contacts")
         destructive: true
         onConfirmed: if (pane.syncModel) pane.syncModel.fullExport()
+    }
+    ContactExportReviewDialog {
+        id: exportReviewDialog
+        objectName: "contactExportReviewDialog"
+        syncModel: pane.syncModel
     }
     RowLayout {
         Button {

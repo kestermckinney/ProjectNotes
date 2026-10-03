@@ -42,6 +42,7 @@ async function main() {
   let finishedTesting = false;
   host.on("exit", code => { if (!finishedTesting) { console.error(`Native host exited before protocol checks (code ${code}).`); process.exitCode = 1; } });
   let listener, buffer = Buffer.alloc(0), profile = "fixture-profile", created;
+  const existing = { id: "alice", properties: { vCard: "BEGIN:VCARD\r\nVERSION:3.0\r\nUID:alice-uid\r\nFN:Alice Smith\r\nEMAIL;TYPE=WORK:alice@example.test\r\nEMAIL;TYPE=HOME:alice.home@example.test\r\nNOTE:Keep this\r\nEND:VCARD\r\n" } };
   const port = {
     onMessage: { addListener(fn) { listener = fn; } },
     onDisconnect: { addListener() {} },
@@ -55,12 +56,13 @@ async function main() {
     runtime: { connectNative(name) { assert.equal(name, "org.projectnotes.contacts"); return port; } },
     storage: { local: { async get() { return { profileId: profile }; }, async set(value) { profile = value.profileId; } } },
     addressBooks: {
-      async list() { return [{ id: "book", name: "Contacts", contacts: [{ id: "alice", properties: { vCard: "BEGIN:VCARD\r\nFN:Alice Smith\r\nEMAIL;TYPE=WORK:alice@example.test\r\nEND:VCARD\r\n" } }] }]; },
+      async list() { return [{ id: "book", name: "Contacts", contacts: [existing] }]; },
       async get(id) { assert.equal(id, "book"); return { id, readOnly: false, remote: false }; }
     },
     contacts: {
       async create(book, properties) { assert.equal(book, "book"); assert.ok(properties.vCard.includes("UID:fixture-intent")); created = { id: "new-contact", properties }; return created.id; },
-      async get(id) { assert.equal(id, created.id); return created; }
+      async get(id) { if (id === existing.id) return existing; assert.equal(id, created.id); return created; },
+      async update(id, properties) { assert.equal(id, existing.id); assert.ok(properties.vCard.includes("NOTE:Keep this")); assert.ok(properties.vCard.includes("UID:alice-uid")); existing.properties = properties; }
     }
   };
   vm.runInNewContext(fs.readFileSync(process.argv[3], "utf8"), { messenger, crypto: require("node:crypto"), setTimeout });
@@ -96,6 +98,10 @@ async function main() {
     assert.equal(snapshot.contacts[0].fields.company, undefined);
     const exported = await request({ action: "create", book: "book", intentId: "fixture-intent", contact: { name: "Jane; Smith", company: "Acme", fields: { email: "jane@example.test" } } });
     assert.equal(exported.contact.id, "new-contact"); assert.equal(exported.contact.name, "Jane; Smith");
+    const updated = await request({ action: "update", book: "book", existing: { id: "alice", book: "book", fields: { email: "alice@example.test" } }, contact: { name: "Alice Jones", company: "Acme", fields: { email: "alice.jones@example.test" } } });
+    assert.ok(updated.contact, updated.error);
+    assert.equal(updated.contact.id, "alice"); assert.equal(updated.contact.name, "Alice Jones"); assert.ok(existing.properties.vCard.includes("NOTE:Keep this"));
+    assert.ok(existing.properties.vCard.includes("alice.home@example.test")); assert.ok(!existing.properties.vCard.includes("EMAIL;TYPE=WORK:alice@example.test"));
     const invalid = await request({ action: "delete" }); assert.ok(invalid.error);
     // A second host launched with another TMPDIR must neither steal the socket
     // nor remove it. This reproduces Thunderbird/Project Notes sandbox isolation.

@@ -41,7 +41,7 @@ int main(int argc,char **argv){
         QObject::connect(socket,&QLocalSocket::readyRead,&app,[&,socket,buffer,used]{
             *buffer+=socket->readAll();if(buffer->size()>1024*1024){socket->abort();return;}int end=buffer->indexOf('\n');if(end<0||*used)return;*used=true;
             auto o=QJsonDocument::fromJson(buffer->left(end)).object();QString action=o["action"].toString();
-            if(o["version"].toInt()!=1 || (action!="snapshot"&&action!="create")){socket->write("{\"version\":1,\"error\":\"Invalid bridge request\"}\n");socket->disconnectFromServer();return;}
+            if(o["version"].toInt()!=1 || (action!="snapshot"&&action!="create"&&action!="update")){socket->write("{\"version\":1,\"error\":\"Invalid bridge request\"}\n");socket->disconnectFromServer();return;}
             QString id=QUuid::createUuid().toString();o["requestId"]=id;pending[id]=socket;send(o);
             QTimer::singleShot(60000,socket,[&,id,socket]{pending.remove(id);socket->abort();socket->deleteLater();});
         });

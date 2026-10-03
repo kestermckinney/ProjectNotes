@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include "VCard.h"
+#include "ContactMatcher.h"
 #include <QRegularExpression>
 namespace PN::Contacts {
 static QString unescape(QString s) {
@@ -49,5 +50,32 @@ QByteArray writeVCard(const Contact &c,const QString&uid) {
     QByteArray out;
     for(const auto&line:lines){QByteArray bytes=line.toUtf8();while(bytes.size()>75){int n=75;while(n>0&&(uchar(bytes[n])&0xc0)==0x80)--n;out+=bytes.left(n)+"\r\n ";bytes=bytes.mid(n);}out+=bytes+"\r\n";}
     return out;
+}
+QByteArray mergeVCard(const QByteArray &existing,const Contact &c,const Contact &previous) {
+    QString text=QString::fromUtf8(existing);text.replace(QRegularExpression("\\r?\\n[ \\t]"),"");
+    QStringList kept;QString uid;
+    for(const auto &line:text.split(QRegularExpression("\\r?\\n"),Qt::SkipEmptyParts)){
+        const int colon=line.indexOf(':');
+        const auto left=(colon<0?line:line.left(colon)).toUpper();
+        const auto key=left.section(';',0,0).section('.',-1);
+        if(key=="UID")uid=line.mid(colon+1);
+        if(key=="FN"||key=="N"||key=="ORG"||key=="TITLE")continue;
+        const auto value=colon<0?QString():unescape(line.mid(colon+1));
+        const auto oldEmail=previous.fields.value("email").toString().trimmed();
+        const auto oldOffice=ContactMatcher::phone(previous.fields.value("office_phone").toString()),oldCell=ContactMatcher::phone(previous.fields.value("cell_phone").toString());
+        if(key=="EMAIL"&&left.contains("WORK")&&!oldEmail.isEmpty()&&value.compare(oldEmail,Qt::CaseInsensitive)==0)continue;
+        if(key=="TEL"&&left.contains("WORK")&&!oldOffice.isEmpty()&&ContactMatcher::phone(value)==oldOffice)continue;
+        if(key=="TEL"&&(left.contains("CELL")||left.contains("MOBILE"))&&!oldCell.isEmpty()&&ContactMatcher::phone(value)==oldCell)continue;
+        if(key!="BEGIN"&&key!="END")kept<<line;
+    }
+    QStringList lines={"BEGIN:VCARD"};
+    if(!kept.join('\n').contains(QRegularExpression("(^|\\n)VERSION:",QRegularExpression::CaseInsensitiveOption)))lines<<"VERSION:3.0";
+    lines<<kept;
+    if(!uid.isEmpty()&&!lines.join('\n').contains(QRegularExpression("(^|\\n)UID:",QRegularExpression::CaseInsensitiveOption)))lines<<"UID:"+uid;
+    lines<<"FN:"+escaped(c.name)<<"N:;"+escaped(c.name)+";;;";
+    for(const auto &pair:QList<QPair<QString,QString>>{{"ORG",c.company},{"TITLE",c.fields.value("role").toString()},
+        {"EMAIL;TYPE=WORK",c.fields.value("email").toString()},{"TEL;TYPE=WORK",c.fields.value("office_phone").toString()},
+        {"TEL;TYPE=CELL",c.fields.value("cell_phone").toString()}})if(!pair.second.isEmpty())lines<<pair.first+":"+escaped(pair.second);
+    lines<<"END:VCARD";return lines.join("\r\n").toUtf8()+"\r\n";
 }
 }
