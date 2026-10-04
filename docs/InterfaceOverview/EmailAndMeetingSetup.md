@@ -27,14 +27,15 @@ Open **Settings > Preferences** and find **Email, Contact and Calendar Integrati
 | **Outlook** | A draft message opened in the new Outlook | A calendar file opened in the new Outlook, which leaves out the attendees. Copy them from the Schedule meeting window and paste them in | Windows |
 | **Outlook (Classic)** | A draft message opened in Outlook (classic) | An unsent meeting window in Outlook (classic) with the attendees filled in | Windows |
 | **MacOS Email and Calendar** | A Mail compose window with the formatted message. No Bcc and no attachments | An event created directly in Calendar, without attendees. Copy them from the Schedule meeting window and paste them in | macOS |
+| **iCloud** | A draft stored in iCloud Mail | An event stored in iCloud Calendar without attendees. Copy them from the Schedule meeting window and paste them in | Windows, macOS, Linux |
 | **Thunderbird** | A Thunderbird compose window, attachments included | A calendar file handed to Thunderbird, which offers to import it | Windows, macOS, Linux |
 | **Microsoft 365 drafts** | A draft in your Microsoft 365 mailbox, opened in Outlook on the web | A draft event in your Microsoft 365 calendar, opened in Outlook on the web | Windows, macOS, Linux |
 
-The list only shows the choices your operating system supports, so no one sees all six at once:
+The list only shows the choices your operating system supports, so no one sees every platform-specific choice at once:
 
-- **Windows:** Default Application, Outlook, Outlook (Classic), Thunderbird and Microsoft 365 drafts.
-- **macOS:** Default Application, MacOS Email and Calendar, Thunderbird and Microsoft 365 drafts.
-- **Linux:** Default Application, Thunderbird and Microsoft 365 drafts.
+- **Windows:** Default Application, Outlook, Outlook (Classic), iCloud, Thunderbird and Microsoft 365 drafts.
+- **macOS:** Default Application, MacOS Email and Calendar, iCloud, Thunderbird and Microsoft 365 drafts.
+- **Linux:** Default Application, iCloud, Thunderbird and Microsoft 365 drafts.
 
 On macOS, **MacOS Email and Calendar** is selected the first time you run Project Notes. Windows and Linux start on **Default Application**; on Windows, switch to the Outlook you use. Pick one, then follow the section for your platform below.
 
@@ -91,6 +92,16 @@ If your desktop has no handler for either type, choose **Thunderbird** instead a
 2. Fill in **Thunderbird executable**. A plain command such as `thunderbird` works when it is on your path. A full path works too. For the Flatpak build, enter `flatpak run org.mozilla.Thunderbird`.
 
 Emails open in a Thunderbird compose window with the attachments already added. Meetings are passed to Thunderbird as a calendar file; Thunderbird asks which calendar to import into, and you send the invitations from the event.
+
+## iCloud on any platform
+
+1. Set **Integration** to **iCloud**.
+2. Enter the Apple Account used for iCloud Calendar and Contacts. If its iCloud Mail address is different, enter that in the optional mail-address field.
+3. Generate an app-specific password at [account.apple.com](https://account.apple.com/), enter it under **Contact Synchronization**, and click **Save password**. Project Notes keeps it in the operating system credential store, not in the database.
+
+Project Notes stores email as an unsent message in iCloud Mail's Drafts mailbox. It creates calendar events in iCloud Calendar without attendees so the provider cannot send invitations during creation. Click **Copy Attendees** before creating a meeting, then open iCloud Calendar and paste them into the event before sending the invitations.
+
+iCloud returns an internal identity for a created item but no link that opens that particular draft or event. Project Notes therefore confirms creation and asks you to open iCloud Mail or Calendar yourself; it does not open a generic page and imply that the new item is selected.
 
 ## Microsoft 365 drafts
 

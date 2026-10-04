@@ -24,6 +24,7 @@ bool isBackendAvailableOnThisPlatform(BackendId backend)
     case BackendId::Graph:
     case BackendId::DefaultApp:
     case BackendId::Thunderbird:
+    case BackendId::ICloud:
         return true;
     }
     return false;

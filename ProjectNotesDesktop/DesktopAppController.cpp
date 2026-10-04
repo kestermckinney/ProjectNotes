@@ -33,12 +33,14 @@
 #include "ProjectNotesEmail/EmailSettingsStore.h"
 #include "ProjectNotesEmail/TransientCacheCleaner.h"
 #include "ProjectNotesEmail/backends/GraphEmailBackend.h"
+#include "ProjectNotesEmail/backends/ICloudEmailBackend.h"
 #include "ProjectNotesEmail/EmlWriter.h"
 #include "ProjectNotesEmail/backends/EmlFileEmailBackend.h"
 #include "ProjectNotesEmail/backends/ThunderbirdEmailBackend.h"
 #include "ProjectNotesEmailRendering/WebEngineReportRenderer.h"
 #include "ProjectNotesMeetings/MeetingService.h"
 #include "ProjectNotesMeetings/backends/GraphMeetingBackend.h"
+#include "ProjectNotesMeetings/backends/ICloudMeetingBackend.h"
 #include "ProjectNotesMeetings/backends/IcsFileMeetingBackend.h"
 #include "ProjectNotesMeetings/backends/ThunderbirdMeetingBackend.h"
 #if defined(Q_OS_DARWIN)
@@ -227,6 +229,10 @@ DesktopAppController::DesktopAppController(QObject* parent)
             && !QDesktopServices::openUrl(result.presentationUrl))
             emit errorOccurred(tr("Cannot Open Email Draft"),
                                tr("The draft was created, but the browser could not open it. Open Outlook Drafts to review the email."));
+        else if (result.error.code.isEmpty()
+                 && m_communicationsController->preparation().backend == PN::Comm::BackendId::ICloud)
+            emit infoOccurred(tr("iCloud Draft Created"),
+                              tr("The email was saved in iCloud Mail Drafts. iCloud does not provide a link to the new draft, so open iCloud Mail to review and send it."));
     });
     m_recipientSelectionModel = std::make_unique<PN::Comm::RecipientSelectionModel>();
     m_templateEditorModel = std::make_unique<PN::Comm::TemplateEditorModel>(
@@ -237,6 +243,14 @@ DesktopAppController::DesktopAppController(QObject* parent)
     m_contactSyncSettingsModel = std::make_unique<PN::Contacts::ContactSyncSettingsModel>(
         &global_DBObjects, m_office365Service, QStringLiteral("ProjectNotes") + s_developerProfile,
         dataLocation(), this);
+    const auto iCloudCredentials = [this] {
+        return m_contactSyncSettingsModel ? m_contactSyncSettingsModel->iCloudCredentials()
+                                          : PN::Comm::ICloudCredentials{};
+    };
+    m_iCloudEmailBackend = std::make_unique<PN::Comm::ICloudEmailBackend>(iCloudCredentials);
+    m_emailService->registerBackend(PN::Comm::BackendId::ICloud, m_iCloudEmailBackend.get());
+    m_iCloudMeetingBackend = std::make_unique<PN::Comm::ICloudMeetingBackend>(iCloudCredentials);
+    m_meetingService->registerBackend(PN::Comm::BackendId::ICloud, m_iCloudMeetingBackend.get());
     m_office365SettingsModel->setContactSyncModel(m_contactSyncSettingsModel.get());
     m_contactSyncSettingsModel->setIntegrationBackend(preferredEmailBackend());
     m_webEngineRenderer = new PN::Comm::WebEngineReportRenderer(this);
@@ -1389,6 +1403,7 @@ QVariantMap DesktopAppController::meetingReview() const
     case PN::Comm::BackendId::DefaultApp: backendLabel = tr("Default application"); break;
     case PN::Comm::BackendId::Outlook: backendLabel = tr("Outlook"); break;
     case PN::Comm::BackendId::OutlookClassic: backendLabel = tr("Outlook (Classic)"); break;
+    case PN::Comm::BackendId::ICloud: backendLabel = tr("iCloud"); break;
     default: backendLabel = PN::Comm::toStableString(review.backend); break;
     }
     const QString agenda = !review.htmlAgenda.isEmpty() ? review.htmlAgenda
@@ -1524,6 +1539,10 @@ bool DesktopAppController::handoffPreparedMeeting(const QString &subject, const 
                              "the event's invitees, then click Send in Calendar.").arg(outcome.eventIdentity));
             }
 #endif
+            if (backend == PN::Comm::BackendId::ICloud && outcome.error.code.isEmpty()) {
+                emit self->infoOccurred(self->tr("Schedule Meeting"),
+                    self->tr("The event was created in iCloud Calendar without attendees. iCloud does not provide a link to the new event; open Calendar, paste the copied attendees into the event, then send the invitations."));
+            }
         });
     });
     return true;
@@ -1536,9 +1555,12 @@ void DesktopAppController::finishMeetingHandoff(const PN::Comm::MeetingHandoffRe
     if (!result.error.code.isEmpty()) {
         const bool unknownOutcome = result.certainty == PN::Comm::OutcomeCertainty::Uncertain
             || result.error.certainty == PN::Comm::OutcomeCertainty::Uncertain;
+        const bool iCloud = m_meetingReview && m_meetingReview->backend == PN::Comm::BackendId::ICloud;
         emit meetingHandoffFinished(false, unknownOutcome
-            ? tr("Microsoft 365 may have created the meeting before the connection failed. "
-                 "Check your Outlook calendar before trying again.")
+            ? (iCloud ? tr("iCloud may have created the event before the connection failed. "
+                           "Check iCloud Calendar before trying again.")
+                      : tr("Microsoft 365 may have created the meeting before the connection failed. "
+                           "Check your Outlook calendar before trying again."))
             : meetingErrorText(result.error.code, result.error.displayText));
         return;
     }
@@ -1616,6 +1638,11 @@ QString DesktopAppController::meetingErrorText(const QString &code, const QStrin
         {QStringLiteral("office365-not-authenticated"), QT_TR_NOOP("Sign in to Microsoft 365 in Settings > Office 365 Integration, then try again.")},
         {QStringLiteral("account-generation-changed"), QT_TR_NOOP("The Microsoft 365 account changed. Try again.")},
         {QStringLiteral("graph-calendar-consent-required"), QT_TR_NOOP("Microsoft 365 did not allow calendar access. Sign out and sign in again in Settings > Office 365 Integration to grant calendar permission.")},
+        {QStringLiteral("icloud-credentials-required"), QT_TR_NOOP("Enter your Apple Account and save an app-specific password in Settings > Preferences, then try again.")},
+        {QStringLiteral("icloud-calendar-authentication-failed"), QT_TR_NOOP("iCloud rejected the Apple Account or app-specific password. Check both in Settings > Preferences.")},
+        {QStringLiteral("icloud-calendar-not-found"), QT_TR_NOOP("No writable iCloud calendar was found for this account.")},
+        {QStringLiteral("icloud-calendar-discovery-failed"), QT_TR_NOOP("Project Notes could not find your iCloud calendars. Check your connection and try again.")},
+        {QStringLiteral("icloud-calendar-event-create-failed"), QT_TR_NOOP("iCloud could not create the event. Check your connection and try again.")},
         {QStringLiteral("operation-cancelled"), QT_TR_NOOP("Scheduling was cancelled.")},
     };
     const auto message = messages.constFind(code);

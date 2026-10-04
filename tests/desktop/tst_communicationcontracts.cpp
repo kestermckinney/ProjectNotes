@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "ProjectNotesEmail/EmailTypes.h"
+#include "ProjectNotesEmail/EmailSettingsStore.h"
 #include "ProjectNotesEmail/ArtifactStore.h"
 #include "ProjectNotesEmail/RecipientAudienceResolver.h"
 #include "ProjectNotesEmail/RecipientSelectionModel.h"
@@ -14,6 +15,7 @@
 #include "ProjectNotesEmail/backends/EmlFileEmailBackend.h"
 #include "ProjectNotesEmail/backends/ThunderbirdEmailBackend.h"
 #include "ProjectNotesEmail/backends/GraphEmailBackend.h"
+#include "ProjectNotesEmail/backends/ICloudEmailBackend.h"
 #include "ProjectNotesEmail/backends/OutlookHelperProtocol.h"
 #include "ProjectNotesEmail/EmailService.h"
 #include "ProjectNotesEmail/AudiencePresetStore.h"
@@ -136,6 +138,7 @@ private slots:
     void resolvesThunderbirdExecutable();
     void validatesOutlookHelperProtocolFrames();
     void reportsMacMailPlatformAvailability();
+    void iCloudEmailRequiresStoredCredentials();
     void serializesEmailHandoffsAndRejectsStaleCompletion();
     void scopesAudiencePresetsByDatabaseAndProject();
     void keepsAudienceDefaultsPerReport();
@@ -192,6 +195,7 @@ void CommunicationContractsTest::stableEnumRoundTrips()
     QVERIFY(backendIdFromStableString(toStableString(BackendId::Thunderbird)) == BackendId::Thunderbird);
     QVERIFY(backendIdFromStableString(toStableString(BackendId::Outlook)) == BackendId::Outlook);
     QVERIFY(backendIdFromStableString(toStableString(BackendId::OutlookClassic)) == BackendId::OutlookClassic);
+    QVERIFY(backendIdFromStableString(toStableString(BackendId::ICloud)) == BackendId::ICloud);
     QVERIFY(recipientRoleFromStableString(toStableString(RecipientRole::Bcc)) == RecipientRole::Bcc);
 }
 
@@ -1356,6 +1360,8 @@ void CommunicationContractsTest::validatesOutlookHelperProtocolFrames()
 
 void CommunicationContractsTest::reportsMacMailPlatformAvailability()
 {
+    // iCloud is a provider integration and is available on every desktop OS.
+    QVERIFY(isBackendAvailableOnThisPlatform(BackendId::ICloud));
     // "MacOS Email and Calendar" now drives Mail.app/Calendar.app natively
     // (MacMailBackend/MacCalendarBackend, macOS-only) instead of writing an
     // .eml/.ics file. Its native compose has no Cc/Bcc distinction and no
@@ -1386,6 +1392,20 @@ void CommunicationContractsTest::reportsMacMailPlatformAvailability()
     QVERIFY(defaultAppResult.validation.ok());
     QVERIFY(!hasWarning(defaultAppResult.validation, QStringLiteral("mac-mail-bcc-unsupported")));
     QVERIFY(!hasWarning(defaultAppResult.validation, QStringLiteral("mac-mail-attachments-unsupported")));
+}
+
+void CommunicationContractsTest::iCloudEmailRequiresStoredCredentials()
+{
+    ICloudEmailBackend backend([] { return ICloudCredentials{}; });
+    EmailRequest request;
+    request.operationId = QUuid::createUuid();
+    EmailHandoffResult result;
+    backend.handoff(request, [&result](EmailHandoffResult value) { result = std::move(value); });
+    QCOMPARE(result.operationId, request.operationId);
+    QCOMPARE(result.error.code, QStringLiteral("icloud-credentials-required"));
+    QCOMPARE(result.certainty, OutcomeCertainty::NotStarted);
+    QVERIFY(result.presentationUrl.isEmpty());
+    QVERIFY(result.draftIdentity.isEmpty());
 }
 
 void CommunicationContractsTest::serializesEmailHandoffsAndRejectsStaleCompletion()

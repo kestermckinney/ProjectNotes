@@ -5,6 +5,7 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Network Qml Sql Xml 
 add_library(ProjectNotesIntegrations STATIC
     CommunicationTypes.cpp
     CommunicationTypes.h
+    ICloudCredentials.h
     MicrosoftOAuthManager.cpp
     MicrosoftOAuthManager.h
     Office365Service.cpp

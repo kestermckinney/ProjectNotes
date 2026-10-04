@@ -87,6 +87,12 @@ ColumnLayout {
             text: pane.config.account || ""
             onEditingFinished: pane.option("account", text)
         }
+        FormField {
+            label: qsTr("iCloud Mail address (if different)")
+            placeholder: qsTr("Uses the Apple Account above when blank")
+            text: pane.config.mailAccount || ""
+            onEditingFinished: pane.option("mailAccount", text)
+        }
         RowLayout {
             TextField {
                 id: password

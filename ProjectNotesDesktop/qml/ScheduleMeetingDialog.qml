@@ -64,6 +64,8 @@ Dialog {
         case "graph":
             return qsTr("A draft meeting will be created in your Microsoft 365 calendar%1 and opened in Outlook. Edit the time, subject and agenda there, then send the invitations.")
                 .arg(office365 && office365.accountLabel !== "" ? " (" + office365.accountLabel + ")" : "")
+        case "icloud":
+            return qsTr("A draft event will be created in iCloud Calendar without attendees. Copy the attendees now, then open iCloud Calendar, paste them into the event, and send the invitations. iCloud cannot link directly to the new event.")
         case "mac-mail":
             return qsTr("The meeting will be created in Calendar without attendees. Copy the attendees, paste them into the event's invitees, then click Send.")
         case "outlook":
@@ -229,7 +231,7 @@ Dialog {
                 // opening the .ics) drop them, so they travel by clipboard.
                 // Only Outlook (classic) and Microsoft 365 fill them in.
                 Button {
-                    visible: ["default-app", "outlook", "mac-mail"].indexOf(dialog.review.backend) >= 0
+                    visible: ["default-app", "outlook", "mac-mail", "icloud"].indexOf(dialog.review.backend) >= 0
                     text: qsTr("Copy Attendees")
                     enabled: dialog.ready && !dialog.busy
                     onClicked: dialog.copyAttendees()
@@ -237,7 +239,7 @@ Dialog {
                 Button { text: qsTr("Cancel"); onClicked: dialog._dismiss() }
                 Button {
                     primary: true
-                    text: qsTr("Open Invite")
+                    text: dialog.review.backend === "icloud" ? qsTr("Create Draft") : qsTr("Open Invite")
                     enabled: dialog.ready && !dialog.busy
                     onClicked: dialog.schedule()
                 }

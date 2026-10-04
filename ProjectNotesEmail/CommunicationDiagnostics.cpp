@@ -63,6 +63,19 @@ QString diagnosticDisplayText(const QString &code)
         return tr("The attachment could not be uploaded to the Microsoft 365 draft. "
                   "Check your connection and try again; an incomplete draft may be left in Drafts.");
 
+    if (code == QLatin1String("icloud-credentials-required"))
+        return tr("Enter your Apple Account and save an app-specific password in Settings > Preferences, then try again.");
+    if (code == QLatin1String("icloud-mail-authentication-failed")
+        || code == QLatin1String("icloud-credentials-invalid"))
+        return tr("iCloud Mail rejected the Apple Account or app-specific password. Check both in Settings > Preferences.");
+    if (code == QLatin1String("icloud-mail-drafts-unavailable"))
+        return tr("iCloud Mail did not make its Drafts mailbox available. Open iCloud Mail once, then try again.");
+    if (code == QLatin1String("icloud-mail-network-error")
+        || code == QLatin1String("icloud-mail-timeout"))
+        return tr("Project Notes could not reach iCloud Mail. Check your connection and try again.");
+    if (code == QLatin1String("icloud-mail-draft-create-failed"))
+        return tr("iCloud Mail may have received the draft before the connection failed. Check Drafts before trying again.");
+
     if (code == QLatin1String("attachment-integrity-mismatch"))
         return tr("A generated attachment changed after it was prepared. Prepare the email again.");
     if (code == QLatin1String("attachment-read-failed")

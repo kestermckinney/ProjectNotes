@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #pragma once
 #include "ContactProvider.h"
+#include "ProjectNotesIntegrations/ICloudCredentials.h"
 #include <QThread>
 class DatabaseObjects;
 namespace PN::Contacts {
@@ -30,6 +31,7 @@ public:
     QString lastSuccess() const {return m_lastSuccess;}
     bool thunderbirdFlatpakInstalled() const;
     bool thunderbirdSetupBusy() const {return m_thunderbirdSetupBusy;}
+    PN::Comm::ICloudCredentials iCloudCredentials() const;
     void setDatabase(const QString &path);
     void setIntegrationBackend(const QString &backend);
     Q_INVOKABLE void setOption(const QString &key,const QVariant &value);

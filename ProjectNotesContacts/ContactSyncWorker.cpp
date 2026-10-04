@@ -119,7 +119,7 @@ void ContactSyncWorker::cancel(){++m_generation;m_timer.stop();if(m_provider)m_p
 void ContactSyncWorker::cancelSync(){const bool fullExport=m_runningFullExport;const int changedCount=m_exported+m_updated;cancel();m_status=fullExport?QString("Full contact export canceled after %1 contacts were changed.").arg(changedCount):QString("Contact synchronization canceled.");schedule();emit changed();}
 void ContactSyncWorker::setDatabase(const QString &path){
     cancel();m_repository.close();m_databasePath=path;m_path.clear();m_journal={};m_books.clear();m_authFailed=false;
-    m_config={{"provider","office365"},{"enabled",false},{"startup",true},{"interval",5},{"account",""},{"sourceBooks",QStringList{}}};
+    m_config={{"provider","office365"},{"enabled",false},{"startup",true},{"interval",5},{"account",""},{"mailAccount",""},{"sourceBooks",QStringList{}}};
     m_config["credentialService"]=m_organization=="ProjectNotes"?QString("Project Notes iCloud Contacts"):QString("Project Notes iCloud Contacts/")+m_organization;
     if(path.isEmpty()){m_status="Open a database to configure contact synchronization.";emit changed();return;}
     QString databaseError;
@@ -177,7 +177,7 @@ bool ContactSyncWorker::persist(){
 }
 void ContactSyncWorker::schedule(){m_timer.stop();if(m_config.value("enabled").toBool()&&!m_authFailed&&!m_path.isEmpty()&&m_config.value("provider")!="none")m_timer.start(qBound(1,m_config.value("interval").toInt(),1440)*60000);}
 void ContactSyncWorker::setOption(const QString&key,const QVariant&value){
-    if(!QStringList{"provider","enabled","startup","interval","account","sourceBooks"}.contains(key))return;
+    if(!QStringList{"provider","enabled","startup","interval","account","mailAccount","sourceBooks"}.contains(key))return;
     if(key=="provider"&&!QStringList{"outlook","office365","thunderbird","icloud","none"}.contains(value.toString()))return;
     cancel();m_authFailed=false;
     if(key=="provider"&&value!=m_config.value(key)){m_config["sourceBooks"]=QStringList{};m_books.clear();}

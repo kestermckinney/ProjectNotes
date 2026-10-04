@@ -62,7 +62,7 @@ The **Managing Company** setting, also under the **Preferences** section of Sett
 
 ## Contact Synchronization
 
-Contact synchronization is part of **Preferences → Email, Contact and Calendar Integration** and follows its **Integration** selection. Thunderbird uses Thunderbird contacts; Outlook (Classic) uses classic Outlook contacts; Outlook and Microsoft 365 drafts use the shared Office 365 account; MacOS Email and Calendar uses iCloud. Default Application does not provide contact synchronization. There is no separate contact-source selector.
+Contact synchronization is part of **Preferences → Email, Contact and Calendar Integration** and follows its **Integration** selection. Thunderbird uses Thunderbird contacts; Outlook (Classic) uses classic Outlook contacts; Outlook and Microsoft 365 drafts use the shared Office 365 account; iCloud and MacOS Email and Calendar use iCloud contacts. Default Application does not provide contact synchronization. There is no separate contact-source selector.
 
 - **Outlook** is offered only on Windows and reads classic Outlook's active profile. New Outlook and other platforms use Office 365 for Microsoft cloud contacts.
 - **Office 365** uses the shared account configured under **Office 365 Integration**. Sign in from that tab to grant contact access for synchronization and full export. Preferences has no separate Microsoft sign-in.
@@ -91,9 +91,9 @@ The **Integration** list only offers what your operating system supports:
 
 | Platform | Choices in the list |
 | :--- | :--- |
-| **Windows** | Default Application, Outlook, Outlook (Classic), Thunderbird, Microsoft 365 drafts |
-| **macOS** | Default Application, MacOS Email and Calendar, Thunderbird, Microsoft 365 drafts |
-| **Linux** | Default Application, Thunderbird, Microsoft 365 drafts |
+| **Windows** | Default Application, Outlook, Outlook (Classic), iCloud, Thunderbird, Microsoft 365 drafts |
+| **macOS** | Default Application, MacOS Email and Calendar, iCloud, Thunderbird, Microsoft 365 drafts |
+| **Linux** | Default Application, iCloud, Thunderbird, Microsoft 365 drafts |
 
 | Integration | What happens |
 | :--- | :--- |
@@ -101,6 +101,7 @@ The **Integration** list only offers what your operating system supports:
 | **Outlook** (Windows) | The email and the meeting open in the new Outlook, whichever app holds the `.eml` and `.ics` associations. The new Outlook drops a meeting's attendees, so use **Copy Attendees** in the Schedule meeting window and paste them into the event. |
 | **Outlook (Classic)** (Windows) | The email opens in Outlook (classic) as an unsent message. The meeting opens as an unsent meeting window with the attendees and agenda already filled in. |
 | **MacOS Email and Calendar** (macOS) | The email opens in a Mail compose window without Bcc recipients or attachments. The meeting becomes an event in Calendar without attendees; use **Copy Attendees** in the Schedule meeting window and paste them into the event. |
+| **iCloud** | The email becomes an unsent iCloud Mail draft. The meeting becomes an iCloud Calendar event without attendees; copy and paste them before sending invitations. iCloud does not return a link to either new item, so open Mail or Calendar yourself. |
 | **Thunderbird** | The email opens in a Thunderbird compose window with its attachments. The meeting is passed to Thunderbird, which offers to import it into one of its calendars. |
 | **Microsoft 365 drafts** | The email becomes a draft in your Microsoft 365 mailbox and the meeting a draft event in your calendar, both opened in Outlook on the web. Sign in under **Settings > Office 365 Integration** first. |
 

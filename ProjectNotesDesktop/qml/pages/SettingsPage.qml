@@ -1120,10 +1120,11 @@ Item {
                 SettingsSection {
                     id: integrationSection
                     title: qsTr("Email, Contact and Calendar Integration")
-                    subtitle: qsTr("Choose the application for email, contact synchronization, and calendar invitations. Emails and invitations open for your review before you send them.")
+                    subtitle: qsTr("Choose the service or application for email, contact synchronization, and calendar invitations. Emails and invitations are prepared for your review before you send them.")
                     readonly property var backends: {
                         var list = [
                             { value: "default-app", label: qsTr("Default Application") },
+                            { value: "icloud", label: qsTr("iCloud") },
                             { value: "thunderbird", label: qsTr("Thunderbird") },
                             { value: "graph", label: qsTr("Microsoft 365 drafts") }
                         ]
@@ -1169,6 +1170,8 @@ Item {
                             switch (DesktopAppController.preferredEmailBackend) {
                             case "graph":
                                 return qsTr("Emails become drafts in your Microsoft 365 mailbox, and meetings become draft events in your Microsoft 365 calendar. Both open in Outlook for review. Sign in under Office 365 Integration first.")
+                            case "icloud":
+                                return qsTr("Emails become drafts in iCloud Mail, and meetings become events in iCloud Calendar without attendees. Copy the meeting attendees and paste them into the event before sending invitations. iCloud does not provide a link to a newly created draft or event, so open iCloud Mail or iCloud Calendar to review it. Enter your Apple Account and app-specific password below.")
                             case "outlook":
                                 return qsTr("Emails and meetings open in the new Outlook, even when another app handles .eml and .ics files. The new Outlook drops the attendees when it opens a meeting, so use Copy Attendees in the Schedule meeting window and paste them into the event before you send it.")
                             case "outlook-classic":

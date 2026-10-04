@@ -264,7 +264,7 @@ add_test(NAME richtextpolicy COMMAND tst_richtextpolicy)
 set_tests_properties(richtextpolicy PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # Native meeting scheduling: iCalendar output, preparation, the calendar file,
-# Thunderbird and Graph backends, and the temporary-cache cleaner. Every
+# Thunderbird, iCloud and Graph backends, and the temporary-cache cleaner. Every
 # launcher, opener and account is a fake; no calendar or invitation is used.
 add_executable(tst_meetings tst_meetings.cpp)
 target_link_libraries(tst_meetings PRIVATE Qt6::Core Qt6::Gui Qt6::Test ProjectNotesMeetings ProjectNotesIntegrations ProjectNotesCore)

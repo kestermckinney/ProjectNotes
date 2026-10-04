@@ -63,7 +63,7 @@ Pick a **Format**:
 
 Then choose recipients under **Send to** and click **Send Email**.
 
-With **Microsoft 365 drafts** selected as your integration, the draft is created in your mailbox and opened in Outlook on the web. With the other integrations, your mail application opens with the report and recipients already filled in.
+With **Microsoft 365 drafts** selected as your integration, the draft is created in your mailbox and opened in Outlook on the web. With **iCloud**, the draft is created in iCloud Mail, but iCloud provides no link to the new item, so open Drafts to review it. With the other integrations, your mail application opens with the report and recipients already filled in.
 
 ## Choosing recipients
 

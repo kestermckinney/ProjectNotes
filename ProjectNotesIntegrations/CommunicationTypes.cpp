@@ -74,6 +74,7 @@ QString toStableString(BackendId value)
     case BackendId::Thunderbird: return QStringLiteral("thunderbird");
     case BackendId::MacMail: return QStringLiteral("mac-mail");
     case BackendId::Outlook: return QStringLiteral("outlook");
+    case BackendId::ICloud: return QStringLiteral("icloud");
     }
     return {};
 }
@@ -113,7 +114,8 @@ std::optional<BackendId> backendIdFromStableString(const QString &value)
                                                {"mailto", BackendId::DefaultApp},
                                                {"outlook", BackendId::Outlook},
                                                {"outlook-classic", BackendId::OutlookClassic},
-                                               {"thunderbird", BackendId::Thunderbird}, {"mac-mail", BackendId::MacMail}});
+                                               {"thunderbird", BackendId::Thunderbird}, {"mac-mail", BackendId::MacMail},
+                                               {"icloud", BackendId::ICloud}});
 }
 
 std::optional<RecipientRole> recipientRoleFromStableString(const QString &value)

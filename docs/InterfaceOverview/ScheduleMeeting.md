@@ -52,6 +52,8 @@ Some routes cannot carry the attendees. For those, the Schedule meeting window s
 
 **MacOS Email and Calendar** (macOS) creates the event directly in Calendar, on your first writable calendar, with the agenda in its notes. Calendar would send invitations the moment an event gets attendees, so none are added. Click **Copy Attendees** in the Schedule meeting window before or after **Open Invite**. That puts every required and optional attendee on the clipboard. Paste them into the event's invitees field in Calendar, then click **Send**. The first time, macOS asks to let Project Notes access your calendars and control Calendar. Allow both.
 
+**iCloud** (all platforms) creates the event in iCloud Calendar without attendees. Click **Copy Attendees** before **Create Draft**, then open iCloud Calendar, find the new event, paste the attendees and send the invitations. iCloud does not provide a link to the newly created event.
+
 **Thunderbird** (all platforms) hands Thunderbird the calendar file. Thunderbird asks which of its calendars to import it into. Open the event there to edit it and send the invitations.
 
 **Microsoft 365 drafts** (all platforms) creates a draft event in your Microsoft 365 calendar and opens it in Outlook on the web. Review it and send the invitations from there. This route needs calendar permission, so sign out and sign in again under **Settings > Office 365 Integration** if your sign-in predates meeting scheduling.

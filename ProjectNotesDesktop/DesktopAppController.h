@@ -48,12 +48,14 @@ class MeetingTemplateEditorModel;
 class Office365Service;
 class QtNetworkHttpTransport;
 class GraphEmailBackend;
+class ICloudEmailBackend;
 class EmlFileEmailBackend;
 class ThunderbirdEmailBackend;
 class MeetingService;
 class IcsFileMeetingBackend;
 class ThunderbirdMeetingBackend;
 class GraphMeetingBackend;
+class ICloudMeetingBackend;
 #if defined(Q_OS_DARWIN)
 class MacMailBackend;
 class MacCalendarBackend;
@@ -898,12 +900,14 @@ private:
     PN::Comm::Office365Service *m_office365Service = nullptr;
     PN::Comm::QtNetworkHttpTransport *m_office365Transport = nullptr;
     std::unique_ptr<PN::Comm::GraphEmailBackend> m_graphEmailBackend;
+    std::unique_ptr<PN::Comm::ICloudEmailBackend> m_iCloudEmailBackend;
     std::unique_ptr<PN::Comm::EmlFileEmailBackend> m_emlFileEmailBackend;
     std::unique_ptr<PN::Comm::ThunderbirdEmailBackend> m_thunderbirdEmailBackend;
     std::unique_ptr<PN::Comm::MeetingService> m_meetingService;
     std::unique_ptr<PN::Comm::IcsFileMeetingBackend> m_icsMeetingBackend;
     std::unique_ptr<PN::Comm::ThunderbirdMeetingBackend> m_thunderbirdMeetingBackend;
     std::unique_ptr<PN::Comm::GraphMeetingBackend> m_graphMeetingBackend;
+    std::unique_ptr<PN::Comm::ICloudMeetingBackend> m_iCloudMeetingBackend;
 #if defined(Q_OS_DARWIN)
     std::unique_ptr<PN::Comm::MacMailBackend> m_macMailBackend;
     std::unique_ptr<PN::Comm::MacCalendarBackend> m_macCalendarBackend;

@@ -10,6 +10,7 @@
 #include <QProcess>
 #include <QStandardPaths>
 #include <QTimer>
+#include "credentialstore.h"
 namespace PN::Contacts {
 // Test providers retain their caller's affinity; callbacks return to the worker.
 class QueuedContactProvider final : public ContactProvider {
@@ -112,13 +113,21 @@ void ContactSyncSettingsModel::setIntegrationBackend(const QString &backend){
     if(backend=="graph"||backend=="outlook")provider="office365";
     else if(backend=="outlook-classic")provider="outlook";
     else if(backend=="thunderbird")provider="thunderbird";
-    else if(backend=="mac-mail")provider="icloud";
+    else if(backend=="mac-mail"||backend=="icloud")provider="icloud";
     m_integrationProvider=provider;
     if(m_databasePath.isEmpty()){m_config["provider"]=provider;emit changed();}
     else if(m_config.value("provider")!=provider)setOption("provider",provider);
 }
+PN::Comm::ICloudCredentials ContactSyncSettingsModel::iCloudCredentials() const {
+    PN::Comm::ICloudCredentials credentials;
+    credentials.account=m_config.value("account").toString().trimmed();
+    credentials.mailUser=m_config.value("mailAccount").toString().trimmed();
+    if(!credentials.account.isEmpty())
+        credentials.password=CredentialStore::read(m_config.value("credentialService","Project Notes iCloud Contacts").toString(),credentials.account);
+    return credentials;
+}
 void ContactSyncSettingsModel::setOption(const QString &key,const QVariant &value){
-    if(!QStringList{"provider","enabled","startup","interval","account","sourceBooks"}.contains(key))return;
+    if(!QStringList{"provider","enabled","startup","interval","account","mailAccount","sourceBooks"}.contains(key))return;
     if(key=="provider"&&!QStringList{"outlook","office365","thunderbird","icloud","none"}.contains(value.toString()))return;
     if((key=="provider"||key=="account")&&value!=m_config.value(key)){m_config["sourceBooks"]=QStringList{};m_books.clear();}
     m_config[key]=key=="interval"?QVariant(qBound(1,value.toInt(),1440)):value;m_busy=false;emit changed();

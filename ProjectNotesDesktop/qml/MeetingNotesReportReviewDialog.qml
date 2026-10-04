@@ -43,6 +43,7 @@ Dialog {
 
     readonly property var office365: DesktopAppController.office365SettingsModel
     readonly property bool graphSelected: DesktopAppController.preferredEmailBackend === "graph"
+    readonly property bool iCloudSelected: DesktopAppController.preferredEmailBackend === "icloud"
     readonly property bool working: controller && (controller.busy
         || (controller.stageName === "editing" && pendingPreparationKey !== ""))
     readonly property bool reviewing: controller && controller.stageName === "reviewing" && !controller.busy
@@ -398,6 +399,8 @@ Dialog {
                                 text: dialog.graphSelected
                                     ? qsTr("A draft will be created in Microsoft 365%1. It will not be sent.")
                                         .arg(dialog.office365 && dialog.office365.accountLabel !== "" ? " (" + dialog.office365.accountLabel + ")" : "")
+                                    : dialog.iCloudSelected
+                                    ? qsTr("A draft will be created in iCloud Mail. It will not be sent, and iCloud cannot link directly to it.")
                                     : qsTr("Your configured email client will open with this report and the selected recipients.")
                                 color: Theme.text3; wrapMode: Text.Wrap
                             }
@@ -416,8 +419,9 @@ Dialog {
             Layout.fillWidth: true; Layout.margins: 14; spacing: 10
             Label {
                 Layout.fillWidth: true; color: Theme.text2; wrapMode: Text.Wrap
-                text: dialog.controller && dialog.controller.stageName === "completed" && dialog.graphSelected
-                    ? qsTr("Microsoft 365 draft created. It has not been sent.")
+                text: dialog.controller && dialog.controller.stageName === "completed" && (dialog.graphSelected || dialog.iCloudSelected)
+                    ? (dialog.iCloudSelected ? qsTr("iCloud Mail draft created. It has not been sent.")
+                                             : qsTr("Microsoft 365 draft created. It has not been sent."))
                     : dialog.deliverySummary()
             }
             Label {
