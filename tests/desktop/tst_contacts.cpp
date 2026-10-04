@@ -139,8 +139,14 @@ private slots:
     }
     void companyNormalization(){
         QCOMPARE(ContactMatcher::normalize("  ACME, Inc. ",true),QString("acme"));
+        QCOMPARE(ContactMatcher::normalize("Acme Company",true),QString("acme"));
+        QCOMPARE(ContactMatcher::normalize("Acme LLP",true),QString("acme"));
         auto m=ContactMatcher::company("Acme LLC",{{"client","Acme Corporation",false}});QCOMPARE(m.id,QString("client"));
         m=ContactMatcher::company("Acme Inc",{{"a","Acme LLC",false},{"b","Acme Ltd",false}});QVERIFY(m.review);QVERIFY(m.id.isEmpty());
+    }
+    void obviousCompanyTypoMatchesAutomatically(){
+        auto m=ContactMatcher::company("Consolidated Grain and Barg",{{"client","Consolidated Grain and Barge",false}});
+        QCOMPARE(m.id,QString("client"));QVERIFY(!m.review);
     }
     void companyConjunctionNormalization(){
         const QString base="Consolidated Grain & Barge";
@@ -215,6 +221,14 @@ private slots:
         QVERIFY(ContactMatcher::person(c,"client",{p,duplicate}).review);
     }
     void fuzzyPhoneAndCompany(){auto c=incoming("Jacqueline Smithe","");auto m=ContactMatcher::person(c,"client",{existing("person","Jacqueline Smith")});QCOMPARE(m.id,QString("person"));}
+    void sharedCompanyPhoneDoesNotMatchDifferentPerson(){
+        auto m=ContactMatcher::person(incoming("John Smith","john@example.test"),"client",{existing()});
+        QVERIFY(m.candidates.isEmpty());QVERIFY(m.id.isEmpty());QVERIFY(!m.review);
+    }
+    void sharedIdentifiersDoNotMatchUnrelatedNames(){
+        auto m=ContactMatcher::person(incoming("Robert Jones","jane@example.test","Different Business"),"other",{existing()});
+        QVERIFY(m.candidates.isEmpty());QVERIFY(m.id.isEmpty());QVERIFY(!m.review);
+    }
     void sharedIdentifiersNeedReview(){auto p=existing("p2","Jane Smithe");auto m=ContactMatcher::person(incoming(),"client",{existing(),p});QVERIFY(m.review);}
     void contradictoryCompanyNeedsReview(){auto c=incoming();auto m=ContactMatcher::person(c,"other",{existing()});QVERIFY(m.review);c.company="Different Business";QVERIFY(ContactMatcher::person(c,"",{existing()}).review);}
     void uniqueNameDoesNotProveIdentity(){auto c=incoming();c.emails={"different@example.test"};auto m=ContactMatcher::person(c,"client",{existing()});QVERIFY(m.review);}
@@ -255,6 +269,31 @@ private slots:
         provider.snapshot.contacts={a,b};ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);model.syncNow();QTRY_VERIFY(!model.busy());
         QCOMPARE(count("clients"),1);QCOMPARE(count("people"),2);
     }
+    void equivalentCompanyVariantsShareOneReview(){
+        seed();QSqlQuery q(global_DBObjects.getDb());
+        QVERIFY(q.exec("UPDATE clients SET client_name='CONSOLIDATED GRAIN AND BARGE - MOUNT VERNON'"));
+        QTemporaryDir state;FakeContacts provider;
+        auto a=incoming("Alice One","alice@example.test","Consolidated Grain & Barge LLP");
+        auto b=incoming("Brian Two","brian@example.test","Consolidated Grain and Barge Company");b.id="remote-two";
+        a.phones.clear();a.fields["office_phone"]="";b.phones.clear();b.fields["office_phone"]="";provider.snapshot.contacts={a,b};
+        ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);
+        model.syncNow();QTRY_VERIFY(!model.busy());QCOMPARE(model.reviews().size(),1);
+        const auto review=model.reviews().first().toMap();QCOMPARE(review.value("stage").toString(),QString("client"));
+        model.resolve(review.value("key").toString(),"clientUseRight","","client","");
+        QTRY_VERIFY(!model.busy());QTRY_VERIFY(model.reviews().isEmpty());QCOMPARE(count("clients"),1);QCOMPARE(count("people"),3);
+    }
+    void sharedCompanyPhoneImportsDifferentPerson(){
+        seed();QTemporaryDir state;FakeContacts provider;
+        provider.snapshot.contacts={incoming("John Smith","john@example.test")};
+        ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);model.syncNow();QTRY_VERIFY(!model.busy());
+        QCOMPARE(count("clients"),1);QCOMPARE(count("people"),2);QVERIFY(model.reviews().isEmpty());
+    }
+    void sharedIdentifiersImportUnrelatedPerson(){
+        seed();QTemporaryDir state;FakeContacts provider;
+        provider.snapshot.contacts={incoming("Robert Jones","jane@example.test","Different Business")};
+        ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);model.syncNow();QTRY_VERIFY(!model.busy());
+        QCOMPARE(count("clients"),2);QCOMPARE(count("people"),2);QVERIFY(model.reviews().isEmpty());
+    }
     void companyLocationImportWaitsForReview(){
         QSqlQuery q(global_DBObjects.getDb());
         QVERIFY(q.exec("INSERT INTO clients(id,client_name) VALUES('client','CONSOLIDATED GRAIN AND BARGE - MOUNT VERNON')"));
@@ -268,7 +307,7 @@ private slots:
         QCOMPARE(clients.first().toMap().value("id").toString(),QString("client"));
         QVERIFY(review.value("selectedClientId").toString().isEmpty());
         QCOMPARE(review.value("stage").toString(),QString("client"));
-        model.resolve(review.value("key").toString(),"clientLink","","client","");
+        model.resolve(review.value("key").toString(),"clientUseRight","","client","");
         QTRY_COMPARE(model.reviews().size(),0);QCOMPARE(count("clients"),1);QCOMPARE(count("people"),1);
         QVERIFY(q.exec("SELECT client_id FROM people"));QVERIFY(q.next());QCOMPARE(q.value(0).toString(),QString("client"));q.finish();
         model.syncNow();QTRY_VERIFY(!model.busy());QVERIFY(model.reviews().isEmpty());
@@ -292,7 +331,7 @@ private slots:
         QVERIFY(review.value("people").toList().isEmpty());
         model.resolve(review.value("key").toString(),"useLeft","person","","");
         QTest::qWait(30);QCOMPARE(count("people"),1);QCOMPARE(model.reviews().size(),1);
-        model.resolve(review.value("key").toString(),separate?"clientCreate":"clientLink","","client","");
+        model.resolve(review.value("key").toString(),separate?"clientUseBoth":"clientUseRight","","client","");
         QTRY_COMPARE(count("people"),2);QTRY_VERIFY(!model.busy());
         QCOMPARE(count("clients"),separate?2:1);QCOMPARE(model.reviews().size(),1);
         review=model.reviews().first().toMap();QVERIFY(review.value("stage").toString()!="client");
@@ -306,6 +345,29 @@ private slots:
         model.syncNow();QTRY_VERIFY(!model.busy());QVERIFY(model.reviews().isEmpty());
         QCOMPARE(count("people"),3);QCOMPARE(count("clients"),separate?2:1);
     }
+    void clientSideChoices_data(){
+        QTest::addColumn<QString>("action");QTest::addColumn<int>("clientCount");QTest::addColumn<QString>("existingName");
+        QTest::newRow("left")<<QString("clientUseLeft")<<1<<QString("Consolidated Grain & Barge");
+        QTest::newRow("right")<<QString("clientUseRight")<<1<<QString("CONSOLIDATED GRAIN AND BARGE - MOUNT VERNON");
+        QTest::newRow("both")<<QString("clientUseBoth")<<2<<QString("CONSOLIDATED GRAIN AND BARGE - MOUNT VERNON");
+    }
+    void clientSideChoices(){
+        QFETCH(QString,action);QFETCH(int,clientCount);QFETCH(QString,existingName);
+        seed();QSqlQuery q(global_DBObjects.getDb());
+        QVERIFY(q.exec("UPDATE clients SET client_name='CONSOLIDATED GRAIN AND BARGE - MOUNT VERNON'"));
+        QTemporaryDir state;FakeContacts provider;auto c=incoming("Brian Two","brian@example.test","  Consolidated Grain & Barge  ");
+        c.phones.clear();c.fields["office_phone"]="";provider.snapshot.contacts={c};
+        ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);
+        model.syncNow();QTRY_VERIFY(!model.busy());QCOMPARE(model.reviews().size(),1);
+        const auto review=model.reviews().first().toMap();QCOMPARE(review.value("stage").toString(),QString("client"));
+        model.resolve(review.value("key").toString(),action,"","client","");
+        QTRY_VERIFY(!model.busy());QTRY_VERIFY(model.reviews().isEmpty());QCOMPARE(count("clients"),clientCount);QCOMPARE(count("people"),2);
+        QVERIFY(q.exec("SELECT client_name FROM clients WHERE id='client'"));QVERIFY(q.next());QCOMPARE(q.value(0).toString(),existingName);q.finish();
+        if(action=="clientUseBoth"){
+            QVERIFY(q.exec("SELECT client_name FROM clients WHERE id<>'client' AND deleted=0"));QVERIFY(q.next());
+            QCOMPARE(q.value(0).toString(),QString("Consolidated Grain & Barge"));
+        }
+    }
     void allClientChoicesRequiredBeforeContactMatching(){
         seed();QSqlQuery q(global_DBObjects.getDb());
         QVERIFY(q.exec("UPDATE clients SET client_name='Consolidated Grain & Barge'"));
@@ -315,10 +377,10 @@ private slots:
         b.id="remote-two";b.phones.clear();b.fields["office_phone"]="";provider.snapshot.contacts={a,b};
         ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);
         model.syncNow();QTRY_VERIFY(!model.busy());QCOMPARE(model.reviews().size(),2);
-        model.resolve(model.reviews().first().toMap().value("key").toString(),"clientLink","","client","");
+        model.resolve(model.reviews().first().toMap().value("key").toString(),"clientUseRight","","client","");
         QTRY_COMPARE(model.reviews().size(),1);QCOMPARE(count("people"),1);QVERIFY(!model.busy());
         model.setDatabase(global_DBObjects.getDatabaseFile());QCOMPARE(model.reviews().size(),1);
-        model.resolve(model.reviews().first().toMap().value("key").toString(),"clientLink","","client","");
+        model.resolve(model.reviews().first().toMap().value("key").toString(),"clientUseRight","","client","");
         QTRY_COMPARE(count("people"),2);QTRY_VERIFY(!model.busy());QVERIFY(model.reviews().isEmpty());
         QCOMPARE(count("clients"),1);
     }
@@ -456,6 +518,13 @@ private slots:
         const auto candidates=model.exportReviews().first().toMap().value("candidates").toList();QCOMPARE(candidates.size(),1);
         QCOMPARE(candidates.first().toMap().value("reason").toString(),QString("Previously exported contact"));
         model.resolveExport("person","skip","remote");QTRY_VERIFY(!model.busy());
+    }
+    void fullExportIgnoresSharedIdentifiersWithUnrelatedName(){
+        seed();QTemporaryDir state;FakeContacts provider;
+        provider.snapshot.contacts={incoming("Robert Jones","jane@example.test","Acme Corporation")};
+        ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);
+        model.fullExport();QTRY_VERIFY(!model.busy());QVERIFY(model.exportReviews().isEmpty());
+        QCOMPARE(provider.creates,1);QCOMPARE(provider.updates,0);
     }
     void disconnectedFullExportReportsFailure(){
         seed();QTemporaryDir state;FakeContacts provider;provider.snapshot.error="Thunderbird bridge is disconnected.";

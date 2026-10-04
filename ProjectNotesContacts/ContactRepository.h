@@ -15,6 +15,7 @@ public:
     std::function<void()> onChanged;
     bool read(QList<Person> &people,QList<Client> &clients,QString &error) const;
     bool createClient(const QString &id,const QString &name,QString &error);
+    bool updateClientName(const QString &id,const QString &expectedName,const QString &name,QString &error);
     // expected is an optimistic snapshot: a stale match cannot overwrite a later edit.
     bool apply(const Contact &contact,const QString &personId,const QString &clientId,
                const QString &newClientId,const QString &displayName,const QVariantMap &expected,QString &error,

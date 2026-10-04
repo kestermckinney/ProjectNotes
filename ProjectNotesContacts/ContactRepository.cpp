@@ -7,6 +7,14 @@
 #include <QWriteLocker>
 #include <QUuid>
 namespace PN::Contacts {
+namespace {
+bool sameTrimmed(const QString &left,const QString &right){return left.trimmed()==right.trimmed();}
+bool sameFieldsTrimmed(const QVariantMap &left,const QVariantMap &right){
+    if(left.keys()!=right.keys())return false;
+    for(auto it=left.begin();it!=left.end();++it)if(!sameTrimmed(it.value().toString(),right.value(it.key()).toString()))return false;
+    return true;
+}
+}
 QSqlDatabase ContactRepository::database() const {return m_database?m_database->getDb():m_connection;}
 bool ContactRepository::open(const QString &path,QString &error) {
     close();m_connectionName="ProjectNotesContacts-"+QUuid::createUuid().toString(QUuid::WithoutBraces);
@@ -33,15 +41,36 @@ bool ContactRepository::read(QList<Person>&people,QList<Client>&clients,QString&
 bool ContactRepository::createClient(const QString &id,const QString &name,QString &error) {
     QWriteLocker lock(&db_rwlock);auto db=database();
     if(!db.transaction()){error=db.lastError().text();return false;}
+    const auto trimmedName=name.trimmed();
     QSqlQuery q(db);q.prepare("SELECT client_name,deleted FROM clients WHERE id=?");q.addBindValue(id);
     if(!q.exec()){error=q.lastError().text();db.rollback();return false;}
     if(q.next()) {
-        if(q.value(1).toBool()||q.value(0).toString()!=name){error="The client changed. Sync again before reviewing it.";db.rollback();return false;}
+        if(q.value(1).toBool()||!sameTrimmed(q.value(0).toString(),trimmedName)){error="The client changed. Sync again before reviewing it.";db.rollback();return false;}
     } else {
-        q.prepare("INSERT INTO clients(id,client_name) VALUES(?,?)");q.addBindValue(id);q.addBindValue(name);
+        q.prepare("INSERT INTO clients(id,client_name) VALUES(?,?)");q.addBindValue(id);q.addBindValue(trimmedName);
         if(!q.exec()){error=q.lastError().text();db.rollback();return false;}
     }
     if(!db.commit()){error=db.lastError().text();db.rollback();return false;}
+    lock.unlock();if(onChanged)onChanged();return true;
+}
+bool ContactRepository::updateClientName(const QString &id,const QString &expectedName,const QString &name,QString &error) {
+    QWriteLocker lock(&db_rwlock);auto db=database();
+    if(!db.transaction()){error=db.lastError().text();return false;}
+    auto fail=[&](const QString &message){error=message;db.rollback();return false;};
+    QSqlQuery q(db);q.prepare("SELECT client_name,deleted FROM clients WHERE id=?");q.addBindValue(id);
+    if(!q.exec())return fail(q.lastError().text());
+    if(!q.next()||q.value(1).toBool())return fail("The selected client is no longer available. Sync again.");
+    const auto current=q.value(0).toString();
+    if(!sameTrimmed(current,expectedName))return fail("The selected client changed. Sync again before reviewing it.");
+    const auto trimmedName=name.trimmed();if(trimmedName.isEmpty())return fail("A client name is required.");
+    q.prepare("SELECT id FROM clients WHERE deleted=0 AND lower(trim(client_name))=lower(trim(?)) AND id<>?");
+    q.addBindValue(trimmedName);q.addBindValue(id);
+    if(!q.exec())return fail(q.lastError().text());
+    if(q.next())return fail("Another client already uses this name. Sync again before reviewing it.");
+    if(sameTrimmed(current,trimmedName)){db.rollback();return true;}
+    q.prepare("UPDATE clients SET client_name=? WHERE id=? AND deleted=0");q.addBindValue(trimmedName);q.addBindValue(id);
+    if(!q.exec())return fail(q.lastError().text());
+    if(!db.commit())return fail(db.lastError().text());
     lock.unlock();if(onChanged)onChanged();return true;
 }
 bool ContactRepository::apply(const Contact&c,const QString&id,const QString&clientId,const QString&newClientId,
@@ -55,7 +84,7 @@ bool ContactRepository::apply(const Contact&c,const QString&id,const QString&cli
     if(exists) {
         if(q.value(6).toBool()) return fail("The linked person was deleted; sync will not restore it.");
         for(int i=0;i<6;++i) fields.insert(q.record().fieldName(i),q.value(i).toString());
-        if(!expected.isEmpty() && fields!=expected) return fail("The contact changed while sync was running. Sync again.");
+        if(!expected.isEmpty() && !sameFieldsTrimmed(fields,expected)) return fail("The contact changed while sync was running. Sync again.");
     } else if(!expected.isEmpty()) return fail("The matched contact no longer exists.");
     // Revalidate the candidate set under the same lock as the write. Another
     // sync writer may have inserted a matching person/company after our preview.
@@ -87,12 +116,12 @@ bool ContactRepository::apply(const Contact&c,const QString&id,const QString&cli
         q.prepare("SELECT id,deleted FROM clients WHERE id=? OR (deleted=0 AND lower(trim(client_name))=lower(trim(?)))");q.addBindValue(newClientId);q.addBindValue(c.company);
         if(!q.exec())return fail(q.lastError().text());
         if(q.next()) {if(q.value(0).toString()!=newClientId || q.value(1).toBool())return fail("The company changed while sync was running. Sync again.");}
-        else {q.prepare("INSERT INTO clients(id,client_name) VALUES(?,?)");q.addBindValue(newClientId);q.addBindValue(c.company);if(!q.exec())return fail(q.lastError().text());}
+        else {q.prepare("INSERT INTO clients(id,client_name) VALUES(?,?)");q.addBindValue(newClientId);q.addBindValue(c.company.trimmed());if(!q.exec())return fail(q.lastError().text());}
     } else if(!clientId.isEmpty()) {
         q.prepare("SELECT id FROM clients WHERE id=? AND deleted=0");q.addBindValue(clientId);
         if(!q.exec() || !q.next())return fail("The matched company is no longer available.");
     }
-    if(exists && fields==expected) {db.rollback();return true;}
+    if(exists && sameFieldsTrimmed(fields,expected)) {db.rollback();return true;}
     q.prepare(exists?"UPDATE people SET name=?,email=?,office_phone=?,cell_phone=?,client_id=?,role=? WHERE id=? AND deleted=0":
                         "INSERT INTO people(name,email,office_phone,cell_phone,client_id,role,id) VALUES(?,?,?,?,?,?,?)");
     for(const auto&key:QStringList{"name","email","office_phone","cell_phone","client_id","role"}) {

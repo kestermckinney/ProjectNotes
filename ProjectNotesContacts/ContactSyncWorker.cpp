@@ -19,9 +19,21 @@
 #include <QElapsedTimer>
 namespace PN::Contacts {
 static QString hash(const QString&s){return QString::fromLatin1(QCryptographicHash::hash(s.toUtf8(),QCryptographicHash::Sha256).toHex());}
-static QString clientKey(const QString &scope,const QString &name){return "client/"+hash(scope+QChar(0)+name.trimmed().toCaseFolded());}
+static QString legacyClientKey(const QString &scope,const QString &name){return "client/"+hash(scope+QChar(0)+name.trimmed().toCaseFolded());}
+static QString clientKey(const QString &scope,const QString &name){
+    auto normalized=ContactMatcher::normalize(name,true);if(normalized.isEmpty())normalized=name.trimmed().toCaseFolded();
+    return "client/"+hash(scope+QChar(0)+normalized);
+}
+static bool sameTrimmed(const QString &left,const QString &right){return left.trimmed()==right.trimmed();}
+static bool sameFieldsTrimmed(const QVariantMap &left,const QVariantMap &right){
+    if(left.keys()!=right.keys())return false;
+    for(auto it=left.begin();it!=left.end();++it)if(!sameTrimmed(it.value().toString(),right.value(it.key()).toString()))return false;
+    return true;
+}
 Match ContactSyncWorker::companyMatch(const QString &name,const QList<Client> &clients) const {
-    const auto decision=m_journal["clientDecisions"].toObject()[clientKey(m_scope,name)].toObject();
+    const auto decisions=m_journal["clientDecisions"].toObject();
+    auto decision=decisions[clientKey(m_scope,name)].toObject();
+    if(decision.isEmpty())decision=decisions[legacyClientKey(m_scope,name)].toObject();
     const auto id=decision["clientId"].toString();
     for(const auto &client:clients)if(!client.deleted&&client.id==id){Match match;match.id=id;return match;}
     return ContactMatcher::company(name,clients);
@@ -235,8 +247,8 @@ void ContactSyncWorker::prepareFullExport(){
         if(person.deleted)continue;
         ExportItem item;item.personId=person.id;item.contact.name=person.name;item.contact.company=person.company;item.contact.fields=person.fields;
         item.contact.fields["company"]=person.company;item.contact.fields["id"]=person.id;
-        const auto email=person.fields.value("email").toString();if(!email.isEmpty())item.contact.emails={email};
-        for(const auto &phone:QStringList{person.fields.value("office_phone").toString(),person.fields.value("cell_phone").toString()})if(!phone.isEmpty())item.contact.phones<<phone;
+        const auto email=person.fields.value("email").toString();if(!email.trimmed().isEmpty())item.contact.emails={email};
+        for(const auto &phone:QStringList{person.fields.value("office_phone").toString(),person.fields.value("cell_phone").toString()})if(!phone.trimmed().isEmpty())item.contact.phones<<phone;
         const auto saved=savedLinks.value(m_scope+"/"+person.id).toObject();
         const auto add=[&](const Contact &remote,const QString &reason){
             const auto book=books.value(remote.book);item.candidates<<ExportCandidate{remote,reason,book.value("writable").toBool(),book.value("name",remote.book).toString()};};
@@ -253,10 +265,11 @@ void ContactSyncWorker::prepareFullExport(){
             for(const auto &left:item.contact.phones)for(const auto &right:remote.phones)if(!ContactMatcher::phone(left).isEmpty()&&ContactMatcher::phone(left)==ContactMatcher::phone(right))phoneMatch=true;
             const bool sameName=ContactMatcher::normalize(item.contact.name)==ContactMatcher::normalize(remote.name);
             const bool sameCompany=ContactMatcher::normalize(item.contact.company,true)==ContactMatcher::normalize(remote.company,true);
-            const bool similarName=ContactMatcher::similarity(ContactMatcher::normalize(item.contact.name),ContactMatcher::normalize(remote.name))>=.92;
+            const auto nameSimilarity=ContactMatcher::nameSimilarity(item.contact.name,remote.name);
+            const bool similarName=nameSimilarity>=.92;
             bool exactProfile=sameName&&sameCompany;
             for(const auto &field:QStringList{"email","office_phone","cell_phone","role"})exactProfile=exactProfile&&item.contact.fields.value(field).toString().trimmed().compare(remote.fields.value(field).toString().trimmed(),Qt::CaseInsensitive)==0;
-            if(emailMatch||phoneMatch||exactProfile||(similarName&&sameCompany&&!item.contact.company.trimmed().isEmpty()))
+            if(exactProfile||((emailMatch||phoneMatch)&&nameSimilarity>=.85)||(similarName&&sameCompany&&!item.contact.company.trimmed().isEmpty()))
                 add(remote,emailMatch?"Exact email":phoneMatch?"Exact phone":exactProfile?"Exact contact fields":"Name and company similarity");
         }
         if(item.candidates.isEmpty())item.action="create";else if(item.action.isEmpty())++conflicts;
@@ -304,20 +317,20 @@ bool ContactSyncWorker::apply(Contact c,const QString&key,QString personId,QStri
     QVariantMap expected;bool foundPerson=false;
     for(const auto&p:people)if(p.id==personId){foundPerson=true;if(p.deleted){m_status="Linked person was deleted; skipped.";return true;}expected=p.fields;}
     if(!personId.isEmpty()&&!foundPerson){m_status="The selected person no longer exists. Refresh synchronization before reviewing this contact.";emit changed();return false;}
-    if(displayName.isEmpty())displayName=c.name;
+    if(displayName.trimmed().isEmpty())displayName=c.name;
     if(keepBoth&&personId.isEmpty()){
         // The database requires unique names. Derive a name from the chosen
         // contact automatically, and persist it for subsequent synchronization.
         auto used=[&](const QString &name){for(const auto &person:people)if(ContactMatcher::normalize(person.name)==ContactMatcher::normalize(name))return true;return false;};
         if(used(displayName)){
-            const auto base=displayName+" ("+(c.company.isEmpty()?m_scope.section('/',0,0):c.company)+")";
+            const auto base=displayName+" ("+(c.company.trimmed().isEmpty()?m_scope.section('/',0,0):c.company.trimmed())+")";
             displayName=base;int suffix=2;
             while(used(displayName))displayName=base+QString(" %1").arg(suffix++);
         }
     }
     if(personId.isEmpty())personId=saved["personId"].toString();if(personId.isEmpty())personId=QUuid::createUuid().toString();
     QString newClientId;
-    if(!c.company.isEmpty()&&clientId.isEmpty()){
+    if(!c.company.trimmed().isEmpty()&&clientId.isEmpty()){
         auto cm=companyMatch(c.company,clients);
         if(cm.review&&!review){addReview(key,c,{},cm,"Company match needs review.");return true;}
         if(!review)clientId=cm.id;if(clientId.isEmpty()){newClientId=saved["clientId"].toString();if(newClientId.isEmpty())newClientId=QUuid::createUuid().toString();}
@@ -373,19 +386,21 @@ void ContactSyncWorker::importNext(){
         }
         auto cm=companyMatch(c.company,m_clients);
         auto decision=m_journal["decisions"].toObject()[key].toObject();
-        if(!m_journal["clientDecisions"].toObject().contains(clientKey(m_scope,c.company))&&decision["company"].toString()==c.company && !decision["clientId"].toString().isEmpty()){
+        const auto clientDecisions=m_journal["clientDecisions"].toObject();
+        const bool hasClientDecision=clientDecisions.contains(clientKey(m_scope,c.company))||clientDecisions.contains(legacyClientKey(m_scope,c.company));
+        if(!hasClientDecision&&sameTrimmed(decision["company"].toString(),c.company) && !decision["clientId"].toString().isEmpty()){
             for(const auto &client:m_clients)if(!client.deleted&&client.id==decision["clientId"].toString()){cm.id=client.id;cm.review=false;break;}
         }
         auto pm=linked.isEmpty()?ContactMatcher::person(c,cm.id,m_people,m_journal["rejected"].toObject()[key].toVariant().toStringList()):Match{};
         if(cm.review){prepareClientReviews();complete(m_status);return;}
         if(linked.isEmpty()&&pm.review){addReview(key,c,pm,cm,"Possible duplicate; choose a match before importing.");continue;}
-        QString displayName=decision["externalName"].toString()==c.name && !decision["displayName"].toString().isEmpty()?decision["displayName"].toString():c.name;
+        QString displayName=sameTrimmed(decision["externalName"].toString(),c.name) && !decision["displayName"].toString().isEmpty()?decision["displayName"].toString():c.name;
         if(!linked.isEmpty()&&!m_journal["reviews"].toObject().contains(key)){
             bool unchanged=false;
             for(const auto&p:m_people)if(p.id==linked){auto desired=p.fields;
                 for(const auto&field:QStringList{"name","email","office_phone","cell_phone","role"})if(c.fields.contains(field))desired[field]=c.fields[field];
                 desired["name"]=displayName;if(c.fields.contains("company"))desired["client_id"]=cm.id;
-                unchanged=desired==p.fields && (c.company.isEmpty()||!cm.id.isEmpty());break;
+                unchanged=sameFieldsTrimmed(desired,p.fields) && (c.company.trimmed().isEmpty()||!cm.id.isEmpty());break;
             }
             if(unchanged){++m_unchanged;continue;}
         }
@@ -461,18 +476,25 @@ void ContactSyncWorker::resolve(const QString&key,const QString&action,const QSt
     }
     m_scope=entry["scope"].toString();
     if(entry["stage"].toString()=="client"){
-        if(action!="clientLink"&&action!="clientCreate")return;
+        QString clientAction=action;
+        if(clientAction=="clientLink")clientAction="clientUseRight";
+        if(clientAction=="clientCreate")clientAction="clientUseBoth";
+        if(!QStringList{"clientUseLeft","clientUseRight","clientUseBoth"}.contains(clientAction))return;
         QList<Person> people;QList<Client> clients;QString error;
         if(!m_repository.read(people,clients,error)){m_status=error;emit changed();return;}
         QString chosen=clientId;
-        if(action=="clientLink"){
-            bool available=false;for(const auto &client:clients)if(!client.deleted&&client.id==chosen)available=true;
+        if(clientAction=="clientUseLeft"||clientAction=="clientUseRight"){
+            QString expectedName;for(const auto &candidate:entry["clients"].toArray())if(candidate.toObject()["id"].toString()==chosen)expectedName=candidate.toObject()["label"].toString();
+            bool available=false;for(const auto &client:clients)if(!client.deleted&&client.id==chosen&&sameTrimmed(client.name,expectedName))available=true;
             if(!available){m_status="The selected client is no longer available. Sync again.";emit changed();return;}
+            if(clientAction=="clientUseLeft"&&!m_repository.updateClientName(chosen,expectedName,entry["company"].toString(),error)){
+                m_status=error;emit changed();return;
+            }
         } else {
             auto intents=m_journal["clientImports"].toObject();auto intent=intents[key].toObject();
             chosen=intent["id"].toString();QString name=intent["name"].toString();
             if(chosen.isEmpty()){
-                chosen=QUuid::createUuid().toString();name=entry["company"].toString();
+                chosen=QUuid::createUuid().toString();name=entry["company"].toString().trimmed();
                 auto used=[&](const QString &value){for(const auto &client:clients)if(!client.deleted&&client.name.trimmed().compare(value.trimmed(),Qt::CaseInsensitive)==0)return true;return false;};
                 if(used(name)){
                     const auto base=name+" ("+m_config.value("provider").toString()+")";name=base;int suffix=2;

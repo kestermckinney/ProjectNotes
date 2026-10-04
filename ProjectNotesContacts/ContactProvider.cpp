@@ -223,10 +223,10 @@ void NativeContactProvider::update(const QVariantMap&config,const Contact&existi
         PN::Comm::HttpRequest r;r.operationId=QUuid::createUuid();r.method="PATCH";r.url=QUrl(graphRoot()+path+QString::fromLatin1(QUrl::toPercentEncoding(existing.id)));
         r.headers["Content-Type"]="application/json";r.headers["Prefer"]="IdType=\"ImmutableId\"";
         QJsonArray emails,phones;const auto newEmail=contact.fields.value("email").toString(),oldEmail=existing.fields.value("email").toString();
-        if(!newEmail.isEmpty())emails<<QJsonObject{{"address",newEmail}};
-        for(const auto &email:existing.emails)if(email.compare(oldEmail,Qt::CaseInsensitive)!=0&&email.compare(newEmail,Qt::CaseInsensitive)!=0)emails<<QJsonObject{{"address",email}};
+        if(!newEmail.trimmed().isEmpty())emails<<QJsonObject{{"address",newEmail}};
+        for(const auto &email:existing.emails)if(email.trimmed().compare(oldEmail.trimmed(),Qt::CaseInsensitive)!=0&&email.trimmed().compare(newEmail.trimmed(),Qt::CaseInsensitive)!=0)emails<<QJsonObject{{"address",email}};
         const auto newOffice=contact.fields.value("office_phone").toString(),oldOffice=ContactMatcher::phone(existing.fields.value("office_phone").toString()),oldCell=ContactMatcher::phone(existing.fields.value("cell_phone").toString());
-        if(!newOffice.isEmpty())phones<<newOffice;
+        if(!newOffice.trimmed().isEmpty())phones<<newOffice;
         for(const auto &phone:existing.phones){const auto normalized=ContactMatcher::phone(phone);if(normalized!=oldOffice&&normalized!=oldCell&&normalized!=ContactMatcher::phone(newOffice))phones<<phone;}
         r.body=QJsonDocument(QJsonObject{{"displayName",contact.name},{"companyName",contact.company},{"jobTitle",contact.fields.value("role").toString()},
             {"mobilePhone",contact.fields.value("cell_phone").toString()},{"emailAddresses",emails},{"businessPhones",phones}}).toJson(QJsonDocument::Compact);

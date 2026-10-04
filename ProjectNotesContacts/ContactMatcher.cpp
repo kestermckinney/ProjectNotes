@@ -8,7 +8,7 @@ QString ContactMatcher::normalize(QString s, bool company) {
     if (company) s.replace('&', " and ");
     s.replace(QRegularExpression("[^\\p{L}\\p{N}]+"), " "); s=s.simplified();
     if (company) {
-        static const QStringList suffixes={"inc","incorporated","llc","ltd","limited","corp","corporation","plc","gmbh"};
+        static const QStringList suffixes={"co","company","inc","incorporated","llc","lp","llp","ltd","limited","corp","corporation","plc","gmbh"};
         auto words=s.split(' ',Qt::SkipEmptyParts);
         while (words.size()>1 && suffixes.contains(words.last())) words.removeLast();
         s=words.join(' ');
@@ -34,7 +34,7 @@ double ContactMatcher::similarity(const QString &a, const QString &b) {
     }
     return 1.0-double(row.last())/std::max(a.size(),b.size());
 }
-static double nameScore(const QString &a,const QString &b) {
+double ContactMatcher::nameSimilarity(const QString &a,const QString &b) {
     auto x=ContactMatcher::normalize(a), y=ContactMatcher::normalize(b);
     auto xs=x.split(' ',Qt::SkipEmptyParts), ys=y.split(' ',Qt::SkipEmptyParts);
     std::sort(xs.begin(),xs.end()); std::sort(ys.begin(),ys.end());
@@ -69,7 +69,8 @@ Match ContactMatcher::company(const QString &name,const QList<Client>& clients) 
         const auto otherBase=companyBase(c.name);
         const bool branchMatch=n!=other && ((!base.isEmpty() && base==other) || (!otherBase.isEmpty() && otherBase==n));
         if(branchMatch) score=std::max(score,.90);
-        if(score>=.85) cs.append({c.id,c.name,branchMatch?"Company base matches; branch/location differs":"Company name similarity",score,n==other && n.size()>=4});
+        const bool obviousUniqueCandidate=n==other || (!branchMatch && score>=.96 && n.size()>=8 && other.size()>=8);
+        if(score>=.85) cs.append({c.id,c.name,branchMatch?"Company base matches; branch/location differs":"Company name similarity",score,obviousUniqueCandidate});
     }
     return finish(cs);
 }
@@ -77,16 +78,19 @@ Match ContactMatcher::person(const Contact &c,const QString&clientId,const QList
     QList<Candidate> cs;
     for(const auto &p:people) {
         if(p.deleted || rejected.contains(p.id)) continue;
-        double score=nameScore(c.name,p.name); bool email=false,telephone=false;
+        double score=nameSimilarity(c.name,p.name); bool email=false,hasEmail=false,telephone=false;
         QString pe=p.fields.value("email").toString().trimmed().toCaseFolded();
-        for(const auto&e:c.emails) if(!pe.isEmpty() && e.trimmed().toCaseFolded()==pe) email=true;
+        for(const auto&e:c.emails) {
+            const auto trimmed=e.trimmed();if(trimmed.isEmpty())continue;hasEmail=true;
+            if(!pe.isEmpty() && trimmed.toCaseFolded()==pe)email=true;
+        }
         for(const auto &v:c.phones) {
             auto ph=phone(v); if(ph.isEmpty()) continue;
             if(ph==phone(p.fields.value("office_phone").toString()) || ph==phone(p.fields.value("cell_phone").toString())) telephone=true;
         }
-        bool differentEmail=!pe.isEmpty() && !c.emails.isEmpty() && !email;
+        bool differentEmail=!pe.isEmpty() && hasEmail && !email;
         bool differentCompany=(!clientId.isEmpty() && !p.clientId.isEmpty() && clientId!=p.clientId) ||
-            (clientId.isEmpty() && !c.company.isEmpty() && !p.company.isEmpty() && normalize(c.company,true)!=normalize(p.company,true));
+            (clientId.isEmpty() && !c.company.trimmed().isEmpty() && !p.company.trimmed().isEmpty() && normalize(c.company,true)!=normalize(p.company,true));
         bool shortName=normalize(c.name).size()<6 || normalize(p.name).split(' ').size()<2;
         // A complete Thunderbird card can have no usable email or phone. Treat
         // identical visible fields as stronger evidence than a fuzzy candidate.
@@ -101,7 +105,12 @@ Match ContactMatcher::person(const Contact &c,const QString&clientId,const QList
             sameText(c.fields.value("role").toString(),p.fields.value("role").toString());
         bool strong=!differentCompany && !shortName && ((email && score>=.80) ||
                     (!differentEmail && score>=.92 && telephone && !clientId.isEmpty() && clientId==p.clientId) || exactProfile);
-        if(score>=.80 || email || telephone) {
+        // Shared inboxes and office numbers are common. An identifier supports
+        // a match only when the visible names are also reasonably close; name-
+        // only candidates require an even closer match.
+        const bool plausibleName=score>=.92;
+        const bool plausibleIdentifier=(email||telephone) && score>=.85;
+        if(plausibleName || plausibleIdentifier) {
             QString reason=exactProfile?"Exact contact fields":email?"Exact email":telephone?"Exact phone":"Name similarity";
             if(differentCompany || differentEmail) reason+="; conflicting identity fields";
             cs.append({p.id,p.name+" — "+p.company+" — "+pe,reason,exactProfile?1.1:(strong?1.0:score),strong});

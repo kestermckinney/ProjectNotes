@@ -336,9 +336,13 @@ private slots:
         provider.clientReview=true;model.syncNow();QTRY_VERIFY(!model.busy());
         QTRY_VERIFY(reviewDialog->property("clientStage").toBool());
         QTRY_COMPARE(reviews->property("count").toInt(),1);
-        auto *useClient=findVisualChild(window->contentItem(),QStringLiteral("useExistingClientButton"));
-        QVERIFY(useClient);QVERIFY(useClient->isVisible());QVERIFY(useClient->isEnabled());
-        QVERIFY(QMetaObject::invokeMethod(useClient,"clicked"));
+        auto *useLeftClient=findVisualChild(window->contentItem(),QStringLiteral("useLeftClientButton"));
+        auto *useRightClient=findVisualChild(window->contentItem(),QStringLiteral("useRightClientButton"));
+        auto *useBothClients=findVisualChild(window->contentItem(),QStringLiteral("useBothClientsButton"));
+        QVERIFY(useLeftClient);QVERIFY(useLeftClient->isVisible());QVERIFY(useLeftClient->isEnabled());
+        QVERIFY(useRightClient);QVERIFY(useRightClient->isVisible());QVERIFY(useRightClient->isEnabled());
+        QVERIFY(useBothClients);QVERIFY(useBothClients->isVisible());QVERIFY(useBothClients->isEnabled());
+        QVERIFY(QMetaObject::invokeMethod(useRightClient,"clicked"));
         QTRY_VERIFY(!reviewDialog->property("clientStage").toBool());
         QTRY_VERIFY(!model.busy());QCOMPARE(model.reviews().size(),1);
         QVERIFY(model.reviews().first().toMap().value("reason").toString().contains("missing"));
