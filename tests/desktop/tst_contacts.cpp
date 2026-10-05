@@ -149,6 +149,39 @@ private slots:
         auto m=ContactMatcher::company("Consolidated Grain and Barg",{{"client","Consolidated Grain and Barge",false}});
         QCOMPARE(m.id,QString("client"));QVERIFY(!m.review);
     }
+    void exactCompanyWinsOverNearbyNames(){
+        QList<Client> clients={{"exact","Consolidated Grain and Barge",false},
+                               {"near","Consolidated Grain and Barges",false}};
+        auto match=ContactMatcher::company(" CONSOLIDATED Grain & Barge, Inc. ",clients);
+        QCOMPARE(match.id,QString("exact"));QVERIFY(!match.review);
+        clients.append({"duplicate","Consolidated Grain & Barge LLC",false});
+        match=ContactMatcher::company("Consolidated Grain and Barge",clients);
+        QVERIFY(match.review);QVERIFY(match.id.isEmpty());
+    }
+    void formattingComparisons(){
+        QVERIFY(ContactMatcher::equivalent("name",QString::fromUtf8("Ｊane  Smith"),"Jane Smith"));
+        QVERIFY(ContactMatcher::equivalent("name","Jane-Smith","jane smith"));
+        QVERIFY(ContactMatcher::equivalent("office_phone","+1 (212) 555-1234 ext. 56","12125551234 x56"));
+        QVERIFY(!ContactMatcher::equivalent("office_phone","12125551234 x56","12125551234 x57"));
+        QVERIFY(!ContactMatcher::equivalent("office_phone","12125551234 x56","1212555123456"));
+        QVERIFY(!ContactMatcher::equivalent("office_phone","12125551234","2125551234"));
+        QVERIFY(!ContactMatcher::equivalent("office_phone","invalid",""));
+        QVERIFY(!ContactMatcher::equivalent("email","jane.smith@example.test","janesmith@example.test"));
+    }
+    void formattedCompleteProfiles(){
+        auto c=incoming(" JANE-SMITH "," JANE@example.test "," ACME, Inc. ");
+        auto p=existing();p.fields["role"]="manager";
+        auto other=existing("other","Jane Smithe");
+        auto match=ContactMatcher::person(c,"client",{p,other});
+        QCOMPARE(match.id,p.id);QVERIFY(!match.review);
+        auto duplicate=p;duplicate.id="duplicate";
+        QVERIFY(ContactMatcher::person(c,"client",{p,duplicate}).review);
+        QVERIFY(ContactMatcher::person(c,"different-client",{p}).review);
+        c.emails={"different@example.test"};c.fields["email"]="different@example.test";
+        QVERIFY(ContactMatcher::person(c,"client",{p}).review);
+        c=incoming();c.emails.clear();c.phones.clear();c.fields.remove("role");
+        QVERIFY(ContactMatcher::person(c,"client",{p}).review);
+    }
     void companyConjunctionNormalization(){
         const QString base="Consolidated Grain & Barge";
         QCOMPARE(ContactMatcher::normalize(base,true),QString("consolidated grain and barge"));
@@ -244,6 +277,43 @@ private slots:
     void rollbackNewCompanyOnNameCollision(){
         seed();ContactRepository repo(&global_DBObjects);QString error;auto c=incoming();c.company="New Company";
         QVERIFY(!repo.apply(c,"different","","new-client",c.name,{},error));QCOMPARE(count("clients"),1);QCOMPARE(count("people"),1);
+    }
+    void automaticImportPreservesFormattingAndConcurrency(){
+        seed();ContactRepository repo(&global_DBObjects);QString error;int writes=0;
+        repo.onChanged=[&]{++writes;};
+        auto c=incoming(" JANE-SMITH "," JANE@example.test ");c.fields["role"]="";
+        auto p=existing();
+        QVERIFY2(repo.apply(c,p.id,p.clientId,"",c.name,p.fields,error),qPrintable(error));
+        QCOMPARE(writes,0);
+        c.fields["role"]="Manager";
+        QVERIFY2(repo.apply(c,p.id,p.clientId,"",c.name,p.fields,error),qPrintable(error));
+        QCOMPARE(writes,1);
+        QList<Person> people;QList<Client> clients;QVERIFY(repo.read(people,clients,error));
+        QCOMPARE(people.first().name,p.name);
+        QCOMPARE(people.first().fields.value("office_phone"),p.fields.value("office_phone"));
+        QCOMPARE(people.first().fields.value("email"),p.fields.value("email"));
+        auto expected=people.first().fields;
+        QSqlQuery q(global_DBObjects.getDb());QVERIFY(q.exec("UPDATE people SET name='JANE SMITH' WHERE id='person'"));
+        QVERIFY(!repo.apply(c,p.id,p.clientId,"",c.name,expected,error));
+        QVERIFY(error.contains("changed"));
+    }
+    void formattedSyncClearsReviewAndSurvivesRestart(){
+        seed();QTemporaryDir state;FakeContacts provider;
+        auto c=incoming();c.emails.clear();c.phones.clear();provider.snapshot.contacts={c};
+        {
+            ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);
+            model.syncNow();QTRY_VERIFY(!model.busy());QCOMPARE(model.reviews().size(),1);
+            // A complete snapshot now proves the existing profile, despite its formatting.
+            c=incoming(" JANE-SMITH "," JANE@example.test ");c.fields["role"]="";
+            provider.snapshot.contacts={c};
+            QSignalSpy changed(&model,&ContactSyncSettingsModel::recordsChanged);
+            model.syncNow();QTRY_VERIFY(!model.busy());QVERIFY(model.reviews().isEmpty());QCOMPARE(changed.count(),0);
+            model.syncNow();QTRY_VERIFY(!model.busy());QVERIFY(model.status().contains("1 unchanged"));
+            QCOMPARE(changed.count(),0);
+        }
+        ContactSyncSettingsModel restarted(&global_DBObjects,nullptr,"ContactTest",state.path());configure(restarted,provider);
+        restarted.syncNow();QTRY_VERIFY(!restarted.busy());QVERIFY(restarted.reviews().isEmpty());
+        QVERIFY(restarted.status().contains("1 unchanged"));QCOMPARE(count("people"),1);QCOMPARE(count("clients"),1);
     }
     void companyCandidateRecheckedUnderWriteLock(){
         seed();ContactRepository repo(&global_DBObjects);auto c=incoming("Different Person","different@example.test","Acme LLC");QString error;

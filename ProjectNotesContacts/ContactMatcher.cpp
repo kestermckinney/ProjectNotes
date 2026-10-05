@@ -16,7 +16,31 @@ QString ContactMatcher::normalize(QString s, bool company) {
     return s;
 }
 QString ContactMatcher::phone(QString s) {
-    s.remove(QRegularExpression("[^0-9]")); return s.size()>=7?s:QString();
+    s=s.normalized(QString::NormalizationForm_KC).trimmed().toCaseFolded();
+    const auto extension=QRegularExpression("(?:ext\\.?|extension|x|#)\\s*([0-9]+)$").match(s);
+    QString suffix;
+    if(extension.hasMatch()) {suffix="x"+extension.captured(1);s.truncate(extension.capturedStart());}
+    s.remove(QRegularExpression("[\\s+().\\-]+"));
+    return QRegularExpression("^[0-9]{7,}$").match(s).hasMatch()?s+suffix:QString();
+}
+bool ContactMatcher::equivalent(const QString &field,const QString &a,const QString &b) {
+    const auto text=[](const QString &s){return s.normalized(QString::NormalizationForm_KC).simplified().toCaseFolded();};
+    if(field=="client_id")return a==b;
+    if(field=="office_phone" || field=="cell_phone") {
+        const auto key=phone(a);
+        return !key.isEmpty()?key==phone(b):text(a)==text(b);
+    }
+    if(field=="name" || field=="company") {
+        const auto key=normalize(a,field=="company");
+        return !key.isEmpty()?key==normalize(b,field=="company"):text(a)==text(b);
+    }
+    return text(a)==text(b);
+}
+bool ContactMatcher::equivalentFields(const QVariantMap &a,const QVariantMap &b) {
+    if(a.keys()!=b.keys())return false;
+    for(auto it=a.begin();it!=a.end();++it)
+        if(!equivalent(it.key(),it.value().toString(),b.value(it.key()).toString()))return false;
+    return true;
 }
 static QString folded(QString s) {
     s=s.normalized(QString::NormalizationForm_D);
@@ -62,17 +86,20 @@ static QString companyBase(QString name) {
 }
 Match ContactMatcher::company(const QString &name,const QList<Client>& clients) {
     QList<Candidate> cs; const auto n=normalize(name,true); if(n.isEmpty()) return {};
-    const auto base=companyBase(name);
+    const auto base=companyBase(name);QStringList exact;
     for(const auto &c:clients) {
         if(c.deleted) continue;
         auto other=normalize(c.name,true); double score=similarity(n,other);
+        if(n==other)exact<<c.id;
         const auto otherBase=companyBase(c.name);
         const bool branchMatch=n!=other && ((!base.isEmpty() && base==other) || (!otherBase.isEmpty() && otherBase==n));
         if(branchMatch) score=std::max(score,.90);
         const bool obviousUniqueCandidate=n==other || (!branchMatch && score>=.96 && n.size()>=8 && other.size()>=8);
         if(score>=.85) cs.append({c.id,c.name,branchMatch?"Company base matches; branch/location differs":"Company name similarity",score,obviousUniqueCandidate});
     }
-    return finish(cs);
+    auto result=finish(cs);
+    if(exact.size()==1){result.id=exact.first();result.review=false;}
+    return result;
 }
 Match ContactMatcher::person(const Contact &c,const QString&clientId,const QList<Person>& people,const QStringList&rejected) {
     QList<Candidate> cs;
@@ -82,7 +109,7 @@ Match ContactMatcher::person(const Contact &c,const QString&clientId,const QList
         QString pe=p.fields.value("email").toString().trimmed().toCaseFolded();
         for(const auto&e:c.emails) {
             const auto trimmed=e.trimmed();if(trimmed.isEmpty())continue;hasEmail=true;
-            if(!pe.isEmpty() && trimmed.toCaseFolded()==pe)email=true;
+            if(!pe.isEmpty() && equivalent("email",trimmed,pe))email=true;
         }
         for(const auto &v:c.phones) {
             auto ph=phone(v); if(ph.isEmpty()) continue;
@@ -94,15 +121,14 @@ Match ContactMatcher::person(const Contact &c,const QString&clientId,const QList
         bool shortName=normalize(c.name).size()<6 || normalize(p.name).split(' ').size()<2;
         // A complete Thunderbird card can have no usable email or phone. Treat
         // identical visible fields as stronger evidence than a fuzzy candidate.
-        const auto sameText=[](const QString &a,const QString &b){return a.simplified().toCaseFolded()==b.simplified().toCaseFolded();};
-        bool exactProfile=sameText(c.name,p.name) && !shortName && !differentCompany && !differentEmail &&
-            !c.company.trimmed().isEmpty() && sameText(c.company,p.company) &&
+        bool exactProfile=equivalent("name",c.name,p.name) && !shortName && !differentCompany && !differentEmail &&
+            !c.company.trimmed().isEmpty() && equivalent("company",c.company,p.company) &&
             c.fields.contains("email") && c.fields.contains("office_phone") &&
             c.fields.contains("cell_phone") && c.fields.contains("role") &&
-            sameText(c.fields.value("email").toString(),p.fields.value("email").toString()) &&
-            sameText(c.fields.value("office_phone").toString(),p.fields.value("office_phone").toString()) &&
-            sameText(c.fields.value("cell_phone").toString(),p.fields.value("cell_phone").toString()) &&
-            sameText(c.fields.value("role").toString(),p.fields.value("role").toString());
+            equivalent("email",c.fields.value("email").toString(),p.fields.value("email").toString()) &&
+            equivalent("office_phone",c.fields.value("office_phone").toString(),p.fields.value("office_phone").toString()) &&
+            equivalent("cell_phone",c.fields.value("cell_phone").toString(),p.fields.value("cell_phone").toString()) &&
+            equivalent("role",c.fields.value("role").toString(),p.fields.value("role").toString());
         bool strong=!differentCompany && !shortName && ((email && score>=.80) ||
                     (!differentEmail && score>=.92 && telephone && !clientId.isEmpty() && clientId==p.clientId) || exactProfile);
         // Shared inboxes and office numbers are common. An identifier supports

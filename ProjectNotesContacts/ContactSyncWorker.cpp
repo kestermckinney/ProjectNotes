@@ -25,11 +25,6 @@ static QString clientKey(const QString &scope,const QString &name){
     return "client/"+hash(scope+QChar(0)+normalized);
 }
 static bool sameTrimmed(const QString &left,const QString &right){return left.trimmed()==right.trimmed();}
-static bool sameFieldsTrimmed(const QVariantMap &left,const QVariantMap &right){
-    if(left.keys()!=right.keys())return false;
-    for(auto it=left.begin();it!=left.end();++it)if(!sameTrimmed(it.value().toString(),right.value(it.key()).toString()))return false;
-    return true;
-}
 Match ContactSyncWorker::companyMatch(const QString &name,const QList<Client> &clients) const {
     const auto decisions=m_journal["clientDecisions"].toObject();
     auto decision=decisions[clientKey(m_scope,name)].toObject();
@@ -388,19 +383,19 @@ void ContactSyncWorker::importNext(){
         auto decision=m_journal["decisions"].toObject()[key].toObject();
         const auto clientDecisions=m_journal["clientDecisions"].toObject();
         const bool hasClientDecision=clientDecisions.contains(clientKey(m_scope,c.company))||clientDecisions.contains(legacyClientKey(m_scope,c.company));
-        if(!hasClientDecision&&sameTrimmed(decision["company"].toString(),c.company) && !decision["clientId"].toString().isEmpty()){
+        if(!hasClientDecision&&ContactMatcher::equivalent("company",decision["company"].toString(),c.company) && !decision["clientId"].toString().isEmpty()){
             for(const auto &client:m_clients)if(!client.deleted&&client.id==decision["clientId"].toString()){cm.id=client.id;cm.review=false;break;}
         }
         auto pm=linked.isEmpty()?ContactMatcher::person(c,cm.id,m_people,m_journal["rejected"].toObject()[key].toVariant().toStringList()):Match{};
         if(cm.review){prepareClientReviews();complete(m_status);return;}
         if(linked.isEmpty()&&pm.review){addReview(key,c,pm,cm,"Possible duplicate; choose a match before importing.");continue;}
-        QString displayName=sameTrimmed(decision["externalName"].toString(),c.name) && !decision["displayName"].toString().isEmpty()?decision["displayName"].toString():c.name;
+        QString displayName=ContactMatcher::equivalent("name",decision["externalName"].toString(),c.name) && !decision["displayName"].toString().isEmpty()?decision["displayName"].toString():c.name;
         if(!linked.isEmpty()&&!m_journal["reviews"].toObject().contains(key)){
             bool unchanged=false;
             for(const auto&p:m_people)if(p.id==linked){auto desired=p.fields;
                 for(const auto&field:QStringList{"name","email","office_phone","cell_phone","role"})if(c.fields.contains(field))desired[field]=c.fields[field];
                 desired["name"]=displayName;if(c.fields.contains("company"))desired["client_id"]=cm.id;
-                unchanged=sameFieldsTrimmed(desired,p.fields) && (c.company.trimmed().isEmpty()||!cm.id.isEmpty());break;
+                unchanged=ContactMatcher::equivalentFields(desired,p.fields) && (c.company.trimmed().isEmpty()||!cm.id.isEmpty());break;
             }
             if(unchanged){++m_unchanged;continue;}
         }

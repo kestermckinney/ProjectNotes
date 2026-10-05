@@ -106,8 +106,10 @@ bool ContactRepository::apply(const Contact&c,const QString&id,const QString&cli
         auto match=ContactMatcher::person(c,clientId.isEmpty()?newClientId:clientId,people);
         if(match.review||(!match.id.isEmpty()&&match.id!=id))return fail("The person match changed during sync. Review the candidates.");
     }
-    for(auto it=c.fields.begin();it!=c.fields.end();++it) if(QStringList{"name","email","office_phone","cell_phone","role"}.contains(it.key())) fields[it.key()]=it.value();
-    fields["name"]=displayName;
+    for(auto it=c.fields.begin();it!=c.fields.end();++it)
+        if(QStringList{"name","email","office_phone","cell_phone","role"}.contains(it.key()) &&
+           (!exists || reviewed || !ContactMatcher::equivalent(it.key(),fields.value(it.key()).toString(),it.value().toString()))) fields[it.key()]=it.value();
+    if(!exists || reviewed || !ContactMatcher::equivalent("name",fields.value("name").toString(),displayName))fields["name"]=displayName;
     if(c.fields.contains("company")) fields["client_id"]=clientId.isEmpty()?newClientId:clientId;
     if(displayName.trimmed().isEmpty()) return fail("A person name is required.");
     q.prepare("SELECT id FROM people WHERE deleted=0 AND lower(trim(name))=lower(trim(?)) AND id<>?");q.addBindValue(displayName);q.addBindValue(id);
