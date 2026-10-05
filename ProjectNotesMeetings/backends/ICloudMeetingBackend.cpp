@@ -162,9 +162,15 @@ void ICloudMeetingBackend::createEvent(Operation *operation, QUrl calendarUrl, Q
     MeetingRequest event = operation->request;
     // iCloud Calendar can send invitations when attendees are written. Keep
     // the server-side item unsent and let the user paste the reviewed list.
+    // An organizer without attendees would make Calendar treat this as a
+    // meeting organized by that address rather than an event created by the
+    // calendar owner, hiding Add Invitees when the addresses differ.
     event.attendees.clear();
+    event.organizerName.clear();
+    event.organizerAddress.clear();
     ValidationResult validation;
-    const QByteArray content = IcsWriter::write(event, QDateTime::currentDateTimeUtc(), &validation);
+    const QByteArray content = IcsWriter::write(event, QDateTime::currentDateTimeUtc(), &validation,
+                                                IcsWriter::OutputKind::CalDavResource);
     if (content.isEmpty()) {
         fail(operation, validation.issues.isEmpty() ? QStringLiteral("icloud-calendar-event-invalid")
                                                     : validation.issues.constFirst().code);

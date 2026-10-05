@@ -33,6 +33,9 @@ Dialog {
     property string templateId: ""
     property var review: ({ ready: false, loading: false })
     property string errorText: ""
+    // iCloud cannot link to the event it just created, so keep this review
+    // available after creation until the user has copied the attendees.
+    property bool draftCreated: false
     // Confirmation after "Copy Attendees", shown in place of the backend
     // description for a few seconds.
     property string copyNotice: ""
@@ -60,6 +63,8 @@ Dialog {
         review = DesktopAppController.meetingReview()
     }
     function backendDescription() {
+        if (draftCreated)
+            return qsTr("The draft was created in iCloud Calendar without attendees. Copy them here, open the event in iCloud Calendar, paste them into the attendee field, and send the invitations.")
         switch (review.backend) {
         case "graph":
             return qsTr("A draft meeting will be created in your Microsoft 365 calendar%1 and opened in Outlook. Edit the time, subject and agenda there, then send the invitations.")
@@ -80,6 +85,10 @@ Dialog {
     }
     function schedule() {
         errorText = ""
+        if (draftCreated) {
+            _dismiss()
+            return
+        }
         // Everything but the attendees comes from the meeting type; the user
         // edits it in the calendar app after the invite opens.
         DesktopAppController.handoffPreparedMeeting(review.subject, review.agendaHtml, review.location,
@@ -99,6 +108,7 @@ Dialog {
     onOpened: {
         errorText = ""
         copyNotice = ""
+        draftCreated = false
         review = ({ ready: false, loading: false })
         meetingTypes = DesktopAppController.meetingTemplateChoices()
         if (templateName(templateId) === "")
@@ -121,7 +131,10 @@ Dialog {
         }
         function onMeetingHandoffFinished(succeeded, message) {
             if (!dialog.visible) return
-            if (succeeded) dialog._dismiss()
+            if (succeeded && dialog.review.backend === "icloud") {
+                dialog.draftCreated = true
+                dialog.copyNotice = ""
+            } else if (succeeded) dialog._dismiss()
             else dialog.errorText = message
         }
     }
@@ -139,7 +152,7 @@ Dialog {
         Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
         ScrollView {
             id: scroll
-            enabled: !dialog.busy
+            enabled: !dialog.busy && !dialog.draftCreated
             Layout.fillWidth: true; Layout.fillHeight: true; clip: true; padding: 16
             contentWidth: availableWidth
             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
@@ -231,15 +244,17 @@ Dialog {
                 // opening the .ics) drop them, so they travel by clipboard.
                 // Only Outlook (classic) and Microsoft 365 fill them in.
                 Button {
+                    objectName: "copyMeetingAttendeesButton"
                     visible: ["default-app", "outlook", "mac-mail", "icloud"].indexOf(dialog.review.backend) >= 0
                     text: qsTr("Copy Attendees")
                     enabled: dialog.ready && !dialog.busy
                     onClicked: dialog.copyAttendees()
                 }
-                Button { text: qsTr("Cancel"); onClicked: dialog._dismiss() }
+                Button { visible: !dialog.draftCreated; text: qsTr("Cancel"); onClicked: dialog._dismiss() }
                 Button {
                     primary: true
-                    text: dialog.review.backend === "icloud" ? qsTr("Create Draft") : qsTr("Open Invite")
+                    text: dialog.draftCreated ? qsTr("Done")
+                        : dialog.review.backend === "icloud" ? qsTr("Create Draft") : qsTr("Open Invite")
                     enabled: dialog.ready && !dialog.busy
                     onClicked: dialog.schedule()
                 }

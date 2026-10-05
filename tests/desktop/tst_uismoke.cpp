@@ -622,6 +622,21 @@ private slots:
         QCOMPARE(review.value(QStringLiteral("durationMinutes")).toInt(), 60);
         assertClean("schedule meeting dialog");
 
+        // iCloud cannot deep-link to the event it creates.  Its successful
+        // handoff must therefore leave the review open so Copy Attendees is
+        // still available instead of dismissing the only attendee control.
+        QVariantMap iCloudReview = review;
+        iCloudReview.insert(QStringLiteral("backend"), QStringLiteral("icloud"));
+        dialog->setProperty("review", iCloudReview);
+        QVERIFY(QMetaObject::invokeMethod(c, "meetingHandoffFinished",
+                                          Q_ARG(bool, true), Q_ARG(QString, QString())));
+        QVERIFY(dialog->property("visible").toBool());
+        QVERIFY(dialog->property("draftCreated").toBool());
+        QObject *copyAttendees = dialog->findChild<QObject*>(QStringLiteral("copyMeetingAttendeesButton"));
+        QVERIFY(copyAttendees);
+        QVERIFY(copyAttendees->property("visible").toBool());
+        QVERIFY(copyAttendees->property("enabled").toBool());
+
         QVERIFY(QMetaObject::invokeMethod(dialog, "close"));
         QTRY_VERIFY_WITH_TIMEOUT(!c->meetingReview().value(QStringLiteral("ready")).toBool(), 1000);
         QVERIFY(PN::Comm::MeetingTemplateStore().remove(meetingType.id).ok());

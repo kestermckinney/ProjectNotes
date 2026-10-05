@@ -1539,10 +1539,10 @@ bool DesktopAppController::handoffPreparedMeeting(const QString &subject, const 
                              "the event's invitees, then click Send in Calendar.").arg(outcome.eventIdentity));
             }
 #endif
-            if (backend == PN::Comm::BackendId::ICloud && outcome.error.code.isEmpty()) {
-                emit self->infoOccurred(self->tr("Schedule Meeting"),
-                    self->tr("The event was created in iCloud Calendar without attendees. iCloud does not provide a link to the new event; open Calendar, paste the copied attendees into the event, then send the invitations."));
-            }
+            // The iCloud review stays open after success because CalDAV does
+            // not provide a link to the newly created event.  Keeping the
+            // review visible preserves Copy Attendees without adding a second,
+            // redundant confirmation dialog here.
         });
     });
     return true;

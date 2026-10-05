@@ -407,6 +407,8 @@ void MeetingsTest::iCloudCreatesEventWithoutAttendeesOrPresentationUrl()
     QCOMPARE(put.method, QByteArray("PUT"));
     QVERIFY(put.url.host().endsWith(QStringLiteral("icloud.com")));
     QVERIFY(put.body.contains("BEGIN:VEVENT"));
+    QVERIFY(!put.body.contains("METHOD:"));
+    QVERIFY(!put.body.contains("ORGANIZER"));
     QVERIFY(!put.body.contains("ATTENDEE"));
     QCOMPARE(put.headers.value("If-None-Match"), QByteArray("*"));
 }
