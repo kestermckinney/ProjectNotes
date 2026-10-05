@@ -1097,7 +1097,8 @@ Item {
                 }
                 GridLayout {
                     Layout.fillWidth: true
-                    columns: 2
+                    Layout.minimumWidth: 0
+                    columns: width < 760 ? 1 : 2
                     columnSpacing: 10
                     rowSpacing: 9
                     ComboField {
@@ -1146,8 +1147,8 @@ Item {
                         return backends[0].value
                     }
                     ComboField {
-                        Layout.preferredWidth: 360
-                        Layout.fillWidth: false
+                        Layout.minimumWidth: 0
+                        Layout.fillWidth: true
                         label: qsTr("Integration")
                         options: integrationSection.backends.map(function(backend) { return backend.label })
                         value: integrationSection.labelFor(DesktopAppController.preferredEmailBackend)
@@ -1268,10 +1269,14 @@ Item {
         Layout.fillHeight: true
         clip: true
         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+        // Keep the flickable's horizontal extent tied to its viewport. Some
+        // controls have wide implicit sizes even when their layouts can shrink.
+        contentWidth: availableWidth
 
         ColumnLayout {
             id: settingsContent
             width: settingsTab.availableWidth
+            Layout.minimumWidth: 0
             spacing: 16
         }
     }
@@ -1283,6 +1288,7 @@ Item {
         property bool checked: false
         signal toggledValue(bool value)
         Layout.fillWidth: true
+        Layout.minimumWidth: 0
         spacing: 8
         CheckBox {
             id: cb
@@ -1593,6 +1599,7 @@ Item {
         property string subtitle: ""
         default property alias content: inner.data
         Layout.fillWidth: true
+        Layout.minimumWidth: 0
         spacing: 8
 
         Text { text: title; color: Theme.text; font.pixelSize: Theme.fontXl; font.weight: Font.Bold }
@@ -1607,6 +1614,7 @@ Item {
         ColumnLayout {
             id: inner
             Layout.fillWidth: true
+            Layout.minimumWidth: 0
             Layout.topMargin: 3
             spacing: 6
         }
