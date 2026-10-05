@@ -247,6 +247,88 @@ private slots:
         assertClean("settings category tabs");
     }
 
+    void test_02bb_preferencesSearchKeyboardSelection()
+    {
+        const QString originalId = c->managingCompanyId();
+        const QString firstName = QStringLiteral("KeyboardChoice Alpha");
+        const QString secondName = QStringLiteral("KeyboardChoice Beta");
+        QStringList ids;
+        for (const QString& name : {firstName, secondName}) {
+            const int row = c->addClient();
+            QVERIFY(row >= 0);
+            QVERIFY2(c->saveClient(row, name), qPrintable(c->lastSaveError()));
+            for (const QVariant& entry : c->clientList()) {
+                const QVariantMap client = entry.toMap();
+                if (client.value(QStringLiteral("name")).toString() == name) {
+                    ids.append(client.value(QStringLiteral("id")).toString());
+                    break;
+                }
+            }
+        }
+        QCOMPARE(ids.size(), 2);
+
+        clearWarnings();
+        nav("selectSection", "settings");
+        auto *window = qobject_cast<QQuickWindow*>(root);
+        QVERIFY(window);
+        QQuickItem* settings = findVisualChild(window->contentItem(), QStringLiteral("settingsPage"));
+        QVERIFY(settings);
+        QVERIFY(QMetaObject::invokeMethod(settings, "refreshContactOptions"));
+        QVariant selected;
+        QVERIFY(QMetaObject::invokeMethod(settings, "selectTab", Q_RETURN_ARG(QVariant, selected),
+                                          Q_ARG(QVariant, 7)));
+        QVERIFY(selected.toBool());
+        QQuickItem* combo = findVisualChild(window->contentItem(), QStringLiteral("Managing CompanyInput"));
+        QVERIFY(combo);
+        QQuickItem* editor = combo->property("contentItem").value<QQuickItem*>();
+        QVERIFY(editor);
+        auto typeText = [window](const QString& value) {
+            for (QChar ch : value)
+                QTest::keyClick(window, static_cast<Qt::Key>(ch.toUpper().unicode()),
+                                ch.isUpper() ? Qt::ShiftModifier : Qt::NoModifier);
+        };
+        editor->forceActiveFocus();
+        typeText(QStringLiteral("KeyboardChoice"));
+        QTRY_COMPARE(combo->property("_filter").toString(), QStringLiteral("keyboardchoice"));
+
+        QTest::keyClick(window, Qt::Key_Down);
+        const int firstIndex = combo->property("_keyboardIndex").toInt();
+        QVERIFY(firstIndex >= 0);
+        QTest::keyClick(window, Qt::Key_Down);
+        const int secondIndex = combo->property("_keyboardIndex").toInt();
+        QVERIFY(secondIndex > firstIndex);
+        QTest::keyClick(window, Qt::Key_Down);
+        QCOMPARE(combo->property("_keyboardIndex").toInt(), secondIndex);
+        QTest::keyClick(window, Qt::Key_Up);
+        QCOMPARE(combo->property("_keyboardIndex").toInt(), firstIndex);
+        QCOMPARE(c->managingCompanyId(), originalId);
+
+        QTest::keyClick(window, Qt::Key_Backspace);
+        QCOMPARE(combo->property("_keyboardIndex").toInt(), -1);
+        QTest::keyClick(window, Qt::Key_A, Qt::ControlModifier);
+        typeText(QStringLiteral("NoMatchingClientName"));
+        QTest::keyClick(window, Qt::Key_Down);
+        QCOMPARE(combo->property("_keyboardIndex").toInt(), -1);
+        QTest::keyClick(window, Qt::Key_Return);
+        QCOMPARE(c->managingCompanyId(), originalId);
+
+        QTest::keyClick(window, Qt::Key_A, Qt::ControlModifier);
+        typeText(QStringLiteral("KeyboardChoice"));
+        QTest::keyClick(window, Qt::Key_Down);
+        QTest::keyClick(window, Qt::Key_Down);
+        QTest::keyClick(window, Qt::Key_Return);
+        QTRY_COMPARE(c->managingCompanyId(), ids.at(1));
+        assertClean("preferences keyboard autocomplete");
+
+        c->setManagingCompanyId(originalId);
+        for (const QString& id : ids) {
+            const int row = c->clientRowForId(id);
+            QVERIFY(row >= 0);
+            QVERIFY2(c->deleteClient(row), qPrintable(c->lastSaveError()));
+        }
+        QVERIFY(QMetaObject::invokeMethod(settings, "refreshContactOptions"));
+    }
+
     void test_02c_nativeContactsReviewPane()
     {
         using namespace PN::Contacts;

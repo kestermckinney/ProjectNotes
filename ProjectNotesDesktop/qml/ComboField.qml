@@ -54,14 +54,36 @@ ColumnLayout {
         font.pixelSize: Theme.fontBody
         displayText: root.includeNone && currentIndex === 0 ? "" : currentText
 
-        // Current type-to-search text (lower-cased match target). Empty = show all.
+        // Current type-to-search text. Empty = show all.
         property string _filter: ""
+        // Keep keyboard navigation separate from currentIndex: moving through
+        // suggestions must not save a value until the user accepts one.
+        property int _keyboardIndex: -1
+
+        function _matches(i) {
+            return String(root._model[i]).toLowerCase().indexOf(_filter.toLowerCase()) >= 0
+        }
+
+        function _moveHighlight(step) {
+            if (!popup.visible)
+                popup.open()
+            var start = _keyboardIndex < 0
+                ? (step > 0 ? -1 : root._model.length) : _keyboardIndex
+            for (var i = start + step; i >= 0 && i < root._model.length; i += step) {
+                if (_matches(i)) {
+                    _keyboardIndex = i
+                    suggestionList.positionViewAtIndex(i, ListView.Contain)
+                    return
+                }
+            }
+        }
 
         // Sync external value → selection without clobbering user edits.
         property bool _syncing: false
         function _syncFromValue() {
             _syncing = true
             _filter = ""
+            _keyboardIndex = -1
             var idx
             // Empty value maps to the none entry when present.
             if (root.includeNone && root.value === "")
@@ -75,13 +97,16 @@ ColumnLayout {
             _syncing = false
         }
 
-        // Resolve typed text to an option. Prefer an exact match, then the
-        // keyboard-highlighted filtered row, and finally the first visible
-        // autocomplete result.
+        // Resolve typed text to an option. An explicitly highlighted row wins;
+        // otherwise prefer an exact match, Qt's highlighted row, then the first
+        // visible result.
         function _completionFor(text) {
             var needle = String(text).toLowerCase()
             if (needle === "")
                 return ""
+
+            if (_keyboardIndex >= 0 && _matches(_keyboardIndex))
+                return root._model[_keyboardIndex]
 
             var i
             for (i = root.includeNone ? 1 : 0; i < root._model.length; ++i) {
@@ -89,11 +114,9 @@ ColumnLayout {
                     return root._model[i]
             }
 
-            if (highlightedIndex >= (root.includeNone ? 1 : 0)) {
-                var highlighted = String(root._model[highlightedIndex])
-                if (highlighted.toLowerCase().indexOf(needle) >= 0)
-                    return root._model[highlightedIndex]
-            }
+            if (highlightedIndex >= (root.includeNone ? 1 : 0)
+                    && _matches(highlightedIndex))
+                return root._model[highlightedIndex]
 
             for (i = root.includeNone ? 1 : 0; i < root._model.length; ++i) {
                 if (String(root._model[i]).toLowerCase().indexOf(needle) >= 0)
@@ -174,9 +197,20 @@ ColumnLayout {
             // value — the user can search without hand-clearing the box first.
             onActiveFocusChanged: if (activeFocus) selectAll()
             onTextEdited: {
+                combo._keyboardIndex = -1
                 combo._filter = text
                 if (!combo.popup.visible)
                     combo.popup.open()
+            }
+            Keys.onDownPressed: (event) => {
+                if (!combo.editable) return
+                combo._moveHighlight(1)
+                event.accepted = true
+            }
+            Keys.onUpPressed: (event) => {
+                if (!combo.editable) return
+                combo._moveHighlight(-1)
+                event.accepted = true
             }
             Keys.onReturnPressed: (event) => {
                 combo._acceptTypedText()
@@ -225,6 +259,7 @@ ColumnLayout {
                 border.color: Theme.border
             }
             contentItem: ListView {
+                id: suggestionList
                 clip: true
                 implicitHeight: contentHeight
                 model: combo.popup.visible ? combo.delegateModel : null
@@ -248,7 +283,7 @@ ColumnLayout {
 
         // A plain Item, not an ItemDelegate: ComboBox closes its popup
         // synchronously when a button delegate is clicked, which is the leak
-        // _pick() avoids. Keyboard selection still goes through onActivated.
+        // _pick() avoids. The editor handles keyboard selection separately.
         delegate: Rectangle {
             id: itemDelegate
             width: combo.width
@@ -258,8 +293,12 @@ ColumnLayout {
             readonly property bool _match: combo._filter === ""
                 || String(modelData).toLowerCase().indexOf(combo._filter.toLowerCase()) >= 0
             visible: _match
-            height: _match ? Math.max(rowText.implicitHeight + 16, 30) : 0
-            color: itemHover.hovered || combo.highlightedIndex === index ? Theme.accentSoft : "transparent"
+            // Text fills this rectangle, so its implicitHeight would depend on
+            // this height and create a binding loop while rows collapse.
+            height: _match ? Math.max(rowText.font.pixelSize + 16, 30) : 0
+            color: itemHover.hovered || (combo._keyboardIndex >= 0
+                ? combo._keyboardIndex === index : combo.highlightedIndex === index)
+                ? Theme.accentSoft : "transparent"
             Text {
                 id: rowText
                 anchors.fill: parent
