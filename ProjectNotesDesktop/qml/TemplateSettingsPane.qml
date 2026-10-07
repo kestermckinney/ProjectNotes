@@ -169,7 +169,9 @@ ColumnLayout {
                 { value: "send-meeting-notes", label: qsTr("Send Meeting Notes") },
                 { value: "tracker-items-report", label: qsTr("Tracker Items Report") },
                 { value: "status-report", label: qsTr("Status Report") },
-                { value: "meeting-notes-report", label: qsTr("Meeting Notes Report") }
+                { value: "meeting-notes-report", label: qsTr("Meeting Notes Report") },
+                { value: "project-email", label: qsTr("Project Email") },
+                { value: "share-location", label: qsTr("Share Location") }
             ]
             textRole: "label"
             valueRole: "value"
@@ -224,7 +226,9 @@ ColumnLayout {
     }
 
     Label { text: qsTr("Rich body"); color: Theme.text2 }
-    Label { text: qsTr("Include exactly one {{ content.body }} protected content block. It preserves native report content while you add prose around it."); color: Theme.text3; font.pixelSize: Theme.fontSm; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+    Label { text: pane.templateModel && pane.templateModel.workflow === "project-email"
+                  ? qsTr("Configure the project email subject and body. Person fields refer to the person right-clicked; they are empty for a project-team email.")
+                  : qsTr("Include exactly one {{ content.body }} protected content block. It preserves the shared content while you add prose around it."); color: Theme.text3; font.pixelSize: Theme.fontSm; wrapMode: Text.WordWrap; Layout.fillWidth: true }
     RichTextEditor {
         id: richBody
         minimumHeight: 120

@@ -191,6 +191,7 @@ void CommunicationContractsTest::init()
 void CommunicationContractsTest::stableEnumRoundTrips()
 {
     QVERIFY(workflowFromStableString(toStableString(Workflow::StatusReport)) == Workflow::StatusReport);
+    QVERIFY(workflowFromStableString(toStableString(Workflow::PersonEmail)) == Workflow::PersonEmail);
     QVERIFY(emailModeFromStableString(toStableString(EmailMode::PdfAttachment)) == EmailMode::PdfAttachment);
     QVERIFY(backendIdFromStableString(toStableString(BackendId::Thunderbird)) == BackendId::Thunderbird);
     QVERIFY(backendIdFromStableString(toStableString(BackendId::Outlook)) == BackendId::Outlook);
@@ -1364,10 +1365,8 @@ void CommunicationContractsTest::reportsMacMailPlatformAvailability()
     QVERIFY(isBackendAvailableOnThisPlatform(BackendId::ICloud));
     // "MacOS Email and Calendar" now drives Mail.app/Calendar.app natively
     // (MacMailBackend/MacCalendarBackend, macOS-only) instead of writing an
-    // .eml/.ics file. Its native compose has no Cc/Bcc distinction and no
-    // attachment slot, so EmailContentBuilder warns — rather than silently
-    // dropping data — when a MacMail request carries a Bcc recipient or an
-    // attachment; every other backend gets neither warning for the same input.
+    // .eml/.ics file. Its native compose has no Cc/Bcc distinction, so warn
+    // about Bcc. File attachments are shared alongside the formatted body.
     EmailPreparation input; input.operationId = QUuid::createUuid();
     input.source = {"db", 1, "p", {}, Workflow::StatusReport};
     input.document.workflow = Workflow::StatusReport;
@@ -1385,7 +1384,7 @@ void CommunicationContractsTest::reportsMacMailPlatformAvailability()
                            [&code](const ValidationIssue &issue) { return issue.code == code; });
     };
     QVERIFY(hasWarning(macMailResult.validation, QStringLiteral("mac-mail-bcc-unsupported")));
-    QVERIFY(hasWarning(macMailResult.validation, QStringLiteral("mac-mail-attachments-unsupported")));
+    QVERIFY(!hasWarning(macMailResult.validation, QStringLiteral("mac-mail-attachments-unsupported")));
 
     input.backend = BackendId::DefaultApp;
     const auto defaultAppResult = EmailContentBuilder::prepare(input);

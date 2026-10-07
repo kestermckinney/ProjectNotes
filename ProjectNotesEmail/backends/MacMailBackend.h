@@ -11,12 +11,11 @@ namespace PN::Comm {
 
 // Hands a message to Mail.app as a real, editable HTML compose window via
 // NSSharingService, rather than writing an .eml file for the desktop to open.
-// NSSharingService's compose-email item has no To/Cc distinction and no
-// attachment slot: Cc addresses are folded into the single recipients list it
+// NSSharingService's compose-email item has no To/Cc distinction:
+// Cc addresses are folded into the single recipients list it
 // exposes, Bcc addresses are dropped (EmailContentBuilder warns about this
-// before handoff so it is never a surprise), and attachments are not carried
-// over. Callers who need attachments or a true Bcc should pick Default
-// Application instead.
+// before handoff so it is never a surprise). Attachments are passed as file URLs
+// alongside the formatted body. A true Bcc requires another backend.
 class MacMailBackend final : public EmailBackend {
 public:
     void handoff(EmailRequest request, Completion completion) override;

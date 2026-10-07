@@ -27,6 +27,8 @@
 #include "ProjectNotesEmail/MeetingNotesPreparationFactory.h"
 #include "ProjectNotesEmail/MeetingNotesReportPreparationFactory.h"
 #include "ProjectNotesEmail/ProjectReportPreparationFactory.h"
+#include "ProjectNotesEmail/ProjectEmailPreparationFactory.h"
+#include "ProjectNotesEmail/LocationAttachmentDownloader.h"
 #include "ProjectNotesEmail/RecipientSelectionModel.h"
 #include "ProjectNotesEmail/RecipientAudienceResolver.h"
 #include "ProjectNotesEmail/AudiencePresetStore.h"
@@ -76,6 +78,27 @@ PN::Comm::AudienceRule projectTeamAudienceRule()
     rule.companyFilter = PN::Comm::CompanyFilter::All;
     rule.includeUnknownCompany = true;
     rule.excludeProjectManager = true;
+    return rule;
+}
+
+PN::Comm::AudienceRule reviewPresetRule(PN::Comm::Workflow workflow,
+                                      const PN::Comm::CommunicationSnapshot &snapshot,
+                                      const PN::Comm::AudiencePreset &preset)
+{
+    auto rule = preset.rule;
+    if (workflow != PN::Comm::Workflow::ProjectEmail) return rule;
+    // Saved report audiences default to team members excluding the manager.
+    // Project emails can explicitly select a manager or meeting guest too;
+    // retain those IDs and their overrides without changing report behavior.
+    rule.source = PN::Comm::PeopleSource::ChosenPeople;
+    rule.excludeProjectManager = false;
+    for (const auto &person : snapshot.people) {
+        bool available = person.projectTeamMember && person.id != snapshot.projectManagerId;
+        for (const auto &overrideValue : preset.overrides)
+            available |= overrideValue.personId == person.id;
+        if (available) rule.chosenPersonIds.append(person.id);
+    }
+    rule.chosenPersonIds.removeDuplicates();
     return rule;
 }
 
@@ -352,6 +375,7 @@ DesktopAppController::~DesktopAppController()
 
 void DesktopAppController::cleanupTransientCache()
 {
+    cancelProjectEmailReview();
     // Rendered reports, staged attachments, meeting .ics files and plug-in
     // report output are transient cache data.  A cleanup call is idempotent,
     // which also makes the destructor safe after the aboutToQuit handler has
@@ -758,6 +782,135 @@ void DesktopAppController::stageRequestedGeneratedAttachmentAsync(
     });
 }
 
+bool DesktopAppController::prepareProjectEmailReview(const QString &projectId, const QString &personId)
+{
+    if (projectId.trimmed().isEmpty()) return false;
+    return prepareProjectEmail(projectId, personId, {}, false);
+}
+
+bool DesktopAppController::preparePersonEmailReview(const QString &personId)
+{
+    if (personId.trimmed().isEmpty()) return false;
+    return prepareProjectEmail({}, personId, {}, false);
+}
+
+bool DesktopAppController::prepareLocationEmailReview(const QString &projectId, const QString &locationId, bool attachment)
+{
+    if (projectId.trimmed().isEmpty() || locationId.trimmed().isEmpty()) return false;
+    return prepareProjectEmail(projectId, {}, locationId, attachment);
+}
+
+void DesktopAppController::cancelProjectEmailReview()
+{
+    const bool pending = !m_pendingProjectEmailReview.isNull();
+    const QUuid operationId = m_pendingProjectEmailReview;
+    m_pendingProjectEmailReview = {};
+    if (pending && m_communicationRepository) m_communicationRepository->cancel(operationId);
+    if (m_locationAttachmentDownloader) m_locationAttachmentDownloader->cancel();
+}
+
+bool DesktopAppController::prepareProjectEmail(const QString &projectId, const QString &personId,
+                                             const QString &locationId, bool attachment)
+{
+    if (!m_databaseOpen || !m_communicationRepository
+        || !m_communicationsController->beginReviewPreparation()) return false;
+    cancelProjectEmailReview();
+    // Invalidate callbacks belonging to another review sharing this controller.
+    if (!m_pendingPdfRender.isNull()) {
+        const QUuid operationId = m_pendingPdfRender;
+        m_pendingPdfRender = {};
+        m_webEngineRenderer->cancel(operationId);
+    }
+    m_pendingMeetingNotesReview = {};
+    m_pendingMeetingNotesReportReview = {};
+    m_pendingProjectReportReview = {};
+    m_pendingMeetingReview = {};
+    m_meetingReview.reset();
+    m_projectEmailReview.reset();
+    m_reviewAudienceSnapshot.reset();
+    m_reviewAudienceRule.reset();
+    m_projectReportOptions.reset();
+    m_recipientSelectionModel->setAudience({});
+    setAppliedReviewAudiencePreset({});
+    PN::Comm::SnapshotRequest request;
+    request.operationId = QUuid::createUuid();
+    request.source = {global_DBObjects.getDatabaseFile(), m_communicationDatabaseGeneration, projectId, {},
+                      projectId.isEmpty() ? PN::Comm::Workflow::PersonEmail
+                          : locationId.isEmpty() ? PN::Comm::Workflow::ProjectEmail : PN::Comm::Workflow::ShareLocation,
+                      personId, locationId};
+    request.managingCompanyId = managingCompanyId();
+    request.projectManagerId = projectManagerId();
+    request.capturedAt = QDateTime::currentDateTimeUtc();
+    m_pendingProjectEmailReview = request.operationId;
+    QPointer<DesktopAppController> self(this);
+    m_communicationRepository->loadSnapshot(request, [self, request, attachment](PN::Comm::SnapshotResult result) {
+        if (!self || self->m_pendingProjectEmailReview != result.operationId) return;
+        const auto fail = [self](QString code, QString message) {
+            self->m_pendingProjectEmailReview = {};
+            PN::Comm::ValidationResult validation;
+            validation.addError(std::move(code), QStringLiteral("email"), std::move(message));
+            self->m_communicationsController->setReviewValidation(std::move(validation));
+        };
+        if (!result.error.code.isEmpty()) { fail(result.error.code, result.error.displayText); return; }
+        const auto contentTemplate = request.source.workflow == PN::Comm::Workflow::PersonEmail
+            ? std::optional<PN::Comm::CommunicationTemplate>(PN::Comm::CommunicationTemplate{})
+            : self->resolveWorkflowTemplate(request.source.workflow);
+        if (!contentTemplate) { fail(QStringLiteral("template-required"), self->tr("Configure this email type in Settings.")); return; }
+        QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+        PN::Comm::EmailSettingsStore emailSettings(settings);
+        auto review = PN::Comm::ProjectEmailPreparationFactory::create(result.snapshot, request.source,
+            emailSettings.preferredBackend(), *contentTemplate, attachment);
+        if (!review.validation.ok()) {
+            self->m_pendingProjectEmailReview = {};
+            self->m_communicationsController->setReviewValidation(review.validation);
+            return;
+        }
+        review.preparation.senderAddress = emailSettings.senderAddress();
+        const QUrl attachmentUrl = review.attachmentUrl;
+        self->stageRequestedGeneratedAttachmentAsync(review.preparation,
+            [self, request, review, snapshot = result.snapshot, attachmentUrl]
+            (std::optional<PN::Comm::EmailPreparation> staged, PN::Comm::ValidationResult validation) mutable {
+                if (!self || self->m_pendingProjectEmailReview != request.operationId) return;
+                if (!staged) {
+                    self->m_pendingProjectEmailReview = {};
+                    self->m_communicationsController->setReviewValidation(std::move(validation));
+                    return;
+                }
+                auto finish = [self, request, review, snapshot, prepared = *staged]
+                    (PN::Comm::ArtifactStoreResult attachmentResult) mutable {
+                    if (!self || self->m_pendingProjectEmailReview != request.operationId) return;
+                    self->m_pendingProjectEmailReview = {};
+                    if (!attachmentResult.ok()) {
+                        PN::Comm::ValidationResult validation;
+                        validation.addError(attachmentResult.error.code, QStringLiteral("attachments"), attachmentResult.error.displayText);
+                        self->m_communicationsController->setReviewValidation(std::move(validation));
+                        return;
+                    }
+                    if (!attachmentResult.artifact.absolutePath.isEmpty()) prepared.attachments.append(attachmentResult.artifact);
+                    self->m_projectEmailReview = prepared;
+                    self->m_reviewAudienceSnapshot = snapshot;
+                    self->m_reviewAudienceRule = review.rule;
+                    self->m_recipientSelectionModel->setAudience(review.audience);
+                    self->m_communicationsController->setPreparation(std::move(prepared));
+                    self->m_recipientSelectionModel->setInternalReportContext(false, {});
+                    // A clicked person is an explicit recipient choice, so
+                    // never replace it automatically with the project default.
+                    if (request.source.personId.isEmpty())
+                        self->applyDefaultReviewAudiencePreset();
+                };
+                const QString cache = PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile);
+                if (attachmentUrl.isLocalFile()) {
+                    finish(PN::Comm::ArtifactStore(cache).stageUserAttachment(staged->operationId, attachmentUrl.toLocalFile()));
+                } else if (!attachmentUrl.isEmpty()) {
+                    if (!self->m_locationAttachmentDownloader)
+                        self->m_locationAttachmentDownloader = std::make_unique<PN::Comm::LocationAttachmentDownloader>();
+                    self->m_locationAttachmentDownloader->download(attachmentUrl, cache, staged->operationId, std::move(finish));
+                } else finish({});
+            });
+    });
+    return true;
+}
+
 bool DesktopAppController::prepareMeetingNotesReview(const QString& projectId, const QString& noteId)
 {
     if (!m_databaseOpen || !m_communicationRepository || projectId.trimmed().isEmpty() || noteId.trimmed().isEmpty())
@@ -765,6 +918,7 @@ bool DesktopAppController::prepareMeetingNotesReview(const QString& projectId, c
     if (!m_communicationsController->beginReviewPreparation())
         return false;
 
+    cancelProjectEmailReview();
     PN::Comm::SnapshotRequest request;
     request.operationId = QUuid::createUuid();
     request.source = {global_DBObjects.getDatabaseFile(), m_communicationDatabaseGeneration,
@@ -844,6 +998,7 @@ bool DesktopAppController::prepareMeetingNotesReportReviewWithOptions(const QStr
     if (!m_communicationsController->beginReviewPreparation())
         return false;
 
+    cancelProjectEmailReview();
     const QDate date = QDate::fromString(reportingDate.trimmed(), QStringLiteral("MM/dd/yyyy"));
     if (!date.isValid()) {
         PN::Comm::ValidationResult validation;
@@ -986,6 +1141,7 @@ bool DesktopAppController::prepareProjectReportReview(const QString &projectId, 
         return false;
     if (!m_communicationsController->beginReviewPreparation())
         return false;
+    cancelProjectEmailReview();
     const QDate date = QDate::fromString(reportingDate.trimmed(), QStringLiteral("MM/dd/yyyy"));
     if (!date.isValid()) {
         PN::Comm::ValidationResult validation;
@@ -1141,10 +1297,11 @@ bool DesktopAppController::applyReviewAudiencePreset(const QString &presetId)
     for (const PN::Comm::AudiencePreset &preset : store.presets(source.projectId)) {
         if (preset.id != presetId)
             continue;
-        m_recipientSelectionModel->setAudience(PN::Comm::resolveAudience(*m_reviewAudienceSnapshot, preset.rule));
+        const auto rule = reviewPresetRule(source.workflow, *m_reviewAudienceSnapshot, preset);
+        m_recipientSelectionModel->setAudience(PN::Comm::resolveAudience(*m_reviewAudienceSnapshot, rule));
         updateRecipientInternalReportContext();
         m_recipientSelectionModel->applyOverrides(preset.overrides);
-        m_reviewAudienceRule = preset.rule;
+        m_reviewAudienceRule = rule;
         setAppliedReviewAudiencePreset(preset.id);
         return true;
     }
@@ -1180,10 +1337,11 @@ bool DesktopAppController::applyDefaultReviewAudiencePreset()
         .defaultFor(source.workflow, source.projectId);
     if (!preset)
         return false;
-    m_recipientSelectionModel->setAudience(PN::Comm::resolveAudience(*m_reviewAudienceSnapshot, preset->rule));
+    const auto rule = reviewPresetRule(source.workflow, *m_reviewAudienceSnapshot, *preset);
+    m_recipientSelectionModel->setAudience(PN::Comm::resolveAudience(*m_reviewAudienceSnapshot, rule));
     updateRecipientInternalReportContext();
     m_recipientSelectionModel->applyOverrides(preset->overrides);
-    m_reviewAudienceRule = preset->rule;
+    m_reviewAudienceRule = rule;
     setAppliedReviewAudiencePreset(preset->id);
     return true;
 }
@@ -1212,6 +1370,9 @@ void DesktopAppController::updateRecipientInternalReportContext()
             break;
         case PN::Comm::Workflow::SendMeetingNotes:
         case PN::Comm::Workflow::ScheduleMeeting:
+        case PN::Comm::Workflow::ProjectEmail:
+        case PN::Comm::Workflow::ShareLocation:
+        case PN::Comm::Workflow::PersonEmail:
             break;
         }
     }
@@ -1231,6 +1392,9 @@ bool DesktopAppController::handoffPreparedReview()
     case PN::Comm::Workflow::MeetingNotesReport: review = &m_meetingNotesReportReview; break;
     case PN::Comm::Workflow::StatusReport:
     case PN::Comm::Workflow::TrackerItemsReport: review = &m_projectReportReview; break;
+    case PN::Comm::Workflow::ProjectEmail:
+    case PN::Comm::Workflow::PersonEmail:
+    case PN::Comm::Workflow::ShareLocation: review = &m_projectEmailReview; break;
     default: break;
     }
     if (!review || !review->has_value()) {
@@ -1276,11 +1440,17 @@ bool DesktopAppController::handoffPreparedReview()
         if (result.snapshot.fingerprint != expectedFingerprint) {
             PN::Comm::ValidationResult validation;
             validation.addError(QStringLiteral("review-source-changed"), QStringLiteral("source"),
-                                tr("The project data changed. Regenerate the review before handing it off."));
+                                tr("The source data changed. Regenerate the review before handing it off."));
             self->m_communicationsController->failSourceRevalidation(std::move(validation));
             return;
         }
-        const PN::Comm::RecipientResolution recipients = self->m_recipientSelectionModel->resolve();
+        PN::Comm::RecipientResolution recipients = self->m_recipientSelectionModel->resolve();
+        // Plain people emails are fixed to the person clicked; project emails
+        // use the review's editable audience, even when opened from a person.
+        if (request.source.workflow == PN::Comm::Workflow::PersonEmail) {
+            recipients = {};
+            recipients.recipients = (*review)->recipients;
+        }
         if (!recipients.validation.ok()) {
             self->m_communicationsController->failSourceRevalidation(recipients.validation);
             return;
@@ -1290,6 +1460,22 @@ bool DesktopAppController::handoffPreparedReview()
         PN::Comm::EmailPreparation prepared = self->m_communicationsController->preparation();
         prepared.recipients = recipients.recipients;
         prepared.addressLater = recipients.addressLaterExplicitlyChosen;
+        // Thunderbird reads its compose body from a file. Freeze review edits
+        // into that file as well as the HTML passed to the other backends.
+        if (prepared.backend == PN::Comm::BackendId::Thunderbird && self->m_thunderbirdEmailBackend
+            && prepared.mode == PN::Comm::EmailMode::InlineHtml) {
+            PN::Comm::ArtifactStore store(PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile));
+            const auto body = store.stageGeneratedContent(prepared.operationId, QStringLiteral("message.html"),
+                prepared.document.emailFragment.toUtf8(), QStringLiteral("text/html"));
+            if (!body.ok()) {
+                PN::Comm::ValidationResult validation;
+                validation.addError(body.error.code, QStringLiteral("body"), tr("The email body could not be prepared."));
+                self->m_communicationsController->failSourceRevalidation(std::move(validation));
+                return;
+            }
+            self->m_thunderbirdEmailBackend->setBodyFile(prepared.operationId, body.artifact.absolutePath,
+                QDir(store.stagingRoot()).filePath(prepared.operationId.toString(QUuid::WithoutBraces)));
+        }
         *review = prepared;
         self->m_communicationsController->handoffAfterSourceRevalidation(
             recipients.recipients, recipients.addressLaterExplicitlyChosen);
@@ -1331,6 +1517,7 @@ bool DesktopAppController::prepareMeetingReview(const QString &projectId, const 
         return false;
     }
 
+    cancelProjectEmailReview();
     PN::Comm::SnapshotRequest request;
     request.operationId = QUuid::createUuid();
     request.source = {global_DBObjects.getDatabaseFile(), m_communicationDatabaseGeneration,

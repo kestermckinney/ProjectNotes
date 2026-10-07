@@ -20,11 +20,14 @@
 #include <QSqlError>
 #include <QDomDocument>
 #include <QStandardPaths>
+#include <QTemporaryDir>
 #include <QUuid>
 
 #include "DesktopAppController.h"
 #include "databaseobjects.h"
 #include "ProjectNotesEmail/RecipientSelectionModel.h"
+#include "ProjectNotesEmail/CommunicationsController.h"
+#include "ProjectNotesIntegrations/TemplateEditorModel.h"
 
 namespace {
 
@@ -338,6 +341,115 @@ private slots:
                                         "Spec document", "/tmp/spec.txt"),
                  qPrintable(c->lastSaveError()));
         QCOMPARE(c->projectLocationsModel()->rowCount(), before + 1);
+    }
+
+    void test_11b_projectEmailAndLocationSharing()
+    {
+        auto *review = qobject_cast<PN::Comm::CommunicationsController *>(c->communicationsController());
+        auto *recipients = qobject_cast<PN::Comm::RecipientSelectionModel *>(c->recipientSelectionModel());
+        auto *templates = qobject_cast<PN::Comm::TemplateEditorModel *>(c->templateEditorModel());
+        QVERIFY(review); QVERIFY(recipients); QVERIFY(templates);
+        templates->setWorkflow("project-email");
+        templates->setDraftSubject("Hello {{ person.name }} - {{ project.number }}");
+        templates->setDraftRichBody("<p>To {{ person.email }} about {{ project.name }}</p>");
+        QVERIFY(templates->save());
+        QVERIFY(c->prepareProjectEmailReview(m_projectId, m_personId));
+        QTRY_COMPARE_WITH_TIMEOUT(review->stageName(), "reviewing", 5000);
+        QCOMPARE(recipients->selectedRecipientCount(), 1);
+        QCOMPARE(review->preparation().recipients.first().address, "p@example.com");
+        QVERIFY(review->subject().contains(m_projectNumber));
+        QVERIFY(review->htmlBody().contains("p@example.com"));
+        QVERIFY(recipients->rowCount() > 1);
+        QVERIFY(c->saveReviewAudiencePreset("Project person audience"));
+        QString projectPresetId;
+        for (const auto &preset : c->reviewAudiencePresets())
+            if (preset.toMap().value("name").toString() == "Project person audience")
+                projectPresetId = preset.toMap().value("id").toString();
+        QVERIFY(!projectPresetId.isEmpty());
+        QVERIFY(c->setReviewAudiencePresetDefault(projectPresetId));
+        recipients->selectAll();
+        QVERIFY(recipients->selectedRecipientCount() > 1);
+        QVERIFY(c->applyReviewAudiencePreset(projectPresetId));
+        QCOMPARE(recipients->selectedRecipientCount(), 1);
+        QCOMPARE(recipients->resolve().recipients.first().address, "p@example.com");
+        // A same-workflow template edit must be used on the next person draft.
+        templates->setDraftSubject("Follow up {{ project.number }}");
+        templates->setDraftRichBody("<p>Configured body for {{ person.email }}</p>");
+        QVERIFY(templates->save());
+        QVERIFY(c->prepareProjectEmailReview(m_projectId, m_personId));
+        QTRY_COMPARE_WITH_TIMEOUT(review->stageName(), "reviewing", 5000);
+        QCOMPARE(review->subject(), "Follow up " + m_projectNumber);
+        QCOMPARE(review->htmlBody(), "<p>Configured body for p@example.com</p>");
+        QCOMPARE(recipients->selectedRecipientCount(), 1);
+        QVERIFY(templates->resetSelected());
+        QVERIFY(c->prepareProjectEmailReview(m_projectId));
+        QTRY_COMPARE_WITH_TIMEOUT(review->stageName(), "reviewing", 5000);
+        // Team drafts load their project-email default; saved meeting guests
+        // must remain recipients even without a clicked-person source.
+        QCOMPARE(recipients->selectedRecipientCount(), 1);
+        QCOMPARE(recipients->resolve().recipients.first().address, "p@example.com");
+        QVERIFY(c->applyReviewAudiencePreset(projectPresetId));
+        QVERIFY(c->prepareProjectEmailReview(m_projectId, m_personId));
+        QTRY_COMPARE_WITH_TIMEOUT(review->stageName(), "reviewing", 5000);
+        QVERIFY(review->subject().contains(m_projectNumber));
+        QVERIFY(!review->subject().contains("Follow up"));
+        QTemporaryDir directory;
+        QFile original(directory.filePath("attachment.txt"));
+        QVERIFY(original.open(QIODevice::WriteOnly)); original.write("original bytes"); original.close();
+        c->setProjectFilter(m_projectId);
+        const int row = c->addProjectLocation(m_projectId);
+        QVERIFY(c->saveProjectLocation(row, c->fileTypeOptions().first(), "Shared attachment", original.fileName()));
+        const QString locationId = idForColumnValue(c->projectLocationsModel(), 3, "Shared attachment");
+        QVERIFY(!locationId.isEmpty());
+        QVERIFY(c->prepareLocationEmailReview(m_projectId, locationId, true));
+        QTRY_COMPARE_WITH_TIMEOUT(review->stageName(), "reviewing", 5000);
+        QCOMPARE(review->preparation().attachments.size(), 1);
+        const auto artifact = review->preparation().attachments.first();
+        QVERIFY(artifact.absolutePath != original.fileName());
+        QVERIFY(original.open(QIODevice::WriteOnly)); original.write("changed bytes"); original.close();
+        QFile cached(artifact.absolutePath); QVERIFY(cached.open(QIODevice::ReadOnly));
+        QCOMPARE(cached.readAll(), QByteArray("original bytes")); cached.close();
+        QVERIFY(c->saveReviewAudiencePreset("Location audience"));
+        const auto presets = c->reviewAudiencePresets(); QVERIFY(!presets.isEmpty());
+        const QString presetId = presets.first().toMap().value("id").toString();
+        QVERIFY(c->setReviewAudiencePresetDefault(presetId));
+        QVERIFY(c->prepareLocationEmailReview(m_projectId, locationId, true));
+        QTRY_COMPARE_WITH_TIMEOUT(review->stageName(), "reviewing", 5000);
+        QVERIFY(c->applyReviewAudiencePreset(presetId));
+        // Changing the saved location after preview must block the handoff,
+        // before any mail application or provider is invoked.
+        const int savedRow = rowForId(c->projectLocationsModel(), locationId);
+        QVERIFY(c->saveProjectLocation(savedRow, c->fileTypeOptions().first(), "Changed attachment", original.fileName()));
+        QVERIFY(c->handoffPreparedReview());
+        QTRY_COMPARE_WITH_TIMEOUT(review->stageName(), "failed", 5000);
+        QVERIFY(review->diagnostic().contains("changed"));
+    }
+
+    void test_11c_standalonePersonEmailHasNoProjectTemplate()
+    {
+        const int row = c->addPerson();
+        QVERIFY(row >= 0);
+        QVERIFY(c->savePerson(row, "Standalone email person", "standalone@example.test", "", "", m_clientId, ""));
+        const QString personId = idForColumnValue(c->peopleModel(), 1, "Standalone email person");
+        QVERIFY(!personId.isEmpty());
+        QVERIFY(c->preparePersonEmailReview(personId));
+        auto *review = qobject_cast<PN::Comm::CommunicationsController *>(c->communicationsController());
+        auto *recipients = qobject_cast<PN::Comm::RecipientSelectionModel *>(c->recipientSelectionModel());
+        QTRY_COMPARE_WITH_TIMEOUT(review->stageName(), "reviewing", 5000);
+        QCOMPARE(review->preparation().source.workflow, PN::Comm::Workflow::PersonEmail);
+        QVERIFY(review->preparation().source.projectId.isEmpty());
+        QVERIFY(review->subject().isEmpty());
+        QVERIFY(review->htmlBody().isEmpty());
+        QCOMPARE(recipients->selectedRecipientCount(), 1);
+        QCOMPARE(review->preparation().recipients.first().address, "standalone@example.test");
+        QVERIFY(!review->setSubject("A plain email"));
+        QVERIFY(!review->setHtmlBody("<p>New message</p>"));
+        QVERIFY(review->subject().isEmpty());
+        QVERIFY(review->htmlBody().isEmpty());
+        QVERIFY(PN::Comm::EmailContentBuilder::prepare(review->preparation()).request.has_value());
+        QVERIFY(!c->saveReviewAudiencePreset("Not a project audience"));
+        QVERIFY(!c->prepareProjectEmailReview({}));
+        QVERIFY(!c->preparePersonEmailReview({}));
     }
 
     void test_12_statusItems()

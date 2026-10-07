@@ -26,7 +26,7 @@ Open **Settings > Preferences** and find **Email, Contact and Calendar Integrati
 | **Default Application** | A draft message file (`.eml`) opened by whatever application handles that file type | A calendar file (`.ics`) opened by your default calendar application | Windows, macOS, Linux |
 | **Outlook** | A draft message opened in the new Outlook | A calendar file opened in the new Outlook, which leaves out the attendees. Copy them from the Schedule meeting window and paste them in | Windows |
 | **Outlook (Classic)** | A draft message opened in Outlook (classic) | An unsent meeting window in Outlook (classic) with the attendees filled in | Windows |
-| **MacOS Email and Calendar** | A Mail compose window with the formatted message. No Bcc and no attachments | An event created directly in Calendar, without attendees. Copy them from the Schedule meeting window and paste them in | macOS |
+| **MacOS Email and Calendar** | A Mail compose window with the formatted message and file attachments. No Bcc | An event created directly in Calendar, without attendees. Copy them from the Schedule meeting window and paste them in | macOS |
 | **iCloud** | A draft stored in iCloud Mail | An event stored in iCloud Calendar without attendees. Copy them from the Schedule meeting window and paste them in | Windows, macOS, Linux |
 | **Thunderbird** | A Thunderbird compose window, attachments included | A calendar file handed to Thunderbird, which offers to import it | Windows, macOS, Linux |
 | **Microsoft 365 drafts** | A draft in your Microsoft 365 mailbox, opened in Outlook on the web | A draft event in your Microsoft 365 calendar, opened in Outlook on the web | Windows, macOS, Linux |
@@ -73,7 +73,7 @@ If you want the meeting to arrive with its attendees already filled in, use **Ou
 2. Open Mail and Calendar at least once and add the account you send project mail from.
 3. Schedule a test meeting. macOS asks whether Project Notes may access your calendars, then whether it may control Calendar. Allow both.
 
-Reports open in a Mail compose window with the recipients and the formatted body already in place. Cc recipients appear alongside the To recipients. Bcc recipients and attachments cannot be carried and are left out. Choose **Default Application** for reports that need either.
+Reports open in a Mail compose window with the recipients, formatted body, and file attachments already in place. Cc recipients appear alongside the To recipients. Bcc recipients cannot be carried; choose **Default Application** or another integration for messages that need Bcc.
 
 Invitations become an event on your first writable calendar with the agenda in its notes. Calendar would send invitations the moment the event had attendees, so Project Notes adds none. Click **Copy Attendees** in the Schedule meeting window, paste the list into the event's invitees field, check the time, then click **Send**.
 
@@ -139,11 +139,11 @@ If you signed in before meeting scheduling existed, sign out and sign in again. 
 
 ## Write your email templates
 
-**Settings > Email Templates** wraps your own wording around the report Project Notes generates. Four workflows each have one editable template: **Send Meeting Notes**, **Tracker Items Report**, **Status Report** and **Meeting Notes Report**.
+**Settings > Email Templates** configures the subject and body for six email types: **Send Meeting Notes**, **Tracker Items Report**, **Status Report**, **Meeting Notes Report**, **Project Email**, and **Share Location**.
 
 1. Pick the **Workflow**.
 2. Edit the **Subject**.
-3. Edit the **Rich body**. Keep exactly one `{{ content.body }}` block in it. That block is protected, and it is where the generated report lands. Write your greeting above it and your sign-off below it.
+3. Edit the **Rich body**. For reports and location sharing, keep exactly one `{{ content.body }}` block: the generated report, link, or attachment description lands there. Project Email can consist entirely of your configured prose and does not require that block.
 4. **Reset** restores the built-in wording for that workflow.
 
 Right-click the subject or the body to insert a field instead of typing it. The fields that resolve are:
@@ -161,6 +161,8 @@ Right-click the subject or the body to insert a field instead of typing it. The 
 | `report.date` | The reporting date you choose in the review, on the three project reports |
 | `meeting.title` | The meeting note's title, on Send Meeting Notes |
 | `meeting.date` | The meeting date, on Send Meeting Notes and the Meeting Notes Report |
+| `person.name`, `person.email` | The person right-clicked for Project Email; empty when emailing the whole team |
+| `location.description`, `location.url`, `location.fileName` | The location being shared |
 
 A field that does not apply to the selected workflow is not offered.
 
@@ -205,7 +207,7 @@ Run one of each before you rely on it.
 | Microsoft 365 reports it is not signed in | Open **Settings > Office 365 Integration** and sign in again. A refresh token expires if it goes unused for a long time. |
 | A meeting draft is created but has no attendees | The sign-in predates calendar permission. Sign out, then sign in again to grant `Calendars.ReadWrite`. |
 | Calendar reports it is not allowed, or no event appears | Open **System Settings > Privacy & Security**. Under **Calendars**, give Project Notes full access. Under **Automation**, turn on **Calendar** for Project Notes. |
-| Mail opens without the attachment | **MacOS Email and Calendar** cannot attach files. Use **Default Application** for that report. |
+| Mail opens without the attachment | Keep Project Notes open until the draft has saved its attachments. If your mail client cannot import the native sharing items, try **Default Application**. |
 | Thunderbird does not start | The **Thunderbird executable** value is wrong. Try the bare command `thunderbird`, a full path, or `flatpak run org.mozilla.Thunderbird`. |
 | An attachment is missing after you reopen a draft | Staged files are removed when Project Notes closes. Send or save the draft before you quit. |
 

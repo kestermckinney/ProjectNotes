@@ -14,6 +14,9 @@ QString reportTypeName(Workflow workflow)
     case Workflow::StatusReport: return QStringLiteral("Status Report");
     case Workflow::TrackerItemsReport: return QStringLiteral("Tracker Items Report");
     case Workflow::ScheduleMeeting: return QStringLiteral("Meeting");
+    case Workflow::ProjectEmail: return QStringLiteral("Project Email");
+    case Workflow::ShareLocation: return QStringLiteral("Share Location");
+    case Workflow::PersonEmail: return QStringLiteral("Email");
     }
     return {};
 }

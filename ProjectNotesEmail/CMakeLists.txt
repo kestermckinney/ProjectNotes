@@ -37,6 +37,10 @@ add_library(ProjectNotesEmail STATIC
     MeetingNotesReportPreparationFactory.cpp
     ProjectReportPreparationFactory.h
     ProjectReportPreparationFactory.cpp
+    ProjectEmailPreparationFactory.h
+    ProjectEmailPreparationFactory.cpp
+    LocationAttachmentDownloader.h
+    LocationAttachmentDownloader.cpp
     StatusReportBuilder.h
     StatusReportBuilder.cpp
     TrackerItemsReportBuilder.h

@@ -120,6 +120,7 @@ set(DESKTOP_QML_FILES
     qml/SpellCheckDialog.qml
     qml/RecipientSelectionPane.qml
     qml/MeetingNotesReviewDialog.qml
+    qml/ProjectEmailReviewDialog.qml
     qml/MeetingNotesReportReviewDialog.qml
     qml/ScheduleMeetingDialog.qml
     qml/TemplateSettingsPane.qml

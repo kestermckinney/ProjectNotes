@@ -42,6 +42,7 @@ class AsyncSqliteCommunicationRepository;
 class WebEngineReportRenderer;
 class CommunicationsController;
 class EmailService;
+class LocationAttachmentDownloader;
 class RecipientSelectionModel;
 class TemplateEditorModel;
 class MeetingTemplateEditorModel;
@@ -195,6 +196,10 @@ public:
     // loads/builds review state; callers must use the later handoff flow to
     // interact with a backend.
     Q_INVOKABLE bool prepareMeetingNotesReview(const QString& projectId, const QString& noteId);
+    Q_INVOKABLE bool prepareProjectEmailReview(const QString &projectId, const QString &personId = {});
+    Q_INVOKABLE bool preparePersonEmailReview(const QString &personId);
+    Q_INVOKABLE bool prepareLocationEmailReview(const QString &projectId, const QString &locationId, bool attachment);
+    Q_INVOKABLE void cancelProjectEmailReview();
     // Starts a read-only review of the project's meeting-notes report.  The
     // reporting date is supplied in the desktop's MM/dd/yyyy display format.
     // Like the one-note route, this never activates an email backend.
@@ -934,6 +939,9 @@ private:
     QUuid m_pendingMeetingNotesReview;
     QUuid m_pendingMeetingNotesReportReview;
     QUuid m_pendingProjectReportReview;
+    QUuid m_pendingProjectEmailReview;
+    std::optional<PN::Comm::EmailPreparation> m_projectEmailReview;
+    std::unique_ptr<PN::Comm::LocationAttachmentDownloader> m_locationAttachmentDownloader;
     QUuid m_pendingHandoffRevalidation;
     QUuid m_pendingPdfRender;
     std::optional<PN::Comm::EmailPreparation> m_meetingNotesReview;
@@ -963,6 +971,8 @@ private:
                                     bool retainHtml = false,
                                     bool displayPdf = false,
                                     std::optional<PN::Comm::TrackerFilters> trackerFilters = std::nullopt);
+    bool prepareProjectEmail(const QString &projectId, const QString &personId,
+                             const QString &locationId, bool attachment);
     bool stageRequestedGeneratedAttachment(PN::Comm::EmailPreparation *preparation,
                                            PN::Comm::ValidationResult *validation);
     void stageRequestedGeneratedAttachmentAsync(PN::Comm::EmailPreparation preparation,

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "MacMailBackend.h"
+#include <QFileInfo>
 
 #import <AppKit/AppKit.h>
 
@@ -33,7 +34,9 @@ void MacMailBackend::handoff(EmailRequest request, Completion completion)
         }
 
         NSData *htmlData = [request.html.toNSString() dataUsingEncoding:NSUTF8StringEncoding];
-        NSAttributedString *body = [[NSAttributedString alloc] initWithHTML:htmlData documentAttributes:nil];
+        NSAttributedString *body = request.html.isEmpty()
+            ? [[NSAttributedString alloc] initWithString:@""]
+            : [[NSAttributedString alloc] initWithHTML:htmlData documentAttributes:nil];
         if (!body) {
             result.error = {QStringLiteral("mac-mail-body-invalid"), {}, RetryKind::ReviewAndRetry,
                             OutcomeCertainty::Certain};
@@ -41,8 +44,20 @@ void MacMailBackend::handoff(EmailRequest request, Completion completion)
             return;
         }
 
+        NSMutableArray *items = [NSMutableArray arrayWithObject:body];
+        for (const Artifact &attachment : request.attachments) {
+            const QFileInfo file(attachment.absolutePath);
+            if (!file.isFile() || !file.isReadable()) {
+                result.error = {QStringLiteral("attachment-source-invalid"),
+                                QStringLiteral("An email attachment is no longer available."),
+                                RetryKind::ReviewAndRetry, OutcomeCertainty::Certain};
+                completion(result);
+                return;
+            }
+            [items addObject:[NSURL fileURLWithPath:file.absoluteFilePath().toNSString()]];
+        }
         NSSharingService *service = [NSSharingService sharingServiceNamed:NSSharingServiceNameComposeEmail];
-        if (!service || ![service canPerformWithItems:@[ body ]]) {
+        if (!service || ![service canPerformWithItems:items]) {
             result.error = {QStringLiteral("mac-mail-unavailable"),
                             QStringLiteral("No mail account is configured in Mail."), RetryKind::ReviewAndRetry,
                             OutcomeCertainty::Certain};
@@ -52,7 +67,7 @@ void MacMailBackend::handoff(EmailRequest request, Completion completion)
 
         service.subject = request.subject.toNSString();
         service.recipients = recipients;
-        [service performWithItems:@[ body ]];
+        [service performWithItems:items];
     }
 
     // Mail.app opens the compose window asynchronously and reports nothing

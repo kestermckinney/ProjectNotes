@@ -18,6 +18,8 @@ private slots:
     void loadsTypedSnapshotWithoutUiFilters();
     void preservesInvalidNoteDateAsInvalid();
     void rejectsMissingProject();
+    void loadsStandalonePersonAndTracksChanges();
+    void validatesLocationAndPersonContextAndFingerprintsChanges();
     void validatesSelectedNotesAndAttendeeProvenance();
     void scopesMeetingAttendeesToRequestedNotesAndExcludesDeletedPeople();
     void loadsProjectWideMeetingAttendeesAndActions();
@@ -130,6 +132,65 @@ void CommunicationRepositoryTest::rejectsMissingProject()
 {
     createDatabase(); SqliteSnapshotLoader loader(databasePath(), &m_lock); SnapshotRequest request; request.operationId=QUuid::createUuid(); request.source.projectId="missing";
     QCOMPARE(loader.load(request).error.code,QStringLiteral("project-not-found"));
+}
+
+void CommunicationRepositoryTest::loadsStandalonePersonAndTracksChanges()
+{
+    createDatabase();
+    SqliteSnapshotLoader loader(databasePath(), &m_lock);
+    SnapshotRequest request; request.operationId = QUuid::createUuid();
+    request.source = {databasePath(), 7, {}, {}, Workflow::PersonEmail, "a"};
+    const auto first = loader.load(request);
+    QVERIFY(first.error.code.isEmpty());
+    QVERIFY(first.snapshot.projectId.isEmpty());
+    QCOMPARE(first.snapshot.people.size(), 1);
+    QCOMPARE(first.snapshot.people.first().email, "a@example.test");
+    QCOMPARE(first.snapshot.databaseGeneration, quint64(7));
+    {
+        auto db = QSqlDatabase::addDatabase("QSQLITE", "plain-person-fixture");
+        db.setDatabaseName(databasePath()); QVERIFY(db.open());
+        QSqlQuery query(db);
+        QVERIFY(query.exec("UPDATE people SET email='changed@example.test' WHERE id='a'"));
+        QVERIFY(query.exec("DELETE FROM project_people WHERE people_id='a'"));
+    }
+    QSqlDatabase::removeDatabase("plain-person-fixture");
+    const auto changed = loader.load(request);
+    QVERIFY(changed.error.code.isEmpty());
+    QVERIFY(changed.snapshot.fingerprint != first.snapshot.fingerprint);
+    request.source.personId = "missing";
+    QCOMPARE(loader.load(request).error.code, "person-not-found");
+}
+
+void CommunicationRepositoryTest::validatesLocationAndPersonContextAndFingerprintsChanges()
+{
+    createDatabase();
+    SqliteSnapshotLoader loader(databasePath(), &m_lock);
+    SnapshotRequest request; request.operationId = QUuid::createUuid();
+    request.source = {databasePath(), 1, "p", {}, Workflow::ShareLocation, {}, "folder-other"};
+    const auto first = loader.load(request);
+    QVERIFY(first.error.code.isEmpty()); QVERIFY(first.snapshot.location.has_value());
+    QCOMPARE(first.snapshot.location->path, "/synthetic/other");
+    {
+        auto db = QSqlDatabase::addDatabase("QSQLITE", "context-fixture");
+        db.setDatabaseName(databasePath()); QVERIFY(db.open());
+        QSqlQuery query(db);
+        QVERIFY(query.exec("UPDATE project_locations SET full_path='/changed' WHERE id='folder-other'"));
+        QVERIFY(query.exec("INSERT INTO people VALUES('guest','Guest','guest@example.test','client',0)"));
+        QVERIFY(query.exec("INSERT INTO meeting_attendees VALUES('guest-attendee','n','guest',0)"));
+    }
+    QSqlDatabase::removeDatabase("context-fixture");
+    const auto changed = loader.load(request);
+    QVERIFY(changed.error.code.isEmpty());
+    QVERIFY(first.snapshot.fingerprint != changed.snapshot.fingerprint);
+    request.source.locationId = "folder-deleted";
+    QCOMPARE(loader.load(request).error.code, "location-not-in-project");
+    request.source = {databasePath(), 1, "p", {}, Workflow::ProjectEmail, "guest"};
+    const auto guest = loader.load(request);
+    QVERIFY(guest.error.code.isEmpty());
+    QVERIFY(std::any_of(guest.snapshot.people.cbegin(), guest.snapshot.people.cend(),
+                       [](const SnapshotPerson &person) { return person.id == "guest"; }));
+    request.source.personId = "missing";
+    QCOMPARE(loader.load(request).error.code, "person-not-in-project");
 }
 
 void CommunicationRepositoryTest::validatesSelectedNotesAndAttendeeProvenance()

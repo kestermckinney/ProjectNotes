@@ -68,7 +68,7 @@ TemplateApplicationResult TemplateApplication::apply(const CommunicationTemplate
     if (!result.validation.ok()) return result;
 
     const int richBlocks = protectedContentBlockCount(templateValue.body);
-    if (richBlocks != 1) {
+    if (context.workflow == Workflow::ProjectEmail ? richBlocks > 1 : richBlocks != 1) {
         result.validation.addError(QStringLiteral("template-content-block-required"), QStringLiteral("body"));
         return result;
     }

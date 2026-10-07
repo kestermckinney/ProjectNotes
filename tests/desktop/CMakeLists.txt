@@ -248,6 +248,10 @@ add_executable(tst_reportbuilders tst_reportbuilders.cpp)
 target_link_libraries(tst_reportbuilders PRIVATE Qt6::Core Qt6::Test ProjectNotesEmail)
 add_test(NAME reportbuilders COMMAND tst_reportbuilders)
 
+qt_add_executable(tst_projectemail tst_projectemail.cpp)
+target_link_libraries(tst_projectemail PRIVATE Qt6::Core Qt6::Network Qt6::Test ProjectNotesEmail)
+add_test(NAME projectemail COMMAND tst_projectemail)
+
 # Pure audience selection/model coverage is kept runnable while email-client
 # adapter checks are intentionally held.  It has no process, browser, or
 # network dependency.

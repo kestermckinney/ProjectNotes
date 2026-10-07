@@ -1051,7 +1051,7 @@ Item {
                                     rowMenu.openFor(DesktopAppController.projectLocationsModel,
                                         (locCard.model.id || "").toString(), qsTr("Location"),
                                         (locCard.model.location_description || locCard.model.full_path || "").toString(),
-                                        sx, sy)
+                                        sx, sy, false, "", "", (locCard.model.full_path || "").toString())
                                 }
                                 // Icon that reflects the location's file type.
                                 readonly property var _typeIcons: ({
@@ -1526,6 +1526,8 @@ Item {
     // notes, team, locations, status). Rows call rowMenu.openFor(model, id, …).
     RecordRowMenu {
         id: rowMenu
+        emailProjectId: page.projectId
+        saveEmailSource: function() { return page._saveNow() }
         onExportRecord: (table, id) => page.exportRequested(table, id)
         // Notes and tracker items get their own page, so a copy of one is worth
         // opening; locations and status items live in a list on this page, where
@@ -1561,6 +1563,7 @@ Item {
     // per-row Project menu (RecordContextMenu there too).
     RecordContextMenu {
         id: selfMenu
+        saveEmailSource: function() { return page._saveNow() }
         recordType: qsTr("Project")
         model: DesktopAppController.projectsListModel
         recordId: page.projectId

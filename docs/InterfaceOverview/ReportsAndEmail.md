@@ -1,9 +1,11 @@
 # Reports and Email
 
-Project Notes builds four communications from your saved project data:
+Project Notes builds communications from your saved project data:
 
 - **Send Notes** for one saved meeting note
 - **Meeting Notes Report**, **Status Report** and **Tracker Items Report** for a whole project
+- **Project Email** for the project team or one person attached to the project
+- **Share Location** to email a link or a file attachment
 
 Each one ends the same way. Project Notes prepares the content, you review it, and then it opens a draft in your mail application. Nothing leaves your machine until you press Send there.
 
@@ -21,6 +23,18 @@ Reports are built from what is saved, not from what is on screen. Project Notes 
 4. Adjust the list, then click **Send Email**.
 
 The notes are formatted into the body of the message. There is no attachment and no format choice.
+
+## Project email and location sharing
+
+Right-click a project in the sidebar, project list, or project page and choose **Project Email…** to start a message to its team. Right-click a team member or a meeting attendee and choose **Project Email…** to preselect that person. Both actions use the **Project Email** subject and body configured in **Settings → Email Templates**; `person.name` and `person.email` refer to the person clicked and are empty for a project-team message. The review offers the same recipient editing and saved-audience controls as report emails. Save or update an audience by name and optionally make it the project-email default. A person action preserves the clicked recipient instead of automatically loading that default.
+
+On the **People** page or a person's own page, choose **Email…** to start a blank message to that person, even if they are not attached to a project. This action uses your configured email integration but does not apply a project template or offer project audiences.
+
+In the project's **Locations** tab, right-click a location and choose **Share as Attachment…**. Web URLs also offer **Share Link…**. Local locations must point to an existing file to be attached. URL attachments are downloaded into the application cache before the review becomes ready; downloads have a 50 MB limit and a 60-second timeout. Download errors appear in the review and prevent creating an incomplete draft.
+
+Location sharing uses the same saved audiences as reports. Choose an existing audience, adjust recipients, or save a new audience and optionally make it the sharing default. Configure the subject and body using the **Share Location** email type. Its fields include `location.description`, `location.url`, and `location.fileName`; keep `{{ content.body }}` in the body to include the link or attachment description.
+
+Create Email Draft dialogs do not display the subject or email body. Project Email and Share Location drafts still use their configured templates; plain people emails start blank. Adjust recipients and audiences where offered, then choose **Create Email Draft**. Review, edit, and send the message from your mail client. Cached downloads and attachment copies are deleted when Project Notes closes, so save or send the draft before quitting.
 
 ## Running a project report
 

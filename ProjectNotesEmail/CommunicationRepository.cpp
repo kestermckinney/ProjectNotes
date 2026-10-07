@@ -41,6 +41,8 @@ QByteArray canonicalFingerprint(const CommunicationSnapshot &snapshot)
         stream << item.number << item.name << item.identifiedBy << item.dateIdentified << item.description
                << item.assignedTo << item.priority << item.status << item.dueDate << item.lastUpdate
                << item.dateResolved << item.comments << item.itemType << item.internal;
+    if (snapshot.location)
+        stream << snapshot.location->id << snapshot.location->description << snapshot.location->path;
     return QCryptographicHash::hash(bytes, QCryptographicHash::Sha256);
 }
 
@@ -70,6 +72,24 @@ SnapshotResult SqliteSnapshotLoader::load(const SnapshotRequest &request) const
         if (!db.open()) result.error = {QStringLiteral("snapshot-open-failed"), db.lastError().text()};
         else if (!db.transaction()) result.error = {QStringLiteral("snapshot-transaction-failed"), db.lastError().text()};
         else {
+            if (request.source.workflow == Workflow::PersonEmail) {
+                QSqlQuery person(db);
+                person.prepare(QStringLiteral(
+                    "SELECT p.id,p.name,p.email,p.client_id,COALESCE(c.client_name,'') FROM people p "
+                    "LEFT JOIN clients c ON c.id=p.client_id AND c.deleted=0 WHERE p.id=? AND p.deleted=0"));
+                person.addBindValue(request.source.personId);
+                if (!person.exec())
+                    result.error = {QStringLiteral("snapshot-query-failed"), person.lastError().text()};
+                else if (!person.next())
+                    result.error = {QStringLiteral("person-not-found"), QStringLiteral("The selected person is no longer available.")};
+                else {
+                    result.snapshot.databaseGeneration = request.source.databaseGeneration;
+                    result.snapshot.loadedAt = request.capturedAt;
+                    result.snapshot.people.append({person.value(0).toString(), person.value(1).toString(),
+                        person.value(2).toString(), person.value(3).toString(), person.value(4).toString()});
+                    result.snapshot.currentSelectionPersonIds = {request.source.personId};
+                }
+            } else {
             QSqlQuery project(db);
             project.prepare(QStringLiteral("SELECT id, project_number, project_name, client_id, status_report_period, "
                                            "budget, actual, bcwp, bcws, bac FROM projects WHERE id=? AND deleted=0"));
@@ -117,6 +137,39 @@ SnapshotResult SqliteSnapshotLoader::load(const SnapshotRequest &request) const
                 people.addBindValue(request.source.projectId);
                 if (!people.exec()) result.error={QStringLiteral("snapshot-query-failed"),people.lastError().text()};
                 while (result.error.code.isEmpty() && people.next()) result.snapshot.people.append({people.value(0).toString(),people.value(1).toString(),people.value(2).toString(),people.value(3).toString(),people.value(4).toString(),people.value(5).toBool(),false,true});
+                // A clicked person may be a meeting attendee rather than a team member.
+                if (result.error.code.isEmpty() && !request.source.personId.isEmpty()) {
+                    QSqlQuery person(db);
+                    person.prepare(QStringLiteral(
+                        "SELECT p.id,p.name,p.email,p.client_id,COALESCE(c.client_name,'') FROM people p "
+                        "LEFT JOIN clients c ON c.id=p.client_id AND c.deleted=0 "
+                        "WHERE p.id=? AND p.deleted=0 AND (EXISTS (SELECT 1 FROM project_people pp "
+                        "WHERE pp.people_id=p.id AND pp.project_id=? AND pp.deleted=0) OR EXISTS "
+                        "(SELECT 1 FROM meeting_attendees ma JOIN project_notes n ON n.id=ma.note_id "
+                        "WHERE ma.person_id=p.id AND ma.deleted=0 AND n.project_id=? AND n.deleted=0))"));
+                    person.addBindValue(request.source.personId);
+                    person.addBindValue(request.source.projectId);
+                    person.addBindValue(request.source.projectId);
+                    if (!person.exec() || !person.next())
+                        result.error = {QStringLiteral("person-not-in-project"), QStringLiteral("The selected person is no longer attached to this project.")};
+                    else if (std::none_of(result.snapshot.people.cbegin(), result.snapshot.people.cend(),
+                                         [&request](const SnapshotPerson &p) { return p.id == request.source.personId; }))
+                        result.snapshot.people.append({person.value(0).toString(), person.value(1).toString(),
+                                                       person.value(2).toString(), person.value(3).toString(),
+                                                       person.value(4).toString(), false, true, false});
+                }
+                if (result.error.code.isEmpty() && !request.source.locationId.isEmpty()) {
+                    QSqlQuery location(db);
+                    location.prepare(QStringLiteral("SELECT id,location_description,full_path FROM project_locations "
+                                                    "WHERE id=? AND project_id=? AND deleted=0"));
+                    location.addBindValue(request.source.locationId);
+                    location.addBindValue(request.source.projectId);
+                    if (!location.exec() || !location.next())
+                        result.error = {QStringLiteral("location-not-in-project"), QStringLiteral("The selected location is no longer in this project.")};
+                    else
+                        result.snapshot.location = CommunicationSnapshot::Location{location.value(0).toString(),
+                            location.value(1).toString(), location.value(2).toString()};
+                }
                 // "Current selection" is the legacy workflow's initial
                 // recipient context, not the selected note-ID set below.
                 // Capture it before adding non-team meeting attendees.
@@ -163,11 +216,14 @@ SnapshotResult SqliteSnapshotLoader::load(const SnapshotRequest &request) const
                 for (const SnapshotNote &note : result.snapshot.notes)
                     availableNotes.insert(note.id);
                 QSet<QString> selectedNotes;
-                if (request.source.workflow == Workflow::MeetingNotesReport
+                if ((request.source.workflow == Workflow::MeetingNotesReport
+                     || request.source.workflow == Workflow::ProjectEmail)
                     && request.source.noteIds.isEmpty()) {
                     // A project-wide report renders every in-scope note, so its
                     // attendee provenance and note-bound actions must cover the
                     // same complete set rather than an empty current selection.
+                    // Project emails need guests available when a saved
+                    // audience explicitly includes a meeting attendee.
                     selectedNotes = availableNotes;
                 } else {
                     for (const QString &noteId : request.source.noteIds) {
@@ -236,6 +292,7 @@ SnapshotResult SqliteSnapshotLoader::load(const SnapshotRequest &request) const
                     if (!actions.exec()) result.error = {QStringLiteral("snapshot-query-failed"), actions.lastError().text()};
                     while (result.error.code.isEmpty() && actions.next()) result.snapshot.actionItems.append({actions.value(0).toString(), actions.value(1).toString(), actions.value(2).toString(), actions.value(3).toString(), actions.value(4).toString()});
                 }
+            }
             }
             if (!db.commit() && result.error.code.isEmpty())
                 result.error = {QStringLiteral("snapshot-transaction-failed"), db.lastError().text()};

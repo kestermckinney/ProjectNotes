@@ -26,6 +26,16 @@ Popup {
     property bool   canMoveTo: false
     // Optional page-specific action for preparing a meeting note for delivery.
     property bool   canReviewEmail: false
+    property string emailProjectId: ""
+    property var saveEmailSource: null
+    property string locationPath: ""
+    readonly property string emailTable: recordTable !== "" ? recordTable
+        : model ? DesktopAppController.tableNameForModel(model) : ""
+    readonly property string projectEmailContext: emailTable === "projects" ? recordId : emailProjectId
+    readonly property bool canProjectEmail: projectEmailContext !== "" && (emailTable === "projects" || personId !== "")
+    readonly property bool canPersonEmail: !canProjectEmail && emailTable === "people" && recordId !== ""
+    readonly property bool canShareLocation: projectEmailContext !== "" && emailTable === "project_locations"
+    readonly property bool canShareLink: canShareLocation && /^https?:\/\//i.test(locationPath.trim())
     property bool   canExport: true
     property bool   canFilter: true
     property bool   canRefresh: true
@@ -86,6 +96,22 @@ Popup {
     signal duplicateRequested()
     signal moveToRequested()
     signal reviewEmailRequested()
+    signal projectEmailRequested()
+    signal personEmailRequested()
+    signal locationEmailRequested(bool attachment)
+    onProjectEmailRequested: {
+        if (!saveEmailSource || saveEmailSource())
+            projectEmailReview.openProject(projectEmailContext, emailTable === "projects" ? "" : personId)
+    }
+    onLocationEmailRequested: (attachment) => {
+        if (!saveEmailSource || saveEmailSource())
+            projectEmailReview.openLocation(projectEmailContext, recordId, attachment)
+    }
+    onPersonEmailRequested: {
+        if (!saveEmailSource || saveEmailSource())
+            projectEmailReview.openPerson(recordId)
+    }
+    ProjectEmailReviewDialog { id: projectEmailReview; parent: menu.parent }
     signal exportRequested()
     signal filterRequested()
     // Carries the menu's own scene position (Overlay.overlay space, same as
@@ -403,6 +429,18 @@ Popup {
                    onHoveredChanged: menu._rowHover("", hovered) }
         MenuRow { icon: "email";        label: qsTr("Send Notes"); visible: menu.canReviewEmail; onActivated: menu._fire(menu.reviewEmailRequested)
                    onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "email"; label: qsTr("Project Email…"); visible: menu.canProjectEmail
+                  onActivated: menu._fire(menu.projectEmailRequested)
+                  onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "email"; label: qsTr("Email…"); visible: menu.canPersonEmail
+                  onActivated: menu._fire(menu.personEmailRequested)
+                  onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "link"; label: qsTr("Share Link…"); visible: menu.canShareLink
+                  onActivated: { menu.close(); menu.locationEmailRequested(false) }
+                  onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "attach_file"; label: qsTr("Share as Attachment…"); visible: menu.canShareLocation
+                  onActivated: { menu.close(); menu.locationEmailRequested(true) }
+                  onHoveredChanged: menu._rowHover("", hovered) }
         MenuRow { icon: "delete";       label: qsTr("Delete");      visible: menu.canDelete;    danger: true; onActivated: menu._fire(menu.deleteRequested)
                    onHoveredChanged: menu._rowHover("", hovered) }
         Rectangle {

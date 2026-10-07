@@ -30,6 +30,7 @@ ColumnLayout {
     // attendance.  Required is stored as To and Optional as Cc, so an audience
     // saved here or in a report works in both places.
     property bool meetingMode: false
+    property string defaultAudienceLabel: ""
     readonly property var roleLabels: meetingMode ? [qsTr("Required"), qsTr("Optional"), qsTr("Optional")]
                                                   : [qsTr("To"), qsTr("Cc"), qsTr("Bcc")]
     readonly property var roleOptions: meetingMode ? [qsTr("Required"), qsTr("Optional")]
@@ -147,7 +148,8 @@ ColumnLayout {
         // audience is loaded into the review is shown as selected.
         function label(preset) {
             if (!preset.reportDefault) return preset.name
-            return pane.meetingMode ? qsTr("%1 (meeting default)").arg(preset.name)
+            return pane.defaultAudienceLabel !== "" ? qsTr("%1 (%2 default)").arg(preset.name).arg(pane.defaultAudienceLabel)
+                                    : pane.meetingMode ? qsTr("%1 (meeting default)").arg(preset.name)
                                     : qsTr("%1 (report default)").arg(preset.name)
         }
         function refresh(selectId, selectName) {
@@ -187,7 +189,8 @@ ColumnLayout {
             }
         }
         Button {
-            text: pane.meetingMode ? qsTr("Set as meeting default") : qsTr("Set as report default")
+            text: pane.defaultAudienceLabel !== "" ? qsTr("Set as %1 default").arg(pane.defaultAudienceLabel)
+                  : pane.meetingMode ? qsTr("Set as meeting default") : qsTr("Set as report default")
             enabled: presetChoice.selectedId !== ""
             onClicked: {
                 var chosenId = presetChoice.selectedId

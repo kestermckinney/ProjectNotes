@@ -13,7 +13,7 @@ namespace PN::Comm {
 
 // ScheduleMeeting is not an email workflow: it identifies meeting invitations
 // so they can share project audiences and staging with the email workflows.
-enum class Workflow { SendMeetingNotes, TrackerItemsReport, StatusReport, MeetingNotesReport, ScheduleMeeting };
+enum class Workflow { SendMeetingNotes, TrackerItemsReport, StatusReport, MeetingNotesReport, ScheduleMeeting, ProjectEmail, ShareLocation, PersonEmail };
 enum class EmailMode { InlineHtml, HtmlAttachment, PdfAttachment, None };
 // Outlook is the new Outlook for Windows; OutlookClassic is OUTLOOK.EXE.
 enum class BackendId { Graph, DefaultApp, OutlookClassic, Thunderbird, MacMail, Outlook, ICloud };

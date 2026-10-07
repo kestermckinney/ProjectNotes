@@ -15,7 +15,12 @@ const QList<TemplateField> &templateFieldCatalog()
          {Workflow::SendMeetingNotes, Workflow::MeetingNotesReport}, true},
         {"report.date", TemplateFieldType::Date,
          {Workflow::TrackerItemsReport, Workflow::StatusReport, Workflow::MeetingNotesReport}},
-        {"report.internal", TemplateFieldType::Boolean}, {"report.type"}
+        {"report.internal", TemplateFieldType::Boolean}, {"report.type"},
+        {"person.name", TemplateFieldType::Text, {Workflow::ProjectEmail}},
+        {"person.email", TemplateFieldType::Text, {Workflow::ProjectEmail}},
+        {"location.description", TemplateFieldType::Text, {Workflow::ShareLocation}},
+        {"location.url", TemplateFieldType::Text, {Workflow::ShareLocation}},
+        {"location.fileName", TemplateFieldType::Text, {Workflow::ShareLocation}}
     };
     return fields;
 }

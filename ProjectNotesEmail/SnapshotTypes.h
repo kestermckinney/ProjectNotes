@@ -29,5 +29,7 @@ struct CommunicationSnapshot {
     QStringList currentSelectionIds;
     QStringList currentSelectionPersonIds;
     QByteArray fingerprint;
+    struct Location { QString id, description, path; };
+    std::optional<Location> location;
 };
 }

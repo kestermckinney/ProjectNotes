@@ -91,6 +91,82 @@ private slots:
         assertClean("initial load of Main.qml");
     }
 
+    void test_00a_projectEmailAndLocationMenusAndReviewLoadClean()
+    {
+        QQuickWindow *window = qobject_cast<QQuickWindow *>(root);
+        QVERIFY(window);
+        // Main.qml starts hidden; the shipping main.cpp calls show(). Map the
+        // offscreen window too so Overlay has its real size for visual checks.
+        window->show();
+        QTest::qWait(100);
+        const QString projectId = c->projectIdAtRow(0);
+        QVERIFY(!projectId.isEmpty());
+        QQmlComponent menuComponent(engine, QUrl("qrc:/qt/qml/ProjectNotesDesktop/qml/RecordContextMenu.qml"));
+        QScopedPointer<QObject> menu(menuComponent.create());
+        QVERIFY2(menu, qPrintable(menuComponent.errorString()));
+        menu->setProperty("recordTable", "projects");
+        menu->setProperty("recordId", projectId);
+        QVERIFY(menu->property("canProjectEmail").toBool());
+        QVERIFY(!menu->property("canShareLocation").toBool());
+        menu->setProperty("recordTable", "people");
+        menu->setProperty("emailProjectId", "");
+        menu->setProperty("personId", "");
+        QVERIFY(menu->property("canPersonEmail").toBool());
+        QVERIFY(!menu->property("canProjectEmail").toBool());
+        menu->setProperty("recordTable", "project_locations");
+        menu->setProperty("emailProjectId", projectId);
+        menu->setProperty("locationPath", "https://example.test/file.pdf");
+        QVERIFY(menu->property("canShareLocation").toBool());
+        QVERIFY(menu->property("canShareLink").toBool());
+        menu->setProperty("locationPath", "/tmp/file.pdf");
+        QVERIFY(!menu->property("canShareLink").toBool());
+        menu->setProperty("recordTable", "meeting_attendees");
+        menu->setProperty("personId", "person");
+        QVERIFY(menu->property("canProjectEmail").toBool());
+        QVERIFY(!menu->property("canShareLocation").toBool());
+        // Use a menu-owned dialog in the real scene so its Overlay parent and
+        // popup layout match the shipping application.
+        QObject *dialog = nullptr;
+        for (QObject *candidate : root->findChildren<QObject *>("projectEmailReviewDialog")) {
+            auto *parentItem = qvariant_cast<QQuickItem *>(candidate->property("parent"));
+            if (parentItem && parentItem->window() == window) { dialog = candidate; break; }
+        }
+        QVERIFY(dialog);
+        QVERIFY(QMetaObject::invokeMethod(dialog, "openProject", Q_ARG(QVariant, projectId), Q_ARG(QVariant, QString())));
+        QTRY_VERIFY_WITH_TIMEOUT(dialog->property("ready").toBool(), 5000);
+        QTRY_VERIFY_WITH_TIMEOUT(dialog->property("visible").toBool(), 1000);
+        QVERIFY(dialog->property("width").toDouble() > 0);
+        QVERIFY(dialog->property("height").toDouble() > 0);
+        QTest::qWait(300);
+        QVERIFY(!dialog->findChild<QQuickItem *>("projectEmailSubject"));
+        QVERIFY(!dialog->findChild<QQuickItem *>("projectEmailBody"));
+        auto *draftButton = dialog->findChild<QQuickItem *>("projectEmailDraftButton");
+        auto *audience = dialog->findChild<QQuickItem *>("projectEmailAudience");
+        QVERIFY(draftButton); QVERIFY(audience);
+        QVERIFY(audience->isVisible());
+        QVERIFY(!audience->property("fixedAudience").toBool());
+        QVERIFY(!audience->property("audienceController").isNull());
+        const qreal audienceRight = audience->mapToScene(QPointF(audience->width(), 0)).x();
+        const qreal buttonRight = draftButton->mapToScene(QPointF(draftButton->width(), 0)).x();
+        QVERIFY2(qAbs(audienceRight - buttonRight) < 1.0, qPrintable(QString("audience=%1 button=%2").arg(audienceRight).arg(buttonRight)));
+        const QImage screenshot = window->grabWindow();
+        if (!screenshot.isNull()) screenshot.save(QDir::temp().filePath("projectnotes-project-email-review.png"));
+        assertClean("Project Email and location sharing menus/review");
+        QVERIFY(QMetaObject::invokeMethod(dialog, "close"));
+        const auto people = c->peopleList();
+        QVERIFY(!people.isEmpty());
+        QVERIFY(QMetaObject::invokeMethod(dialog, "openPerson",
+            Q_ARG(QVariant, people.first().toMap().value("id"))));
+        QTRY_VERIFY_WITH_TIMEOUT(dialog->property("ready").toBool(), 5000);
+        QVERIFY(dialog->property("plainPerson").toBool());
+        QVERIFY(!audience->isVisible());
+        QVERIFY(!dialog->findChild<QQuickItem *>("projectEmailSubject"));
+        QVERIFY(!dialog->findChild<QQuickItem *>("projectEmailBody"));
+        assertClean("plain person email review");
+        QVERIFY(QMetaObject::invokeMethod(dialog, "close"));
+        window->hide();
+    }
+
     void test_00b_emailTemplatesCanBeFirstSettingsCategorySelected()
     {
         nav("selectSection", "settings");

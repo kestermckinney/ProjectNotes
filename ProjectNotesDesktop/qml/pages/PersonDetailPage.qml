@@ -105,6 +105,7 @@ Item {
         recordType: qsTr("Person")
         model: DesktopAppController.peopleModel
         recordId: page.personId
+        saveEmailSource: function() { return page._saveNow() }
         canOpen: false
         canNew: false
         canDelete: false

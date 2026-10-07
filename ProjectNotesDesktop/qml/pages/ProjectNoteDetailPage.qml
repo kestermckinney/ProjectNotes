@@ -624,6 +624,8 @@ Item {
     // makes a copy a guaranteed clash.
     RecordRowMenu {
         id: rowMenu
+        emailProjectId: page.projectId
+        saveEmailSource: function() { return page._saveNow() }
         onExportRecord: (table, id) => page.exportRequested(table, id)
         // Copied action items keep this note, so the copy just turns up in the
         // list — copyTrackerItem() renumbers it and refreshes the models.

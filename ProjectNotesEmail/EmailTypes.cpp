@@ -20,10 +20,22 @@ ValidationResult validate(const SourceContext &context)
     ValidationResult result;
     if (context.databaseKey.trimmed().isEmpty())
         result.addError(QStringLiteral("database-key-required"), QStringLiteral("source.databaseKey"));
-    if (context.projectId.trimmed().isEmpty())
+    if (context.projectId.trimmed().isEmpty() && context.workflow != Workflow::PersonEmail)
         result.addError(QStringLiteral("project-id-required"), QStringLiteral("source.projectId"));
     if (context.workflow == Workflow::SendMeetingNotes && context.noteIds.size() != 1)
         result.addError(QStringLiteral("single-note-required"), QStringLiteral("source.noteIds"));
+    if (context.workflow == Workflow::ShareLocation && context.locationId.trimmed().isEmpty())
+        result.addError(QStringLiteral("location-id-required"), QStringLiteral("source.locationId"));
+    if (!context.locationId.isEmpty() && context.workflow != Workflow::ShareLocation)
+        result.addError(QStringLiteral("location-context-not-applicable"), QStringLiteral("source.locationId"));
+    if (context.workflow == Workflow::PersonEmail) {
+        if (context.personId.trimmed().isEmpty())
+            result.addError(QStringLiteral("person-id-required"), QStringLiteral("source.personId"));
+        if (!context.projectId.isEmpty() || !context.noteIds.isEmpty())
+            result.addError(QStringLiteral("project-context-not-applicable"), QStringLiteral("source.projectId"));
+    }
+    if (!context.personId.isEmpty() && context.workflow != Workflow::ProjectEmail && context.workflow != Workflow::PersonEmail)
+        result.addError(QStringLiteral("person-context-not-applicable"), QStringLiteral("source.personId"));
     return result;
 }
 
@@ -32,7 +44,8 @@ ValidationResult validate(const ReportOptions &options)
     ValidationResult result;
     if (!options.reportingDate.isValid())
         result.addError(QStringLiteral("reporting-date-invalid"), QStringLiteral("reportingDate"));
-    if (options.workflow == Workflow::SendMeetingNotes)
+    if (options.workflow == Workflow::SendMeetingNotes || options.workflow == Workflow::ProjectEmail
+        || options.workflow == Workflow::ShareLocation || options.workflow == Workflow::PersonEmail)
         result.addError(QStringLiteral("report-options-not-supported"), QStringLiteral("workflow"));
     if (options.workflow == Workflow::TrackerItemsReport) {
         if (!options.tracker.has_value())
