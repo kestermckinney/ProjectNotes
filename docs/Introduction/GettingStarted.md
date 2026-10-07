@@ -42,7 +42,7 @@ You will need to setup yourself to manage all of the projects. First you need to
 8. Select yourself as the **Project Manager**.
 9. Select ***"Your Company Name"*** as the **Managing Company**.
 10. Still in **Settings**, open **Preferences** and choose your **Email, Contact and Calendar Integration**.
-11. Open **Settings > Meeting Templates** and add the meeting types you run, such as a status meeting and a kickoff.
+11. Open **Settings > Meeting Templates** and review the standard meeting types, such as status meetings and kickoffs. Customize their subjects, agendas and durations, or add your own types.
 12. Open **Settings > File Finder** and add the root folder where your project files are stored.
 
 Steps 10 and 11 are the start of email and meeting setup. See [Email and Meeting Setup](<../InterfaceOverview/EmailAndMeetingSetup.md>) for the rest, including what to configure on Windows, macOS and Linux.

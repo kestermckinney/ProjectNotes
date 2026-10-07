@@ -170,15 +170,19 @@ Templates are stored for the open database and the active Project Notes profile.
 
 ## Define your meeting types
 
-**Settings > Meeting Templates** holds the meeting types you can schedule. Nothing is preloaded, so create the ones your organization runs.
+**Settings > Meeting Templates** holds the meeting types you can schedule. When Project Notes starts with an empty meeting type list, it adds 12 standard types covering kickoff, status, lessons learned, closeout, risk and issue review, change control, technical review, FAT / SAT readiness, steering committee status and requirements workshops. Kickoff and status each have an internal and a customer-facing version.
+
+Each standard type includes a purpose, an agenda and a 60-minute duration. Its subject inserts the project number and name. Internal types end in **(Internal)**; customer-facing titles omit **Customer**. Edit these types to suit your organization, or add your own:
 
 1. Click **New**.
-2. Give it a **Name**, such as `Customer Status`.
+2. Give it a **Name**, such as `Status Meeting`.
 3. Pick a **Duration** between 15 minutes and 4 hours.
 4. Write the **Subject**, for example `{{ project.number }} {{ project.name }} Status Meeting`.
 5. Write the **Agenda**. It becomes the body of the invitation.
 
 **Duplicate** copies a type when two of them differ only slightly. **Delete** removes one. Leaving the tab saves your changes, and a type left completely blank is discarded.
+
+Startup leaves any nonempty meeting type list as you configured it. If you delete every type, the standard types return the next time you start Project Notes.
 
 Subjects and agendas accept `project.number`, `project.name`, `client.name`, `preferences.managerName`, `preferences.managingCompanyName` and `current.date`, which is the date the meeting is scheduled. Right-click to insert one. Report fields such as `report.date` are not offered, because a meeting is scheduled from a project rather than from a report.
 

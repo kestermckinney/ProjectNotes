@@ -210,7 +210,9 @@ private slots:
         QVERIFY(QMetaObject::invokeMethod(settings, "selectTab", Q_RETURN_ARG(QVariant, selected),
                                           Q_ARG(QVariant, 0)));
         QVERIFY(selected.toBool());
-        QVERIFY(!model->property("hasDraft").toBool());
+        // Discarding the blank type returns to a seeded standard template.
+        QVERIFY(model->property("hasDraft").toBool());
+        QCOMPARE(model->property("templates").toList().size(), 12);
         assertClean("blank meeting type discarded");
 
         // A named draft with no subject is kept but blocks leaving the tab

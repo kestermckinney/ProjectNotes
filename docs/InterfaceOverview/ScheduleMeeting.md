@@ -2,7 +2,7 @@
 
 Project Notes turns a project and a meeting type into a ready invitation, then opens it in your calendar application. You confirm the details and send the invitations from there.
 
-Two things must exist first: at least one meeting type in **Settings > Meeting Templates**, and an integration chosen in **Settings > Preferences**. Both are covered in [Email and Meeting Setup](<EmailAndMeetingSetup.md>).
+Two things must exist first: at least one meeting type in **Settings > Meeting Templates**, and an integration chosen in **Settings > Preferences**. Project Notes adds standard meeting types at startup when the list is empty. Both settings are covered in [Email and Meeting Setup](<EmailAndMeetingSetup.md>).
 
 ## Creating an invitation
 

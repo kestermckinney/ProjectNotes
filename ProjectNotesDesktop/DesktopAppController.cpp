@@ -551,6 +551,10 @@ bool DesktopAppController::openOrCreateDatabase()
         dbPath, &db_rwlock, ++m_communicationDatabaseGeneration);
     m_templateEditorModel->setDatabaseKey(dbPath);
     m_contactSyncSettingsModel->setDatabase(dbPath);
+    const auto meetingDefaults = PN::Comm::MeetingTemplateStore().initializeDefaults();
+    if (!meetingDefaults.ok())
+        emit errorOccurred(tr("Meeting Templates"),
+                           tr("Could not initialize standard meeting types. Check Settings > Meeting Templates."));
     m_meetingTemplateEditorModel->setDatabaseKey(dbPath);
 
     m_databaseOpen = true;

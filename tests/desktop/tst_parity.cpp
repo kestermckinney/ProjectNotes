@@ -104,6 +104,8 @@ private slots:
         QVERIFY(!c->itemStatusOptions().isEmpty());
         QVERIFY(!c->fileTypeOptions().isEmpty());
         QVERIFY(!c->statusItemCategoryOptions().isEmpty());
+        QCOMPARE(c->meetingTemplateChoices().size(), 12);
+        QCOMPARE(c->meetingTemplateEditorModel()->property("templates").toList().size(), 12);
     }
 
     void test_01_clientCrud()

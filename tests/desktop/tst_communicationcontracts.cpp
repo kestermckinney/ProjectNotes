@@ -31,6 +31,7 @@
 #include "ProjectNotesIntegrations/CommunicationTemplateStore.h"
 #include "ProjectNotesIntegrations/TemplateEditorModel.h"
 #include "ProjectNotesIntegrations/MeetingTemplateEditorModel.h"
+#include "ProjectNotesIntegrations/MeetingTemplateStore.h"
 #include "ProjectNotesIntegrations/TemplateApplication.h"
 #include "ProjectNotesIntegrations/MicrosoftOAuthManager.h"
 #include "ProjectNotesIntegrations/Office365Service.h"
@@ -48,6 +49,7 @@
 #include <QTemporaryDir>
 #include <QSettings>
 #include <QThread>
+#include <QTextDocument>
 
 #include <algorithm>
 #include <chrono>
@@ -125,6 +127,10 @@ private slots:
     void switchingTemplateDatabaseDiscardsPriorSelection();
     void editsTemplatesWithoutQmlEvaluation();
     void storesUserDefinedMeetingTypes();
+    void initializesStandardMeetingTypes();
+    void preservesExistingMeetingTypesDuringInitialization();
+    void rejectsCorruptMeetingTypesDuringInitialization_data();
+    void rejectsCorruptMeetingTypesDuringInitialization();
     void editsMeetingTypesWithoutQmlEvaluation();
     void appliesTemplateAroundProtectedNativeContent();
     void buildsContextSpecificMeetingNotes();
@@ -762,6 +768,114 @@ void CommunicationContractsTest::storesUserDefinedMeetingTypes()
     QCOMPARE(validation.issues.constFirst().code, QStringLiteral("template-store-corrupt"));
     // A corrupt value is never overwritten by a later save.
     QCOMPARE(store.save(kickoff).issues.constFirst().code, QStringLiteral("template-store-corrupt"));
+}
+
+void CommunicationContractsTest::initializesStandardMeetingTypes()
+{
+    MeetingTemplateStore store;
+    QVERIFY(store.templates().isEmpty());
+    QVERIFY(store.initializeDefaults().ok());
+    const QList<MeetingTemplate> values = store.templates();
+    QCOMPARE(values.size(), 12);
+    QSet<QString> ids;
+    int internalTypes = 0;
+    TemplateContext context;
+    context.workflow = Workflow::ScheduleMeeting;
+    context.values.insert(QStringLiteral("project.number"), QStringLiteral("P100"));
+    context.values.insert(QStringLiteral("project.name"), QStringLiteral("Plant Upgrade"));
+    for (const MeetingTemplate &value : values) {
+        QVERIFY(!value.id.isEmpty());
+        QVERIFY(!ids.contains(value.id));
+        ids.insert(value.id);
+        QVERIFY(!value.name.contains(QStringLiteral("Customer"), Qt::CaseInsensitive));
+        QVERIFY(validateTemplateSubject(value.subject).ok());
+        const TemplateRender subject = renderTemplateFields(value.subject, context);
+        QVERIFY(subject.validation.ok());
+        QCOMPARE(subject.text, QStringLiteral("P100 Plant Upgrade - ") + value.name);
+        if (value.name.contains(QStringLiteral("Internal"))) {
+            ++internalTypes;
+            QVERIFY(value.name.endsWith(QStringLiteral("(Internal)")));
+            QVERIFY(subject.text.endsWith(QStringLiteral("(Internal)")));
+        }
+        const TemplateRender agenda = renderTemplateFields(value.agenda, context, TemplateRenderMode::Html);
+        QVERIFY(agenda.validation.ok());
+        QTextDocument document;
+        document.setHtml(agenda.text);
+        const QString plainAgenda = document.toPlainText();
+        QVERIFY(plainAgenda.contains(QStringLiteral("Purpose")));
+        QVERIFY(plainAgenda.contains(QStringLiteral("Agenda")));
+        QVERIFY(plainAgenda.size() > 200);
+        QCOMPARE(value.durationMinutes, 60);
+    }
+    QCOMPARE(internalTypes, 3);
+    QVERIFY(values.at(1).agenda.contains(QStringLiteral("DeltaV waterfall approach")));
+    QVERIFY(values.at(1).agenda.contains(QStringLiteral("Syncade workshops &amp; workstreams")));
+
+    // Persisted templates reload into the editor as ordinary editable types.
+    MeetingTemplateEditorModel editor;
+    editor.setDatabaseKey(m_templateDatabasePath);
+    QCOMPARE(editor.templates().size(), 12);
+    for (const MeetingTemplate &value : values) {
+        QVERIFY(editor.selectTemplate(value.id));
+        QVERIFY(editor.validateDraft());
+    }
+    const QString stored = global_DBObjects.loadParameter(MeetingTemplateStore::storageKey());
+    QVERIFY(store.initializeDefaults().ok());
+    QCOMPARE(global_DBObjects.loadParameter(MeetingTemplateStore::storageKey()), stored);
+
+    // An explicitly empty list is seeded, but reads/deletion never reseed it.
+    for (const MeetingTemplate &value : values) QVERIFY(store.remove(value.id).ok());
+    QVERIFY(store.templates().isEmpty());
+    QCOMPARE(global_DBObjects.loadParameter(MeetingTemplateStore::storageKey()), QStringLiteral("[]"));
+    QVERIFY(store.initializeDefaults().ok());
+    QCOMPARE(store.templates().size(), 12);
+    QCOMPARE(global_DBObjects.loadParameter(MeetingTemplateStore::storageKey()), stored);
+}
+
+void CommunicationContractsTest::preservesExistingMeetingTypesDuringInitialization()
+{
+    MeetingTemplateStore store;
+    // A custom-only list is already configured and does not get supplemented.
+    QVERIFY(store.save({QStringLiteral("custom"), QStringLiteral("Custom Review"), 45,
+                        QStringLiteral("My subject"), QStringLiteral("<p>My agenda</p>")}).ok());
+    QString stored = global_DBObjects.loadParameter(MeetingTemplateStore::storageKey());
+    QVERIFY(store.initializeDefaults().ok());
+    QCOMPARE(global_DBObjects.loadParameter(MeetingTemplateStore::storageKey()), stored);
+
+    QVERIFY(store.remove(QStringLiteral("custom")).ok());
+    QVERIFY(store.initializeDefaults().ok());
+    const QList<MeetingTemplate> defaults = store.templates();
+    MeetingTemplate edited = defaults.first();
+    edited.name = QStringLiteral("Renamed Kickoff");
+    edited.subject = QStringLiteral("Edited subject");
+    edited.agenda = QStringLiteral("<p>Edited agenda</p>");
+    edited.durationMinutes = 30;
+    QVERIFY(store.save(edited).ok());
+    QVERIFY(store.remove(defaults.last().id).ok());
+    stored = global_DBObjects.loadParameter(MeetingTemplateStore::storageKey());
+    QVERIFY(store.initializeDefaults().ok());
+    QCOMPARE(store.templates().size(), 11);
+    QCOMPARE(global_DBObjects.loadParameter(MeetingTemplateStore::storageKey()), stored);
+}
+
+void CommunicationContractsTest::rejectsCorruptMeetingTypesDuringInitialization_data()
+{
+    QTest::addColumn<QString>("stored");
+    QTest::newRow("malformed-json") << QStringLiteral("{broken");
+    QTest::newRow("object") << QStringLiteral("{}");
+    QTest::newRow("missing-id") << QStringLiteral("[{\"name\":\"Invalid\"}]");
+    QTest::newRow("invalid-entry") << QStringLiteral("[null]");
+    QTest::newRow("partially-valid") << QStringLiteral("[{\"id\":\"valid\",\"name\":\"Valid\"},null]");
+}
+
+void CommunicationContractsTest::rejectsCorruptMeetingTypesDuringInitialization()
+{
+    QFETCH(QString, stored);
+    QVERIFY(global_DBObjects.saveParameter(MeetingTemplateStore::storageKey(), stored));
+    const ValidationResult result = MeetingTemplateStore().initializeDefaults();
+    QVERIFY(!result.ok());
+    QCOMPARE(result.issues.constFirst().code, QStringLiteral("template-store-corrupt"));
+    QCOMPARE(global_DBObjects.loadParameter(MeetingTemplateStore::storageKey()), stored);
 }
 
 void CommunicationContractsTest::editsMeetingTypesWithoutQmlEvaluation()
