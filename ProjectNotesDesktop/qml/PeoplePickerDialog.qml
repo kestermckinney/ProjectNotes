@@ -151,6 +151,13 @@ Dialog {
                     }
                     Keys.onDownPressed: root._move(1)
                     Keys.onUpPressed: root._move(-1)
+                    Keys.onPressed: (event) => {
+                        if (event.key === Qt.Key_PageUp || event.key === Qt.Key_PageDown) {
+                            root._move((event.key === Qt.Key_PageDown ? 1 : -1)
+                                       * Math.max(1, Math.floor(peopleList.height / 34)))
+                            event.accepted = true
+                        }
+                    }
                     Keys.onReturnPressed: root._pickHighlighted()
                     Keys.onEnterPressed: root._pickHighlighted()
                 }
@@ -159,6 +166,18 @@ Dialog {
 
         ListView {
             id: peopleList
+            activeFocusOnTab: true
+            Keys.onDownPressed: root._move(1)
+            Keys.onUpPressed: root._move(-1)
+            Keys.onPressed: (event) => {
+                if (event.key === Qt.Key_PageUp || event.key === Qt.Key_PageDown) {
+                    root._move((event.key === Qt.Key_PageDown ? 1 : -1)
+                               * Math.max(1, Math.floor(height / 34)))
+                    event.accepted = true
+                }
+            }
+            Keys.onReturnPressed: root._pickHighlighted()
+            Keys.onEnterPressed: root._pickHighlighted()
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true

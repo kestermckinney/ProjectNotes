@@ -16,7 +16,7 @@ ColumnLayout {
     // The settings page uses the same surface, border, indicator, and popup
     // treatment as the application's standard dropdowns rather than the stock
     // Controls appearance.
-    component TemplateComboBox: ComboBox {
+    component TemplateComboBox: KeyboardComboBox {
         id: control
         implicitHeight: 32
         font.pixelSize: Theme.fontBody

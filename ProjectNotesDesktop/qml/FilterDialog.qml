@@ -214,12 +214,18 @@ Popup {
                         font.pixelSize: Theme.font2xs; font.weight: Font.Bold
                         Layout.leftMargin: 11; Layout.topMargin: 9; Layout.bottomMargin: 3
                     }
-                    ListView {
+                    KeyboardListView {
                         id: colList
                         Layout.fillWidth: true; Layout.fillHeight: true
                         clip: true
                         model: dlg._cols
                         currentIndex: dlg._curIndex
+                        selectIndex: (row) => {
+                            if (row === dlg._curIndex) return
+                            dlg._captureDates()
+                            dlg._curIndex = row
+                            dlg._reloadValues()
+                        }
                         delegate: Rectangle {
                             required property int index
                             required property var modelData
@@ -288,7 +294,7 @@ Popup {
                     color: Theme.surface
                     border.color: Theme.border
                     clip: true
-                    ListView {
+                    KeyboardListView {
                         id: valList
                         anchors.fill: parent
                         visible: !dlg._curIsDate && dlg._values.length > 0

@@ -14,6 +14,9 @@ Rectangle {
     readonly property var contactSyncModel: DesktopAppController.contactSyncSettingsModel
     readonly property bool contactsNeedReview: contactSyncModel && contactSyncModel.reviews.length > 0
 
+    readonly property alias applicationMenu: appMenu
+    function closeMenu() { appMenu.close() }
+
     property string currentSection: "projects"
     // Forwarded to AppMenu so it can add the current record's table-scoped
     // plugin menus (e.g. Export / Templates) alongside the global ones.
@@ -122,7 +125,11 @@ Rectangle {
         property string icon: ""
         property string section: ""
         property bool selectable: true
-        property string tooltip: ""
+        readonly property var destination: AppShortcuts.destination(section)
+        property string tooltip: destination
+                                 ? destination.label + " (" + AppShortcuts.text(destination.action) + ")"
+                                 : ""
+        objectName: section !== "" ? "rail_" + section : ""
         signal clicked()
 
         readonly property bool active: selectable && rail.currentSection === section

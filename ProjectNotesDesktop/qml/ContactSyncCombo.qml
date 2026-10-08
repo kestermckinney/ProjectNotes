@@ -3,7 +3,7 @@ import QtQuick
 import QtQuick.Controls.Basic
 import ProjectNotesDesktop
 
-ComboBox {
+KeyboardComboBox {
     id: control
     implicitHeight: 32
     background: Rectangle {

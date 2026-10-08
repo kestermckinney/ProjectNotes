@@ -40,7 +40,7 @@ Item {
 
     // Virtualized list — only visible cards (plus cacheBuffer) are instantiated,
     // and reuseItems recycles delegates while scrolling.
-    ListView {
+    KeyboardListView {
         id: list
         anchors.fill: parent
         anchors.margins: 12
@@ -94,7 +94,8 @@ Item {
                     }
 
                     HoverHandler { id: hover }
-                    TapHandler { onTapped: page.clientActivated(card.index, card.cid) }
+                    function openRecord() { page.clientActivated(card.index, card.cid) }
+                    TapHandler { onTapped: card.openRecord() }
                     TapHandler {
                         acceptedButtons: Qt.RightButton
                         onTapped: (ev) => card._openMenu(ev.scenePosition.x, ev.scenePosition.y)

@@ -21,10 +21,12 @@
 #include <QVariant>
 
 #include "DesktopAppController.h"
+#include "FolderManager.h"
 #include "ProjectNotesIntegrations/MeetingTemplateStore.h"
 #include "ProjectNotesContacts/ContactSyncSettingsModel.h"
 #include "databaseobjects.h"
 #include <QQmlComponent>
+#include <QJSValue>
 #include <QTemporaryDir>
 #include <QSqlQuery>
 
@@ -89,6 +91,123 @@ private slots:
     void test_00_loadClean()
     {
         assertClean("initial load of Main.qml");
+    }
+
+    void test_00_keyboardListNavigation()
+    {
+        clearWarnings();
+        QQmlComponent component(engine);
+        component.setData(R"(
+            import QtQuick
+            import ProjectNotesDesktop
+            KeyboardListView {
+                width: 240; height: 150
+                model: 50
+                property bool hideOdd: false
+                header: Item { width: 240; height: 40 }
+                delegate: Rectangle {
+                    required property int index
+                    width: 240
+                    visible: !ListView.view.hideOdd || index % 2 === 0
+                    height: visible ? 30 : 0
+                    color: index % 2 ? "white" : "lightgray"
+                }
+            }
+        )", QUrl());
+        QScopedPointer<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* list = qobject_cast<QQuickItem*>(object.data());
+        QVERIFY(list);
+        QQuickWindow window;
+        window.resize(240, 150);
+        list->setParentItem(window.contentItem());
+        window.show();
+        list->forceActiveFocus();
+        QTest::qWait(50);
+        QCOMPARE(list->property("currentIndex").toInt(), 0);
+        const qreal initialContentY = list->property("contentY").toReal();
+        QTest::keyClick(&window, Qt::Key_Down);
+        QCOMPARE(list->property("currentIndex").toInt(), 1);
+        QTest::keyClick(&window, Qt::Key_Up);
+        QCOMPARE(list->property("currentIndex").toInt(), 0);
+        QTest::keyClick(&window, Qt::Key_PageDown);
+        QCOMPARE(list->property("currentIndex").toInt(), 4);
+        QTRY_VERIFY(list->property("contentY").toReal() > initialContentY);
+        QTest::keyClick(&window, Qt::Key_PageUp);
+        QCOMPARE(list->property("currentIndex").toInt(), 0);
+        QTest::keyClick(&window, Qt::Key_Up);
+        QCOMPARE(list->property("currentIndex").toInt(), 0);
+        for (int i = 0; i < 15; ++i) QTest::keyClick(&window, Qt::Key_PageDown);
+        QCOMPARE(list->property("currentIndex").toInt(), 49);
+        QTest::keyClick(&window, Qt::Key_Down);
+        QCOMPARE(list->property("currentIndex").toInt(), 49);
+        QTest::qWait(50);
+        list->setFocus(false);
+        window.contentItem()->forceActiveFocus();
+        QVERIFY(!list->hasActiveFocus());
+        QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, QPoint(120, 45));
+        QVERIFY(list->hasActiveFocus());
+        const int clickedRow = list->property("currentIndex").toInt();
+        QVERIFY(clickedRow < 49);
+        QTest::keyClick(&window, Qt::Key_Down);
+        QCOMPARE(list->property("currentIndex").toInt(), clickedRow + 1);
+        list->setProperty("hideOdd", true);
+        list->setProperty("currentIndex", 0);
+        QTest::qWait(50);
+        QTest::keyClick(&window, Qt::Key_Down);
+        QCOMPARE(list->property("currentIndex").toInt(), 2);
+        QTest::keyClick(&window, Qt::Key_Up);
+        QCOMPARE(list->property("currentIndex").toInt(), 0);
+        QTest::keyClick(&window, Qt::Key_PageDown);
+        QCOMPARE(list->property("currentIndex").toInt(), 8);
+        list->setProperty("model", 0);
+        QTest::keyClick(&window, Qt::Key_PageDown);
+        QCOMPARE(list->property("currentIndex").toInt(), -1);
+        assertClean("list keyboard navigation");
+    }
+
+    void test_00_keyboardDropdownNavigation()
+    {
+        clearWarnings();
+        QQmlComponent component(engine);
+        component.setData(R"(
+            import QtQuick
+            import QtQuick.Controls.Basic
+            import ProjectNotesDesktop
+            KeyboardComboBox {
+                width: 240; height: 30
+                model: 50
+                popup: Popup {
+                    y: 30; width: 240; height: 150
+                    contentItem: ListView {
+                        implicitHeight: contentHeight
+                        model: parent.visible ? control.delegateModel : null
+                    }
+                }
+                id: control
+                delegate: ItemDelegate { width: 240; height: 30; text: index }
+            }
+        )", QUrl());
+        QScopedPointer<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* combo = qobject_cast<QQuickItem*>(object.data());
+        QVERIFY(combo);
+        QQuickWindow window;
+        window.resize(240, 240);
+        combo->setParentItem(window.contentItem());
+        window.show();
+        combo->forceActiveFocus();
+        QTest::qWait(50);
+        QTest::keyClick(&window, Qt::Key_PageDown);
+        QVERIFY(combo->property("highlightedIndex").toInt() > 1);
+        QCOMPARE(combo->property("currentIndex").toInt(), 0);
+        QTest::keyClick(&window, Qt::Key_PageUp);
+        QCOMPARE(combo->property("highlightedIndex").toInt(), 0);
+        QTest::keyClick(&window, Qt::Key_Down);
+        QCOMPARE(combo->property("highlightedIndex").toInt(), 1);
+        QTest::keyClick(&window, Qt::Key_Up);
+        QCOMPARE(combo->property("highlightedIndex").toInt(), 0);
+        assertClean("dropdown keyboard navigation");
     }
 
     void test_00a_projectEmailAndLocationMenusAndReviewLoadClean()
@@ -248,6 +367,445 @@ private slots:
             nav("selectSection", s);
             assertClean(qPrintable(QStringLiteral("selectSection('%1')").arg(s)));
         }
+    }
+
+    void test_01b_openPagesReceiveNavigationKeys()
+    {
+        clearWarnings();
+        auto* window = qobject_cast<QQuickWindow*>(root);
+        QVERIFY(window);
+        window->show();
+        auto* stack = findVisualChild(window->contentItem(), "contentStack");
+        QVERIFY(stack);
+        for (const QString& section : {QString("projects"), QString("items"),
+                                       QString("people"), QString("clients"), QString("projects")}) {
+            nav("selectSection", section);
+            auto* page = qvariant_cast<QQuickItem*>(stack->property("currentItem"));
+            QVERIFY(page);
+            QVERIFY(window->activeFocusItem() == page || page->isAncestorOf(window->activeFocusItem()));
+            QVariant result;
+            QVERIFY(QMetaObject::invokeMethod(root, "_pageScrollTarget", Q_RETURN_ARG(QVariant, result)));
+            auto* list = qobject_cast<QQuickItem*>(result.value<QObject*>());
+            QVERIFY(list);
+            const QVariant originalModel = list->property("model");
+            list->setProperty("model", 100);
+            list->setProperty("currentIndex", 0);
+            QTest::qWait(50);
+            QTest::keyClick(window, Qt::Key_Down);
+            QCOMPARE(list->property("currentIndex").toInt(), 1);
+            QTest::keyClick(window, Qt::Key_Up);
+            QCOMPARE(list->property("currentIndex").toInt(), 0);
+            QTest::keyClick(window, Qt::Key_PageDown);
+            QVERIFY(list->property("currentIndex").toInt() > 1);
+            QTest::keyClick(window, Qt::Key_PageUp);
+            QCOMPARE(list->property("currentIndex").toInt(), 0);
+            list->setProperty("model", originalModel);
+            assertClean(qPrintable("keyboard navigation on " + section));
+        }
+        window->hide();
+    }
+
+    void test_01c_plainPageScrollingAndEditorKeys()
+    {
+        clearWarnings();
+        nav("selectSection", "projects");
+        auto* window = qobject_cast<QQuickWindow*>(root);
+        auto* stack = findVisualChild(window->contentItem(), "contentStack");
+        auto* page = qvariant_cast<QQuickItem*>(stack->property("currentItem"));
+        QVERIFY(page);
+        QQmlComponent component(engine);
+        component.setData(R"(
+            import QtQuick
+            Flickable {
+                width: 300; height: 200
+                contentWidth: width; contentHeight: 2000
+                boundsBehavior: Flickable.StopAtBounds
+                TextInput { objectName: "scrollTestEditor"; width: 150; height: 30; text: "editable" }
+            }
+        )", QUrl());
+        QScopedPointer<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* flick = qobject_cast<QQuickItem*>(object.data());
+        flick->setParentItem(page);
+        window->show();
+        flick->forceActiveFocus();
+        QTest::qWait(50);
+        QTest::keyClick(window, Qt::Key_Down);
+        QCOMPARE(flick->property("contentY").toReal(), 40.0);
+        QTest::keyClick(window, Qt::Key_Up);
+        QCOMPARE(flick->property("contentY").toReal(), 0.0);
+        QTest::keyClick(window, Qt::Key_PageDown);
+        QCOMPARE(flick->property("contentY").toReal(), 180.0);
+        QTest::keyClick(window, Qt::Key_PageUp);
+        QCOMPARE(flick->property("contentY").toReal(), 0.0);
+        auto* editor = object->findChild<QQuickItem*>("scrollTestEditor");
+        QVERIFY(editor);
+        editor->forceActiveFocus();
+        QTest::keyClick(window, Qt::Key_PageDown);
+        QCOMPARE(flick->property("contentY").toReal(), 0.0);
+        QTest::keyClick(window, Qt::Key_Return);
+        QCOMPARE(stack->property("depth").toInt(), 1);
+        QTest::keyClick(window, Qt::Key_X);
+        QVERIFY(editor->property("text").toString().contains('x'));
+        window->hide();
+        assertClean("plain scrolling page and editor keys");
+    }
+
+    void test_01d_enterOpensSelectedRecordsAndKeyboardBack()
+    {
+        clearWarnings();
+        auto* window = qobject_cast<QQuickWindow*>(root);
+        QVERIFY(window);
+        window->show();
+        window->requestActivate();
+        auto* stack = findVisualChild(window->contentItem(), "contentStack");
+        QVERIFY(stack);
+        struct Case { const char* section; const char* rowId; const char* detailId; };
+        const Case cases[] = {
+            {"projects", "projId", "projectId"}, {"items", "iid", "itemId"},
+            {"people", "pid", "personId"}, {"clients", "cid", "clientId"}
+        };
+        for (const auto& entry : cases) {
+            nav("selectSection", QString::fromLatin1(entry.section));
+            auto* page = qvariant_cast<QQuickItem*>(stack->property("currentItem"));
+            QVERIFY(page);
+            QVariant result;
+            QVERIFY(QMetaObject::invokeMethod(root, "_pageScrollTarget", Q_RETURN_ARG(QVariant, result)));
+            auto* list = qobject_cast<QQuickItem*>(result.value<QObject*>());
+            QVERIFY(list);
+            QVERIFY(list->property("count").toInt() > 0);
+            list->setProperty("currentIndex", 0);
+            QTest::keyClick(window, Qt::Key_Down);
+            QTest::qWait(50);
+            auto* row = qvariant_cast<QQuickItem*>(list->property("currentItem"));
+            QVERIFY(row);
+            const QString id = row->property(entry.rowId).toString();
+            QVERIFY(!id.isEmpty());
+            const int selectedIndex = list->property("currentIndex").toInt();
+            QTest::keyClick(window, Qt::Key_Return);
+            QTRY_COMPARE(stack->property("depth").toInt(), 2);
+            QTRY_VERIFY(!stack->property("busy").toBool());
+            auto* detail = qvariant_cast<QQuickItem*>(stack->property("currentItem"));
+            QVERIFY(detail);
+            QCOMPARE(detail->property(entry.detailId).toString(), id);
+            QTest::qWait(50);
+            QTest::keyClick(window, Qt::Key_Left, Qt::AltModifier);
+            QTRY_COMPARE(stack->property("depth").toInt(), 1);
+            QTRY_VERIFY(!stack->property("busy").toBool());
+            QCOMPARE(qvariant_cast<QQuickItem*>(stack->property("currentItem")), page);
+            QCOMPARE(list->property("currentIndex").toInt(), selectedIndex);
+            // Enter also works directly after returning, with focus on the page.
+            QTest::keyClick(window, Qt::Key_Enter);
+            QTRY_COMPARE(stack->property("depth").toInt(), 2);
+            QTRY_VERIFY(!stack->property("busy").toBool());
+            detail = qvariant_cast<QQuickItem*>(stack->property("currentItem"));
+            QCOMPARE(detail->property(entry.detailId).toString(), id);
+            QTest::qWait(50);
+            QTest::keyClick(window, Qt::Key_Back);
+            QTRY_COMPARE(stack->property("depth").toInt(), 1);
+            QTRY_VERIFY(!stack->property("busy").toBool());
+            QTest::keyClick(window, Qt::Key_Left, Qt::AltModifier);
+            QCOMPARE(stack->property("depth").toInt(), 1);
+            assertClean(qPrintable("Enter and Back on " + QString::fromLatin1(entry.section)));
+        }
+        window->hide();
+    }
+
+    void test_01e_railShortcutsAndNavigateMenu()
+    {
+        clearWarnings();
+        auto* window = qobject_cast<QQuickWindow*>(root);
+        window->show();
+        window->requestActivate();
+        QTest::qWait(50);
+        auto* stack = findVisualChild(window->contentItem(), "contentStack");
+        QVERIFY(stack);
+        QObject* menu = root->findChild<QObject*>("appMenu");
+        QVERIFY(menu);
+        QVariant groupsValue = menu->property("groups");
+        const auto groups = groupsValue.value<QJSValue>().toVariant().toList();
+        QVariantList destinations;
+        int navigateIndex = -1;
+        for (int i = 0; i < groups.size(); ++i) {
+            const auto group = groups[i].toMap();
+            if (group.value("name").toString() == "Navigate") {
+                destinations = group.value("items").toList();
+                navigateIndex = i;
+            }
+        }
+        QCOMPARE(destinations.size(), 7);
+        const QStringList sections = {"projects", "items", "people", "clients", "search", "help", "settings"};
+        const QStringList labels = {"Projects", "Action Items", "People", "Clients", "Search", "User Guide", "Settings"};
+        const QString projectId = projectWithNote();
+        QVERIFY(!projectId.isEmpty());
+        for (int i = 0; i < sections.size(); ++i) {
+            const auto destination = destinations[i].toMap();
+            QCOMPARE(destination.value("label").toString(), labels[i]);
+            QCOMPARE(destination.value("key").toString(), c->nativeShortcutText(QString("Ctrl+%1").arg(i + 1)));
+            auto* button = findVisualChild(window->contentItem(), "rail_" + sections[i]);
+            QVERIFY(button);
+            QVERIFY(button->property("tooltip").toString().contains(destination.value("key").toString()));
+            nav("selectSection", "projects");
+            nav("openProject", projectId);
+            QTRY_VERIFY(!stack->property("busy").toBool());
+            QTest::keyClick(window, Qt::Key(Qt::Key_1 + i), Qt::ControlModifier);
+            QTRY_COMPARE(root->property("currentSection").toString(), sections[i]);
+            QTRY_COMPARE(stack->property("depth").toInt(), 1);
+            QTRY_VERIFY(!stack->property("busy").toBool());
+            // The same keys work with the modal hamburger popup open.
+            QVERIFY(QMetaObject::invokeMethod(menu, "open"));
+            QTRY_VERIFY(menu->property("opened").toBool());
+            QTest::keyClick(window, Qt::Key(Qt::Key_1 + i), Qt::ControlModifier);
+            QTRY_VERIFY(!menu->property("visible").toBool());
+            QCOMPARE(root->property("currentSection").toString(), sections[i]);
+            // Menu actions use exactly the same destination identifiers.
+            nav("selectSection", "projects");
+            QVERIFY(QMetaObject::invokeMethod(menu, "_act", Q_ARG(QVariant, destination.value("action"))));
+            QTRY_COMPARE(root->property("currentSection").toString(), sections[i]);
+            QTRY_VERIFY(!stack->property("busy").toBool());
+            assertClean(qPrintable("rail/menu navigation to " + sections[i]));
+        }
+        nav("selectSection", "projects");
+        QObject* about = root->findChild<QObject*>("aboutDialog");
+        QVERIFY(about);
+        QVERIFY(QMetaObject::invokeMethod(about, "open"));
+        QTRY_VERIFY(about->property("opened").toBool());
+        QTest::keyClick(window, Qt::Key_2, Qt::ControlModifier);
+        QCOMPARE(root->property("currentSection").toString(), QString("projects"));
+        QVERIFY(QMetaObject::invokeMethod(about, "close"));
+        QTRY_VERIFY(!about->property("visible").toBool());
+        // Open the actual Navigate flyout for visual QA.
+        QVERIFY(QMetaObject::invokeMethod(menu, "open"));
+        QTRY_VERIFY(menu->property("opened").toBool());
+        QVariant allGroupsValue = menu->property("_allGroups");
+        const auto allGroups = allGroupsValue.value<QJSValue>().toVariant().toList();
+        for (int i = 0; i < allGroups.size(); ++i)
+            if (allGroups[i].toMap().value("name").toString() == "Navigate") navigateIndex = i;
+        QVERIFY(QMetaObject::invokeMethod(menu, "_activateGroup", Q_ARG(QVariant, navigateIndex)));
+        QTest::qWait(300);
+        const QImage screenshot = window->grabWindow();
+        if (!screenshot.isNull()) screenshot.save("/tmp/projectnotes-navigate-menu.png");
+        QTest::keyClick(window, Qt::Key_2, Qt::ControlModifier);
+        QTRY_COMPARE(root->property("currentSection").toString(), QString("items"));
+        QTRY_VERIFY(!menu->property("visible").toBool());
+        QTest::qWait(50);  // let the menu dismissal shield close
+        // Preserve the existing Search and Settings aliases.
+        QTest::keyClick(window, Qt::Key_K, Qt::ControlModifier);
+        QTRY_COMPARE(root->property("currentSection").toString(), QString("search"));
+        QTest::keyClick(window, Qt::Key_Comma, Qt::ControlModifier);
+        QTRY_COMPARE(root->property("currentSection").toString(), QString("settings"));
+        nav("selectSection", "clients");
+        QTest::keyClick(window, Qt::Key_F1);
+        QTRY_COMPARE(root->property("currentSection").toString(), QString("help"));
+        auto* helpPage = qvariant_cast<QQuickItem*>(stack->property("currentItem"));
+        QCOMPARE(helpPage->property("topic").toString(), QString("InterfaceOverview/ClientListPage.md"));
+        // A shortcut while typing uses the same save path as a rail click.
+        const QString clientId = c->clientIdAtProxyRow(0);
+        QVERIFY(!clientId.isEmpty());
+        int clientRow = c->clientRowForId(clientId);
+        const QString oldName = c->getClientData(clientRow).value("client_name").toString();
+        nav("selectSection", "clients");
+        nav("openClient", clientRow, clientId);
+        QTRY_VERIFY(!stack->property("busy").toBool());
+        auto* name = findVisualChild(window->contentItem(), "Client NameInput");
+        QVERIFY(name);
+        name->forceActiveFocus();
+        QTest::keyClick(window, Qt::Key_A, Qt::ControlModifier);
+        for (char key : QByteArray("Rail Shortcut Saved Client")) QTest::keyClick(window, key);
+        QTest::keyClick(window, Qt::Key_1, Qt::ControlModifier);
+        QTRY_COMPARE(root->property("currentSection").toString(), QString("projects"));
+        QCOMPARE(c->getClientData(c->clientRowForId(clientId)).value("client_name").toString(),
+                 QString("Rail Shortcut Saved Client"));
+        QVERIFY(c->saveClient(c->clientRowForId(clientId), oldName));
+        // Invalid settings drafts keep the user on the current page.
+        nav("selectSection", "settings");
+        auto* settings = findVisualChild(window->contentItem(), "settingsPage");
+        QVERIFY(settings);
+        QVariant selected;
+        QVERIFY(QMetaObject::invokeMethod(settings, "selectTab", Q_RETURN_ARG(QVariant, selected),
+                                          Q_ARG(QVariant, 4)));
+        QVERIFY(selected.toBool());
+        QObject* model = c->meetingTemplateEditorModel();
+        QVERIFY(QMetaObject::invokeMethod(model, "beginNew"));
+        model->setProperty("draftName", "Navigation validation draft");
+        QTest::keyClick(window, Qt::Key_1, Qt::ControlModifier);
+        QCOMPARE(root->property("currentSection").toString(), QString("settings"));
+        QObject* validation = root->findChild<QObject*>("meetingValidationDialog");
+        QVERIFY(validation);
+        QTRY_VERIFY(validation->property("visible").toBool());
+        QVERIFY(QMetaObject::invokeMethod(validation, "close"));
+        QVERIFY(QMetaObject::invokeMethod(model, "deleteSelected"));
+        QVERIFY(QMetaObject::invokeMethod(settings, "selectTab", Q_RETURN_ARG(QVariant, selected),
+                                          Q_ARG(QVariant, 0)));
+        QVERIFY(selected.toBool());
+        nav("selectSection", "projects");
+        QTRY_VERIFY(!stack->property("busy").toBool());
+        window->hide();
+        assertClean("rail shortcuts, modal guard and Navigate flyout");
+    }
+
+    void test_01f_sidebarFolderKeyboardNavigation()
+    {
+        clearWarnings();
+        nav("selectSection", "projects");
+        auto* window = qobject_cast<QQuickWindow*>(root);
+        const QSize originalSize = window->size();
+        window->resize(originalSize.width(), 560);
+        window->show();
+        window->requestActivate();
+        auto* stack = findVisualChild(window->contentItem(), "contentStack");
+        auto* sidebar = findVisualChild(window->contentItem(), "projectSidebar");
+        QVERIFY(stack); QVERIFY(sidebar);
+        const bool sidebarWasShown = c->showProjectSidebar();
+        c->setShowProjectSidebar(true);
+        auto* folders = FolderManager::instance();
+        QVERIFY(folders);
+        const bool allCollapsed = folders->allProjectsCollapsed();
+        const bool uncategorizedCollapsed = folders->uncategorizedCollapsed();
+        folders->setAllProjectsCollapsed(false);
+        folders->setUncategorizedCollapsed(true);
+        const QString projectId = projectWithNote();
+        QVERIFY(!projectId.isEmpty());
+        const QString folderId = folders->addFolder("Keyboard Folder");
+        QVERIFY(!folderId.isEmpty());
+        QVERIFY(folders->addProjectToFolder(projectId, folderId));
+        QVERIFY(folders->setFolderCollapsed(folderId, true));
+        QStringList extraFolders;
+        for (int i = 0; i < 20; ++i) {
+            const QString id = folders->addFolder(QString("Keyboard Empty %1").arg(i));
+            QVERIFY(!id.isEmpty());
+            QVERIFY(folders->setFolderCollapsed(id, true));
+            extraFolders << id;
+        }
+        const QString headerKey = folderId + "/folder";
+        auto expanded = [&]() {
+            auto* header = findVisualChild(sidebar, "sidebar_" + headerKey);
+            return header && header->parentItem()->property("expanded").toBool();
+        };
+        QTest::qWait(100);
+        sidebar->setProperty("keyboardKey", headerKey);
+        sidebar->forceActiveFocus();
+        QVERIFY(!expanded());
+        QTest::keyClick(window, Qt::Key_Return);
+        QTRY_VERIFY(expanded());
+        QCOMPARE(sidebar->property("keyboardKey").toString(), headerKey);
+        QTest::keyClick(window, Qt::Key_Down);
+        QCOMPARE(sidebar->property("keyboardKey").toString(), folderId + "/project/" + projectId);
+        QTest::keyClick(window, Qt::Key_Enter);
+        QTRY_COMPARE(stack->property("depth").toInt(), 2);
+        QTRY_VERIFY(!stack->property("busy").toBool());
+        auto* detail = qvariant_cast<QQuickItem*>(stack->property("currentItem"));
+        QCOMPARE(detail->property("projectId").toString(), projectId);
+        QTest::keyClick(window, Qt::Key_Left, Qt::AltModifier);
+        QTRY_COMPARE(stack->property("depth").toInt(), 1);
+        QTRY_VERIFY(!stack->property("busy").toBool());
+        sidebar->forceActiveFocus();
+        QTest::keyClick(window, Qt::Key_Up);
+        QCOMPARE(sidebar->property("keyboardKey").toString(), headerKey);
+        QTest::keyClick(window, Qt::Key_Return);
+        QTRY_VERIFY(!expanded());
+        QTest::keyClick(window, Qt::Key_Down);
+        QCOMPARE(sidebar->property("keyboardKey").toString(), extraFolders.first() + "/folder");
+        // Expanding an empty folder leaves its header highlighted.
+        QTest::keyClick(window, Qt::Key_Return);
+        QCOMPARE(sidebar->property("keyboardKey").toString(), extraFolders.first() + "/folder");
+        QTest::keyClick(window, Qt::Key_Down);
+        QCOMPARE(sidebar->property("keyboardKey").toString(), extraFolders[1] + "/folder");
+        for (int i = 0; i < 100; ++i) QTest::keyClick(window, Qt::Key_Down);
+        const QString lastKey = sidebar->property("keyboardKey").toString();
+        QVERIFY(lastKey.startsWith("all/project/"));
+        QTest::keyClick(window, Qt::Key_Down);
+        QCOMPARE(sidebar->property("keyboardKey").toString(), lastKey);
+        auto* scroll = findVisualChild(sidebar, "projectFolderScroll");
+        QVERIFY(scroll);
+        auto* flick = qvariant_cast<QQuickItem*>(scroll->property("contentItem"));
+        QVERIFY(flick);
+        QVERIFY(flick->property("contentY").toReal() > 0);
+        for (int i = 0; i < 100; ++i) QTest::keyClick(window, Qt::Key_Up);
+        QCOMPARE(sidebar->property("keyboardKey").toString(), headerKey);
+        QTest::keyClick(window, Qt::Key_Up);
+        QCOMPARE(sidebar->property("keyboardKey").toString(), headerKey);
+        // Clicking a folder also establishes the keyboard navigation target.
+        qvariant_cast<QQuickItem*>(stack->property("currentItem"))->forceActiveFocus();
+        auto* header = findVisualChild(sidebar, "sidebar_" + headerKey);
+        QVERIFY(header);
+        const QPoint click = header->mapToScene(QPointF(header->width() / 2, header->height() / 2)).toPoint();
+        QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier, click);
+        QVERIFY(sidebar->hasActiveFocus());
+        QCOMPARE(sidebar->property("keyboardKey").toString(), headerKey);
+        for (const auto& id : extraFolders) QVERIFY(folders->removeFolder(id));
+        QVERIFY(folders->removeFolder(folderId));
+        folders->setAllProjectsCollapsed(allCollapsed);
+        folders->setUncategorizedCollapsed(uncategorizedCollapsed);
+        c->setShowProjectSidebar(sidebarWasShown);
+        window->resize(originalSize);
+        window->hide();
+        assertClean("folder keyboard navigation, activation and scrolling");
+    }
+
+    void test_01g_preferencesTabKeyboardNavigation()
+    {
+        clearWarnings();
+        nav("selectSection", "settings");
+        auto* window = qobject_cast<QQuickWindow*>(root);
+        window->show();
+        window->requestActivate();
+        auto* settings = findVisualChild(window->contentItem(), "settingsPage");
+        auto* tabs = findVisualChild(window->contentItem(), "settingsTabList");
+        QVERIFY(settings); QVERIFY(tabs);
+        QVariant selected;
+        QVERIFY(QMetaObject::invokeMethod(settings, "selectTab", Q_RETURN_ARG(QVariant, selected),
+                                          Q_ARG(QVariant, 0)));
+        QVERIFY(selected.toBool());
+        settings->forceActiveFocus();
+        QTest::keyClick(window, Qt::Key_Down);
+        QCOMPARE(tabs->property("currentIndex").toInt(), 1);
+        QCOMPARE(settings->property("currentTab").toInt(), 0);
+        QTest::keyClick(window, Qt::Key_Down);
+        QCOMPARE(tabs->property("currentIndex").toInt(), 2);
+        QTest::keyClick(window, Qt::Key_Return);
+        QCOMPARE(settings->property("currentTab").toInt(), 2);
+        QTest::keyClick(window, Qt::Key_Up);
+        QCOMPARE(settings->property("currentTab").toInt(), 2);
+        QCOMPARE(tabs->property("currentIndex").toInt(), 1);
+        QTest::keyClick(window, Qt::Key_Enter);
+        QCOMPARE(settings->property("currentTab").toInt(), 1);
+        for (int i = 0; i < 15; ++i) QTest::keyClick(window, Qt::Key_Down);
+        QCOMPARE(tabs->property("currentIndex").toInt(), 9);
+        QCOMPARE(settings->property("currentTab").toInt(), 1);
+        QTest::keyClick(window, Qt::Key_Return);
+        QCOMPARE(settings->property("currentTab").toInt(), 9);
+        for (int i = 0; i < 15; ++i) QTest::keyClick(window, Qt::Key_Up);
+        QCOMPARE(tabs->property("currentIndex").toInt(), 0);
+        QTest::keyClick(window, Qt::Key_Return);
+        QCOMPARE(settings->property("currentTab").toInt(), 0);
+        // Arrows don't validate or save a draft; Enter retains the existing gate.
+        QVERIFY(QMetaObject::invokeMethod(settings, "selectTab", Q_RETURN_ARG(QVariant, selected),
+                                          Q_ARG(QVariant, 4)));
+        QVERIFY(selected.toBool());
+        auto* model = c->meetingTemplateEditorModel();
+        QVERIFY(QMetaObject::invokeMethod(model, "beginNew"));
+        model->setProperty("draftName", "Keyboard tab validation");
+        tabs->forceActiveFocus();
+        QTest::keyClick(window, Qt::Key_Up);
+        QCOMPARE(settings->property("currentTab").toInt(), 4);
+        QCOMPARE(tabs->property("currentIndex").toInt(), 3);
+        auto* validation = root->findChild<QObject*>("meetingValidationDialog");
+        QVERIFY(validation);
+        QVERIFY(!validation->property("visible").toBool());
+        QTest::keyClick(window, Qt::Key_Return);
+        QCOMPARE(settings->property("currentTab").toInt(), 4);
+        QTRY_VERIFY(validation->property("visible").toBool());
+        QVERIFY(QMetaObject::invokeMethod(validation, "close"));
+        QVERIFY(QMetaObject::invokeMethod(model, "deleteSelected"));
+        QVERIFY(QMetaObject::invokeMethod(settings, "selectTab", Q_RETURN_ARG(QVariant, selected),
+                                          Q_ARG(QVariant, 0)));
+        QVERIFY(selected.toBool());
+        nav("selectSection", "projects");
+        auto* stack = findVisualChild(window->contentItem(), "contentStack");
+        QTRY_VERIFY(!stack->property("busy").toBool());
+        window->hide();
+        assertClean("preferences tab highlighting, Enter and validation");
     }
 
     void test_02_projectDetailAndChildren()

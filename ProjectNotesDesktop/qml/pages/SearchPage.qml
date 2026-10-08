@@ -146,7 +146,7 @@ Item {
 
         // Results — virtualized: only visible cards (plus cacheBuffer) exist,
         // and reuseItems recycles delegates while scrolling.
-        ListView {
+        KeyboardListView {
             id: list
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -225,13 +225,14 @@ Item {
                             MaterialIcon { name: "chevron_right"; size: 17; color: Theme.text3 }
                         }
                         HoverHandler { id: rh }
-                        TapHandler {
-                            onTapped: page.resultActivated(
+                        function openRecord() {
+                            page.resultActivated(
                                 (rc.model.datatype || "").toString(),
                                 (rc.model.dataid || "").toString(),
                                 (rc.model.fk_id || "").toString(),
                                 (rc.model.datakey || "").toString())
                         }
+                        TapHandler { onTapped: rc.openRecord() }
                         TapHandler {
                             acceptedButtons: Qt.RightButton
                             onTapped: (ev) => rc._menu(ev.scenePosition.x, ev.scenePosition.y)

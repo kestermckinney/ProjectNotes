@@ -19,6 +19,9 @@ Item {
     readonly property var _finder: DesktopAppController.fileFinder
     readonly property var _office365: DesktopAppController.office365SettingsModel
     property int currentTab: 0
+    property int highlightedTab: currentTab
+    onCurrentTabChanged: highlightedTab = currentTab
+    function keyboardNavigationTarget() { return tabList }
     readonly property int emailTemplatesTabIndex: 3
     readonly property int meetingTemplatesTabIndex: 4
     Component.onCompleted: {
@@ -78,14 +81,16 @@ Item {
             color: Theme.surface
             border.color: Theme.border
 
-            ListView {
+            KeyboardListView {
                 id: tabList
                 objectName: "settingsTabList"
                 anchors.fill: parent
                 anchors.margins: 5
                 clip: true
                 interactive: false
-                currentIndex: page.currentTab
+                currentIndex: page.highlightedTab
+                selectIndex: (row) => { page.highlightedTab = row }
+                focusOnTap: false
                 model: [
                     { key: "appearance", label: qsTr("Appearance") },
                     { key: "cloudSync", label: qsTr("Cloud Sync") },
@@ -104,6 +109,9 @@ Item {
                     required property var modelData
                     required property int index
                     objectName: "settingsTab_" + modelData.key
+                    function openRecord() {
+                        if (page.selectTab(index)) tabList.forceActiveFocus(Qt.OtherFocusReason)
+                    }
                     width: tabList.width
                     height: 36
                     radius: Theme.radiusSm
@@ -134,7 +142,7 @@ Item {
                     HoverHandler { id: tabHover }
                     TapHandler {
                         gesturePolicy: TapHandler.ReleaseWithinBounds
-                        onTapped: page.selectTab(tabDelegate.index)
+                        onTapped: tabDelegate.openRecord()
                     }
                 }
             }

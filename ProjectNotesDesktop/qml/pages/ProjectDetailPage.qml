@@ -545,7 +545,7 @@ Item {
             // statusRep.count, which is the model's row count either way.
             // No reuseItems on these tabs — delegates hold edit-field state.
             Item {
-                ListView {
+                KeyboardListView {
                     id: statusRep
                     anchors.fill: parent
                     anchors.margins: 13
@@ -630,7 +630,7 @@ Item {
 
             // â”€â”€ 1: TRACKER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Item {
-                ListView {
+                KeyboardListView {
                     id: trackerRep
                     anchors.fill: parent
                     anchors.margins: 13
@@ -669,6 +669,10 @@ Item {
                     // FolderGroup's row/content split).
                     delegate: Item {
                             id: trackerSlot
+                            function openRecord() {
+                                page._saveNow()
+                                page.itemActivated(trackerSlot.iid)
+                            }
                             required property int index
                             required property var model
                             readonly property string iid: model.id !== undefined ? model.id : ""
@@ -784,8 +788,7 @@ Item {
                                             var p = dragArea.mapToItem(null, mouse.x, mouse.y)
                                             trackerSlot._menu(p.x, p.y)
                                         } else {
-                                            page._saveNow()
-                                            page.itemActivated(trackerSlot.iid)
+                                            trackerSlot.openRecord()
                                         }
                                     }
                                     onReleased: if (drag.active) trackerCard.Drag.drop()
@@ -834,7 +837,7 @@ Item {
                     }
                 }
 
-                ListView {
+                KeyboardListView {
                     id: teamRep
                     anchors.fill: parent
                     anchors.margins: 13
@@ -974,7 +977,7 @@ Item {
                     }
                 }
 
-                ListView {
+                KeyboardListView {
                     id: locRep
                     anchors.fill: parent
                     anchors.margins: 13
@@ -1167,7 +1170,7 @@ Item {
 
             // â”€â”€ 4: NOTES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Item {
-                ListView {
+                KeyboardListView {
                     id: notesRep
                     anchors.fill: parent
                     anchors.margins: 13
@@ -1238,12 +1241,11 @@ Item {
                                 MaterialIcon { name: "chevron_right"; size: 17; color: Theme.text3 }
                             }
                             HoverHandler { id: nHover }
-                            TapHandler {
-                                onTapped: {
-                                    page._saveNow()
-                                    page.noteActivated(noteCard.index, (noteCard.model.id || "").toString())
-                                }
+                            function openRecord() {
+                                page._saveNow()
+                                page.noteActivated(noteCard.index, (noteCard.model.id || "").toString())
                             }
+                            TapHandler { onTapped: noteCard.openRecord() }
                             TapHandler {
                                 acceptedButtons: Qt.RightButton
                                 onTapped: (ev) => noteCard._menu(ev.scenePosition.x, ev.scenePosition.y)

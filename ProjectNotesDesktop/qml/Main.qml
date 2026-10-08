@@ -296,6 +296,11 @@ ApplicationWindow {
             next()
     }
 
+    function navigateSection(section) {
+        iconRail.closeMenu()
+        selectSection(section)
+    }
+
     function selectSection(section) {
         if (section === root.currentSection && contentStack.depth <= 1)
             return
@@ -465,6 +470,8 @@ ApplicationWindow {
 
     // Dispatch a hamburger-menu action.
     function handleMenuAction(action) {
+        var section = AppShortcuts.sectionForAction(action)
+        if (section !== "") { navigateSection(section); return }
         switch (action) {
         case "new":         addForCurrentSection(); break
         case "search":
@@ -500,6 +507,12 @@ ApplicationWindow {
         // clicking its native close button.
         case "exit":        root.close(); break
         }
+    }
+
+    function _workspaceHasFocus() {
+        for (var item = root.activeFocusItem; item; item = item.parent)
+            if (item === zoomLayer) return true
+        return false
     }
 
     // ── XML export ────────────────────────────────────────────────────────────
@@ -550,6 +563,69 @@ ApplicationWindow {
         confirmDeleteDialog.open()
     }
 
+    // Route unhandled navigation keys to the open page, including plain
+    // ScrollViews and Flickables used by forms and the User Guide.
+    function _pageScrollTarget() { return _findPageScrollTarget(undefined) }
+
+    function _findPageScrollTarget(key) {
+        var page = contentStack.currentItem
+        if (!page) return null
+        for (var item = root.activeFocusItem; item && item !== page; item = item.parent) {
+            if (typeof item.contentY === "number" && typeof item.contentHeight === "number") {
+                for (var ancestor = item; ancestor; ancestor = ancestor.parent)
+                    if (ancestor === page) return item
+            }
+        }
+        if (typeof page.keyboardNavigationTarget === "function"
+                && (key === undefined || key === Qt.Key_Up || key === Qt.Key_Down
+                    || key === Qt.Key_Return || key === Qt.Key_Enter))
+            return page.keyboardNavigationTarget()
+        var best = null
+        var bestArea = -1
+        function visit(item) {
+            if (!item.visible || !item.enabled) return
+            if (typeof item.contentY === "number" && typeof item.contentHeight === "number"
+                    && item.height > 0 && item.width > 0) {
+                var area = item.width * item.height
+                if (area > bestArea) { best = item; bestArea = area }
+                // A Flickable owns its scroll content, which may contain editors
+                // or smaller nested views. The page viewport takes precedence.
+                return
+            }
+            for (var i = 0; i < item.children.length; ++i) visit(item.children[i])
+        }
+        visit(page)
+        return best
+    }
+
+    function _navigatePage(key) {
+        if (key !== Qt.Key_Up && key !== Qt.Key_Down
+                && key !== Qt.Key_PageUp && key !== Qt.Key_PageDown
+                && key !== Qt.Key_Return && key !== Qt.Key_Enter) return false
+        var focused = root.activeFocusItem
+        // Editors and dropdowns retain their own navigation behavior.
+        if (focused && (typeof focused.cursorPosition === "number"
+                        || focused.popup !== undefined)) return false
+        var target = _findPageScrollTarget(key)
+        if (!target) return false
+        if (key === Qt.Key_Return || key === Qt.Key_Enter)
+            return typeof target.activateCurrent === "function" && target.activateCurrent()
+        var direction = key === Qt.Key_Up || key === Qt.Key_PageUp ? -1 : 1
+        var paging = key === Qt.Key_PageUp || key === Qt.Key_PageDown
+        if (typeof target.moveRows === "function") {
+            target.forceActiveFocus(Qt.OtherFocusReason)
+            if (paging) target.movePage(direction)
+            else target.moveRows(direction)
+        } else {
+            var top = target.originY || 0
+            var bottom = Math.max(top, top + target.contentHeight - target.height)
+            var distance = paging ? target.height * 0.9 : 40
+            target.cancelFlick()
+            target.contentY = Math.max(top, Math.min(bottom, target.contentY + direction * distance))
+        }
+        return true
+    }
+
     // ── Layout ────────────────────────────────────────────────────────────────
     // Zoomable logical viewport. Its logical size shrinks as uiScale grows, then
     // the scale transform magnifies it back to fill the window — so the whole UI
@@ -557,6 +633,11 @@ ApplicationWindow {
     // (Qt Quick re-rasterises distance-field glyphs at the composited scale).
     Item {
         id: zoomLayer
+        Keys.priority: Keys.AfterItem
+        Keys.onPressed: (event) => {
+            if (event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier)) return
+            if (root._navigatePage(event.key)) event.accepted = true
+        }
         transformOrigin: Item.TopLeft
         scale: Theme.uiScale
         width:  (root.contentItem ? root.contentItem.width  : root.width)  / Theme.uiScale
@@ -567,6 +648,7 @@ ApplicationWindow {
         spacing: 0
 
         IconRail {
+            id: iconRail
             Layout.fillHeight: true
             currentSection: root.currentSection
             // Same "is there an open record" signal the TopBar's Export XML
@@ -579,7 +661,7 @@ ApplicationWindow {
             pluginMenuRecordId: contentStack.currentItem
                                 && contentStack.currentItem.exportId !== undefined
                                 ? contentStack.currentItem.exportId : ""
-            onSectionActivated: (s) => root.selectSection(s)
+            onSectionActivated: (s) => root.navigateSection(s)
             onMenuAction: (a) => root.handleMenuAction(a)
         }
 
@@ -652,6 +734,11 @@ ApplicationWindow {
 
             StackView {
                 id: contentStack
+                objectName: "contentStack"
+                focus: true
+                onCurrentItemChanged: {
+                    if (currentItem) currentItem.forceActiveFocus(Qt.OtherFocusReason)
+                }
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
@@ -691,6 +778,11 @@ ApplicationWindow {
     Shortcut { sequence: "Ctrl+-";              onActivated: Theme.zoomOut() }
     Shortcut { sequence: "Ctrl+0";              onActivated: Theme.zoomReset() }
 
+    RailNavigationShortcuts {
+        shortcutsEnabled: !iconRail.applicationMenu.visible
+        onTriggered: (action) => root.handleMenuAction(action)
+    }
+
     // ── App menu shortcuts ───────────────────────────────────────────────────
     // Portable sequences come from AppShortcuts.map — the same source AppMenu.qml
     // reads to display the key beside each row, so the two can't drift. "search"
@@ -713,6 +805,12 @@ ApplicationWindow {
     Shortcut { sequence: AppShortcuts.map["import"]; onActivated: importDialog.open() }
     Shortcut { sequence: AppShortcuts.map["filter"]; onActivated: filterDialog.openFor(root.currentSection) }
     Shortcut { sequence: AppShortcuts.map["sort"];   onActivated: root._openSortMenuForCurrentSection() }
+    Shortcut {
+        sequences: [AppShortcuts.map["back"], "Back"]
+        enabled: contentStack.depth > 1 && root._workspaceHasFocus()
+        autoRepeat: false
+        onActivated: root.goBack()
+    }
     // Ctrl+L (⌘L on macOS) drops the cursor into the top bar's quick search
     // field, browser address-bar style. Harmless on the sections that don't show
     // the field — focusSearch() is a no-op there.

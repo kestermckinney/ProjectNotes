@@ -80,6 +80,7 @@ set(DESKTOP_QML_FILES
     qml/Main.qml
     qml/Theme.qml
     qml/AppShortcuts.qml
+    qml/RailNavigationShortcuts.qml
     qml/MaterialIcon.qml
     qml/MaterialIconCodepoints.js
     qml/IconRail.qml
@@ -107,6 +108,8 @@ set(DESKTOP_QML_FILES
     qml/FindReplaceBar.qml
     qml/KebabButton.qml
     qml/ProjectChip.qml
+    qml/KeyboardComboBox.qml
+    qml/KeyboardListView.qml
     qml/Card.qml
     qml/FormField.qml
     qml/ComboField.qml

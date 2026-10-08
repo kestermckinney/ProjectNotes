@@ -220,7 +220,7 @@ ColumnLayout {
         placeholder: pane.meetingMode ? qsTr("Search attendees") : qsTr("Search selected audience")
         visible: !pane.recipientListOnly
     }
-    ListView {
+    KeyboardListView {
         id: recipientList
         Layout.fillWidth: true
         Layout.preferredHeight: Math.min(220, Math.max(contentHeight, count > 0 ? 80 : 0))

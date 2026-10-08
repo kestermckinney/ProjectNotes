@@ -92,6 +92,9 @@ Rectangle {
             color: backHover.hovered ? Theme.surface2 : "transparent"
             MaterialIcon { anchors.centerIn: parent; name: "arrow_back"; size: 16; color: Theme.text2 }
             HoverHandler { id: backHover }
+            ToolTip.visible: backHover.hovered
+            ToolTip.delay: 500
+            ToolTip.text: qsTr("Back (%1)").arg(AppShortcuts.text("back"))
             TapHandler { onTapped: bar.backClicked() }
         }
 

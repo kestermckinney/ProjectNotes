@@ -42,7 +42,7 @@ ColumnLayout {
         font.weight: Font.DemiBold
     }
 
-    ComboBox {
+    KeyboardComboBox {
         id: combo
         objectName: root.label + "Input"
         KeyNavigation.tab: root.tabNext
@@ -76,6 +76,13 @@ ColumnLayout {
                     return
                 }
             }
+        }
+
+        function _movePage(direction) {
+            if (!popup.visible) popup.open()
+            var rowHeight = Math.max(comboEditor.font.pixelSize + 16, 30)
+            var rows = Math.max(1, Math.floor(suggestionList.height / rowHeight))
+            for (var i = 0; i < rows; ++i) _moveHighlight(direction)
         }
 
         // Sync external value → selection without clobbering user edits.
@@ -211,6 +218,14 @@ ColumnLayout {
                 if (!combo.editable) return
                 combo._moveHighlight(-1)
                 event.accepted = true
+            }
+            Keys.onPressed: (event) => {
+                if (event.key === Qt.Key_PageUp || event.key === Qt.Key_PageDown) {
+                    var direction = event.key === Qt.Key_PageDown ? 1 : -1
+                    if (combo.editable) combo._movePage(direction)
+                    else combo.navigatePage(direction)
+                    event.accepted = true
+                }
             }
             Keys.onReturnPressed: (event) => {
                 combo._acceptTypedText()

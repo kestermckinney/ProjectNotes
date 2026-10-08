@@ -15,6 +15,18 @@ import ProjectNotesDesktop
 Column {
     id: group
 
+    property var navigationOwner: null
+    readonly property string navigationKey: isAll ? "all" : isUncategorized ? "uncategorized" : folderId
+    function navigationRows() {
+        var rows = [folderHeader]
+        if (expanded)
+            for (var i = 0; i < projectRows.count; ++i) {
+                var row = projectRows.itemAt(i)
+                if (row) rows.push(row)
+            }
+        return rows
+    }
+
     property string folderId: ""
     property string folderName: "Folder"
     property string folderIcon: "folder"
@@ -75,6 +87,10 @@ Column {
 
     // ── Header (drop target) ──────────────────────────────────────────────────
     Item {
+        id: folderHeader
+        readonly property string navigationKey: group.navigationKey + "/folder"
+        objectName: "sidebar_" + navigationKey
+        function openRecord() { group.toggled(!group.expanded) }
         width: parent.width
         height: 22
 
@@ -90,6 +106,10 @@ Column {
             anchors.rightMargin: 2
             radius: Theme.radiusSm
             color: headerDrop.containsDrag ? Theme.dropHighlight : "transparent"
+            border.width: 2
+            border.color: group.navigationOwner && group.navigationOwner.activeFocus
+                          && group.navigationOwner.keyboardKey === folderHeader.navigationKey
+                          ? Theme.accent : "transparent"
         }
 
         RowLayout {
@@ -126,14 +146,15 @@ Column {
 
         TapHandler {
             onTapped: {
-                group.expanded = !group.expanded
-                group.toggled(group.expanded)
+                if (group.navigationOwner) group.navigationOwner.focusRow(folderHeader)
+                folderHeader.openRecord()
             }
         }
     }
 
     // ── Body: project rows (members only — see `members` above) ──────────────
     Repeater {
+        id: projectRows
         model: group.expanded ? group.members : []
 
         delegate: Item {
@@ -141,6 +162,9 @@ Column {
             required property int index
             required property var modelData
 
+            readonly property string navigationKey: group.navigationKey + "/project/" + projId
+            objectName: "sidebar_" + navigationKey
+            function openRecord() { group.projectActivated(projId) }
             readonly property string projId: (modelData.id || "").toString()
             readonly property string ctxLabel:
                 ((modelData.project_number || "") + " " + (modelData.project_name || "")).trim()
@@ -155,6 +179,10 @@ Column {
                 height: 24
                 x: 0; y: 1
                 radius: Theme.radiusSm
+                border.width: 2
+                border.color: group.navigationOwner && group.navigationOwner.activeFocus
+                              && group.navigationOwner.keyboardKey === row.navigationKey
+                              ? Theme.accent : "transparent"
                 color: {
                     if (dragArea.drag.active) return Theme.surface2
                     if (itemDrop.containsDrag) return Theme.dropHighlight
@@ -250,12 +278,16 @@ Column {
                     acceptedButtons: Qt.LeftButton | Qt.RightButton
                     drag.target: content
                     drag.threshold: 6
+                    onPressed: (mouse) => {
+                        if (mouse.button === Qt.LeftButton && group.navigationOwner)
+                            group.navigationOwner.focusRow(row)
+                    }
                     onClicked: (mouse) => {
                         if (mouse.button === Qt.RightButton) {
                             var p = dragArea.mapToItem(null, mouse.x, mouse.y)
                             group.menuRequested(row.projId, row.ctxLabel, p.x, p.y)
                         } else {
-                            group.projectActivated(row.projId)
+                            row.openRecord()
                         }
                     }
                     onReleased: if (drag.active) content.Drag.drop()
