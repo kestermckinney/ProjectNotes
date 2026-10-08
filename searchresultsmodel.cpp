@@ -140,12 +140,12 @@ void SearchResultsModel::PerformSearch(const QString& searchValue)
     if ( searchValue.isEmpty())
     {
         setUserSearchString(0, "FIND NOTHING");
-        activateUserFilter(QString());
+        activateUserFilter();
     }
     else
     {
         setUserSearchString(3, searchValue);
-        activateUserFilter(QString());
+        activateUserFilter();
     }
 }
 
@@ -160,7 +160,7 @@ void SearchResultsModel::PerformKeySearch(const QStringList& searchFields, const
     if ( searchValues.isEmpty())
     {
         setUserSearchString(0, "FIND NOTHING");
-        activateUserFilter(QString());
+        activateUserFilter();
     }
     else
     {
@@ -178,7 +178,7 @@ void SearchResultsModel::PerformKeySearch(const QStringList& searchFields, const
                 setFilter(col_num, col_val, DBCompareType::Equals);
         }
 
-        activateUserFilter(QString());
+        activateUserFilter();
     }
 }
 

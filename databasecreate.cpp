@@ -248,29 +248,6 @@ void db_CreateNewDatabase()
         CREATE UNIQUE INDEX idx_project_people_proj_person ON project_people (project_id, people_id) WHERE deleted = 0;
     )");
 
-    // Project risks table
-    global_DBObjects.execute(R"(
-        CREATE TABLE project_risks (
-            id                    TEXT    PRIMARY KEY
-                                          UNIQUE
-                                          NOT NULL,
-            project_id            TEXT,
-            internal_risk         INTEGER,
-            risk_number           TEXT    NOT NULL,
-            risk_event            TEXT    NOT NULL,
-            risk_cause            TEXT,
-            risk_effect           TEXT,
-            risk_type             TEXT,
-            risk_probability      TEXT,
-            risk_impact           TEXT,
-            risk_strategy         TEXT,
-            risk_response_actions TEXT,
-            updateddate           INTEGER,
-            syncdate              INTEGER,
-            deleted               INTEGER DEFAULT 0
-        );
-    )");
-
     // Projects table
     global_DBObjects.execute(R"(
         CREATE TABLE projects (
@@ -437,15 +414,6 @@ void db_CreateNewDatabase()
         WHEN NEW.syncdate IS OLD.syncdate
         BEGIN
             UPDATE project_people SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
-            WHERE id = NEW.id;
-        END;
-    )");
-
-    global_DBObjects.execute(R"(
-        CREATE TRIGGER trg_project_risks_updated AFTER UPDATE ON project_risks
-        WHEN NEW.syncdate IS OLD.syncdate
-        BEGIN
-            UPDATE project_risks SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
             WHERE id = NEW.id;
         END;
     )");

@@ -25,6 +25,11 @@
 
 #include "DesktopAppController.h"
 #include "databaseobjects.h"
+#include "databasestructure.h"
+#include "databaseupgrade_v6_4_0.h"
+#include "legacywidgetsettings.h"
+#include <QSettings>
+#include <QScopeGuard>
 #include "ProjectNotesEmail/RecipientSelectionModel.h"
 #include "ProjectNotesEmail/CommunicationsController.h"
 #include "ProjectNotesIntegrations/TemplateEditorModel.h"
@@ -91,6 +96,138 @@ private slots:
         QVERIFY(c);
         QVERIFY2(c->openOrCreateDatabase(), "database failed to open/create");
         QVERIFY(c->databaseOpen());
+    }
+
+    void test_localCleanupKeepsCurrentPreferences()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        QSettings settings(dir.filePath("settings.ini"), QSettings::IniFormat);
+        const QStringList retired{"UserFilter:ClientsModel", "UserFilter:ClientsModel:IsActive",
+                                  "MainWindow/Width", "tableViewProjectsColumns",
+                                  "tableViewColumnName_tableViewProjectsSortColumn", "ZoomFactor"};
+        const QStringList retained{"UserFilter:ShowClosedProjects", "ViewFilter:ShowResolvedTrackerItems",
+                                   "UI:QMLMainWindow:Width", "UI:ZoomPercent", "DefaultDictionary",
+                                   "Sync/Enabled", "Sync/Password", "UserFilter:CustomPlugin"};
+        for (const QString &key : retired + retained) settings.setValue(key, "saved");
+        PN::LegacyWidgetSettings::cleanupLocal(settings);
+        PN::LegacyWidgetSettings::cleanupLocal(settings);
+        for (const QString &key : retired) QVERIFY(!settings.contains(key));
+        for (const QString &key : retained) QCOMPARE(settings.value(key).toString(), QString("saved"));
+    }
+
+    void test_settingsFailuresReleaseLockAndPreserveTombstones()
+    {
+        const QString connection = uniq("settings-test-");
+        DatabaseObjects settings;
+        settings.setGuiDialogsEnabled(false);
+        settings.getDb() = QSqlDatabase::addDatabase("QSQLITE", connection);
+        settings.getDb().setDatabaseName(":memory:");
+        QVERIFY(settings.getDb().open());
+        auto cleanup = qScopeGuard([&] {
+            settings.getDb().close();
+            settings.getDb() = QSqlDatabase();
+            QSqlDatabase::removeDatabase(connection);
+        });
+        QSqlQuery q(settings.getDb());
+        QVERIFY(q.exec("PRAGMA foreign_keys = ON"));
+        QVERIFY(q.exec("CREATE TABLE allowed(id TEXT PRIMARY KEY)"));
+        QVERIFY(q.exec("INSERT INTO allowed VALUES('old'),('new')"));
+        QVERIFY(q.exec("CREATE TABLE application_settings(id TEXT PRIMARY KEY, parameter_name TEXT, "
+                       "parameter_value TEXT REFERENCES allowed(id) DEFERRABLE INITIALLY DEFERRED, "
+                       "updateddate INTEGER, deleted INTEGER DEFAULT 0)"));
+        QVERIFY(q.exec("INSERT INTO application_settings VALUES('active','key','old',2,0),"
+                       "('older','key','old',1,0),('deleted','key','old',3,1)"));
+        QVERIFY(settings.saveParameter("key", "new"));
+        QCOMPARE(settings.loadParameter("key"), QString("new"));
+        QVERIFY(q.exec("SELECT parameter_value FROM application_settings WHERE id IN ('older','deleted')"));
+        while (q.next()) QCOMPARE(q.value(0).toString(), QString("old"));
+        q.finish();
+        // The SQL statement succeeds, but a deferred constraint rejects commit.
+        QVERIFY(!settings.saveParameter("key", "missing-parent"));
+        QVERIFY(!settings.lastSaveError().isEmpty());
+        QCOMPARE(settings.loadParameter("key"), QString("new"));
+        QVERIFY(db_rwlock.tryLockForWrite());
+        db_rwlock.unlock();
+        QVERIFY(q.exec("DROP TABLE application_settings"));
+        QVERIFY(!settings.saveParameter("key", "new"));
+        QVERIFY(db_rwlock.tryLockForWrite());
+        db_rwlock.unlock();
+    }
+
+    void test_upgrade640RetiresOnlyLegacySettings()
+    {
+        QSqlQuery q(global_DBObjects.getDb());
+        QVERIFY(!global_DBObjects.getDb().tables().contains("project_risks"));
+        const QStringList retired{"PageState:ProjectsPage:project-id", "UserFilter:ClientsModel",
+                                  "UserFilter:ClientsModel:IsActive", "UserFilter:ShowClosedProjects",
+                                  "UserFilter:ShowInternalItems", "ViewFilter:ShowResolvedTrackerItems"};
+        const QStringList retained{"UI:ColumnFilters:review-test", "UI:SortOrder:review-test",
+                                   "UserFilter:CustomPlugin", "UI:LastProjectDetailTab:review-test",
+                                   "ReviewTest:CustomSetting"};
+        for (const QString &key : retired + retained)
+            QVERIFY(global_DBObjects.saveParameter(key, "review-test"));
+        // Empty legacy tables can be dropped; unrelated extension tables remain.
+        QVERIFY(q.exec("CREATE TABLE project_risks(id TEXT)"));
+        QVERIFY(q.exec("CREATE TABLE review_extension_data(id TEXT)"));
+        QVERIFY(q.exec("UPDATE application_version SET current_version='6.3.0'"));
+        DatabaseStructure structure;
+        QVERIFY(structure.UpgradeDatabase());
+        QVERIFY(!global_DBObjects.getDb().tables().contains("project_risks"));
+        QVERIFY(global_DBObjects.getDb().tables().contains("review_extension_data"));
+        for (const QString &key : retired) QVERIFY(global_DBObjects.loadParameter(key).isEmpty());
+        for (const QString &key : retained) QCOMPARE(global_DBObjects.loadParameter(key), QString("review-test"));
+        QVERIFY(q.exec("SELECT current_version FROM application_version"));
+        QVERIFY(q.next());
+        QCOMPARE(q.value(0).toString(), QString("6.4.0"));
+        q.finish();
+        QVERIFY(q.exec("SELECT deleted, syncdate, updateddate FROM application_settings "
+                       "WHERE parameter_name='PageState:ProjectsPage:project-id'"));
+        QVERIFY(q.next());
+        QCOMPARE(q.value(0).toInt(), 1);
+        QVERIFY(q.value(1).isNull());
+        QVERIFY(!q.value(2).isNull());
+        q.finish();
+        QVERIFY(structure.UpgradeDatabase());
+        // A later sync from an old client is cleaned up on the next open too.
+        QVERIFY(global_DBObjects.saveParameter(retired.first(), "old-client"));
+        QVERIFY(structure.UpgradeDatabase());
+        QVERIFY(global_DBObjects.loadParameter(retired.first()).isEmpty());
+        QVERIFY(q.exec("CREATE TABLE project_risks(id TEXT)"));
+        QVERIFY(q.exec("INSERT INTO project_risks VALUES('historical-risk')"));
+        QVERIFY(db_UpgradeStep_v6_4_0());
+        QVERIFY(!global_DBObjects.getDb().tables().contains("project_risks"));
+        QVERIFY(q.exec("DROP TABLE review_extension_data"));
+        for (const QString &key : retired + retained) {
+            q.prepare("DELETE FROM application_settings WHERE parameter_name=?");
+            q.addBindValue(key);
+            QVERIFY(q.exec());
+        }
+    }
+
+    void test_upgrade640RollsBackOnFailure()
+    {
+        QSqlQuery q(global_DBObjects.getDb());
+        QVERIFY(global_DBObjects.saveParameter("PageState:rollback-test:record", "legacy"));
+        QVERIFY(q.exec("UPDATE application_version SET current_version='6.3.0'"));
+        QVERIFY(q.exec("CREATE TRIGGER review_cleanup_failure BEFORE UPDATE ON application_settings "
+                       "WHEN OLD.parameter_name='PageState:rollback-test:record' "
+                       "BEGIN SELECT RAISE(ABORT, 'cleanup failed'); END"));
+        auto cleanup = qScopeGuard([&] {
+            QSqlQuery restore(global_DBObjects.getDb());
+            restore.exec("DROP TRIGGER IF EXISTS review_cleanup_failure");
+            restore.exec("DELETE FROM application_settings WHERE parameter_name='PageState:rollback-test:record'");
+            restore.exec("UPDATE application_version SET current_version='6.4.0'");
+        });
+        DatabaseStructure structure;
+        QVERIFY(!structure.UpgradeDatabase());
+        QCOMPARE(global_DBObjects.loadParameter("PageState:rollback-test:record"), QString("legacy"));
+        QVERIFY(q.exec("SELECT current_version FROM application_version"));
+        QVERIFY(q.next());
+        QCOMPARE(q.value(0).toString(), QString("6.3.0"));
+        q.finish();
+        QVERIFY(db_rwlock.tryLockForWrite());
+        db_rwlock.unlock();
     }
 
     // ── Static option lists back the ComboBoxes on every form ─────────────────
@@ -908,7 +1045,7 @@ private slots:
 
     void test_21_appVersion()
     {
-        QCOMPARE(c->appVersion(), QStringLiteral("6.3.0"));
+        QCOMPARE(c->appVersion(), QStringLiteral("6.4.0"));
     }
 
     // installUpdate with no prior successful check must fail gracefully (no crash,

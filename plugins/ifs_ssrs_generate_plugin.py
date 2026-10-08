@@ -6,6 +6,7 @@ if (platform.system() == 'Windows'):
     import win32com
 
 import projectnotes
+from includes.settings_dialog import PluginSettingsDialog
 from includes.common import ProjectNotesCommon
 from includes.word_tools import ProjectNotesWordTools
 from includes.collaboration_tools import CollaborationTools
@@ -16,7 +17,6 @@ from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QDate, QRect
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
 from PyQt6.QtGui import QDesktopServices
-
 
 # Project Notes Plugin Parameters
 pluginname = "SSRS Report Capture"
@@ -44,7 +44,7 @@ pluginmenus = []
 tapi = TokenAPI()
 
 # Custom Setting
-class SSRSSettings(QDialog):
+class SSRSSettings(PluginSettingsDialog):
     def __init__(self, parent: QMainWindow = None):
         super().__init__(parent)
         self.settings_pluginname = "SSRS Generate"
@@ -60,29 +60,10 @@ class SSRSSettings(QDialog):
         self.ui.buttonBox.accepted.connect(self.save_settings)
         self.ui.buttonBox.rejected.connect(self.reject_changes)
 
-        w = pnc.get_plugin_setting("W", self.settings_pluginname)
-        h = pnc.get_plugin_setting("H", self.settings_pluginname)
-
         self.export_subfolder = pnc.get_plugin_setting("ExportSubFolder", self.settings_pluginname)
         self.ui.lineEditExportSubFolder.setText(self.export_subfolder or "")
 
-        if w is not None and h is not None:
-            self.ui.resize(int(w), int(h))
-        self.center_on_main_window()
-
-    def center_on_main_window(self):
-        main_window = QApplication.activeWindow()
-        if main_window:
-            main_geometry = main_window.geometry()
-            x = main_geometry.x() + (main_geometry.width() - self.width()) // 2
-            y = main_geometry.y() + (main_geometry.height() - self.height()) // 2
-            self.move(max(0, x), max(0, y))
-
-    def save_window_state(self):
-        pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
-        pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
-
-        # print(f"saving dimensions {self.size().width()},{self.size().height()}")
+        self.restore_window_state()
 
     def save_settings(self):
         self.export_subfolder = self.ui.lineEditExportSubFolder.text()
@@ -90,18 +71,6 @@ class SSRSSettings(QDialog):
 
         self.save_window_state()
         self.accept()
-
-    def reject_changes(self):
-        self.save_window_state()
-        
-        # Call the base class implementation
-        self.reject()
-
-    def closeEvent(self, event):
-        self.save_window_state()
-
-        # Call the base class implementation
-        super().closeEvent(event)
 
 class GenerateSSRSReport(QDialog):
     def __init__(self, parent: QMainWindow = None):

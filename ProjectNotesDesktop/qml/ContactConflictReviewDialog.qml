@@ -134,7 +134,7 @@ Dialog {
                                     Layout.alignment: Qt.AlignTop
                                     spacing: 10
                                     Label { text: qsTr("Project Notes"); color: Theme.text; font.bold: true; font.pixelSize: Theme.fontLg }
-                                    ContactSyncCombo {
+                                    StyledComboBox {
                                         id: clientChoice
                                         objectName: "duplicateClientChoice"
                                         model: review.modelData.clients || []
@@ -231,7 +231,7 @@ Dialog {
                                     font.pixelSize: Theme.fontLg
                                     Layout.fillWidth: true
                                 }
-                                ContactSyncCombo {
+                                StyledComboBox {
                                     id: personChoice
                                     model: review.modelData.people || []
                                     textRole: "label"

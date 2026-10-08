@@ -7,10 +7,11 @@ import time
 import json
 import projectnotes
 
+from includes.settings_dialog import PluginSettingsDialog
 from includes.common import ProjectNotesCommon
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
 from PyQt6.QtCore import Qt, QRect, QSettings
-from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QDialog, QFileDialog, QWidget, QTableWidgetItem, QStyledItemDelegate, QComboBox
+from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QFileDialog, QWidget, QTableWidgetItem, QStyledItemDelegate, QComboBox
 
 # Project Notes Plugin Parameters
 pluginname = "IFS Cloud Plugins Settings" # name used in the menu
@@ -28,7 +29,7 @@ pluginmenus = [
 ]
 
 # File Finder populates the list of files associated with a project
-class IFSCloudSettings(QDialog):
+class IFSCloudSettings(PluginSettingsDialog):
     def __init__(self, parent: QMainWindow = None):
         super().__init__(parent)
 
@@ -63,27 +64,7 @@ class IFSCloudSettings(QDialog):
         self.sync_tracker_items = self.pnc.get_plugin_setting("SyncTrackerItems", self.settings_pluginname)
         self.ui.m_checkBoxSyncTrackerItems.setChecked((self.sync_tracker_items or "").lower() == "true")
 
-        w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
-        h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
-
-        if w is not None and h is not None:
-            # print(f"loading dimensions {int(w)},{int(h)}")
-            self.ui.resize(int(w), int(h))
-        self.center_on_main_window()
-
-    def center_on_main_window(self):
-        main_window = QApplication.activeWindow()
-        if main_window:
-            main_geometry = main_window.geometry()
-            x = main_geometry.x() + (main_geometry.width() - self.width()) // 2
-            y = main_geometry.y() + (main_geometry.height() - self.height()) // 2
-            self.move(max(0, x), max(0, y))
-
-    def save_window_state(self):
-        self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
-        self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
-
-        # print(f"saving dimensions {self.size().width()},{self.size().height()}")
+        self.restore_window_state()
 
     def save_settings(self):
 
@@ -108,18 +89,6 @@ class IFSCloudSettings(QDialog):
 
         self.save_window_state()
         self.accept()
-
-    def reject_changes(self):
-        self.save_window_state()
-
-        # Call the base class implementation
-        self.reject()
-
-    def closeEvent(self, event):
-        self.save_window_state()
-
-        # Call the base class implementation
-        super().closeEvent(event)
 
 def setup_default_ifs_cloud_settings():
     pnc_tmp = ProjectNotesCommon()

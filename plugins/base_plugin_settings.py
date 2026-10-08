@@ -7,10 +7,11 @@ import time
 import json
 import projectnotes
 
+from includes.settings_dialog import PluginSettingsDialog
 from includes.common import ProjectNotesCommon, _settings_organization
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
 from PyQt6.QtCore import Qt, QRect, QSettings
-from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QDialog, QFileDialog, QTableWidgetItem, QStyledItemDelegate, QComboBox
+from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QFileDialog, QTableWidgetItem, QStyledItemDelegate, QComboBox
 
 # Project Notes Plugin Parameters
 pluginname = "Base Plugins Settings" # name used in the menu
@@ -75,7 +76,7 @@ class ComboBoxDelegate(QStyledItemDelegate):
         editor.setGeometry(option.rect)
 
 # Custom Editor Setting
-class EditorSettings(QDialog):
+class EditorSettings(PluginSettingsDialog):
     def __init__(self, parent: QMainWindow = None):
         super().__init__(parent)
 
@@ -93,15 +94,10 @@ class EditorSettings(QDialog):
         self.ui.buttonBox.accepted.connect(self.save_settings)
         self.ui.buttonBox.rejected.connect(self.reject_changes)
 
-        w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
-        h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
-
         self.editor_path = self.pnc.get_plugin_setting("EditorPath", self.settings_pluginname)
         self.ui.lineEditFullPath.setText(self.editor_path or "")
 
-        if w is not None and h is not None:
-            self.ui.resize(int(w), int(h))
-        self.center_on_main_window()
+        self.restore_window_state()
 
     def edit_location(self):
         value = self.ui.lineEditFullPath.text()
@@ -115,20 +111,6 @@ class EditorSettings(QDialog):
         if (file_path is not None and file_path != ''):
             self.ui.lineEditFullPath.setText(file_path)        
 
-    def center_on_main_window(self):
-        main_window = QApplication.activeWindow()
-        if main_window:
-            main_geometry = main_window.geometry()
-            x = main_geometry.x() + (main_geometry.width() - self.width()) // 2
-            y = main_geometry.y() + (main_geometry.height() - self.height()) // 2
-            self.move(max(0, x), max(0, y))
-
-    def save_window_state(self):
-        self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
-        self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
-
-        # print(f"saving dimensions {self.size().width()},{self.size().height()}")
-
     def save_settings(self):
         self.editor_path = self.ui.lineEditFullPath.text()
         self.pnc.set_plugin_setting("EditorPath", self.settings_pluginname, self.editor_path)
@@ -136,21 +118,8 @@ class EditorSettings(QDialog):
         self.save_window_state()
         self.accept()
 
-    def reject_changes(self):
-        self.save_window_state()
-
-        # Call the base class implementation
-        self.reject()
-
-    def closeEvent(self, event):
-        self.save_window_state()
-
-        # Call the base class implementation
-        super().closeEvent(event)
-
-
 # Outlook Integration Settings
-class OutlookIntegrationSettings(QDialog):
+class OutlookIntegrationSettings(PluginSettingsDialog):
     def __init__(self, parent: QMainWindow = None):
         super().__init__(parent)
 
@@ -167,9 +136,6 @@ class OutlookIntegrationSettings(QDialog):
         self.ui.buttonBox.accepted.connect(self.save_settings)
         self.ui.buttonBox.rejected.connect(self.reject_changes)
 
-        w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
-        h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
-
         self.ui.comboBoxIntegrationType.setCurrentText(self.pnc.get_plugin_setting("IntegrationType", self.settings_pluginname) or "")
         self.ui.lineEditApplicationID.setText(self.pnc.get_plugin_setting("ApplicationID", self.settings_pluginname) or "")
         self.ui.lineEditTenantID.setText(self.pnc.get_plugin_setting("TenantID", self.settings_pluginname) or "")
@@ -182,23 +148,7 @@ class OutlookIntegrationSettings(QDialog):
         self.ui.lineEditBackupSentFolder.setText(self.pnc.get_plugin_setting("BackupSentFolder", self.settings_pluginname) or "")
         self.ui.checkBoxSendO365.setChecked((self.pnc.get_plugin_setting("SendO365", self.settings_pluginname) or "").lower() == "true")
 
-        if w is not None and h is not None:
-            self.ui.resize(int(w), int(h))
-        self.center_on_main_window()
-
-    def center_on_main_window(self):
-        main_window = QApplication.activeWindow()
-        if main_window:
-            main_geometry = main_window.geometry()
-            x = main_geometry.x() + (main_geometry.width() - self.width()) // 2
-            y = main_geometry.y() + (main_geometry.height() - self.height()) // 2
-            self.move(max(0, x), max(0, y))
-
-    def save_window_state(self):
-        self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
-        self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
-
-        # print(f"saving dimensions {self.size().width()},{self.size().height()}")
+        self.restore_window_state()
 
     def save_settings(self):
 
@@ -218,18 +168,7 @@ class OutlookIntegrationSettings(QDialog):
         self.save_window_state()
         self.accept()
 
-    def reject_changes(self):
-        self.save_window_state()
-        
-        # Call the base class implementation
-        self.reject()
-
-    def closeEvent(self, event):
-        self.save_window_state()
-        # Call the base class implementation
-        super().closeEvent(event)
-
-class MyShortcutSettings(QDialog):
+class MyShortcutSettings(PluginSettingsDialog):
     def __init__(self, parent: QMainWindow = None):
         super().__init__(parent)
 
@@ -269,9 +208,6 @@ class MyShortcutSettings(QDialog):
 
         self.populate_table_from_json(self.myshortcuts, self.ui.tableShortcuts)
 
-        w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
-        h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
-
         c1 = self.pnc.get_plugin_setting("c1", self.settings_pluginname)
         c2 = self.pnc.get_plugin_setting("c2", self.settings_pluginname)
         c3 = self.pnc.get_plugin_setting("c3", self.settings_pluginname)
@@ -283,9 +219,7 @@ class MyShortcutSettings(QDialog):
             self.ui.tableShortcuts.setColumnWidth(2, int(c3))
             self.ui.tableShortcuts.setColumnWidth(3, int(c4))
 
-        if w is not None and h is not None:
-            self.ui.resize(int(w), int(h))
-        self.center_on_main_window()
+        self.restore_window_state()
 
     def copy_table_to_json(self, qtable):
         data = []
@@ -336,25 +270,6 @@ class MyShortcutSettings(QDialog):
         if (row > -1):
             value = self.ui.tableShortcuts.removeRow(row)
 
-    def center_on_main_window(self):
-        main_window = QApplication.activeWindow()
-        if main_window:
-            main_geometry = main_window.geometry()
-            x = main_geometry.x() + (main_geometry.width() - self.width()) // 2
-            y = main_geometry.y() + (main_geometry.height() - self.height()) // 2
-            self.move(max(0, x), max(0, y))
-
-    def save_window_state(self):
-        self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
-        self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
-
-        self.pnc.set_plugin_setting("c1", self.settings_pluginname, f"{self.ui.tableShortcuts.columnWidth(0)}")
-        self.pnc.set_plugin_setting("c2", self.settings_pluginname, f"{self.ui.tableShortcuts.columnWidth(1)}")
-        self.pnc.set_plugin_setting("c3", self.settings_pluginname, f"{self.ui.tableShortcuts.columnWidth(2)}")
-        self.pnc.set_plugin_setting("c4", self.settings_pluginname, f"{self.ui.tableShortcuts.columnWidth(3)}")
-
-        # print(f"saving dimensions {self.size().width()},{self.size().height()}")
-
     def save_settings(self):
         self.myshortcuts = self.copy_table_to_json(self.ui.tableShortcuts)
         self.pnc.set_plugin_setting("MyShortcuts", self.settings_pluginname, self.myshortcuts)
@@ -364,18 +279,7 @@ class MyShortcutSettings(QDialog):
         self.save_window_state()
         self.accept()
 
-    def reject_changes(self):
-        self.save_window_state()
-        
-        # Call the base class implementation
-        self.reject()        
-
-    def closeEvent(self, event):
-        self.save_window_state()
-        # Call the base class implementation
-        super().closeEvent(event)
-
-class SettingsMigrator(QDialog):
+class SettingsMigrator(PluginSettingsDialog):
     def __init__(self, parent: QMainWindow = None):
         super().__init__(parent)
 
@@ -397,12 +301,7 @@ class SettingsMigrator(QDialog):
 
         self.load_all_plugin_settings()
 
-        w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
-        h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
-
-        if w is not None and h is not None:
-            self.ui.resize(int(w), int(h))
-        self.center_on_main_window()
+        self.restore_window_state()
 
     def load_all_plugin_settings(self):
         self.listWidgetPlugins.clear()
@@ -540,31 +439,6 @@ class SettingsMigrator(QDialog):
         
         return
 
-    def center_on_main_window(self):
-        main_window = QApplication.activeWindow()
-        if main_window:
-            main_geometry = main_window.geometry()
-            x = main_geometry.x() + (main_geometry.width() - self.width()) // 2
-            y = main_geometry.y() + (main_geometry.height() - self.height()) // 2
-            self.move(max(0, x), max(0, y))
-
-    def save_window_state(self):
-        self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
-        self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
-
-        # print(f"saving dimensions {self.size().width()},{self.size().height()}")
-
-    def reject_changes(self):
-        self.save_window_state()
-
-        # Call the base class implementation
-        self.reject()
-
-    def closeEvent(self, event):
-        self.save_window_state()
-        # Call the base class implementation
-        super().closeEvent(event)
-
 def menu_editor_settings(parameter):
     es.show()
     return ""
@@ -572,7 +446,6 @@ def menu_editor_settings(parameter):
 def menu_outlook_integration_settings(parameter):
     ois.show()
     return ""
-
 
 def menu_my_shortcut_settings(parameter):
     mss.show()
@@ -615,7 +488,6 @@ def setup_default_outlook_settings():
         pnc_tmp.set_plugin_setting("BackupSentFolder", settings_pluginname, "Project Management/Correspondence/Sent Items")
     if pnc_tmp.get_plugin_setting("SendO365", settings_pluginname) is None:
         pnc_tmp.set_plugin_setting("SendO365", settings_pluginname, "false")
-
 
 setup_default_editor_settings()
 setup_default_outlook_settings()

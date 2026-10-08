@@ -70,7 +70,7 @@ ColumnLayout {
     RowLayout {
         Layout.fillWidth: true
         Label { text: qsTr("Meeting type"); color: Theme.text2 }
-        TemplateSettingsPane.TemplateComboBox {
+        StyledComboBox {
             id: meetingType
             objectName: "meetingTypeCombo"
             Layout.preferredWidth: 260
@@ -152,7 +152,7 @@ ColumnLayout {
         Label { text: qsTr("Duration"); color: Theme.text2 }
         RowLayout {
             Layout.fillWidth: true
-            TemplateSettingsPane.TemplateComboBox {
+            StyledComboBox {
                 id: duration
                 readonly property var options: [
                     { value: 15, label: qsTr("15 minutes") },

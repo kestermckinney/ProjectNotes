@@ -109,6 +109,7 @@ set(DESKTOP_QML_FILES
     qml/KebabButton.qml
     qml/ProjectChip.qml
     qml/KeyboardComboBox.qml
+    qml/StyledComboBox.qml
     qml/KeyboardListView.qml
     qml/Card.qml
     qml/FormField.qml
@@ -129,7 +130,6 @@ set(DESKTOP_QML_FILES
     qml/TemplateSettingsPane.qml
     qml/ContactConflictReviewDialog.qml
     qml/ContactExportReviewDialog.qml
-    qml/ContactSyncCombo.qml
     qml/ContactSyncSettingsPane.qml
     qml/MeetingTemplateSettingsPane.qml
     qml/ThemedMessageDialog.qml

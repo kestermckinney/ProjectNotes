@@ -167,7 +167,11 @@ bool DatabaseObjects::openDatabase(const QString& databasepath, const QString& c
     if (m_gui)
     {
         DatabaseStructure ds;
-        ds.UpgradeDatabase();
+        if (!ds.UpgradeDatabase()) {
+            m_sqliteDb.close();
+            m_databaseFile.clear();
+            return false;
+        }
     }
 
     m_clientsModel = new ClientsModel(this);
@@ -509,69 +513,52 @@ void DatabaseObjects::backupDatabase(const QString& file)
     DB_UNLOCK;
 }
 
-bool DatabaseObjects::saveParameter( const QString& parametername, const QString& parametervalue )
+bool DatabaseObjects::saveParameter(const QString& parametername, const QString& parametervalue)
 {
-    DB_LOCK;
-    QSqlQuery select(m_sqliteDb);
-    if(!select.prepare("select parameter_value from application_settings where parameter_name = ? and deleted = 0;"))
-    {
-        if (m_gui)
-            QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
-
-        return false;
-    }
-
-    select.bindValue(0, parametername);
-
-    if (select.exec())
-    {
-
-        if (select.next())
-        {
-            QSqlQuery update(m_sqliteDb);
-            update.prepare("update application_settings set parameter_value = ? where parameter_name = ?;");
-            update.bindValue(0, parametervalue);
-            update.bindValue(1, parametername);
-            getDb().transaction();
-            if (update.exec())
-            {
-                getDb().commit();
-                DB_UNLOCK;
-                return true;
-            }
-
-            getDb().rollback();
+    QString error;
+    const bool saved = [&]() {
+        QWriteLocker lock(&db_rwlock);
+        if (!m_sqliteDb.transaction()) {
+            error = m_sqliteDb.lastError().text();
+            return false;
         }
-        else
-        {
-            QSqlQuery insert(m_sqliteDb);
-            insert.prepare("insert into application_settings (id, parameter_name, parameter_value) values (?, ?, ?);");
-            insert.bindValue(0, QUuid::createUuid().toString());
-            insert.bindValue(1, parametername);
-            insert.bindValue(2, parametervalue);
-            getDb().transaction();
-            if (insert.exec())
-            {
-                getDb().commit();
-                DB_UNLOCK;
-                return true;
-            }
-            getDb().rollback();
+        auto fail = [&](const QSqlError& sqlError) {
+            error = sqlError.text();
+            m_sqliteDb.rollback();
+            return false;
+        };
+        QSqlQuery select(m_sqliteDb);
+        if (!select.prepare("SELECT id FROM application_settings WHERE parameter_name = ? AND deleted = 0 "
+                            "ORDER BY COALESCE(updateddate, 0) DESC, id LIMIT 1"))
+            return fail(select.lastError());
+        select.addBindValue(parametername);
+        if (!select.exec()) return fail(select.lastError());
+        const QString id = select.next() ? select.value(0).toString() : QString();
+        select.finish();
+
+        QSqlQuery write(m_sqliteDb);
+        if (id.isEmpty()) {
+            if (!write.prepare("INSERT INTO application_settings(id, parameter_name, parameter_value) VALUES(?, ?, ?)"))
+                return fail(write.lastError());
+            write.addBindValue(QUuid::createUuid().toString());
+            write.addBindValue(parametername);
+            write.addBindValue(parametervalue);
+        } else {
+            if (!write.prepare("UPDATE application_settings SET parameter_value = ? WHERE id = ? AND deleted = 0"))
+                return fail(write.lastError());
+            write.addBindValue(parametervalue);
+            write.addBindValue(id);
         }
-
-    }
-    else
-    {
-        DB_UNLOCK;
-
-        if (m_gui)
-            QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting.  You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()));
-
-        return false;
-    }
-
-    DB_UNLOCK;
-    return false;
+        if (!write.exec()) return fail(write.lastError());
+        if (!m_sqliteDb.commit()) return fail(m_sqliteDb.lastError());
+        return true;
+    }();
+    m_lastSaveError = error;
+    // Show errors only after releasing the lock; modal dialogs process events.
+    if (!saved && m_gui && m_guiDialogsEnabled)
+        QMessageBox::critical(nullptr, tr("Database Access Failed"),
+                              tr("Failed to save a setting.\n\nError:\n%1").arg(error));
+    return saved;
 }
 
 SqlQueryModel* DatabaseObjects::findOpenTable(const QString& tablename)
@@ -585,42 +572,29 @@ SqlQueryModel* DatabaseObjects::findOpenTable(const QString& tablename)
     return nullptr;
 }
 
-QString DatabaseObjects::loadParameter( const QVariant& parametername )
+QString DatabaseObjects::loadParameter(const QVariant& parametername)
 {
-    QSqlQuery select(m_sqliteDb);
-    if (!select.prepare("select parameter_value from application_settings where parameter_name = ? and deleted = 0"))
-    {
-        if (m_gui)
-            QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
-
-        return QString();
-    }
-
-    select.bindValue(0, parametername);
-
-    DB_LOCK;
-
-    if (select.exec())
-    {
-        if (select.next())
-        {
-            DB_UNLOCK;
-            return select.value(0).toString();
-        }
-        else
-        {
-            DB_UNLOCK;
+    QString error;
+    const QString value = [&]() {
+        QWriteLocker lock(&db_rwlock);
+        QSqlQuery select(m_sqliteDb);
+        if (!select.prepare("SELECT parameter_value FROM application_settings "
+                            "WHERE parameter_name = ? AND deleted = 0 "
+                            "ORDER BY COALESCE(updateddate, 0) DESC, id LIMIT 1")) {
+            error = select.lastError().text();
             return QString();
         }
-    }
-    else
-    {
-        if (m_gui)
-            QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
-
-        DB_UNLOCK;
-        return QString();
-    }
+        select.addBindValue(parametername);
+        if (!select.exec()) {
+            error = select.lastError().text();
+            return QString();
+        }
+        return select.next() ? select.value(0).toString() : QString();
+    }();
+    if (!error.isEmpty() && m_gui && m_guiDialogsEnabled)
+        QMessageBox::critical(nullptr, tr("Database Access Failed"),
+                              tr("Failed to read a saved setting.\n\nError:\n%1").arg(error));
+    return value;
 }
 
 void DatabaseObjects::setShowResolvedTrackerItems(bool value)

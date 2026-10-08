@@ -79,7 +79,7 @@ public:
     // and only record the message in lastSaveError() for the caller to surface
     // (e.g. the QML app routes it through a themed dialog). Interactive
     // confirmations (delete prompts) are unaffected. Defaults to true so the
-    // Widgets app keeps its existing behaviour.
+    // native consumers keep their existing behaviour.
     void setGuiDialogsEnabled(bool enabled) { m_guiDialogsEnabled = enabled; }
     bool guiDialogsEnabled() const { return m_guiDialogsEnabled; }
 

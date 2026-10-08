@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(ProjectNotesMobile VERSION 6.3.0 LANGUAGES CXX)
+project(ProjectNotesMobile VERSION 6.4.0 LANGUAGES CXX)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../version.h.in
+               ${CMAKE_CURRENT_BINARY_DIR}/version.h @ONLY)
+include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)

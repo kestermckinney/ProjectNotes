@@ -118,7 +118,7 @@ Dialog {
                                 Layout.alignment: Qt.AlignTop
                                 spacing: 10
                                 Label { text: dialog.sourceName(); color: Theme.text; font.bold: true; font.pixelSize: Theme.fontLg }
-                                ContactSyncCombo {
+                                StyledComboBox {
                                     id: candidateChoice
                                     objectName: "exportContactCandidateChoice"
                                     model: review.modelData.candidates || []
