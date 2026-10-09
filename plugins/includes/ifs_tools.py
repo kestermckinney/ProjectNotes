@@ -391,11 +391,7 @@ class SSOAuthAPI:
 
         oauth = OAuth2Session(client_id=self.CLIENT_ID, redirect_uri=self.REDIRECT_URI, scope=self.SCOPE)
 
-        authorization_url, state = oauth.authorization_url(
-            self.auth_url,
-            access_type="offline",
-            prompt="consent"
-        )
+        authorization_url, state = oauth.authorization_url(self.auth_url)
 
         print("Opening browser for login...")
         webbrowser.open(authorization_url)
