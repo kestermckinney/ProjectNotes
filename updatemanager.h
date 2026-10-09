@@ -13,7 +13,7 @@ class QNetworkAccessManager;
 class QNetworkReply;
 class QProgressDialog;
 
-// Checks GitHub Releases for a newer ProjectNotes build, downloads the
+// Checks GitLab Releases for a newer ProjectNotes build, downloads the
 // platform installer, and launches it. On both Windows and macOS the install is
 // unattended and the app relaunches itself: Windows runs the NSIS installer
 // silently (it waits on /waitpid, then /relaunch), while macOS launches a
@@ -31,7 +31,7 @@ class UpdateManager : public QObject
 public:
     explicit UpdateManager(QWidget *parent = nullptr);
 
-    // Query the GitHub "latest release" endpoint. When silent is true,
+    // Query the GitLab "latest release" endpoint. When silent is true,
     // upToDate()/checkFailed() are emitted but callers are expected to ignore them.
     void checkForUpdates(bool silent);
 
@@ -71,7 +71,10 @@ private slots:
     void onDownloadProgress(qint64 received, qint64 total);
 
 private:
-    // Returns the browser_download_url of the asset matching the running platform,
+    friend class UpdateManagerTest;
+    void processRelease(const class QJsonObject &release);
+
+    // Returns the GitLab direct_asset_url (falling back to url) of the asset matching the running platform,
     // or an empty string when the release carries no suitable installer.
     static QString selectPlatformAsset(const class QJsonArray &assets);
 

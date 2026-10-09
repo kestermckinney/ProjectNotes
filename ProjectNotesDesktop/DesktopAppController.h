@@ -163,7 +163,7 @@ public:
     // production. Set from main.cpp before the engine loads.
     static void setTestSupabase(bool test) { s_testSupabase = test; }
 
-    // Disable the GitHub update check (used by the test runner so the suite makes
+    // Disable the GitLab update check (used by the test runner so the suite makes
     // no network calls). Enabled by default.
     static void setUpdateChecksEnabled(bool enabled) { s_updateChecksEnabled = enabled; }
 
@@ -743,7 +743,7 @@ public:
     // Active --developer-profile name, or "" when running under the default
     // profile — matches the Widgets app's window-title "((profile))" prefix.
     Q_INVOKABLE QString developerProfile() const { return s_developerProfile; }
-    // Query GitHub for a newer release; answers via updateAvailable() /
+    // Query GitLab for a newer release; answers via updateAvailable() /
     // upToDate() / updateCheckFailed(). The silent variant is for the automatic
     // launch-time check: it stays quiet unless an update is actually available.
     Q_INVOKABLE void checkForUpdates();
@@ -813,7 +813,7 @@ signals:
     void errorOccurred(const QString& title, const QString& message);
     // A non-error informational result (e.g. Send Logs to Support outcome).
     void infoOccurred(const QString& title, const QString& message);
-    // Update-check results (see checkForUpdates). releaseNotes is the GitHub
+    // Update-check results (see checkForUpdates). releaseNotes is the GitLab
     // release body; installUpdate() acts on the last-offered release.
     void updateAvailable(const QString& version, const QString& releaseNotes);
     void upToDate(const QString& version);

@@ -1,13 +1,8 @@
 # ProjectNotes
 
 [![Project site](https://img.shields.io/badge/Project%20Site-Live-2ecc71?style=for-the-badge)](https://kestermckinney.github.io/ProjectNotes/)
-[![License](https://img.shields.io/github/license/kestermckinney/ProjectNotes?style=for-the-badge)](LICENSE)
-[![Latest release](https://img.shields.io/github/v/release/kestermckinney/ProjectNotes?style=for-the-badge)](https://github.com/kestermckinney/ProjectNotes/releases)
-[![Downloads](https://img.shields.io/github/downloads/kestermckinney/ProjectNotes/total?style=for-the-badge)](https://github.com/kestermckinney/ProjectNotes/releases)
-[![Stars](https://img.shields.io/github/stars/kestermckinney/ProjectNotes?style=for-the-badge)](https://github.com/kestermckinney/ProjectNotes/stargazers)
-[![Forks](https://img.shields.io/github/forks/kestermckinney/ProjectNotes?style=for-the-badge)](https://github.com/kestermckinney/ProjectNotes/network/members)
-[![Open issues](https://img.shields.io/github/issues/kestermckinney/ProjectNotes?style=for-the-badge)](https://github.com/kestermckinney/ProjectNotes/issues)
-[![Last commit](https://img.shields.io/github/last-commit/kestermckinney/ProjectNotes?style=for-the-badge)](https://github.com/kestermckinney/ProjectNotes/commits/main)
+[![License](https://img.shields.io/badge/license-GPL--3.0-blue?style=for-the-badge)](LICENSE)
+[![Releases](https://img.shields.io/badge/releases-GitLab-orange?style=for-the-badge)](https://gitlab.com/kestermckinney/ProjectNotes/-/releases)
 
 ![ProjectNotes demo](docs/img/demo.gif)
 
@@ -18,9 +13,9 @@ ProjectNotes is a project manager's workspace for notes, action items, project m
 - [Project site](https://kestermckinney.github.io/ProjectNotes/)
 - [Documentation](https://projectnotes.readthedocs.io)
 - [High Level Roadmap](https://github.com/users/kestermckinney/projects/4/views/1)
-- [Report a bug](https://github.com/kestermckinney/ProjectNotes/issues/new?template=bug_report.yml)
-- [Request an enhancement](https://github.com/kestermckinney/ProjectNotes/issues/new?template=enhancement_request.yml)
-- [Ask a usage question](https://github.com/kestermckinney/ProjectNotes/issues/new?template=question.yml)
+- [Report a bug](https://gitlab.com/kestermckinney/ProjectNotes/-/issues/new)
+- [Request an enhancement](https://gitlab.com/kestermckinney/ProjectNotes/-/issues/new)
+- [Ask a usage question](https://gitlab.com/kestermckinney/ProjectNotes/-/issues/new)
 - [Contributing guide](CONTRIBUTING.md)
 
 ## What ProjectNotes Does
@@ -34,26 +29,19 @@ ProjectNotes is a project manager's workspace for notes, action items, project m
 
 ## Install On Linux
 
-Project Notes ships as a self-hosted Flatpak with automatic updates:
+Project Notes ships as a signed Flatpak from our GitLab Pages repository. Enable
+automatic updates in your desktop software manager, or run `flatpak update`:
 
 ```bash
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 flatpak remote-add --if-not-exists projectnotes \
-  https://kestermckinney.github.io/projectnotes-flatpak/projectnotes.flatpakrepo
+  https://kestermckinney.gitlab.io/ProjectNotes/flatpak/projectnotes.flatpakrepo
 flatpak install projectnotes com.projectnotespro.ProjectNotes
 ```
 
 Prefer a single file? Download `ProjectNotes.flatpak` from the
-[latest release](https://github.com/kestermckinney/ProjectNotes/releases/latest).
+[latest release](https://gitlab.com/kestermckinney/ProjectNotes/-/releases/permalink/latest).
 Full instructions: [Installing on Linux](docs/Introduction/InstallLinux.md).
-
-## Activity And Request Snapshot
-
-[![Open bugs](https://img.shields.io/github/issues-search?query=repo%3Akestermckinney%2FProjectNotes+is%3Aissue+is%3Aopen+%22%5BBug%5D%3A%22+in%3Atitle&label=open%20bugs&style=flat-square)](https://github.com/kestermckinney/ProjectNotes/issues?q=is%3Aissue%20is%3Aopen%20%22%5BBug%5D%3A%22%20in%3Atitle)
-[![Open enhancements](https://img.shields.io/github/issues-search?query=repo%3Akestermckinney%2FProjectNotes+is%3Aissue+is%3Aopen+%22%5BEnhancement%5D%3A%22+in%3Atitle&label=open%20enhancements&style=flat-square)](https://github.com/kestermckinney/ProjectNotes/issues?q=is%3Aissue%20is%3Aopen%20%22%5BEnhancement%5D%3A%22%20in%3Atitle)
-[![Open questions](https://img.shields.io/github/issues-search?query=repo%3Akestermckinney%2FProjectNotes+is%3Aissue+is%3Aopen+%22%5BQuestion%5D%3A%22+in%3Atitle&label=open%20questions&style=flat-square)](https://github.com/kestermckinney/ProjectNotes/issues?q=is%3Aissue%20is%3Aopen%20%22%5BQuestion%5D%3A%22%20in%3Atitle)
-
-These badges update automatically from GitHub so visitors can quickly see activity, open requests, and whether the project is actively maintained.
 
 ## Contributing
 

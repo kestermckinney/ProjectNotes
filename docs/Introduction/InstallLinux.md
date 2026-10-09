@@ -26,7 +26,7 @@ This registers our update server, so new releases arrive through the normal
 
 ```bash
 flatpak remote-add --if-not-exists projectnotes \
-  https://kestermckinney.github.io/projectnotes-flatpak/projectnotes.flatpakrepo
+  https://kestermckinney.gitlab.io/ProjectNotes/flatpak/projectnotes.flatpakrepo
 flatpak install projectnotes com.projectnotespro.ProjectNotes
 ```
 
@@ -42,11 +42,21 @@ To update later:
 flatpak update
 ```
 
+Enable automatic Flatpak updates in your desktop software manager if you want
+updates installed in the background.
+
+If your `projectnotes` remote still points to GitHub, migrate it once:
+
+```bash
+flatpak remote-modify --url=https://kestermckinney.gitlab.io/ProjectNotes/flatpak/ projectnotes
+flatpak update com.projectnotespro.ProjectNotes
+```
+
 ## Option 2 — Single-file install
 
 If you prefer a one-off download (for example on an offline machine), grab
 `ProjectNotes.flatpak` from the
-[latest release](https://github.com/kestermckinney/ProjectNotes/releases/latest)
+[latest release](https://gitlab.com/kestermckinney/ProjectNotes/-/releases/permalink/latest)
 and install it:
 
 ```bash

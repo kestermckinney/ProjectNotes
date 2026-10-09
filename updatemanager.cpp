@@ -10,6 +10,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QRegularExpression>
 #include <QStandardPaths>
 #include <QProgressDialog>
 #include <QProcess>
@@ -26,11 +27,11 @@ using namespace QLogger;
 
 namespace
 {
-// GitHub repository that publishes ProjectNotes releases.
+// GitLab project that publishes ProjectNotes releases.
 const char *kReleaseApiUrl =
-    "https://api.github.com/repos/kestermckinney/ProjectNotes/releases/latest";
+    "https://gitlab.com/api/v4/projects/kestermckinney%2FProjectNotes/releases/permalink/latest";
 
-// GitHub rejects requests without a User-Agent header.
+// Identify the application to the release service.
 const char *kUserAgent = "ProjectNotes-Updater";
 }
 
@@ -76,13 +77,15 @@ QString UpdateManager::selectPlatformAsset(const QJsonArray &assets)
 
 #if defined(Q_OS_WIN)
         if (name.endsWith("-Windows-x64-Setup.exe", Qt::CaseInsensitive))
-            return asset.value("browser_download_url").toString();
+            return asset.value("direct_asset_url").toString().isEmpty()
+                ? asset.value("url").toString() : asset.value("direct_asset_url").toString();
 #elif defined(Q_OS_MACOS)
         // The updater consumes a zip of the self-contained .app bundle (see
         // launchInstaller()). The .pkg/.dmg first-install assets that may also be
         // attached to the release are intentionally not matched here.
         if (name.contains("macOS", Qt::CaseInsensitive) && name.endsWith(".zip", Qt::CaseInsensitive))
-            return asset.value("browser_download_url").toString();
+            return asset.value("direct_asset_url").toString().isEmpty()
+                ? asset.value("url").toString() : asset.value("direct_asset_url").toString();
 #else
         Q_UNUSED(name);
 #endif
@@ -100,8 +103,8 @@ void UpdateManager::checkForUpdates(bool silent)
 
     QNetworkRequest request{QUrl(QString::fromLatin1(kReleaseApiUrl))};
     request.setHeader(QNetworkRequest::UserAgentHeader, QString::fromLatin1(kUserAgent));
-    request.setRawHeader("Accept", "application/vnd.github+json");
-    request.setRawHeader("X-GitHub-Api-Version", "2022-11-28");
+    request.setRawHeader("Accept", "application/json");
+    request.setTransferTimeout(30000);
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                          QNetworkRequest::NoLessSafeRedirectPolicy);
 
@@ -130,14 +133,25 @@ void UpdateManager::onCheckFinished()
         return;
     }
 
-    const QJsonObject release = doc.object();
+    processRelease(doc.object());
+}
+
+void UpdateManager::processRelease(const QJsonObject &release)
+{
+    // Upcoming releases are preparation records, not installable updates.
+    if (release.value("upcoming_release").toBool())
+    {
+        emit upToDate();
+        return;
+    }
 
     // Tags are published as "vX.Y.Z"; strip the leading "v".
     QString latest = release.value("tag_name").toString();
     if (latest.startsWith('v', Qt::CaseInsensitive))
         latest.remove(0, 1);
 
-    if (latest.isEmpty())
+    static const QRegularExpression stableVersion(QStringLiteral("^[0-9]+\\.[0-9]+\\.[0-9]+$"));
+    if (!stableVersion.match(latest).hasMatch())
     {
         emit checkFailed(tr("The update server did not report a version."));
         return;
@@ -151,7 +165,14 @@ void UpdateManager::onCheckFinished()
         return;
     }
 
-    const QString assetUrl = selectPlatformAsset(release.value("assets").toArray());
+#if defined(Q_OS_LINUX)
+    // The host's Flatpak software manager owns sandboxed app updates.
+    emit checkFailed(tr("Version %1 is available. Update Project Notes through your software "
+                        "manager or run flatpak update com.projectnotespro.ProjectNotes.").arg(latest));
+    return;
+#endif
+
+    const QString assetUrl = selectPlatformAsset(release.value("assets").toObject().value("links").toArray());
     if (assetUrl.isEmpty())
     {
         // A newer release exists but ships no installer for this platform.
@@ -161,7 +182,7 @@ void UpdateManager::onCheckFinished()
     }
 
     QLog_Info(CONSOLELOG, QString("Update available: %1 (current %2).").arg(latest, currentVersion()));
-    emit updateAvailable(latest, release.value("body").toString(), QUrl(assetUrl));
+    emit updateAvailable(latest, release.value("description").toString(), QUrl(assetUrl));
 }
 
 void UpdateManager::downloadAndInstall(const QUrl &assetUrl)

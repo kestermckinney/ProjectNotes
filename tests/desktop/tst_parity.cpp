@@ -751,7 +751,7 @@ private slots:
 
     void test_21_appVersion()
     {
-        QCOMPARE(c->appVersion(), QStringLiteral("6.3.0"));
+        QCOMPARE(c->appVersion(), QStringLiteral("6.4.0"));
     }
 
     // installUpdate with no prior successful check must fail gracefully (no crash,

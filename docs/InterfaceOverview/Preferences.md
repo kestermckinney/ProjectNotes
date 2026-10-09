@@ -119,7 +119,7 @@ Choosing **About** from the [Application Menu](<ApplicationMenu.md>)'s **Help** 
 
 ## Checking for Updates
 
-Project Notes can keep itself up to date by checking GitHub for newer releases. A quiet, background check runs automatically each time Project Notes starts. If a newer release is found, it offers to download and install it for you; the installer runs automatically and Project Notes relaunches itself when it finishes. When no update is available, the background check stays silent so it never interrupts your work.
+Project Notes can keep itself up to date by checking GitLab for newer releases. A quiet, background check runs automatically each time Project Notes starts. If a newer release is found, it offers to download and install it for you; the installer runs automatically and Project Notes relaunches itself when it finishes. When no update is available, the background check stays silent so it never interrupts your work.
 
 You can also check at any time from the app menu by choosing **Check for Updates…**. A manual check always reports its result — including telling you when you are already running the latest version.
 

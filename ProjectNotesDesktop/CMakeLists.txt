@@ -59,7 +59,7 @@ qt_add_executable(ProjectNotes
     ../pluginmanager.cpp   ../pluginmanager.h
     ../pythonworker.cpp    ../pythonworker.h
     ../credentialstore.cpp ../credentialstore.h
-    # Unattended software update (GitHub releases → silent install + relaunch).
+    # Unattended software update (GitLab releases → silent install + relaunch).
     ../updatemanager.cpp   ../updatemanager.h
     # Single-instance guard (UUID key in main.cpp).
     ../runguard.cpp ../runguard.h
