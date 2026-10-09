@@ -47,13 +47,13 @@ Page {
         Button {
             Layout.alignment: Qt.AlignHCenter
             text: qsTr("Release Notes")
-            onClicked: Qt.openUrlExternally("https://github.com/kestermckinney/ProjectNotes/releases")
+            onClicked: Qt.openUrlExternally("https://gitlab.com/kestermckinney/ProjectNotes/-/releases")
         }
 
         Button {
             Layout.alignment: Qt.AlignHCenter
             text: qsTr("Source Code")
-            onClicked: Qt.openUrlExternally("https://github.com/kestermckinney/ProjectNotes")
+            onClicked: Qt.openUrlExternally("https://gitlab.com/kestermckinney/ProjectNotes")
         }
 
         Item { height: 8 }

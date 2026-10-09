@@ -208,7 +208,7 @@ When you delete a record that other records depend on — for example, a person 
 
 Open from **≡ → Cloud Sync Settings**.
 
-The mobile app synchronizes data with **Project Notes Pro** hosting using [SqliteSyncPro](https://github.com/kestermckinney/SqliteSyncPro). Hosting is fully managed — there is no server address or API key to enter. You sign in with the same Project Notes Pro account you use on the desktop, and your data stays in sync across every device.
+The mobile app synchronizes data with **Project Notes Pro** hosting using [SqliteSyncPro](https://gitlab.com/kestermckinney/SqliteSyncPro). Hosting is fully managed — there is no server address or API key to enter. You sign in with the same Project Notes Pro account you use on the desktop, and your data stays in sync across every device.
 
 | Setting | Description |
 | :--- | :--- |

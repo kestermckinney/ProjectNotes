@@ -148,6 +148,18 @@ enable_testing()
 add_test(NAME qmldesktop COMMAND tst_qmldesktop)
 set_tests_properties(qmldesktop PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+# Release API and installer-link coverage uses a fake network, never the live service.
+add_executable(tst_updatemanager
+    tst_updatemanager.cpp
+    ${ROOT_DIR}/updatemanager.cpp ${ROOT_DIR}/updatemanager.h
+    ${ROOT_DIR}/QLogger.cpp ${ROOT_DIR}/QLogger.h
+    ${ROOT_DIR}/QLoggerWriter.cpp ${ROOT_DIR}/QLoggerWriter.h
+)
+target_include_directories(tst_updatemanager PRIVATE ${ROOT_DIR})
+target_link_libraries(tst_updatemanager PRIVATE Qt6::Widgets Qt6::Network Qt6::Test)
+add_test(NAME updatemanager COMMAND tst_updatemanager)
+set_tests_properties(updatemanager PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
 # Fast, headless coverage for the native reconciliation path. This exercises a
 # dedicated SQLite connection, the shared lock, active-project filtering,
 # legacy-row adoption, batched upsert, and no-op repeat scans.

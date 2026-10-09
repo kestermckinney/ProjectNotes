@@ -1,13 +1,8 @@
 # ProjectNotes
 
-[![Project site](https://img.shields.io/badge/Project%20Site-Live-2ecc71?style=for-the-badge)](https://kestermckinney.github.io/ProjectNotes/)
-[![License](https://img.shields.io/github/license/kestermckinney/ProjectNotes?style=for-the-badge)](LICENSE)
-[![Latest release](https://img.shields.io/github/v/release/kestermckinney/ProjectNotes?style=for-the-badge)](https://github.com/kestermckinney/ProjectNotes/releases)
-[![Downloads](https://img.shields.io/github/downloads/kestermckinney/ProjectNotes/total?style=for-the-badge)](https://github.com/kestermckinney/ProjectNotes/releases)
-[![Stars](https://img.shields.io/github/stars/kestermckinney/ProjectNotes?style=for-the-badge)](https://github.com/kestermckinney/ProjectNotes/stargazers)
-[![Forks](https://img.shields.io/github/forks/kestermckinney/ProjectNotes?style=for-the-badge)](https://github.com/kestermckinney/ProjectNotes/network/members)
-[![Open issues](https://img.shields.io/github/issues/kestermckinney/ProjectNotes?style=for-the-badge)](https://github.com/kestermckinney/ProjectNotes/issues)
-[![Last commit](https://img.shields.io/github/last-commit/kestermckinney/ProjectNotes?style=for-the-badge)](https://github.com/kestermckinney/ProjectNotes/commits/main)
+[![License](https://img.shields.io/badge/License-GPL%203.0-blue?style=for-the-badge)](LICENSE)
+
+[Project site](https://kestermckinney.gitlab.io/ProjectNotes/) · [GitLab repository](https://gitlab.com/kestermckinney/ProjectNotes) · [Latest release](https://gitlab.com/kestermckinney/ProjectNotes/-/releases/permalink/latest)
 
 ![ProjectNotes demo](docs/img/demo.gif)
 
@@ -15,12 +10,12 @@ ProjectNotes is a project manager's workspace for notes, action items, project m
 
 ## Explore
 
-- [Project site](https://kestermckinney.github.io/ProjectNotes/)
+- [Project site](https://kestermckinney.gitlab.io/ProjectNotes/)
 - [Documentation](https://projectnotes.readthedocs.io)
-- [High Level Roadmap](https://github.com/users/kestermckinney/projects/4/views/1)
-- [Report a bug](https://github.com/kestermckinney/ProjectNotes/issues/new?template=bug_report.yml)
-- [Request an enhancement](https://github.com/kestermckinney/ProjectNotes/issues/new?template=enhancement_request.yml)
-- [Ask a usage question](https://github.com/kestermckinney/ProjectNotes/issues/new?template=question.yml)
+- [Planning and issue board](https://gitlab.com/kestermckinney/ProjectNotes/-/boards)
+- [Report a bug](https://gitlab.com/kestermckinney/ProjectNotes/-/issues/new?issuable_template=Bug)
+- [Request an enhancement](https://gitlab.com/kestermckinney/ProjectNotes/-/issues/new?issuable_template=Enhancement)
+- [Ask a usage question](https://gitlab.com/kestermckinney/ProjectNotes/-/issues/new?issuable_template=Question)
 - [Contributing guide](CONTRIBUTING.md)
 
 ## What ProjectNotes Does
@@ -39,21 +34,43 @@ Project Notes ships as a self-hosted Flatpak with automatic updates:
 ```bash
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 flatpak remote-add --if-not-exists projectnotes \
-  https://kestermckinney.github.io/projectnotes-flatpak/projectnotes.flatpakrepo
+  https://kestermckinney.gitlab.io/ProjectNotes/flatpak/projectnotes.flatpakrepo
 flatpak install projectnotes com.projectnotespro.ProjectNotes
 ```
 
 Prefer a single file? Download `ProjectNotes.flatpak` from the
-[latest release](https://github.com/kestermckinney/ProjectNotes/releases/latest).
+[latest GitLab release](https://gitlab.com/kestermckinney/ProjectNotes/-/releases/permalink/latest).
+For an existing installation using the former GitHub-hosted remote, see the
+migration instructions below.
 Full instructions: [Installing on Linux](docs/Introduction/InstallLinux.md).
 
-## Activity And Request Snapshot
+## Updating An Existing Installation
 
-[![Open bugs](https://img.shields.io/github/issues-search?query=repo%3Akestermckinney%2FProjectNotes+is%3Aissue+is%3Aopen+%22%5BBug%5D%3A%22+in%3Atitle&label=open%20bugs&style=flat-square)](https://github.com/kestermckinney/ProjectNotes/issues?q=is%3Aissue%20is%3Aopen%20%22%5BBug%5D%3A%22%20in%3Atitle)
-[![Open enhancements](https://img.shields.io/github/issues-search?query=repo%3Akestermckinney%2FProjectNotes+is%3Aissue+is%3Aopen+%22%5BEnhancement%5D%3A%22+in%3Atitle&label=open%20enhancements&style=flat-square)](https://github.com/kestermckinney/ProjectNotes/issues?q=is%3Aissue%20is%3Aopen%20%22%5BEnhancement%5D%3A%22%20in%3Atitle)
-[![Open questions](https://img.shields.io/github/issues-search?query=repo%3Akestermckinney%2FProjectNotes+is%3Aissue+is%3Aopen+%22%5BQuestion%5D%3A%22+in%3Atitle&label=open%20questions&style=flat-square)](https://github.com/kestermckinney/ProjectNotes/issues?q=is%3Aissue%20is%3Aopen%20%22%5BQuestion%5D%3A%22%20in%3Atitle)
+Older desktop builds check the former GitHub repository, which is unavailable.
+Download and install a new Windows or macOS build from [GitLab releases](https://gitlab.com/kestermckinney/ProjectNotes/-/releases)
+when one is available. Builds containing the GitLab updater will check GitLab for
+subsequent updates.
 
-These badges update automatically from GitHub so visitors can quickly see activity, open requests, and whether the project is actively maintained.
+For Linux installations using the former update server, keep the existing remote
+and import the GitLab signing key, change its URL, then update:
+
+```bash
+curl --fail --location --output projectnotes.gpg https://kestermckinney.gitlab.io/ProjectNotes/flatpak/projectnotes.gpg
+flatpak remote-modify --gpg-verify --gpg-import=projectnotes.gpg --url=https://kestermckinney.gitlab.io/ProjectNotes/flatpak/ projectnotes
+flatpak update com.projectnotespro.ProjectNotes
+```
+
+See [Installing on Linux](docs/Introduction/InstallLinux.md) for the key fingerprint
+and instructions for user-specific installations.
+
+## Activity And Requests
+
+- [Open issues](https://gitlab.com/kestermckinney/ProjectNotes/-/issues?state=opened)
+- [Open bugs](https://gitlab.com/kestermckinney/ProjectNotes/-/issues?state=opened&search=%5BBug%5D)
+- [Open enhancements](https://gitlab.com/kestermckinney/ProjectNotes/-/issues?state=opened&search=%5BEnhancement%5D)
+- [Usage questions](https://gitlab.com/kestermckinney/ProjectNotes/-/issues?state=opened&search=%5BQuestion%5D)
+- [Recent commits](https://gitlab.com/kestermckinney/ProjectNotes/-/commits/main)
+- [Releases and downloads](https://gitlab.com/kestermckinney/ProjectNotes/-/releases)
 
 ## Contributing
 
@@ -62,15 +79,15 @@ Contributions are welcome in several forms:
 - Bug reports with clear reproduction steps
 - Enhancement requests with a real project-management use case
 - Documentation fixes and clarification
-- Focused pull requests with tests or screenshots when relevant
+- Focused merge requests with tests or screenshots when relevant
 
-Please start with [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+Please start with [CONTRIBUTING.md](CONTRIBUTING.md) before opening a merge request.
 
 ## Building From Source
 
 For build and setup details, see:
 
-- [How to Contribute](https://github.com/kestermckinney/ProjectNotes/wiki/How-to-Contribute)
+- [How to Contribute](https://gitlab.com/kestermckinney/ProjectNotes/-/blob/main/CONTRIBUTING.md)
 - [System Requirements](Systemrequirements.md)
 - [Developer documentation](docs/index.md)
 

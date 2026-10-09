@@ -16,10 +16,12 @@ RUNTIME_VERSION="6.9"
 # GPG_KEY_ID       If set, `repo` and `bundle` are signed with this key.
 # GPG_HOMEDIR      Optional GnuPG home holding that key (used by CI's ephemeral
 #                  keyring); passed through to flatpak as --gpg-homedir.
-# RUNTIME_REPO_URL If set, embedded in the bundle via --runtime-repo so that
-#                  installing the .flatpak also adds the auto-update remote.
+# APP_REPO_URL     If set, embedded via --repo-url as the application update remote.
+# RUNTIME_REPO_URL If set, embedded via --runtime-repo for runtime dependencies
+#                  (normally the Flathub .flatpakrepo, not the application repo).
 GPG_KEY_ID="${GPG_KEY_ID:-}"
 GPG_HOMEDIR="${GPG_HOMEDIR:-}"
+APP_REPO_URL="${APP_REPO_URL:-}"
 RUNTIME_REPO_URL="${RUNTIME_REPO_URL:-}"
 
 # DISABLE_ROFILES_FUSE  Set to 1 in containerized CI where rofiles-fuse can't
@@ -50,15 +52,15 @@ fi
 
 # ── Source pins ──────────────────────────────────────────────────────────────
 # PN_REF  Which ProjectNotes source build/install/repo compile:
-#           latest  (default) the newest v* tag on GitHub
+#           latest  (default) the newest v* tag on GitLab
 #           pinned  the `commit:` values committed in the manifest, untouched
 #           <tag|branch|sha>  that ref, e.g. v6.1.0, main, or a full commit SHA
 #         Unless pinned, SqliteSyncPro follows its default-branch tip, matching
 #         the release workflow. The resolved pins go into a generated copy of
 #         the manifest; the committed manifest is never edited.
 PN_REF="${PN_REF:-latest}"
-PN_GIT_URL="https://github.com/kestermckinney/ProjectNotes.git"
-SS_GIT_URL="https://github.com/kestermckinney/SqliteSyncPro.git"
+PN_GIT_URL="https://gitlab.com/kestermckinney/ProjectNotes.git"
+SS_GIT_URL="https://gitlab.com/kestermckinney/SqliteSyncPro.git"
 # Must sit next to the real manifest so its relative module includes resolve.
 RESOLVED_MANIFEST="$SCRIPT_DIR/.${APP_ID}.resolved.yml"
 
@@ -121,7 +123,7 @@ DESKTOP_FILE="$SCRIPT_DIR/${APP_ID}.desktop"
 usage() {
     echo "Usage: $0 [setup|build|lint|verify-webengine|run|install|repo|bundle|regen-pip|clean]"
     echo ""
-    echo "  NOTE: build/install/repo clone ProjectNotes + SqliteSyncPro from GitHub."
+    echo "  NOTE: build/install/repo clone ProjectNotes + SqliteSyncPro from GitLab."
     echo "        By default they build the newest v* tag (with SqliteSyncPro HEAD)."
     echo "        Override with PN_REF=<tag|branch|sha>, or PN_REF=pinned to use the"
     echo "        manifest's committed 'commit:' values. Push before building."
@@ -230,7 +232,7 @@ cmd_lint() {
 
 cmd_build() {
     echo "==> Building Flatpak..."
-    echo "    (clones ProjectNotes + SqliteSyncPro from GitHub at pinned commits;"
+    echo "    (clones ProjectNotes + SqliteSyncPro from GitLab at pinned commits;"
     echo "     ensure those commits are pushed to origin first)"
     resolve_manifest
     "${FLATPAK_BUILDER[@]}" "${BUILDER_FLAGS[@]}" --force-clean "$BUILD_DIR" "$MANIFEST"
@@ -308,7 +310,8 @@ cmd_bundle() {
     local sign_args
     gpg_sign_args sign_args
     local extra=()
-    # Embed the update remote so installing the bundle also wires up `flatpak update`.
+    # Keep the application update remote separate from the runtime provider.
+    [ -n "$APP_REPO_URL" ] && extra+=("--repo-url=$APP_REPO_URL")
     [ -n "$RUNTIME_REPO_URL" ] && extra+=("--runtime-repo=$RUNTIME_REPO_URL")
     echo "==> Creating bundle at $BUNDLE_FILE..."
     flatpak build-bundle "${sign_args[@]}" "${extra[@]}" "$REPO_DIR" "$BUNDLE_FILE" "$APP_ID"

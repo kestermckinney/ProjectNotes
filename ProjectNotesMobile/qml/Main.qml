@@ -352,7 +352,7 @@ ApplicationWindow {
                         text: qsTr("What's New")
                         onClicked: {
                             hamburgerDrawer.close()
-                            Qt.openUrlExternally("https://github.com/kestermckinney/ProjectNotes/releases")
+                            Qt.openUrlExternally("https://gitlab.com/kestermckinney/ProjectNotes/-/releases")
                         }
                     }
 
