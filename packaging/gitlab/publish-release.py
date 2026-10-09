@@ -41,7 +41,7 @@ if publish:
             raise SystemExit('A newer release is already published; refusing to downgrade the repository')
 
 links = []
-for name in ['ProjectNotes.flatpak', 'projectnotes.flatpakrepo']:
+for name in ['ProjectNotes.flatpak', 'projectnotes.flatpakrepo', 'projectnotes.gpg']:
     path = Path('packaging/linux') / name
     endpoint = f'/packages/generic/projectnotes/{quote(tag, safe="")}/{name}'
     if not publish:

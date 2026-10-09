@@ -27,8 +27,10 @@ registry. The release links point to those packages, rather than expiring CI art
    from its backup. Do not silently generate a new key for existing installations.
 4. Use a runner that supports Flatpak/bubblewrap sandbox builds with the KDE 6.9
    container. A self-managed Docker runner may require privileged mode.
-   Public access to the SqliteSyncPro source repository is also required by the
-   manifest's Git source; alternatively configure runner credentials for it.
+   For private SqliteSyncPro sources, authorize this project in SqliteSyncPro’s
+   CI job-token allowlist and configure a Git credential helper using the job
+   token. This project has protected `GIT_CONFIG_COUNT`, `GIT_CONFIG_KEY_0`,
+   `GIT_CONFIG_VALUE_0`, and `GIT_TERMINAL_PROMPT` variables for that purpose.
 
 ## Prepare 6.4.0
 
@@ -77,12 +79,26 @@ command-line users run `flatpak update`.
 For the existing GitHub remote, run:
 
 ```bash
-flatpak remote-modify --url=https://kestermckinney.gitlab.io/ProjectNotes/flatpak/ projectnotes
+curl --fail --location --output projectnotes.gpg https://kestermckinney.gitlab.io/ProjectNotes/flatpak/projectnotes.gpg
+flatpak remote-modify --gpg-import=projectnotes.gpg --url=https://kestermckinney.gitlab.io/ProjectNotes/flatpak/ projectnotes
 flatpak update com.projectnotespro.ProjectNotes
 ```
+
+The GitLab repository uses a new signing key. Existing installations must import
+`projectnotes.gpg` using the migration command above.
 
 Keep the existing app ID and `master` branch to preserve installed refs. Every
 repository build includes a complete delta from an empty installation. This
 pipeline starts a fresh repository, so clients can update without old server
 objects but will download a full delta. A future incremental implementation can
 restore the previous repository before export to reduce update bandwidth.
+
+## Deploy a prepared repository while keeping the release upcoming
+
+A maintainer can upload a signed repository as `repository.tar.gz` to the same
+generic package/version as the bundle, containing `index.html` and `flatpak/`.
+Trigger an API pipeline on main with `REPOSITORY_PACKAGE_VERSION=v6.4.0` and
+`REPOSITORY_PACKAGE_SHA256` set to the archive’s SHA-256 digest. The
+`deploy-prepared-repository` job verifies the archive checksum and publishes
+Pages while leaving the release’s upcoming date unchanged. Future tag pipelines
+use the normal signed build, preparation, and manual publication workflow.

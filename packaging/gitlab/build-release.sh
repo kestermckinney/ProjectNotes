@@ -50,7 +50,7 @@ flatpak build-update-repo --gpg-sign="$GPG_KEY_ID" --gpg-homedir="$GPG_HOMEDIR" 
 bash packaging/linux/build-flatpak.sh bundle
 mkdir -p public/flatpak
 cp -a packaging/linux/flatpak-repo/. public/flatpak/
-cp packaging/linux/projectnotes.flatpakrepo public/flatpak/
+cp packaging/linux/projectnotes.flatpakrepo packaging/linux/projectnotes.gpg public/flatpak/
 cp packaging/linux/icons/256x256/com.projectnotespro.ProjectNotes.png public/flatpak/icon.png
 # Flatpak clients must not follow Pages' unique-domain redirects for every object.
 printf '%s\n' 'Project Notes Linux update repository' > public/index.html

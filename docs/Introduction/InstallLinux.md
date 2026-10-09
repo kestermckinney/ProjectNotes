@@ -48,7 +48,8 @@ updates installed in the background.
 If your `projectnotes` remote still points to GitHub, migrate it once:
 
 ```bash
-flatpak remote-modify --url=https://kestermckinney.gitlab.io/ProjectNotes/flatpak/ projectnotes
+curl --fail --location --output projectnotes.gpg https://kestermckinney.gitlab.io/ProjectNotes/flatpak/projectnotes.gpg
+flatpak remote-modify --gpg-import=projectnotes.gpg --url=https://kestermckinney.gitlab.io/ProjectNotes/flatpak/ projectnotes
 flatpak update com.projectnotespro.ProjectNotes
 ```
 
@@ -78,6 +79,7 @@ and is **not** removed by uninstalling the app.
 
 ## Verifying the download
 
-Releases are signed with our GPG key. The repository's public key is embedded in
+GitLab releases use a new GPG signing key. Import `projectnotes.gpg` when
+migrating an existing GitHub remote. Releases are signed with our GPG key. The repository's public key is embedded in
 the `projectnotes.flatpakrepo` file, so Flatpak verifies signatures on every
 install and update automatically — no manual step required.

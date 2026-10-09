@@ -27,7 +27,8 @@ flatpak update com.projectnotespro.ProjectNotes
 If you previously installed from the GitHub repository, migrate your remote before updating:
 
 ```bash
-flatpak remote-modify --url=https://kestermckinney.gitlab.io/ProjectNotes/flatpak/ projectnotes
+curl --fail --location --output projectnotes.gpg https://kestermckinney.gitlab.io/ProjectNotes/flatpak/projectnotes.gpg
+flatpak remote-modify --gpg-import=projectnotes.gpg --url=https://kestermckinney.gitlab.io/ProjectNotes/flatpak/ projectnotes
 flatpak update com.projectnotespro.ProjectNotes
 ```
 

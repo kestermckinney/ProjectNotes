@@ -23,3 +23,8 @@ packaging/macos/staging*
 *.aps
 .codegraph/
 packaging/linux/.com.projectnotespro.ProjectNotes.resolved.yml
+
+# Local release signing backups (never commit private keys).
+.release-secrets/
+.flatpak-builder/
+packaging/linux/flatpak-build/
