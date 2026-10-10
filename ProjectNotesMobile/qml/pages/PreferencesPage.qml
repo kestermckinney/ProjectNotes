@@ -11,13 +11,13 @@ Page {
     title: qsTr("Preferences")
 
     // Stable {id,name} snapshots backing the combos below — deliberately NOT
-    // AppController.clientsModel/peopleModel directly, which the Clients/
-    // People tabs' Sort feature can reorder/reset out from under a ComboBox
+    // AppController.companiesModel/contactsModel directly, which the Companies/
+    // Contacts tabs' Sort feature can reorder/reset out from under a ComboBox
     // bound live to them (see AppController::teamMemberList doc comment).
-    property var _clients: []
-    property var _people:  []
-    function _clientNames() { return root._clients.map(function(c){ return c.name }) }
-    function _peopleNames() { return root._people.map(function(p){ return p.name }) }
+    property var _companies: []
+    property var _contacts:  []
+    function _companyNames() { return root._companies.map(function(c){ return c.name }) }
+    function _contactNames() { return root._contacts.map(function(p){ return p.name }) }
     function _indexForId(list, id) {
         for (var i = 0; i < list.length; i++) if (list[i].id === id) return i
         return -1
@@ -36,17 +36,17 @@ Page {
             FieldRow {
                 FormCombo {
                     id: companyCombo
-                    options: root._clientNames()
+                    options: root._companyNames()
                     includeNone: true
                     searchable: true
                     Component.onCompleted: {
-                        root._clients = AppController.clientList()
-                        selectOption(root._indexForId(root._clients, AppController.managingCompanyId()))
+                        root._companies = AppController.companyList()
+                        selectOption(root._indexForId(root._companies, AppController.managingCompanyId()))
                     }
                     onActivated: {
                         var i = optionIndex
                         AppController.setManagingCompanyId(
-                            (i >= 0 && i < root._clients.length) ? root._clients[i].id : "")
+                            (i >= 0 && i < root._companies.length) ? root._companies[i].id : "")
                     }
                 }
             }
@@ -55,17 +55,17 @@ Page {
             FieldRow {
                 FormCombo {
                     id: managerCombo
-                    options: root._peopleNames()
+                    options: root._contactNames()
                     includeNone: true
                     searchable: true
                     Component.onCompleted: {
-                        root._people = AppController.peopleList()
-                        selectOption(root._indexForId(root._people, AppController.projectManagerId()))
+                        root._contacts = AppController.contactList()
+                        selectOption(root._indexForId(root._contacts, AppController.projectManagerId()))
                     }
                     onActivated: {
                         var i = optionIndex
                         AppController.setProjectManagerId(
-                            (i >= 0 && i < root._people.length) ? root._people[i].id : "")
+                            (i >= 0 && i < root._contacts.length) ? root._contacts[i].id : "")
                     }
                 }
             }

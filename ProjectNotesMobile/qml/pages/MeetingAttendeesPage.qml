@@ -66,7 +66,7 @@ Page {
                         attendeeId:   (d.id        || "").toString(),
                         isNewRecord:  true,
                         projectId:    root.projectId,
-                        initialPerson:(d.person_id || "").toString()
+                        initialContact:(d.person_id || "").toString()
                     })
                 }
             }
@@ -164,7 +164,7 @@ Page {
                     attendeeRow:  delegateRoot.index,
                     attendeeId:   delegateRoot.model.id        || "",
                     projectId:    root.projectId,
-                    initialPerson: delegateRoot.model.person_id || ""
+                    initialContact: delegateRoot.model.person_id || ""
                 })
             }
         }

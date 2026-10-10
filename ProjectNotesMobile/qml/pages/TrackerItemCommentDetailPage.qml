@@ -22,15 +22,15 @@ Page {
     property bool   isNewRecord: false
 
     // Stable {id,name} snapshot backing updatedByCombo — deliberately NOT the
-    // live AppController.peopleModel proxy, which the People tab's Sort
+    // live AppController.contactsModel proxy, which the Contacts tab's Sort
     // feature can reorder/reset out from under a ComboBox bound directly to
-    // it (see AppController::teamMemberList doc comment). All people, not
+    // it (see AppController::teamMemberList doc comment). All contacts, not
     // just this project's team, matches desktop's Updated By field.
-    property var _people: []
-    function _peopleNames() { return root._people.map(function(p){ return p.name }) }
-    function _personIndexForId(id) {
-        for (var i = 0; i < root._people.length; i++)
-            if (root._people[i].id === id) return i
+    property var _contacts: []
+    function _contactNames() { return root._contacts.map(function(p){ return p.name }) }
+    function _contactIndexForId(id) {
+        for (var i = 0; i < root._contacts.length; i++)
+            if (root._contacts[i].id === id) return i
         return -1
     }
 
@@ -41,7 +41,7 @@ Page {
         if (!root._hasChanges) return true
         dateField.commitPending()
         var bi = updatedByCombo.optionIndex
-        var byId = (bi >= 0 && bi < root._people.length) ? root._people[bi].id : ""
+        var byId = (bi >= 0 && bi < root._contacts.length) ? root._contacts[bi].id : ""
         var result = AppController.saveComment(root.commentRow, dateField.text, noteEdit.text, byId)
         if (result) root._hasChanges = false
         return result
@@ -51,8 +51,8 @@ Page {
         var d = AppController.getCommentData(root.commentRow)
         dateField.text = (d.lastupdated_date || "").toString()
         noteEdit.text  = (d.update_note      || "").toString()
-        root._people = AppController.peopleList()
-        updatedByCombo.selectOption(root._personIndexForId((d.updated_by || "").toString()))
+        root._contacts = AppController.contactList()
+        updatedByCombo.selectOption(root._contactIndexForId((d.updated_by || "").toString()))
     }
 
     StackView.onDeactivating: {
@@ -110,11 +110,11 @@ Page {
             FieldRow {
                 FormCombo {
                     id: updatedByCombo
-                    options: root._peopleNames()
+                    options: root._contactNames()
                     includeNone: true
                     Component.onCompleted: {
-                        root._people = AppController.peopleList()
-                        selectOption(root._personIndexForId(root.initialBy))
+                        root._contacts = AppController.contactList()
+                        selectOption(root._contactIndexForId(root.initialBy))
                     }
                     onActivated: root._hasChanges = true
                 }

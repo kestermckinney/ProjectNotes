@@ -10,7 +10,7 @@
 // Usage:
 //   QuickFilterDialog { id: qfDialog }
 //   qfDialog.openWith(AppController.projectsListModel, [
-//       { label: qsTr("This Client"), field: "client_id", values: [clientId] }
+//       { label: qsTr("This Company"), field: "client_id", values: [companyId] }
 //   ])
 
 import QtQuick

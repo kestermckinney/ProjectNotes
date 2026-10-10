@@ -49,7 +49,7 @@ Page {
     }
 
     // Quick Filter entries for a long-pressed item row (project-scoped, so no
-    // client shortcut — every row already shares this project's client), led
+    // company shortcut — every row already shares this project's company), led
     // by "Assigned to Me" (the Project Manager configured in Preferences,
     // omitted when none is set) so this project's own items narrow down the
     // same way the All Items list does. item_overdue is a computed "Yes"/"No"
@@ -210,7 +210,7 @@ Page {
                         visible: (model.assigned_to || "") !== ""
                         text: {
                             var sep = (model.status || model.priority) ? "  ·  " : ""
-                            return sep + AppController.peopleNameForId(model.assigned_to || "")
+                            return sep + AppController.contactNameForId(model.assigned_to || "")
                         }
                         font.pixelSize: 12
                         color: Theme.mutedText
