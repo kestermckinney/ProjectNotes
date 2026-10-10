@@ -23,7 +23,7 @@ private slots:
 void AudienceResolverTest::resolvesCompanyAndSourceIntersections()
 {
     CommunicationSnapshot snapshot;
-    snapshot.clientCompanyId = QStringLiteral("client");
+    snapshot.companyId = QStringLiteral("client");
     snapshot.managingCompanyId = QStringLiteral("ours");
     snapshot.projectManagerId = QStringLiteral("manager");
     snapshot.contacts = {{QStringLiteral("manager"), QStringLiteral("Manager"),
@@ -40,7 +40,7 @@ void AudienceResolverTest::resolvesCompanyAndSourceIntersections()
 
     AudienceRule rule;
     rule.source = ContactSource::StatusRecipients;
-    rule.companyFilter = CompanyFilter::ExceptProjectClient;
+    rule.companyFilter = CompanyFilter::ExceptProjectCompany;
     auto result = resolveAudience(snapshot, rule);
     QVERIFY(result.contacts.isEmpty());
     rule.includeUnknownCompany = true;
@@ -73,7 +73,7 @@ void AudienceResolverTest::resolvesCompanyAndSourceIntersections()
     QCOMPARE(result.contacts.size(), 1);
     QCOMPARE(result.contacts.first().id, QStringLiteral("client"));
 
-    rule.companyFilter = CompanyFilter::ExceptProjectClient;
+    rule.companyFilter = CompanyFilter::ExceptProjectCompany;
     result = resolveAudience(snapshot, rule);
     QCOMPARE(result.contacts.size(), 2);
     QCOMPARE(result.contacts.at(0).id, QStringLiteral("manager"));
@@ -115,13 +115,13 @@ void AudienceResolverTest::resolvesCompanyAndSourceIntersections()
     QCOMPARE(result.validation.issues.constFirst().code, QStringLiteral("company-setup-required"));
 
     snapshot.managingCompanyId = QStringLiteral("ours");
-    snapshot.clientCompanyId.clear();
-    rule.companyFilter = CompanyFilter::ExceptProjectClient;
+    snapshot.companyId.clear();
+    rule.companyFilter = CompanyFilter::ExceptProjectCompany;
     result = resolveAudience(snapshot, rule);
     QVERIFY(!result.validation.ok());
     QCOMPARE(result.validation.issues.constFirst().code, QStringLiteral("company-setup-required"));
 
-    snapshot.clientCompanyId = QStringLiteral("client");
+    snapshot.companyId = QStringLiteral("client");
     snapshot.contacts.append({QStringLiteral("invalid"), QStringLiteral("Invalid"),
                             QStringLiteral("invalid@example.test;other@example.test"),
                             QStringLiteral("partner"), QStringLiteral("Partner Co"), false, true, true});

@@ -3303,11 +3303,11 @@ bool DesktopAppController::saveAttendee(int row, const QString& contactId)
 
     const QString safeNote   = model->data(model->index(row, 1)).toString().replace("'", "''");
     const QString safeId     = model->data(model->index(row, 0)).toString().replace("'", "''");
-    const QString safePerson = QString(contactId).replace("'", "''");
+    const QString safeContact = QString(contactId).replace("'", "''");
     const QString sql = QString(
         "SELECT COUNT(*) FROM meeting_attendees "
         "WHERE note_id = '%1' AND person_id = '%2' AND id != '%3' AND deleted = 0"
-    ).arg(safeNote, safePerson, safeId);
+    ).arg(safeNote, safeContact, safeId);
     if (global_DBObjects.execute(sql).toInt() > 0) {
         const QString msg = tr("Attendee already exists.");
         global_DBObjects.setLastSaveError(msg);

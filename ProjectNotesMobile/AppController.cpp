@@ -45,10 +45,10 @@ static AppController* s_instance = nullptr;
 
 static void appendEmailRecipient(QStringList& emails,
                                  const QString& email,
-                                 const QString& personId,
-                                 const QString& excludedPersonId)
+                                 const QString& contactId,
+                                 const QString& excludedContactId)
 {
-    if (!excludedPersonId.isEmpty() && personId == excludedPersonId)
+    if (!excludedContactId.isEmpty() && contactId == excludedContactId)
         return;
 
     const QString trimmedEmail = email.trimmed();
@@ -1038,9 +1038,9 @@ QString AppController::teamMemberEmailList() const
     QStringList emails;
     const QString projectManagerId = global_DBObjects.getProjectManager();
     for (int row = 0; row < model->rowCount(); ++row) {
-        const QString personId = model->data(model->index(row, 2)).toString(); // col 2 = people_id
+        const QString contactId = model->data(model->index(row, 2)).toString(); // col 2 = people_id
         const QString email = model->data(model->index(row, 6)).toString();  // col 6 = email
-        appendEmailRecipient(emails, email, personId, projectManagerId);
+        appendEmailRecipient(emails, email, contactId, projectManagerId);
     }
     return emails.join(",");
 }
@@ -1051,9 +1051,9 @@ QString AppController::attendeeEmailList() const
     QStringList emails;
     const QString projectManagerId = global_DBObjects.getProjectManager();
     for (int row = 0; row < model->rowCount(); ++row) {
-        const QString personId = model->data(model->index(row, 2)).toString(); // col 2 = person_id
+        const QString contactId = model->data(model->index(row, 2)).toString(); // col 2 = person_id
         const QString email = model->data(model->index(row, 5)).toString();  // col 5 = email
-        appendEmailRecipient(emails, email, personId, projectManagerId);
+        appendEmailRecipient(emails, email, contactId, projectManagerId);
     }
     return emails.join(",");
 }

@@ -29,7 +29,7 @@ TemplateContext communicationTemplateContext(const CommunicationSnapshot &snapsh
     context.workflow = workflow;
     context.values.insert(QStringLiteral("project.number"), snapshot.projectNumber);
     context.values.insert(QStringLiteral("project.name"), snapshot.projectName);
-    context.values.insert(QStringLiteral("client.name"), snapshot.clientName);
+    context.values.insert(QStringLiteral("company.name"), snapshot.companyName);
     context.values.insert(QStringLiteral("preferences.managerName"), snapshot.projectManagerName);
     context.values.insert(QStringLiteral("preferences.managingCompanyName"), snapshot.managingCompanyName);
     context.values.insert(QStringLiteral("report.type"), reportTypeName(workflow));

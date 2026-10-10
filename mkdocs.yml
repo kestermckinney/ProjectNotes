@@ -19,8 +19,8 @@ nav:
     - 'Notes Page': InterfaceOverview/NotesPage.md
     - 'Item Tracker Page': InterfaceOverview/ItemTrackerPage.md
     - 'Action/Tracker Item Details': InterfaceOverview/ActionItemDetailPage.md
-    - 'People List Page': InterfaceOverview/PeopleListPage.md
-    - 'Client List Page': InterfaceOverview/ClientListPage.md
+    - 'Contacts List Page': InterfaceOverview/ContactsListPage.md
+    - 'Companies List Page': InterfaceOverview/CompaniesListPage.md
     - 'Search Page': InterfaceOverview/SearchPage.md
   - 'Productivity Features':
     - 'Project Folders': InterfaceOverview/ProjectFolders.md
@@ -41,7 +41,7 @@ nav:
     - 'Scheduling Meetings': InterfaceOverview/ScheduleMeeting.md
     - 'Office 365 Integration': InterfaceOverview/Office365Integration.md
     - 'Earned Value Terms': InterfaceOverview/EarnedValueTerms.md
-    - 'Presenting to Clients': InterfaceOverview/PresentingToClients.md
+    - 'Presenting to Companies': InterfaceOverview/PresentingToCompanies.md
   - 'Plugins Overview':
     - 'Adding Functionality': PluginsOverview/AddingFunctionality.md
     - 'Data Types': PluginsOverview/DataTypes.md

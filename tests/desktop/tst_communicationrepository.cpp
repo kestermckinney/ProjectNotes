@@ -82,7 +82,7 @@ void CommunicationRepositoryTest::loadsTypedSnapshotWithoutUiFilters()
     QCOMPARE(result.snapshot.managingCompanyId, QStringLiteral("ours"));
     QCOMPARE(result.snapshot.projectManagerId, QStringLiteral("a"));
     // Template fields need names, resolved once at snapshot time.
-    QCOMPARE(result.snapshot.clientName, QStringLiteral("Client"));
+    QCOMPARE(result.snapshot.companyName, QStringLiteral("Client"));
     QCOMPARE(result.snapshot.managingCompanyName, QStringLiteral("Our Company"));
     QCOMPARE(result.snapshot.projectManagerName, QStringLiteral("Alice"));
     // An unknown ID leaves the name empty instead of failing the snapshot.

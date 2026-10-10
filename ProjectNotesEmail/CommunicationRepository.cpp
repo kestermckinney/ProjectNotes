@@ -21,8 +21,8 @@ QByteArray canonicalFingerprint(const CommunicationSnapshot &snapshot)
     QDataStream stream(&bytes, QIODevice::WriteOnly);
     stream.setVersion(QDataStream::Qt_6_5);
     stream << snapshot.projectId << snapshot.projectNumber << snapshot.projectName
-           << snapshot.clientCompanyId << snapshot.managingCompanyId << snapshot.projectManagerId
-           << snapshot.clientName << snapshot.managingCompanyName << snapshot.projectManagerName
+           << snapshot.companyId << snapshot.managingCompanyId << snapshot.projectManagerId
+           << snapshot.companyName << snapshot.managingCompanyName << snapshot.projectManagerName
            << snapshot.projectFolderPath
            << snapshot.statusReportPeriod << snapshot.budget << snapshot.actual << snapshot.bcwp << snapshot.bcws << snapshot.bac
            << snapshot.databaseGeneration << snapshot.currentSelectionIds
@@ -73,20 +73,20 @@ SnapshotResult SqliteSnapshotLoader::load(const SnapshotRequest &request) const
         else if (!db.transaction()) result.error = {QStringLiteral("snapshot-transaction-failed"), db.lastError().text()};
         else {
             if (request.source.workflow == Workflow::ContactEmail) {
-                QSqlQuery person(db);
-                person.prepare(QStringLiteral(
+                QSqlQuery contact(db);
+                contact.prepare(QStringLiteral(
                     "SELECT p.id,p.name,p.email,p.client_id,COALESCE(c.client_name,'') FROM people p "
                     "LEFT JOIN clients c ON c.id=p.client_id AND c.deleted=0 WHERE p.id=? AND p.deleted=0"));
-                person.addBindValue(request.source.contactId);
-                if (!person.exec())
-                    result.error = {QStringLiteral("snapshot-query-failed"), person.lastError().text()};
-                else if (!person.next())
+                contact.addBindValue(request.source.contactId);
+                if (!contact.exec())
+                    result.error = {QStringLiteral("snapshot-query-failed"), contact.lastError().text()};
+                else if (!contact.next())
                     result.error = {QStringLiteral("contact-not-found"), QStringLiteral("The selected contact is no longer available.")};
                 else {
                     result.snapshot.databaseGeneration = request.source.databaseGeneration;
                     result.snapshot.loadedAt = request.capturedAt;
-                    result.snapshot.contacts.append({person.value(0).toString(), person.value(1).toString(),
-                        person.value(2).toString(), person.value(3).toString(), person.value(4).toString()});
+                    result.snapshot.contacts.append({contact.value(0).toString(), contact.value(1).toString(),
+                        contact.value(2).toString(), contact.value(3).toString(), contact.value(4).toString()});
                     result.snapshot.currentSelectionContactIds = {request.source.contactId};
                 }
             } else {
@@ -96,7 +96,7 @@ SnapshotResult SqliteSnapshotLoader::load(const SnapshotRequest &request) const
             project.addBindValue(request.source.projectId);
             if (!project.exec() || !project.next()) result.error = {QStringLiteral("project-not-found"), project.lastError().text()};
             else {
-                result.snapshot.projectId=project.value(0).toString(); result.snapshot.projectNumber=project.value(1).toString(); result.snapshot.projectName=project.value(2).toString(); result.snapshot.clientCompanyId=project.value(3).toString(); result.snapshot.statusReportPeriod=project.value(4).toString(); result.snapshot.budget=project.value(5).toString(); result.snapshot.actual=project.value(6).toString(); result.snapshot.bcwp=project.value(7).toString(); result.snapshot.bcws=project.value(8).toString(); result.snapshot.bac=project.value(9).toString(); result.snapshot.managingCompanyId=request.managingCompanyId; result.snapshot.projectManagerId=request.projectManagerId; result.snapshot.databaseGeneration=request.source.databaseGeneration; result.snapshot.loadedAt=request.capturedAt;
+                result.snapshot.projectId=project.value(0).toString(); result.snapshot.projectNumber=project.value(1).toString(); result.snapshot.projectName=project.value(2).toString(); result.snapshot.companyId=project.value(3).toString(); result.snapshot.statusReportPeriod=project.value(4).toString(); result.snapshot.budget=project.value(5).toString(); result.snapshot.actual=project.value(6).toString(); result.snapshot.bcwp=project.value(7).toString(); result.snapshot.bcws=project.value(8).toString(); result.snapshot.bac=project.value(9).toString(); result.snapshot.managingCompanyId=request.managingCompanyId; result.snapshot.projectManagerId=request.projectManagerId; result.snapshot.databaseGeneration=request.source.databaseGeneration; result.snapshot.loadedAt=request.capturedAt;
                 // Template fields need names, not IDs. Each lookup tolerates a
                 // missing or deleted row by leaving the name empty.
                 const auto lookupName = [&db](const QString &sql, const QString &id) {
@@ -106,10 +106,10 @@ SnapshotResult SqliteSnapshotLoader::load(const SnapshotRequest &request) const
                     query.addBindValue(id);
                     return query.exec() && query.next() ? query.value(0).toString() : QString();
                 };
-                const QString clientNameSql =
+                const QString companyNameSql =
                     QStringLiteral("SELECT client_name FROM clients WHERE id=? AND deleted=0");
-                result.snapshot.clientName = lookupName(clientNameSql, result.snapshot.clientCompanyId);
-                result.snapshot.managingCompanyName = lookupName(clientNameSql, result.snapshot.managingCompanyId);
+                result.snapshot.companyName = lookupName(companyNameSql, result.snapshot.companyId);
+                result.snapshot.managingCompanyName = lookupName(companyNameSql, result.snapshot.managingCompanyId);
                 result.snapshot.projectManagerName = lookupName(
                     QStringLiteral("SELECT name FROM people WHERE id=? AND deleted=0"),
                     result.snapshot.projectManagerId);
@@ -126,37 +126,37 @@ SnapshotResult SqliteSnapshotLoader::load(const SnapshotRequest &request) const
                 } else if (projectFolder.next()) {
                     result.snapshot.projectFolderPath = projectFolder.value(0).toString().trimmed();
                 }
-                QSqlQuery people(db);
-                people.prepare(QStringLiteral(
+                QSqlQuery contacts(db);
+                contacts.prepare(QStringLiteral(
                     "SELECT p.id,p.name,p.email,p.client_id,COALESCE(c.client_name,''),"
                     "COALESCE(pp.receive_status_report,0) "
                     "FROM people p JOIN project_people pp "
                     "ON pp.people_id=p.id AND pp.project_id=? AND pp.deleted=0 "
                     "LEFT JOIN clients c ON c.id=p.client_id AND c.deleted=0 "
                     "WHERE p.deleted=0 ORDER BY p.name,p.id"));
-                people.addBindValue(request.source.projectId);
-                if (!people.exec()) result.error={QStringLiteral("snapshot-query-failed"),people.lastError().text()};
-                while (result.error.code.isEmpty() && people.next()) result.snapshot.contacts.append({people.value(0).toString(),people.value(1).toString(),people.value(2).toString(),people.value(3).toString(),people.value(4).toString(),people.value(5).toBool(),false,true});
+                contacts.addBindValue(request.source.projectId);
+                if (!contacts.exec()) result.error={QStringLiteral("snapshot-query-failed"),contacts.lastError().text()};
+                while (result.error.code.isEmpty() && contacts.next()) result.snapshot.contacts.append({contacts.value(0).toString(),contacts.value(1).toString(),contacts.value(2).toString(),contacts.value(3).toString(),contacts.value(4).toString(),contacts.value(5).toBool(),false,true});
                 // A clicked contact may be a meeting attendee rather than a team member.
                 if (result.error.code.isEmpty() && !request.source.contactId.isEmpty()) {
-                    QSqlQuery person(db);
-                    person.prepare(QStringLiteral(
+                    QSqlQuery contact(db);
+                    contact.prepare(QStringLiteral(
                         "SELECT p.id,p.name,p.email,p.client_id,COALESCE(c.client_name,'') FROM people p "
                         "LEFT JOIN clients c ON c.id=p.client_id AND c.deleted=0 "
                         "WHERE p.id=? AND p.deleted=0 AND (EXISTS (SELECT 1 FROM project_people pp "
                         "WHERE pp.people_id=p.id AND pp.project_id=? AND pp.deleted=0) OR EXISTS "
                         "(SELECT 1 FROM meeting_attendees ma JOIN project_notes n ON n.id=ma.note_id "
                         "WHERE ma.person_id=p.id AND ma.deleted=0 AND n.project_id=? AND n.deleted=0))"));
-                    person.addBindValue(request.source.contactId);
-                    person.addBindValue(request.source.projectId);
-                    person.addBindValue(request.source.projectId);
-                    if (!person.exec() || !person.next())
+                    contact.addBindValue(request.source.contactId);
+                    contact.addBindValue(request.source.projectId);
+                    contact.addBindValue(request.source.projectId);
+                    if (!contact.exec() || !contact.next())
                         result.error = {QStringLiteral("contact-not-in-project"), QStringLiteral("The selected contact is no longer attached to this project.")};
                     else if (std::none_of(result.snapshot.contacts.cbegin(), result.snapshot.contacts.cend(),
                                          [&request](const SnapshotContact &p) { return p.id == request.source.contactId; }))
-                        result.snapshot.contacts.append({person.value(0).toString(), person.value(1).toString(),
-                                                       person.value(2).toString(), person.value(3).toString(),
-                                                       person.value(4).toString(), false, true, false});
+                        result.snapshot.contacts.append({contact.value(0).toString(), contact.value(1).toString(),
+                                                       contact.value(2).toString(), contact.value(3).toString(),
+                                                       contact.value(4).toString(), false, true, false});
                 }
                 if (result.error.code.isEmpty() && !request.source.locationId.isEmpty()) {
                     QSqlQuery location(db);

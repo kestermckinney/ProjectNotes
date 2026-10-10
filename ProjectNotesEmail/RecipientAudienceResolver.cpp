@@ -21,12 +21,12 @@ AudienceResolution resolveAudience(const CommunicationSnapshot &snapshot, const 
     if (rule.companyFilter == CompanyFilter::ManagingCompany)
         requiredCompany = snapshot.managingCompanyId;
     else if (rule.companyFilter == CompanyFilter::ProjectCompany
-             || rule.companyFilter == CompanyFilter::ExceptProjectClient)
-        requiredCompany = snapshot.clientCompanyId;
+             || rule.companyFilter == CompanyFilter::ExceptProjectCompany)
+        requiredCompany = snapshot.companyId;
 
     if ((rule.companyFilter == CompanyFilter::ManagingCompany
          || rule.companyFilter == CompanyFilter::ProjectCompany
-         || rule.companyFilter == CompanyFilter::ExceptProjectClient)
+         || rule.companyFilter == CompanyFilter::ExceptProjectCompany)
         && requiredCompany.isEmpty()) {
         result.validation.addError("company-setup-required", "audience.companyFilter");
         return result;
@@ -55,7 +55,7 @@ AudienceResolution resolveAudience(const CommunicationSnapshot &snapshot, const 
         bool companyMatches = rule.companyFilter == CompanyFilter::All
             || (rule.companyFilter == CompanyFilter::ManagingCompany && contact.companyId == requiredCompany)
             || (rule.companyFilter == CompanyFilter::ProjectCompany && contact.companyId == requiredCompany)
-            || (rule.companyFilter == CompanyFilter::ExceptProjectClient
+            || (rule.companyFilter == CompanyFilter::ExceptProjectCompany
                 && !contact.companyId.isEmpty() && contact.companyId != requiredCompany)
             || (rule.companyFilter == CompanyFilter::SelectedCompanies
                 && rule.companyIds.contains(contact.companyId));

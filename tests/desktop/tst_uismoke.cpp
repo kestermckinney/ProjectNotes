@@ -598,7 +598,7 @@ private slots:
         QTest::keyClick(window, Qt::Key_F1);
         QTRY_COMPARE(root->property("currentSection").toString(), QString("help"));
         auto* helpPage = qvariant_cast<QQuickItem*>(stack->property("currentItem"));
-        QCOMPARE(helpPage->property("topic").toString(), QString("InterfaceOverview/ClientListPage.md"));
+        QCOMPARE(helpPage->property("topic").toString(), QString("InterfaceOverview/CompaniesListPage.md"));
         // A shortcut while typing uses the same save path as a rail click.
         const QString clientId = c->companyIdAtProxyRow(0);
         QVERIFY(!clientId.isEmpty());

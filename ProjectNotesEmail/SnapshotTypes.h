@@ -12,10 +12,10 @@ struct SnapshotActionItem { QString noteId,name,assignedTo,status,dueDate; };
 struct SnapshotStatusItem { QString category,description; };
 struct SnapshotTrackerItem { QString number,name,identifiedBy,dateIdentified,description,assignedTo,priority,status,dueDate,lastUpdate,dateResolved,comments,itemType; bool internal=false; };
 struct CommunicationSnapshot {
-    QString projectId, projectNumber, projectName, clientCompanyId, managingCompanyId, projectManagerId;
+    QString projectId, projectNumber, projectName, companyId, managingCompanyId, projectManagerId;
     // Display names for the IDs above, resolved when the snapshot is taken so
     // templates never read live models. Empty when the ID is unset or unknown.
-    QString clientName, managingCompanyName, projectManagerName;
+    QString companyName, managingCompanyName, projectManagerName;
     // Optional local root discovered/stored for report publication. This is a
     // captured database value, never a live filesystem lookup by rendering/UI.
     QString projectFolderPath;

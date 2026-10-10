@@ -5,7 +5,7 @@ namespace PN::Comm {
 const QList<TemplateField> &templateFieldCatalog()
 {
     static const QList<TemplateField> fields = {
-        {"project.number"}, {"project.name"}, {"client.name"},
+        {"project.number"}, {"project.name"}, {"company.name"},
         {"preferences.managerName"}, {"preferences.managingCompanyName"},
         // The date the email or meeting is prepared, as MM/DD/YYYY.
         {"current.date", TemplateFieldType::Date},

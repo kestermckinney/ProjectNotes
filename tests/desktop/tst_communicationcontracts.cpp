@@ -256,14 +256,14 @@ void CommunicationContractsTest::recordsFakeHandoffWithOperationIdentity()
 void CommunicationContractsTest::resolvesAudienceWithoutExpandingSource()
 {
     CommunicationSnapshot snapshot;
-    snapshot.clientCompanyId = "client";
+    snapshot.companyId = "client";
     snapshot.managingCompanyId = "ours";
     snapshot.projectManagerId = "manager";
     snapshot.contacts = {{"manager", "Manager", "manager@example.test", "ours", "Ours", true, true, true},
                        {"client", "Client", "client@example.test", "client", "Client Co", true, false, true},
                        {"partner", "Partner", "partner@example.test", "partner", "Partner Co", false, true, true},
                        {"unknown", "Unknown", "unknown@example.test", {}, {}, true, false, true}};
-    AudienceRule rule; rule.source = ContactSource::StatusRecipients; rule.companyFilter = CompanyFilter::ExceptProjectClient;
+    AudienceRule rule; rule.source = ContactSource::StatusRecipients; rule.companyFilter = CompanyFilter::ExceptProjectCompany;
     auto result = resolveAudience(snapshot, rule);
     QVERIFY(result.contacts.isEmpty());
     rule.includeUnknownCompany = true;
@@ -296,7 +296,7 @@ void CommunicationContractsTest::resolvesAudienceWithoutExpandingSource()
     QCOMPARE(result.contacts.size(), 1);
     QCOMPARE(result.contacts.first().id, QStringLiteral("client"));
 
-    rule.companyFilter = CompanyFilter::ExceptProjectClient;
+    rule.companyFilter = CompanyFilter::ExceptProjectCompany;
     rule.includeUnknownCompany = false;
     result = resolveAudience(snapshot, rule);
     QCOMPARE(result.contacts.size(), 2);
@@ -338,13 +338,13 @@ void CommunicationContractsTest::resolvesAudienceWithoutExpandingSource()
     QCOMPARE(result.validation.issues.constFirst().code, QStringLiteral("company-setup-required"));
 
     snapshot.managingCompanyId = QStringLiteral("ours");
-    snapshot.clientCompanyId.clear();
-    rule.companyFilter = CompanyFilter::ExceptProjectClient;
+    snapshot.companyId.clear();
+    rule.companyFilter = CompanyFilter::ExceptProjectCompany;
     result = resolveAudience(snapshot, rule);
     QVERIFY(!result.validation.ok());
     QCOMPARE(result.validation.issues.constFirst().code, QStringLiteral("company-setup-required"));
 
-    snapshot.clientCompanyId = QStringLiteral("client");
+    snapshot.companyId = QStringLiteral("client");
     snapshot.contacts.append({"invalid", "Invalid", "invalid@example.test;other@example.test",
                             "partner", "Partner Co", false, true, true});
     rule.companyFilter = CompanyFilter::All;
@@ -900,7 +900,7 @@ void CommunicationContractsTest::editsMeetingTypesWithoutQmlEvaluation()
     editor.setDraftDurationMinutes(30);
     editor.setDraftSubject(QStringLiteral("{{ project.number }} {{ project.name }} Status"));
     editor.setDraftRichAgenda(QStringLiteral("<p>Review "));
-    QVERIFY(editor.appendField(QStringLiteral("client.name"), QStringLiteral("richAgenda")));
+    QVERIFY(editor.appendField(QStringLiteral("company.name"), QStringLiteral("richAgenda")));
     QVERIFY(!editor.appendField(QStringLiteral("meeting.date"), QStringLiteral("richAgenda")));
     // An agenda is rich text only; its plain-text DESCRIPTION is derived.
     QVERIFY(!editor.appendField(QStringLiteral("current.date"), QStringLiteral("plainAgenda")));
@@ -934,7 +934,7 @@ void CommunicationContractsTest::editsMeetingTypesWithoutQmlEvaluation()
     reopened.setDatabaseKey(m_templateDatabasePath);
     QCOMPARE(reopened.templates().size(), 2);
     QVERIFY(reopened.selectTemplate(statusId));
-    QCOMPARE(reopened.draftRichAgenda(), QStringLiteral("<p>Review {{ client.name }}"));
+    QCOMPARE(reopened.draftRichAgenda(), QStringLiteral("<p>Review {{ company.name }}"));
     const auto persisted = reopened.templateById(statusId);
     QVERIFY(persisted);
     QCOMPARE(persisted->durationMinutes, 30);
@@ -947,10 +947,10 @@ void CommunicationContractsTest::editsMeetingTypesWithoutQmlEvaluation()
 void CommunicationContractsTest::appliesTemplateAroundProtectedNativeContent()
 {
     CommunicationTemplate templateValue{"meeting-prose", "Meeting prose", Workflow::SendMeetingNotes,
-                                        "{{ project.name }} notes", "<p>Hello {{ client.name }}</p>{{ content.body }}"};
+                                        "{{ project.name }} notes", "<p>Hello {{ company.name }}</p>{{ content.body }}"};
     TemplateContext context;
     context.workflow = Workflow::SendMeetingNotes;
-    context.values = {{"project.name", "North"}, {"client.name", "Safe <Client>"}};
+    context.values = {{"project.name", "North"}, {"company.name", "Safe <Client>"}};
     const TemplateApplicationResult applied = TemplateApplication::apply(
         templateValue, context, QStringLiteral("<table><tr><td>Native</td></tr></table>"));
     QVERIFY(applied.validation.ok());
@@ -960,13 +960,13 @@ void CommunicationContractsTest::appliesTemplateAroundProtectedNativeContent()
 
     // The protected block must not be represented by a marker that field data
     // can reproduce; that would turn ordinary text into native report markup.
-    context.values.insert(QStringLiteral("client.name"), QString(QChar(0xe000)));
+    context.values.insert(QStringLiteral("company.name"), QString(QChar(0xe000)));
     const auto markerValue = TemplateApplication::apply(
         templateValue, context, QStringLiteral("<table>Native once</table>"));
     QVERIFY(markerValue.validation.ok());
     QCOMPARE(markerValue.html.count(QStringLiteral("<table>Native once</table>")), 1);
     QVERIFY(markerValue.html.contains(QString(QChar(0xe000))));
-    context.values.insert(QStringLiteral("client.name"), QStringLiteral("Safe <Client>"));
+    context.values.insert(QStringLiteral("company.name"), QStringLiteral("Safe <Client>"));
 
     context.values.insert(QStringLiteral("project.name"), QStringLiteral("North\r\nBcc: injected@example.test"));
     const auto expandedHeader = TemplateApplication::apply(
@@ -1092,10 +1092,10 @@ void CommunicationContractsTest::createsMeetingNotesReviewFromSnapshot()
     QVERIFY(templated->preparation.document.emailFragment.contains(QStringLiteral("Prepared for North")));
     QVERIFY(templated->preparation.document.emailFragment.contains(QStringLiteral("Kickoff")));
 
-    // client.name is offered by the editor, so it must resolve rather than
+    // company.name is offered by the editor, so it must resolve rather than
     // fail the review; the snapshot supplies the name.
-    snapshot.clientName = QStringLiteral("Acme");
-    templateValue.body = QStringLiteral("<p>For {{ client.name }}</p>{{ content.body }}");
+    snapshot.companyName = QStringLiteral("Acme");
+    templateValue.body = QStringLiteral("<p>For {{ company.name }}</p>{{ content.body }}");
     const auto withClient = MeetingNotesPreparationFactory::create(snapshot, source, BackendId::DefaultApp,
                                                                      EmailMode::InlineHtml, &templateValue);
     QVERIFY(withClient.has_value());
@@ -2088,15 +2088,15 @@ void CommunicationContractsTest::resolvesEveryOfferedTemplateField()
 
     const QList<Workflow> workflows = {Workflow::SendMeetingNotes, Workflow::MeetingNotesReport,
                                        Workflow::StatusReport, Workflow::TrackerItemsReport};
-    // Names absent (no client, no manager configured): must still prepare.
+    // Names absent (no company, no manager configured): must still prepare.
     for (Workflow workflow : workflows)
         QVERIFY2(subjectFor(workflow).has_value(), qPrintable(toStableString(workflow)));
 
-    snapshot.clientName = "Acme"; snapshot.managingCompanyName = "Our Co"; snapshot.projectManagerName = "Dana";
+    snapshot.companyName = "Acme"; snapshot.managingCompanyName = "Our Co"; snapshot.projectManagerName = "Dana";
     for (Workflow workflow : workflows) {
         const auto subject = subjectFor(workflow);
         QVERIFY2(subject.has_value(), qPrintable(toStableString(workflow)));
-        QVERIFY2(subject->contains("[client.name=Acme]"), qPrintable(*subject));
+        QVERIFY2(subject->contains("[company.name=Acme]"), qPrintable(*subject));
         QVERIFY2(subject->contains("[preferences.managingCompanyName=Our Co]"), qPrintable(*subject));
         QVERIFY2(subject->contains("[preferences.managerName=Dana]"), qPrintable(*subject));
         QVERIFY2(subject->contains("[report.internal=No]"), qPrintable(*subject));
