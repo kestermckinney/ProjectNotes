@@ -174,29 +174,29 @@ bool DatabaseObjects::openDatabase(const QString& databasepath, const QString& c
         }
     }
 
-    m_clientsModel = new ClientsModel(this);
-    m_clientsModelProxy = new SortFilterProxyModel(this);
-    m_clientsModelProxy->setSourceModel(m_clientsModel);
+    m_companiesModel = new CompaniesModel(this);
+    m_companiesModelProxy = new SortFilterProxyModel(this);
+    m_companiesModelProxy->setSourceModel(m_companiesModel);
 
-    m_unfilteredclientsModel = new ClientsModel(this);
-    m_unfilteredclientsModelProxy = new SortFilterProxyModel(this);
-    m_unfilteredclientsModelProxy->setSourceModel(m_unfilteredclientsModel);
-    m_unfilteredclientsModel->setShowBlank();
-    m_unfilteredclientsModel->setNoExport();
+    m_unfilteredCompaniesModel = new CompaniesModel(this);
+    m_unfilteredCompaniesModelProxy = new SortFilterProxyModel(this);
+    m_unfilteredCompaniesModelProxy->setSourceModel(m_unfilteredCompaniesModel);
+    m_unfilteredCompaniesModel->setShowBlank();
+    m_unfilteredCompaniesModel->setNoExport();
 
-    m_peopleModel = new PeopleModel(this);
-    m_peopleModelProxy = new SortFilterProxyModel(this);
-    m_peopleModelProxy->setSourceModel(m_peopleModel);
+    m_contactsModel = new ContactsModel(this);
+    m_contactsModelProxy = new SortFilterProxyModel(this);
+    m_contactsModelProxy->setSourceModel(m_contactsModel);
 
-    m_companyPeopleModel = new PeopleModel(this);
-    m_companyPeopleModelProxy = new SortFilterProxyModel(this);
-    m_companyPeopleModelProxy->setSourceModel(m_companyPeopleModel);
+    m_companyContactsModel = new ContactsModel(this);
+    m_companyContactsModelProxy = new SortFilterProxyModel(this);
+    m_companyContactsModelProxy->setSourceModel(m_companyContactsModel);
 
-    m_unfilteredPeopleModel = new PeopleModel(this);
-    m_unfilteredPeopleModelProxy = new SortFilterProxyModel(this);
-    m_unfilteredPeopleModelProxy->setSourceModel(m_unfilteredPeopleModel);
-    m_unfilteredPeopleModel->setShowBlank();
-    m_unfilteredPeopleModel->setNoExport();
+    m_unfilteredContactsModel = new ContactsModel(this);
+    m_unfilteredContactsModelProxy = new SortFilterProxyModel(this);
+    m_unfilteredContactsModelProxy->setSourceModel(m_unfilteredContactsModel);
+    m_unfilteredContactsModel->setShowBlank();
+    m_unfilteredContactsModel->setNoExport();
 
     m_projectInformationModel = new ProjectsModel(this);
     m_projectInformationModelProxy = new SortFilterProxyModel(this);
@@ -299,9 +299,9 @@ SqlQueryModel* DatabaseObjects::createExportObject(const QString& tableName)
     const QString lower = tableName.toLower();
 
     if (lower == QLatin1String("clients"))
-        return new ClientsModel(this);
+        return new CompaniesModel(this);
     else if (lower == QLatin1String("people"))
-        return new PeopleModel(this);
+        return new ContactsModel(this);
     else if (lower == QLatin1String("projects"))
         return new ProjectsModel(this);
     else if (lower == QLatin1String("status_report_items"))
@@ -383,11 +383,11 @@ void DatabaseObjects::closeDatabase()
         return;
 
     // delete proxy models BEFORE their source models
-    delete m_clientsModelProxy;
-    delete m_unfilteredclientsModelProxy;
-    delete m_peopleModelProxy;
-    delete m_companyPeopleModelProxy;
-    delete m_unfilteredPeopleModelProxy;
+    delete m_companiesModelProxy;
+    delete m_unfilteredCompaniesModelProxy;
+    delete m_contactsModelProxy;
+    delete m_companyContactsModelProxy;
+    delete m_unfilteredContactsModelProxy;
     delete m_projectInformationModelProxy;
     delete m_projectsListModelProxy;
     delete m_unfilteredProjectsListModelProxy;
@@ -408,11 +408,11 @@ void DatabaseObjects::closeDatabase()
     delete m_notesActionItemsModelProxy;
     delete m_searchResultsModelProxy;
 
-    m_clientsModelProxy = nullptr;
-    m_unfilteredclientsModelProxy = nullptr;
-    m_peopleModelProxy = nullptr;
-    m_companyPeopleModelProxy = nullptr;
-    m_unfilteredPeopleModelProxy = nullptr;
+    m_companiesModelProxy = nullptr;
+    m_unfilteredCompaniesModelProxy = nullptr;
+    m_contactsModelProxy = nullptr;
+    m_companyContactsModelProxy = nullptr;
+    m_unfilteredContactsModelProxy = nullptr;
     m_projectInformationModelProxy = nullptr;
     m_projectsListModelProxy = nullptr;
     m_unfilteredProjectsListModelProxy = nullptr;
@@ -434,11 +434,11 @@ void DatabaseObjects::closeDatabase()
     m_searchResultsModelProxy = nullptr;
 
     // now delete source models
-    delete m_clientsModel;
-    delete m_unfilteredclientsModel;
-    delete m_peopleModel;
-    delete m_companyPeopleModel;
-    delete m_unfilteredPeopleModel;
+    delete m_companiesModel;
+    delete m_unfilteredCompaniesModel;
+    delete m_contactsModel;
+    delete m_companyContactsModel;
+    delete m_unfilteredContactsModel;
     delete m_projectInformationModel;
     delete m_projectsListModel;
     delete m_unfilteredProjectsListModel;
@@ -460,11 +460,11 @@ void DatabaseObjects::closeDatabase()
 
     delete m_searchResultsModel;
 
-    m_clientsModel= nullptr;
-    m_unfilteredclientsModel= nullptr;
-    m_peopleModel= nullptr;
-    m_companyPeopleModel= nullptr;
-    m_unfilteredPeopleModel= nullptr;
+    m_companiesModel= nullptr;
+    m_unfilteredCompaniesModel= nullptr;
+    m_contactsModel= nullptr;
+    m_companyContactsModel= nullptr;
+    m_unfilteredContactsModel= nullptr;
     m_projectInformationModel= nullptr;
     m_projectsListModel= nullptr;
     m_unfilteredProjectsListModel = nullptr;
@@ -789,8 +789,8 @@ void DatabaseObjects::setGlobalSearches( bool refresh )
 
     if (refresh)
     {
-        peoplemodel()->markDirty();
-        clientsmodel()->markDirty();
+        contactsmodel()->markDirty();
+        companiesmodel()->markDirty();
         projectnotesmodel()->markDirty();
         actionitemsdetailsmeetingsmodel()->markDirty();
         notesactionitemsmodel()->markDirty();
@@ -895,10 +895,10 @@ bool DatabaseObjects::importXMLDoc(const QDomDocument& xmldoc)
 #ifdef QT_DEBUG
         QLog_Debug(DEBUGLOG, "importXMLDoc processing clients.");
 #endif
-        ClientsModel clients_model(this);
+        CompaniesModel companies_model(this);
 
         for (QDomNode& tablenode : domlist)
-            if (!clients_model.importXMLNode(tablenode))
+            if (!companies_model.importXMLNode(tablenode))
                 return false;
 
         domlist.clear();
@@ -911,10 +911,10 @@ bool DatabaseObjects::importXMLDoc(const QDomDocument& xmldoc)
 #ifdef QT_DEBUG
         QLog_Debug(DEBUGLOG, "importXMLDoc processing people.");
 #endif
-        PeopleModel people_model(this);
+        ContactsModel contacts_model(this);
 
         for (QDomNode& tablenode : domlist)
-            if(!people_model.importXMLNode(tablenode))
+            if(!contacts_model.importXMLNode(tablenode))
                 return false;
 
         domlist.clear();
@@ -1076,7 +1076,7 @@ QList<SqlQueryModel*>* DatabaseObjects::getData(const QDomDocument& xmldoc)
     {
         for (QDomNode& tablenode : domlist)
         {
-            SqlQueryModel* model = new ClientsModel(this);
+            SqlQueryModel* model = new CompaniesModel(this);
             model->setFilter(tablenode);
             model->refresh();
             model_list->append(model);
@@ -1091,7 +1091,7 @@ QList<SqlQueryModel*>* DatabaseObjects::getData(const QDomDocument& xmldoc)
     {
         for (QDomNode& tablenode : domlist)
         {
-            SqlQueryModel* model = new PeopleModel(this);
+            SqlQueryModel* model = new ContactsModel(this);
             model->setFilter(tablenode);
             model->refresh();
             model_list->append(model);

@@ -6,8 +6,8 @@
 
 #include "projectsmodel.h"
 #include "projectslistmodel.h"
-#include "clientsmodel.h"
-#include "peoplemodel.h"
+#include "companiesmodel.h"
+#include "contactsmodel.h"
 #include "teamsmodel.h"
 #include "statusreportitemsmodel.h"
 #include "projectemailaudiencesmodel.h"
@@ -105,11 +105,11 @@ public:
     bool isOpen() { return !m_databaseFile.isEmpty(); }
     bool hasGUI() { return m_gui; }
 
-    ClientsModel* clientsmodel() { return m_clientsModel; }
-    ClientsModel* unfilteredclientsmodel() { return m_unfilteredclientsModel; }
-    PeopleModel* peoplemodel() { return m_peopleModel; }
-    PeopleModel* companypeoplemodel() { return m_companyPeopleModel; }
-    PeopleModel* unfilteredpeoplemodel() { return m_unfilteredPeopleModel; }
+    CompaniesModel* companiesmodel() { return m_companiesModel; }
+    CompaniesModel* unfilteredcompaniesmodel() { return m_unfilteredCompaniesModel; }
+    ContactsModel* contactsmodel() { return m_contactsModel; }
+    ContactsModel* companycontactsmodel() { return m_companyContactsModel; }
+    ContactsModel* unfilteredcontactsmodel() { return m_unfilteredContactsModel; }
     ProjectsModel* projectinformationmodel() { return m_projectInformationModel; }
     ProjectsListModel* projectslistmodel() { return m_projectsListModel; }
     TeamsModel* teamsmodel() { return m_teamsModel; }
@@ -128,11 +128,11 @@ public:
     TrackerItemsModel* actionitemsdetailsmodel() { return m_actionItemDetailsModel; }
     TrackerItemsModel* allitemsmodel() { return m_allItemsModel; }
 
-    SortFilterProxyModel* clientsmodelproxy() { return m_clientsModelProxy; }
-    SortFilterProxyModel* unfilteredclientsmodelproxy() { return m_unfilteredclientsModelProxy; }
-    SortFilterProxyModel* peoplemodelproxy() { return m_peopleModelProxy; }
-    SortFilterProxyModel* companypeoplemodelproxy() { return m_companyPeopleModelProxy; }
-    SortFilterProxyModel* unfilteredpeoplemodelproxy() { return m_unfilteredPeopleModelProxy; }
+    SortFilterProxyModel* companiesmodelproxy() { return m_companiesModelProxy; }
+    SortFilterProxyModel* unfilteredcompaniesmodelproxy() { return m_unfilteredCompaniesModelProxy; }
+    SortFilterProxyModel* contactsmodelproxy() { return m_contactsModelProxy; }
+    SortFilterProxyModel* companycontactsmodelproxy() { return m_companyContactsModelProxy; }
+    SortFilterProxyModel* unfilteredcontactsmodelproxy() { return m_unfilteredContactsModelProxy; }
     ProjectsListModel* unfilteredprojectslistmodel() { return m_unfilteredProjectsListModel; }
     SortFilterProxyModel* unfilteredprojectslistmodelproxy() { return m_unfilteredProjectsListModelProxy; }
     SortFilterProxyModel* projectinformationmodelproxy() { return m_projectInformationModelProxy; }
@@ -166,7 +166,7 @@ public:
 
     // Drop every proxy's cached lookup display values for the given table.
     // Must be called on any write to a table other models reference as a
-    // lookup (people, clients, projects, ...); pushRowChange() and
+    // lookup (contacts, companies, projects, ...); pushRowChange() and
     // SqlQueryModel::setData() cover all write paths between them.
     void invalidateLookupCaches(const QString& table);
 
@@ -232,11 +232,11 @@ private:
     bool m_guiDialogsEnabled = true;
     QString m_lastSaveError;
 
-    ClientsModel* m_clientsModel = nullptr;
-    ClientsModel* m_unfilteredclientsModel = nullptr;
-    PeopleModel* m_peopleModel = nullptr;
-    PeopleModel* m_companyPeopleModel = nullptr;
-    PeopleModel* m_unfilteredPeopleModel = nullptr;
+    CompaniesModel* m_companiesModel = nullptr;
+    CompaniesModel* m_unfilteredCompaniesModel = nullptr;
+    ContactsModel* m_contactsModel = nullptr;
+    ContactsModel* m_companyContactsModel = nullptr;
+    ContactsModel* m_unfilteredContactsModel = nullptr;
     ProjectsListModel* m_projectsListModel = nullptr;
     ProjectsListModel* m_unfilteredProjectsListModel = nullptr;
     ProjectsModel* m_projectInformationModel = nullptr;
@@ -258,11 +258,11 @@ private:
 
     SearchResultsModel* m_searchResultsModel = nullptr;
 
-    SortFilterProxyModel* m_clientsModelProxy = nullptr;
-    SortFilterProxyModel* m_unfilteredclientsModelProxy = nullptr;
-    SortFilterProxyModel* m_peopleModelProxy = nullptr;
-    SortFilterProxyModel* m_companyPeopleModelProxy = nullptr;
-    SortFilterProxyModel* m_unfilteredPeopleModelProxy = nullptr;
+    SortFilterProxyModel* m_companiesModelProxy = nullptr;
+    SortFilterProxyModel* m_unfilteredCompaniesModelProxy = nullptr;
+    SortFilterProxyModel* m_contactsModelProxy = nullptr;
+    SortFilterProxyModel* m_companyContactsModelProxy = nullptr;
+    SortFilterProxyModel* m_unfilteredContactsModelProxy = nullptr;
     SortFilterProxyModel* m_projectsListModelProxy = nullptr;
     SortFilterProxyModel* m_unfilteredProjectsListModelProxy = nullptr;
     SortFilterProxyModel* m_projectInformationModelProxy = nullptr;
