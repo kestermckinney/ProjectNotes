@@ -154,7 +154,7 @@ Right-click the subject or the body to insert a field instead of typing it. The 
 | :--- | :--- |
 | `project.number` | The project number |
 | `project.name` | The project name |
-| `client.name` | The company on the project |
+| `company.name` | The company on the project |
 | `preferences.managerName` | The project manager from **Settings > Preferences** |
 | `preferences.managingCompanyName` | The managing company from **Settings > Preferences** |
 | `current.date` | The date the email is prepared, as MM/DD/YYYY |
@@ -182,11 +182,11 @@ Each standard type includes a purpose, an agenda and a 60-minute duration. Its s
 4. Write the **Subject**, for example `{{ project.number }} {{ project.name }} Status Meeting`.
 5. Write the **Agenda**. It becomes the body of the invitation.
 
-**Duplicate** copies a type when two of them differ only slightly. **Delete** removes one. Leaving the tab saves your changes, and a type left completely blank is discarded.
+**Duplicate** copies a type when two of them differ only slightly, naming the copy `<original name> (copy)`. **Delete** removes one. Switching to another type, clicking **New**, clicking **Duplicate**, or leaving the tab all save your current draft; a type left completely blank is discarded instead. A draft with a name but an invalid subject or agenda — for example, a field Project Notes doesn't recognize — is kept, but a dialog blocks you from switching away until you fix it or discard the draft.
 
 Startup leaves any nonempty meeting type list as you configured it. If you delete every type, the standard types return the next time you start Project Notes.
 
-Subjects and agendas accept `project.number`, `project.name`, `client.name`, `preferences.managerName`, `preferences.managingCompanyName` and `current.date`, which is the date the meeting is scheduled. Right-click to insert one. Report fields such as `report.date` are not offered, because a meeting is scheduled from a project rather than from a report.
+Subjects and agendas accept `project.number`, `project.name`, `company.name`, `preferences.managerName`, `preferences.managingCompanyName` and `current.date`, which is the date the meeting is scheduled. Right-click to insert one. Report fields such as `report.date` are not offered, because a meeting is scheduled from a project rather than from a report.
 
 Meeting types live in the open database, next to the email templates.
 
@@ -216,6 +216,7 @@ Run one of each before you rely on it.
 | No contacts sync under MacOS Email and Calendar | Open **System Settings > Privacy & Security > Contacts** and give Project Notes access, then try **Test Connection** again. |
 | Mail opens without the attachment | Keep Project Notes open until the draft has saved its attachments. If your mail client cannot import the native sharing items, try **Default Application**. |
 | Thunderbird does not start | The **Thunderbird executable** value is wrong. Try the bare command `thunderbird`, a full path, or `flatpak run org.mozilla.Thunderbird`. |
+| Thunderbird reports a missing draft or attachment path | Project Notes closed before Thunderbird finished reading the staged files. Start the draft again and leave Project Notes open until Thunderbird has them. |
 | An attachment is missing after you reopen a draft | Staged files are removed when Project Notes closes. Send or save the draft before you quit. |
 
 ## Where the temporary files go

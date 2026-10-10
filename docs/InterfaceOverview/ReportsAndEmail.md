@@ -15,6 +15,8 @@ Set the integration up once before using any of this. See [Email and Meeting Set
 
 Reports are built from what is saved, not from what is on screen. Project Notes saves the open record for you when you start a report, but if a note or a tracker item is open and unsaved somewhere else, save it first.
 
+Project Notes also checks again right before handing a draft to your mail application. If the project's data changed after the review opened — someone else's sync came in, or you edited the project in another window — it stops with "The source data changed" instead of sending stale content. Close the review and start the report again to pick up the current data.
+
 ## Sending one meeting note
 
 1. Open the project note, or right-click its row in the project's **Notes** tab.
@@ -47,6 +49,8 @@ Create Email Draft dialogs do not display the subject or email body. Project Ema
 The **Report** dropdown lets you switch between the three reports without closing the dialog. **Reporting date** sets the date printed on the report and available to templates as `report.date`.
 
 **Generate internal report**, called **Include internal meetings** on the Meeting Notes Report, brings internal-only material into the output. Leave it off for anything a company will see. See [Presenting to Companies](<PresentingToCompanies.md>).
+
+Turning on an internal report also checks your recipients: Project Notes warns you if the managing company isn't set in **Settings > Preferences**, and again if any selected recipient falls outside that managing company. Either warning shows above the recipient list so you can catch a company contact before an internal report reaches them.
 
 The Tracker Items Report adds two filter rows:
 
