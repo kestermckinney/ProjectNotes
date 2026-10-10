@@ -173,7 +173,7 @@ bool ContactSyncWorker::persist(){
 void ContactSyncWorker::schedule(){m_timer.stop();if(m_config.value("enabled").toBool()&&!m_authFailed&&!m_path.isEmpty()&&m_config.value("provider")!="none")m_timer.start(qBound(1,m_config.value("interval").toInt(),1440)*60000);}
 void ContactSyncWorker::setOption(const QString&key,const QVariant&value){
     if(!QStringList{"provider","enabled","startup","interval","account","mailAccount","sourceBooks"}.contains(key))return;
-    if(key=="provider"&&!QStringList{"outlook","office365","thunderbird","icloud","none"}.contains(value.toString()))return;
+    if(key=="provider"&&!QStringList{"outlook","office365","thunderbird","icloud","mac","none"}.contains(value.toString()))return;
     cancel();m_authFailed=false;
     if(key=="provider"&&value!=m_config.value(key)){m_config["sourceBooks"]=QStringList{};m_books.clear();}
     if(key=="account"&&value!=m_config.value(key)){m_config["sourceBooks"]=QStringList{};m_books.clear();}
@@ -199,7 +199,7 @@ void ContactSyncWorker::fullExport(){
     if(m_config.value("provider")=="none"){complete("Choose an application in Email, Contact and Calendar Integration to export contacts.");return;}
     if(m_path.isEmpty()||!m_repository.isOpen()){complete("Open a database first.");return;}
     if(m_provider&&m_provider!=m_testProvider){m_provider->cancel();m_provider->deleteLater();}
-    m_provider=m_testProvider?m_testProvider:new NativeContactProvider(m_config.value("provider").toString(),m_office,this);
+    m_provider=m_testProvider?m_testProvider:createContactProvider(m_config.value("provider").toString(),m_office,this);
     if(auto *provider=dynamic_cast<NativeContactProvider*>(m_provider))provider->setOfficeAccount(m_account);
     m_busy=true;m_runningFullExport=true;m_exported=0;m_status="Preparing full contact export…";emit changed();auto gen=++m_generation;
     m_officeGeneration=m_account.generation;
@@ -294,7 +294,7 @@ void ContactSyncWorker::run(bool test){
     if(m_path.isEmpty()||!m_repository.isOpen()){m_status="Open a database first.";emit changed();return;}
     if(!test&&!m_config.value("enabled").toBool()){m_status="Enable contact synchronization first.";emit changed();return;}
     if(m_provider&&m_provider!=m_testProvider){m_provider->cancel();m_provider->deleteLater();}
-    m_provider=m_testProvider?m_testProvider:new NativeContactProvider(m_config.value("provider").toString(),m_office,this);
+    m_provider=m_testProvider?m_testProvider:createContactProvider(m_config.value("provider").toString(),m_office,this);
     if(auto *provider=dynamic_cast<NativeContactProvider*>(m_provider))provider->setOfficeAccount(m_account);
     m_busy=true;m_imported=0;m_exported=0;m_unchanged=0;m_status=test?"Testing contact connection…":"Synchronizing contacts…";emit changed();auto gen=++m_generation;
     m_officeGeneration=m_account.generation;

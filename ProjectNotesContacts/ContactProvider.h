@@ -63,4 +63,7 @@ private:
     QPointer<QProcess> m_process;
     QPointer<QLocalSocket> m_socket;
 };
+// Picks NativeContactProvider for every remote/bridge provider string, except
+// "mac" on Apple builds, which goes straight through CNContactStore.
+ContactProvider *createContactProvider(QString provider,PN::Comm::Office365Service *office,QObject *parent);
 }

@@ -79,6 +79,13 @@ ColumnLayout {
         wrapMode: Text.Wrap
         Layout.fillWidth: true
     }
+    Text {
+        visible: pane.config.provider === "mac"
+        text: qsTr("Uses the Contacts app on this Mac directly; there is no separate account or password to enter. The first sync asks for access in System Settings > Privacy & Security > Contacts.")
+        color: Theme.text2
+        wrapMode: Text.Wrap
+        Layout.fillWidth: true
+    }
     ColumnLayout {
         visible: pane.config.provider === "icloud"
         Layout.fillWidth: true

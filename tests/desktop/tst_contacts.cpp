@@ -77,7 +77,7 @@ private slots:
         QTest::newRow("new-outlook")<<QString("outlook")<<QString("office365");
         QTest::newRow("classic-outlook")<<QString("outlook-classic")<<QString("outlook");
         QTest::newRow("thunderbird")<<QString("thunderbird")<<QString("thunderbird");
-        QTest::newRow("mac")<<QString("mac-mail")<<QString("icloud");
+        QTest::newRow("mac")<<QString("mac-mail")<<QString("mac");
         QTest::newRow("icloud")<<QString("icloud")<<QString("icloud");
     }
     void sharedIntegrationSelectsContactProvider(){

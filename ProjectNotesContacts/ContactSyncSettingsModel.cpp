@@ -113,7 +113,8 @@ void ContactSyncSettingsModel::setIntegrationBackend(const QString &backend){
     if(backend=="graph"||backend=="outlook")provider="office365";
     else if(backend=="outlook-classic")provider="outlook";
     else if(backend=="thunderbird")provider="thunderbird";
-    else if(backend=="mac-mail"||backend=="icloud")provider="icloud";
+    else if(backend=="mac-mail")provider="mac";
+    else if(backend=="icloud")provider="icloud";
     m_integrationProvider=provider;
     if(m_databasePath.isEmpty()){m_config["provider"]=provider;emit changed();}
     else if(m_config.value("provider")!=provider)setOption("provider",provider);
@@ -128,7 +129,7 @@ PN::Comm::ICloudCredentials ContactSyncSettingsModel::iCloudCredentials() const 
 }
 void ContactSyncSettingsModel::setOption(const QString &key,const QVariant &value){
     if(!QStringList{"provider","enabled","startup","interval","account","mailAccount","sourceBooks"}.contains(key))return;
-    if(key=="provider"&&!QStringList{"outlook","office365","thunderbird","icloud","none"}.contains(value.toString()))return;
+    if(key=="provider"&&!QStringList{"outlook","office365","thunderbird","icloud","mac","none"}.contains(value.toString()))return;
     if((key=="provider"||key=="account")&&value!=m_config.value(key)){m_config["sourceBooks"]=QStringList{};m_books.clear();}
     m_config[key]=key=="interval"?QVariant(qBound(1,value.toInt(),1440)):value;m_busy=false;emit changed();
     post([key,value](auto &worker){worker.setOption(key,value);});

@@ -5,6 +5,9 @@
 #include "credentialstore.h"
 #include "ProjectNotesIntegrations/Office365Service.h"
 #include "ProjectNotesIntegrations/QtNetworkHttpTransport.h"
+#ifdef Q_OS_MACOS
+#include "backends/MacContactsProvider.h"
+#endif
 #include <QCoreApplication>
 #include <QDomDocument>
 #include <QJsonDocument>
@@ -269,5 +272,11 @@ void NativeContactProvider::local(QJsonObject request,std::function<void(QJsonOb
         QTimer::singleShot(30000,s,[s,complete]{complete({},"Thunderbird contact bridge timed out.");s->abort();s->deleteLater();});
         s->connectToServer(m_config.value("bridgeSocket").toString());
     }
+}
+ContactProvider *createContactProvider(QString provider,PN::Comm::Office365Service *office,QObject *parent){
+#ifdef Q_OS_MACOS
+    if(provider=="mac")return createMacContactProvider(parent);
+#endif
+    return new NativeContactProvider(std::move(provider),office,parent);
 }
 }
