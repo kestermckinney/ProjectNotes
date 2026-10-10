@@ -17,21 +17,6 @@ namespace PN::Comm {
 AudienceResolution resolveAudience(const CommunicationSnapshot &snapshot, const AudienceRule &rule)
 {
     AudienceResolution result;
-    QString requiredCompany;
-    if (rule.companyFilter == CompanyFilter::ManagingCompany)
-        requiredCompany = snapshot.managingCompanyId;
-    else if (rule.companyFilter == CompanyFilter::ProjectCompany
-             || rule.companyFilter == CompanyFilter::ExceptProjectCompany)
-        requiredCompany = snapshot.companyId;
-
-    if ((rule.companyFilter == CompanyFilter::ManagingCompany
-         || rule.companyFilter == CompanyFilter::ProjectCompany
-         || rule.companyFilter == CompanyFilter::ExceptProjectCompany)
-        && requiredCompany.isEmpty()) {
-        result.validation.addError("company-setup-required", "audience.companyFilter");
-        return result;
-    }
-
     for (const SnapshotContact &contact : snapshot.contacts) {
         const bool inSource = (rule.source == ContactSource::ProjectTeam && contact.projectTeamMember)
             || (rule.source == ContactSource::MeetingAttendees && contact.meetingAttendee)
@@ -51,20 +36,7 @@ AudienceResolution resolveAudience(const CommunicationSnapshot &snapshot, const 
             result.exclusions.append({contact, QStringLiteral("project-manager-excluded")});
             continue;
         }
-
-        bool companyMatches = rule.companyFilter == CompanyFilter::All
-            || (rule.companyFilter == CompanyFilter::ManagingCompany && contact.companyId == requiredCompany)
-            || (rule.companyFilter == CompanyFilter::ProjectCompany && contact.companyId == requiredCompany)
-            || (rule.companyFilter == CompanyFilter::ExceptProjectCompany
-                && !contact.companyId.isEmpty() && contact.companyId != requiredCompany)
-            || (rule.companyFilter == CompanyFilter::SelectedCompanies
-                && rule.companyIds.contains(contact.companyId));
-        if (contact.companyId.isEmpty() && rule.companyFilter != CompanyFilter::All)
-            companyMatches = rule.includeUnknownCompany;
-        if (companyMatches)
-            result.contacts.append(contact);
-        else
-            result.exclusions.append({contact, QStringLiteral("company-filter")});
+        result.contacts.append(contact);
     }
 
     if (result.contacts.isEmpty() && result.validation.ok())

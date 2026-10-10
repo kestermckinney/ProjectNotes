@@ -637,7 +637,7 @@ Item {
                 // Email, Contacts, and Calendar
                 SettingsSection {
                     id: integrationSection
-                    title: qsTr("Email, Contact and Calendar Integration")
+                    title: qsTr("Email, Contacts, and Calendar")
                     subtitle: qsTr("Choose the service or application for email, contact synchronization, and calendar invitations. Emails and invitations are prepared for your review before you send them.")
                     readonly property var backends: {
                         var list = [

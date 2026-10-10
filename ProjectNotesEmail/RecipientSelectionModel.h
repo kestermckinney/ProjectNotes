@@ -18,7 +18,6 @@ class RecipientSelectionModel final : public QAbstractListModel {
     Q_PROPERTY(int toRecipientCount READ toRecipientCount NOTIFY selectionStateChanged)
     Q_PROPERTY(int ccRecipientCount READ ccRecipientCount NOTIFY selectionStateChanged)
     Q_PROPERTY(int bccRecipientCount READ bccRecipientCount NOTIFY selectionStateChanged)
-    Q_PROPERTY(QVariantList excludedRecipients READ excludedRecipients NOTIFY selectionStateChanged)
     Q_PROPERTY(QString internalAudienceWarning READ internalAudienceWarning NOTIFY selectionStateChanged)
     Q_PROPERTY(QString audienceDiagnostic READ audienceDiagnostic NOTIFY selectionStateChanged)
 public:
@@ -58,7 +57,6 @@ public:
     [[nodiscard]] int toRecipientCount() const;
     [[nodiscard]] int ccRecipientCount() const;
     [[nodiscard]] int bccRecipientCount() const;
-    [[nodiscard]] QVariantList excludedRecipients() const;
     [[nodiscard]] QString internalAudienceWarning() const;
     [[nodiscard]] QString audienceDiagnostic() const;
     // Presets contain only persisted snapshot-contact choices. The
@@ -82,7 +80,6 @@ private:
     int recipientRoleCount(RecipientRole role) const;
     QString sourceReason(const SnapshotContact &contact) const;
     QList<Entry> m_entries;
-    QList<AudienceExclusion> m_exclusions;
     ValidationResult m_audienceValidation;
     bool m_addressLaterExplicitlyChosen = false;
     bool m_internalReport = false;

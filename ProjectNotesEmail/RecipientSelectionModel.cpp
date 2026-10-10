@@ -73,7 +73,6 @@ void RecipientSelectionModel::setAudience(AudienceResolution audience)
             return !leftGroup.isEmpty();
         return leftGroup.localeAwareCompare(rightGroup) < 0;
     });
-    m_exclusions = std::move(audience.exclusions);
     m_audienceValidation = std::move(audience.validation);
     m_addressLaterExplicitlyChosen = false;
     endResetModel();
@@ -208,26 +207,6 @@ int RecipientSelectionModel::recipientRoleCount(RecipientRole role) const
 int RecipientSelectionModel::toRecipientCount() const { return recipientRoleCount(RecipientRole::To); }
 int RecipientSelectionModel::ccRecipientCount() const { return recipientRoleCount(RecipientRole::Cc); }
 int RecipientSelectionModel::bccRecipientCount() const { return recipientRoleCount(RecipientRole::Bcc); }
-
-QVariantList RecipientSelectionModel::excludedRecipients() const
-{
-    QVariantList values;
-    values.reserve(m_exclusions.size());
-    for (const AudienceExclusion &exclusion : m_exclusions) {
-        const SnapshotContact &contact = exclusion.contact;
-        QString reason;
-        if (exclusion.reason == QLatin1String("source-mismatch")) reason = tr("Not in the selected audience source");
-        else if (exclusion.reason == QLatin1String("invalid-address")) reason = tr("Email address is invalid or unavailable");
-        else if (exclusion.reason == QLatin1String("project-manager-excluded")) reason = tr("Project manager is excluded");
-        else if (exclusion.reason == QLatin1String("company-filter")) reason = tr("Does not match the company filter");
-        else reason = exclusion.reason;
-        values.append(QVariantMap{{QStringLiteral("contactId"), contact.id},
-                                  {QStringLiteral("name"), contact.name},
-                                  {QStringLiteral("companyName"), contact.companyName},
-                                  {QStringLiteral("reason"), reason}});
-    }
-    return values;
-}
 
 QString RecipientSelectionModel::internalAudienceWarning() const
 {

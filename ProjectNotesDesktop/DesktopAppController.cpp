@@ -77,8 +77,6 @@ PN::Comm::AudienceRule projectTeamAudienceRule()
 {
     PN::Comm::AudienceRule rule;
     rule.source = PN::Comm::ContactSource::ProjectTeam;
-    rule.companyFilter = PN::Comm::CompanyFilter::All;
-    rule.includeUnknownCompany = true;
     rule.excludeProjectManager = true;
     return rule;
 }
@@ -1548,7 +1546,7 @@ bool DesktopAppController::prepareMeetingReview(const QString &projectId, const 
                                      result.error.displayText.isEmpty() ? result.error.code : result.error.displayText);
             return;
         }
-        // Meetings follow the Email, Contact and Calendar Integration preference.
+        // Meetings follow the Email, Contacts, and Calendar integration preference.
         QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
         const PN::Comm::BackendId backend = PN::Comm::EmailSettingsStore(settings).preferredBackend();
         PN::Comm::ValidationResult validation;
@@ -1817,22 +1815,21 @@ QString DesktopAppController::meetingErrorText(const QString &code, const QStrin
         {QStringLiteral("meeting-end-before-start"), QT_TR_NOOP("Choose a valid start time and duration.")},
         {QStringLiteral("recipient-address-invalid"), QT_TR_NOOP("One of the selected attendees has an invalid email address. Correct it on the Contacts page or clear that attendee.")},
         {QStringLiteral("recipient-role-conflict"), QT_TR_NOOP("The same email address is selected more than once with different roles.")},
-        {QStringLiteral("company-setup-required"), QT_TR_NOOP("Set the managing company in Settings > Preferences before using this audience.")},
         {QStringLiteral("organizer-address-invalid"), QT_TR_NOOP("The project manager's email address is not valid. Correct it on the Contacts page.")},
         {QStringLiteral("review-source-changed"), QT_TR_NOOP("The project data changed. Close this review and schedule the meeting again.")},
         {QStringLiteral("meeting-operation-busy"), QT_TR_NOOP("Another meeting is still being scheduled.")},
-        {QStringLiteral("meeting-backend-unavailable"), QT_TR_NOOP("The selected Email, Contact and Calendar Integration cannot schedule meetings. Choose another in Settings > Preferences.")},
-        {QStringLiteral("thunderbird-unavailable"), QT_TR_NOOP("Thunderbird was not found. Check its path in Settings > Preferences > Email, Contact and Calendar Integration.")},
+        {QStringLiteral("meeting-backend-unavailable"), QT_TR_NOOP("The selected integration cannot schedule meetings. Choose another in Settings > Email, Contacts, and Calendar.")},
+        {QStringLiteral("thunderbird-unavailable"), QT_TR_NOOP("Thunderbird was not found. Check its path in Settings > Email, Contacts, and Calendar.")},
         {QStringLiteral("thunderbird-launch-failed"), QT_TR_NOOP("Thunderbird could not be started.")},
-        {QStringLiteral("outlook-open-failed"), QT_TR_NOOP("The meeting file was created, but the new Outlook did not open it. Check that the new Outlook is installed, or choose another Email, Contact and Calendar Integration.")},
-        {QStringLiteral("outlook-classic-unavailable"), QT_TR_NOOP("Outlook (classic) was not found. Check that it is installed, or choose another Email, Contact and Calendar Integration.")},
+        {QStringLiteral("outlook-open-failed"), QT_TR_NOOP("The meeting file was created, but the new Outlook did not open it. Check that the new Outlook is installed, or choose another integration in Settings > Email, Contacts, and Calendar.")},
+        {QStringLiteral("outlook-classic-unavailable"), QT_TR_NOOP("Outlook (classic) was not found. Check that it is installed, or choose another integration in Settings > Email, Contacts, and Calendar.")},
         {QStringLiteral("outlook-classic-failed"), QT_TR_NOOP("Outlook (classic) could not create the meeting. Close any Outlook dialog that is waiting for an answer, then try again.")},
-        {QStringLiteral("calendar-open-failed"), QT_TR_NOOP("The meeting file was created, but no calendar app opened it. Set a default app for .ics files, or choose another Email, Contact and Calendar Integration.")},
+        {QStringLiteral("calendar-open-failed"), QT_TR_NOOP("The meeting file was created, but no calendar app opened it. Set a default app for .ics files, or choose another integration in Settings > Email, Contacts, and Calendar.")},
         {QStringLiteral("office365-not-authenticated"), QT_TR_NOOP("Sign in to Microsoft 365 in Settings > Office 365 Integration, then try again.")},
         {QStringLiteral("account-generation-changed"), QT_TR_NOOP("The Microsoft 365 account changed. Try again.")},
         {QStringLiteral("graph-calendar-consent-required"), QT_TR_NOOP("Microsoft 365 did not allow calendar access. Sign out and sign in again in Settings > Office 365 Integration to grant calendar permission.")},
-        {QStringLiteral("icloud-credentials-required"), QT_TR_NOOP("Enter your Apple Account and save an app-specific password in Settings > Preferences, then try again.")},
-        {QStringLiteral("icloud-calendar-authentication-failed"), QT_TR_NOOP("iCloud rejected the Apple Account or app-specific password. Check both in Settings > Preferences.")},
+        {QStringLiteral("icloud-credentials-required"), QT_TR_NOOP("Enter your Apple Account and save an app-specific password in Settings > Email, Contacts, and Calendar, then try again.")},
+        {QStringLiteral("icloud-calendar-authentication-failed"), QT_TR_NOOP("iCloud rejected the Apple Account or app-specific password. Check both in Settings > Email, Contacts, and Calendar.")},
         {QStringLiteral("icloud-calendar-not-found"), QT_TR_NOOP("No writable iCloud calendar was found for this account.")},
         {QStringLiteral("icloud-calendar-discovery-failed"), QT_TR_NOOP("Project Notes could not find your iCloud calendars. Check your connection and try again.")},
         {QStringLiteral("icloud-calendar-event-create-failed"), QT_TR_NOOP("iCloud could not create the event. Check your connection and try again.")},

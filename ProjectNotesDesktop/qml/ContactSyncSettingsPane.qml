@@ -54,7 +54,7 @@ ColumnLayout {
     }
     Text {
         visible: !pane.supported
-        text: qsTr("Default Application does not provide contact synchronization. Choose an application under Email, Contact and Calendar Integration to synchronize contacts.")
+        text: qsTr("Default Application does not provide contact synchronization. Choose an application under Email, Contacts, and Calendar to synchronize contacts.")
         color: Theme.text2
         wrapMode: Text.Wrap
         Layout.fillWidth: true

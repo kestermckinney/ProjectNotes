@@ -74,7 +74,6 @@ std::optional<MeetingNotesReview> MeetingNotesPreparationFactory::create(
     // Only attendees start selected; absent team members default to CC.
     AudienceRule defaultAudience;
     defaultAudience.source = ContactSource::ChosenContacts;
-    defaultAudience.companyFilter = CompanyFilter::All;
     defaultAudience.excludeProjectManager = true;
     const auto selectedNote = std::find_if(snapshot.notes.cbegin(), snapshot.notes.cend(), [&source](const SnapshotNote &note) {
         return note.id == source.noteIds.constFirst();

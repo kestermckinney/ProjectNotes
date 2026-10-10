@@ -2,8 +2,7 @@
 #include "SnapshotTypes.h"
 namespace PN::Comm {
 enum class ContactSource { ProjectTeam, MeetingAttendees, StatusRecipients, CurrentSelection, ChosenContacts };
-enum class CompanyFilter { All, ManagingCompany, ProjectCompany, ExceptProjectCompany, SelectedCompanies };
-struct AudienceRule { ContactSource source=ContactSource::ProjectTeam; CompanyFilter companyFilter=CompanyFilter::All; QStringList companyIds,chosenContactIds; bool includeUnknownCompany=false,excludeProjectManager=true; };
+struct AudienceRule { ContactSource source=ContactSource::ProjectTeam; QStringList chosenContactIds; bool excludeProjectManager=true; };
 // Keep exclusions alongside eligible contacts so the presentation layer can
 // explain a decision without reimplementing audience filtering in QML.
 struct AudienceExclusion { SnapshotContact contact; QString reason; };

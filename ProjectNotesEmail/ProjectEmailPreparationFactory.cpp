@@ -17,7 +17,6 @@ ProjectEmailReview ProjectEmailPreparationFactory::create(
     const bool plainContact = source.workflow == Workflow::ContactEmail;
     if (source.workflow != Workflow::ProjectEmail && source.workflow != Workflow::ShareLocation && !plainContact)
         review.validation.addError("email-workflow-invalid", "source.workflow");
-    review.rule.includeUnknownCompany = true;
     review.rule.excludeProjectManager = source.workflow == Workflow::ShareLocation;
     TemplateContext context = communicationTemplateContext(snapshot, source.workflow);
     context.values.insert("report.internal", templateBoolean(false));

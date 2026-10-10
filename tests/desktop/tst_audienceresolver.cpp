@@ -14,13 +14,13 @@ class AudienceResolverTest final : public QObject {
     Q_OBJECT
 
 private slots:
-    void resolvesCompanyAndSourceIntersections();
+    void resolvesSourceIntersectionsAndValidation();
     void appliesRecipientOverridesSafely();
     void retainsRecipientEditsAndManualEntries();
     void preservesResolutionOrderWhileGroupingAudience();
 };
 
-void AudienceResolverTest::resolvesCompanyAndSourceIntersections()
+void AudienceResolverTest::resolvesSourceIntersectionsAndValidation()
 {
     CommunicationSnapshot snapshot;
     snapshot.companyId = QStringLiteral("client");
@@ -40,13 +40,10 @@ void AudienceResolverTest::resolvesCompanyAndSourceIntersections()
 
     AudienceRule rule;
     rule.source = ContactSource::StatusRecipients;
-    rule.companyFilter = CompanyFilter::ExceptProjectCompany;
     auto result = resolveAudience(snapshot, rule);
-    QVERIFY(result.contacts.isEmpty());
-    rule.includeUnknownCompany = true;
-    result = resolveAudience(snapshot, rule);
-    QCOMPARE(result.contacts.size(), 1);
-    QCOMPARE(result.contacts.first().id, QStringLiteral("unknown"));
+    QCOMPARE(result.contacts.size(), 2);
+    QCOMPARE(result.contacts.at(0).id, QStringLiteral("client"));
+    QCOMPARE(result.contacts.at(1).id, QStringLiteral("unknown"));
 
     rule.source = ContactSource::ChosenContacts;
     rule.chosenContactIds = {QStringLiteral("missing")};
@@ -56,77 +53,25 @@ void AudienceResolverTest::resolvesCompanyAndSourceIntersections()
 
     rule.source = ContactSource::CurrentSelection;
     snapshot.currentSelectionContactIds = {QStringLiteral("client"), QStringLiteral("partner")};
-    rule.companyFilter = CompanyFilter::All;
     rule.excludeProjectManager = false;
     result = resolveAudience(snapshot, rule);
     QCOMPARE(result.contacts.size(), 2);
 
-    rule.source = ContactSource::ProjectTeam;
-    rule.companyFilter = CompanyFilter::ManagingCompany;
-    rule.includeUnknownCompany = false;
-    result = resolveAudience(snapshot, rule);
-    QCOMPARE(result.contacts.size(), 1);
-    QCOMPARE(result.contacts.first().id, QStringLiteral("manager"));
-
-    rule.companyFilter = CompanyFilter::ProjectCompany;
-    result = resolveAudience(snapshot, rule);
-    QCOMPARE(result.contacts.size(), 1);
-    QCOMPARE(result.contacts.first().id, QStringLiteral("client"));
-
-    rule.companyFilter = CompanyFilter::ExceptProjectCompany;
-    result = resolveAudience(snapshot, rule);
-    QCOMPARE(result.contacts.size(), 2);
-    QCOMPARE(result.contacts.at(0).id, QStringLiteral("manager"));
-    QCOMPARE(result.contacts.at(1).id, QStringLiteral("partner"));
-
     rule.source = ContactSource::ChosenContacts;
     rule.chosenContactIds = {QStringLiteral("manager"), QStringLiteral("partner")};
-    rule.companyFilter = CompanyFilter::All;
     rule.excludeProjectManager = true;
     result = resolveAudience(snapshot, rule);
     QCOMPARE(result.contacts.size(), 1);
     QCOMPARE(result.contacts.first().id, QStringLiteral("partner"));
 
     rule.source = ContactSource::ProjectTeam;
-    rule.companyFilter = CompanyFilter::SelectedCompanies;
-    rule.companyIds = {QStringLiteral("partner")};
-    result = resolveAudience(snapshot, rule);
-    QCOMPARE(result.contacts.size(), 1);
-    QCOMPARE(result.contacts.first().id, QStringLiteral("partner"));
-    rule.includeUnknownCompany = true;
-    result = resolveAudience(snapshot, rule);
-    QCOMPARE(result.contacts.size(), 2);
-
-    snapshot.contacts.append({QStringLiteral("outside"), QStringLiteral("Outside"),
-                            QStringLiteral("outside@example.test"), QStringLiteral("partner"),
-                            QStringLiteral("Partner Co"), false, true, false});
-    rule.companyFilter = CompanyFilter::All;
     rule.excludeProjectManager = false;
     result = resolveAudience(snapshot, rule);
     QCOMPARE(result.contacts.size(), 4);
-    QVERIFY(std::none_of(result.contacts.cbegin(), result.contacts.cend(), [](const SnapshotContact &person) {
-        return person.id == QStringLiteral("outside");
-    }));
 
-    rule.companyFilter = CompanyFilter::ManagingCompany;
-    snapshot.managingCompanyId.clear();
-    result = resolveAudience(snapshot, rule);
-    QVERIFY(!result.validation.ok());
-    QCOMPARE(result.validation.issues.constFirst().code, QStringLiteral("company-setup-required"));
-
-    snapshot.managingCompanyId = QStringLiteral("ours");
-    snapshot.companyId.clear();
-    rule.companyFilter = CompanyFilter::ExceptProjectCompany;
-    result = resolveAudience(snapshot, rule);
-    QVERIFY(!result.validation.ok());
-    QCOMPARE(result.validation.issues.constFirst().code, QStringLiteral("company-setup-required"));
-
-    snapshot.companyId = QStringLiteral("client");
     snapshot.contacts.append({QStringLiteral("invalid"), QStringLiteral("Invalid"),
                             QStringLiteral("invalid@example.test;other@example.test"),
                             QStringLiteral("partner"), QStringLiteral("Partner Co"), false, true, true});
-    rule.companyFilter = CompanyFilter::All;
-    rule.excludeProjectManager = false;
     result = resolveAudience(snapshot, rule);
     QVERIFY(std::none_of(result.contacts.cbegin(), result.contacts.cend(), [](const SnapshotContact &person) {
         return person.id == QStringLiteral("invalid");
@@ -242,13 +187,6 @@ void AudienceResolverTest::preservesResolutionOrderWhileGroupingAudience()
     QCOMPARE(model.toRecipientCount(), 1);
     QCOMPARE(model.ccRecipientCount(), 1);
     QCOMPARE(model.bccRecipientCount(), 0);
-    const QVariantList excluded = model.excludedRecipients();
-    QCOMPARE(excluded.size(), 3);
-    QVERIFY(std::any_of(excluded.cbegin(), excluded.cend(), [](const QVariant &value) {
-        return value.toMap().value(QStringLiteral("reason")).toString()
-            == QStringLiteral("Project manager is excluded");
-    }));
-
     const RecipientResolution resolved = model.resolve();
     QCOMPARE(resolved.recipients.size(), 2);
     QCOMPARE(resolved.recipients.at(0).address, QStringLiteral("partner@example.test"));

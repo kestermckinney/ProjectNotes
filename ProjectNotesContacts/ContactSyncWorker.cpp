@@ -196,7 +196,7 @@ void ContactSyncWorker::syncNow(){run(false);}
 void ContactSyncWorker::fullExport(){
     if(m_busy||m_runningFullExport)return;
     m_runningFullExport=true;m_exported=0;m_updated=0;m_skipped=0;m_snapshot={};m_exportPlan.clear();
-    if(m_config.value("provider")=="none"){complete("Choose an application in Email, Contact and Calendar Integration to export contacts.");return;}
+    if(m_config.value("provider")=="none"){complete("Choose an application in Email, Contacts, and Calendar to export contacts.");return;}
     if(m_path.isEmpty()||!m_repository.isOpen()){complete("Open a database first.");return;}
     if(m_provider&&m_provider!=m_testProvider){m_provider->cancel();m_provider->deleteLater();}
     m_provider=m_testProvider?m_testProvider:createContactProvider(m_config.value("provider").toString(),m_office,this);
@@ -290,7 +290,7 @@ void ContactSyncWorker::resolveExport(const QString &personId,const QString &act
 void ContactSyncWorker::testConnection(){run(true);}
 void ContactSyncWorker::run(bool test){
     if(m_busy)return;
-    if(m_config.value("provider")=="none"){complete("Choose an application in Email, Contact and Calendar Integration to synchronize contacts.");return;}
+    if(m_config.value("provider")=="none"){complete("Choose an application in Email, Contacts, and Calendar to synchronize contacts.");return;}
     if(m_path.isEmpty()||!m_repository.isOpen()){m_status="Open a database first.";emit changed();return;}
     if(!test&&!m_config.value("enabled").toBool()){m_status="Enable contact synchronization first.";emit changed();return;}
     if(m_provider&&m_provider!=m_testProvider){m_provider->cancel();m_provider->deleteLater();}
