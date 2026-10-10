@@ -48,7 +48,7 @@ public:
     void failSourceRevalidation(ValidationResult validation);
     Q_INVOKABLE bool handoff();
     Q_INVOKABLE void cancel();
-    // Project/location templates and blank standalone people messages are
+    // Project/location templates and blank standalone contact messages are
     // read-only until composed in the mail client; setters reject these flows.
     Q_INVOKABLE bool setSubject(QString subject);
     // Editable HTML is restricted to inline mode. Attachment modes retain the

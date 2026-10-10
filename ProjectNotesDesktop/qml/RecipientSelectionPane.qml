@@ -251,7 +251,7 @@ ColumnLayout {
                 id: recipientCheck
                 checked: model.selected
                 Accessible.name: qsTr("Include %1").arg(model.name)
-                onToggled: if (pane.recipientModel) pane.recipientModel.setSelected(model.personId, checked)
+                onToggled: if (pane.recipientModel) pane.recipientModel.setSelected(model.contactId, checked)
             }
             ColumnLayout {
                 Layout.fillWidth: true
@@ -271,7 +271,7 @@ ColumnLayout {
                                                   : qsTr("Recipient role for %1").arg(recipientRow.recipient.name)
                 onActivated: function(value) {
                     if (pane.recipientModel)
-                        pane.recipientModel.setRecipientRoleValue(recipientRow.recipient.personId,
+                        pane.recipientModel.setRecipientRoleValue(recipientRow.recipient.contactId,
                                                                   options.indexOf(value))
                 }
             }

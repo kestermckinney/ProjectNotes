@@ -37,8 +37,8 @@ QtObject {
     readonly property var navigation: [
         { section: "projects", label: qsTr("Projects"), icon: "description", action: "navigate_projects" },
         { section: "items", label: qsTr("Action Items"), icon: "task_alt", action: "navigate_items" },
-        { section: "people", label: qsTr("People"), icon: "group", action: "navigate_people" },
-        { section: "clients", label: qsTr("Clients"), icon: "apartment", action: "navigate_clients" },
+        { section: "contacts", label: qsTr("Contacts"), icon: "group", action: "navigate_contacts" },
+        { section: "companies", label: qsTr("Companies"), icon: "apartment", action: "navigate_companies" },
         { section: "search", label: qsTr("Search"), icon: "search", action: "navigate_search" },
         { section: "help", label: qsTr("User Guide"), icon: "menu_book", action: "navigate_help" },
         { section: "settings", label: qsTr("Settings"), icon: "settings", action: "navigate_settings" }
@@ -59,8 +59,8 @@ QtObject {
     readonly property var map: ({
         "navigate_projects": "Ctrl+1",
         "navigate_items":    "Ctrl+2",
-        "navigate_people":   "Ctrl+3",
-        "navigate_clients":  "Ctrl+4",
+        "navigate_contacts": "Ctrl+3",
+        "navigate_companies":"Ctrl+4",
         "navigate_search":   "Ctrl+5",
         "navigate_help":     "Ctrl+6",
         "navigate_settings": "Ctrl+7",

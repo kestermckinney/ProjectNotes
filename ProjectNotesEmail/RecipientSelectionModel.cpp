@@ -21,23 +21,23 @@ QVariant RecipientSelectionModel::data(const QModelIndex &index, int role) const
     if (!index.isValid() || index.row() < 0 || index.row() >= m_entries.size()) return {};
     const Entry &entry = m_entries.at(index.row());
     switch (role) {
-    case PersonIdRole: return entry.person.id;
-    case NameRole: return entry.person.name;
-    case AddressRole: return entry.person.email;
-    case CompanyNameRole: return entry.person.companyName;
+    case ContactIdRole: return entry.contact.id;
+    case NameRole: return entry.contact.name;
+    case AddressRole: return entry.contact.email;
+    case CompanyNameRole: return entry.contact.companyName;
     case SelectedRole: return entry.selected;
     case RecipientRoleRole: return static_cast<int>(entry.role);
     case CompanyGroupRole:
-        return entry.person.companyName.trimmed().isEmpty()
-            ? tr("Unknown company") : entry.person.companyName.trimmed();
-    case SourceReasonRole: return sourceReason(entry.person);
+        return entry.contact.companyName.trimmed().isEmpty()
+            ? tr("Unknown company") : entry.contact.companyName.trimmed();
+    case SourceReasonRole: return sourceReason(entry.contact);
     default: return {};
     }
 }
 
 QHash<int, QByteArray> RecipientSelectionModel::roleNames() const
 {
-    return {{PersonIdRole, "personId"}, {NameRole, "name"}, {AddressRole, "address"},
+    return {{ContactIdRole, "contactId"}, {NameRole, "name"}, {AddressRole, "address"},
             {CompanyNameRole, "companyName"}, {SelectedRole, "selected"},
             {RecipientRoleRole, "recipientRole"},
             {CompanyGroupRole, "companyGroup"}, {SourceReasonRole, "sourceReason"}};
@@ -52,23 +52,23 @@ void RecipientSelectionModel::setAudience(AudienceResolution audience)
     beginResetModel();
     m_entries.clear();
     int sourceOrder = 0;
-    for (const SnapshotPerson &person : audience.people) {
+    for (const SnapshotContact &contact : audience.contacts) {
         bool selected = true;
         RecipientRole role = RecipientRole::To;
         for (const RecipientOverride &overrideValue : audience.initialOverrides) {
-            if (overrideValue.personId == person.id) {
+            if (overrideValue.contactId == contact.id) {
                 selected = overrideValue.selected;
                 role = overrideValue.role;
             }
         }
-        m_entries.append({person, selected, role, sourceOrder++});
+        m_entries.append({contact, selected, role, sourceOrder++});
     }
     // Grouping affects only presentation. resolve() restores this recorded
     // source order before applying overrides, preserving the frozen native
     // recipient order supplied by the repository/resolver.
     std::stable_sort(m_entries.begin(), m_entries.end(), [](const Entry &left, const Entry &right) {
-        const QString leftGroup = left.person.companyName.trimmed();
-        const QString rightGroup = right.person.companyName.trimmed();
+        const QString leftGroup = left.contact.companyName.trimmed();
+        const QString rightGroup = right.contact.companyName.trimmed();
         if (leftGroup.isEmpty() != rightGroup.isEmpty())
             return !leftGroup.isEmpty();
         return leftGroup.localeAwareCompare(rightGroup) < 0;
@@ -92,16 +92,16 @@ void RecipientSelectionModel::setInternalReportContext(bool internalReport, QStr
     emit selectionStateChanged();
 }
 
-int RecipientSelectionModel::indexOf(const QString &personId) const
+int RecipientSelectionModel::indexOf(const QString &contactId) const
 {
     for (int index = 0; index < m_entries.size(); ++index)
-        if (m_entries.at(index).person.id == personId) return index;
+        if (m_entries.at(index).contact.id == contactId) return index;
     return -1;
 }
 
-bool RecipientSelectionModel::setSelected(const QString &personId, bool selected)
+bool RecipientSelectionModel::setSelected(const QString &contactId, bool selected)
 {
-    const int index = indexOf(personId); if (index < 0) return false;
+    const int index = indexOf(contactId); if (index < 0) return false;
     if (m_entries[index].selected == selected) return true;
     m_entries[index].selected = selected;
     emit dataChanged(this->index(index), this->index(index), {SelectedRole});
@@ -141,9 +141,9 @@ void RecipientSelectionModel::clearSelection()
     emit selectionStateChanged();
 }
 
-bool RecipientSelectionModel::setRecipientRole(const QString &personId, RecipientRole role)
+bool RecipientSelectionModel::setRecipientRole(const QString &contactId, RecipientRole role)
 {
-    const int index = indexOf(personId); if (index < 0) return false;
+    const int index = indexOf(contactId); if (index < 0) return false;
     if (m_entries[index].role == role) return true;
     m_entries[index].role = role;
     emit dataChanged(this->index(index), this->index(index), {RecipientRoleRole});
@@ -151,11 +151,11 @@ bool RecipientSelectionModel::setRecipientRole(const QString &personId, Recipien
     return true;
 }
 
-bool RecipientSelectionModel::setRecipientRoleValue(const QString &personId, int role)
+bool RecipientSelectionModel::setRecipientRoleValue(const QString &contactId, int role)
 {
     if (role < static_cast<int>(RecipientRole::To) || role > static_cast<int>(RecipientRole::Bcc))
         return false;
-    return setRecipientRole(personId, static_cast<RecipientRole>(role));
+    return setRecipientRole(contactId, static_cast<RecipientRole>(role));
 }
 
 void RecipientSelectionModel::setAddressLaterExplicitlyChosen(bool chosen)
@@ -176,7 +176,7 @@ int RecipientSelectionModel::selectedRecipientCount() const
 {
     QSet<QString> addresses;
     for (const Entry &entry : m_entries) {
-        const QString address = entry.person.email.trimmed();
+        const QString address = entry.contact.email.trimmed();
         if (entry.selected && !address.isEmpty())
             addresses.insert(address.toCaseFolded());
     }
@@ -187,7 +187,7 @@ int RecipientSelectionModel::recipientCount() const
 {
     QSet<QString> addresses;
     for (const Entry &entry : m_entries) {
-        const QString address = entry.person.email.trimmed();
+        const QString address = entry.contact.email.trimmed();
         if (!address.isEmpty())
             addresses.insert(address.toCaseFolded());
     }
@@ -198,7 +198,7 @@ int RecipientSelectionModel::recipientRoleCount(RecipientRole role) const
 {
     QSet<QString> addresses;
     for (const Entry &entry : m_entries) {
-        const QString address = entry.person.email.trimmed();
+        const QString address = entry.contact.email.trimmed();
         if (entry.selected && entry.role == role && !address.isEmpty())
             addresses.insert(address.toCaseFolded());
     }
@@ -214,16 +214,16 @@ QVariantList RecipientSelectionModel::excludedRecipients() const
     QVariantList values;
     values.reserve(m_exclusions.size());
     for (const AudienceExclusion &exclusion : m_exclusions) {
-        const SnapshotPerson &person = exclusion.person;
+        const SnapshotContact &contact = exclusion.contact;
         QString reason;
         if (exclusion.reason == QLatin1String("source-mismatch")) reason = tr("Not in the selected audience source");
         else if (exclusion.reason == QLatin1String("invalid-address")) reason = tr("Email address is invalid or unavailable");
         else if (exclusion.reason == QLatin1String("project-manager-excluded")) reason = tr("Project manager is excluded");
         else if (exclusion.reason == QLatin1String("company-filter")) reason = tr("Does not match the company filter");
         else reason = exclusion.reason;
-        values.append(QVariantMap{{QStringLiteral("personId"), person.id},
-                                  {QStringLiteral("name"), person.name},
-                                  {QStringLiteral("companyName"), person.companyName},
+        values.append(QVariantMap{{QStringLiteral("contactId"), contact.id},
+                                  {QStringLiteral("name"), contact.name},
+                                  {QStringLiteral("companyName"), contact.companyName},
                                   {QStringLiteral("reason"), reason}});
     }
     return values;
@@ -237,8 +237,8 @@ QString RecipientSelectionModel::internalAudienceWarning() const
         return tr("This report is marked internal, but the managing company is not configured.");
     QSet<QString> outsideAddresses;
     for (const Entry &entry : m_entries) {
-        const QString address = entry.person.email.trimmed();
-        if (entry.selected && entry.person.companyId != m_managingCompanyId && !address.isEmpty())
+        const QString address = entry.contact.email.trimmed();
+        if (entry.selected && entry.contact.companyId != m_managingCompanyId && !address.isEmpty())
             outsideAddresses.insert(address.toCaseFolded());
     }
     if (outsideAddresses.isEmpty())
@@ -247,12 +247,12 @@ QString RecipientSelectionModel::internalAudienceWarning() const
               nullptr, outsideAddresses.size());
 }
 
-QString RecipientSelectionModel::sourceReason(const SnapshotPerson &person) const
+QString RecipientSelectionModel::sourceReason(const SnapshotContact &contact) const
 {
     QStringList sources;
-    if (person.projectTeamMember) sources.append(tr("Project team"));
-    if (person.meetingAttendee) sources.append(tr("Meeting attendee"));
-    if (person.receivesStatus) sources.append(tr("Receives status reports"));
+    if (contact.projectTeamMember) sources.append(tr("Project team"));
+    if (contact.meetingAttendee) sources.append(tr("Meeting attendee"));
+    if (contact.receivesStatus) sources.append(tr("Receives status reports"));
     return sources.isEmpty() ? tr("Selected audience") : sources.join(QStringLiteral(" · "));
 }
 
@@ -267,19 +267,19 @@ QList<RecipientOverride> RecipientSelectionModel::overrides() const
 {
     QList<RecipientOverride> result;
     for (const Entry &entry : m_entries)
-        result.append({entry.person.id, entry.selected, entry.role});
+        result.append({entry.contact.id, entry.selected, entry.role});
     return result;
 }
 
 void RecipientSelectionModel::applyOverrides(const QList<RecipientOverride> &overrides)
 {
-    QHash<QString, RecipientOverride> byPerson;
+    QHash<QString, RecipientOverride> byContact;
     for (const RecipientOverride &overrideValue : overrides)
-        byPerson.insert(overrideValue.personId, overrideValue);
+        byContact.insert(overrideValue.contactId, overrideValue);
     bool changed = false;
     for (Entry &entry : m_entries) {
-        const auto found = byPerson.constFind(entry.person.id);
-        if (found == byPerson.cend())
+        const auto found = byContact.constFind(entry.contact.id);
+        if (found == byContact.cend())
             continue;
         if (entry.selected != found->selected || entry.role != found->role) {
             entry.selected = found->selected;
@@ -314,8 +314,8 @@ RecipientResolution RecipientSelectionModel::resolve() const
     std::stable_sort(orderedEntries.begin(), orderedEntries.end(),
                      [](const Entry &left, const Entry &right) { return left.sourceOrder < right.sourceOrder; });
     for (const Entry &entry : orderedEntries) {
-        audience.people.append(entry.person);
-        overrides.append({entry.person.id, entry.selected, entry.role});
+        audience.contacts.append(entry.contact);
+        overrides.append({entry.contact.id, entry.selected, entry.role});
     }
     RecipientResolution result = applyRecipientOverrides(audience, overrides);
     result.validation.issues = m_audienceValidation.issues + result.validation.issues;

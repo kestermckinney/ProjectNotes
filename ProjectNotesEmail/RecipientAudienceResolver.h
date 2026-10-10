@@ -1,15 +1,15 @@
 #pragma once
 #include "SnapshotTypes.h"
 namespace PN::Comm {
-enum class PeopleSource { ProjectTeam, MeetingAttendees, StatusRecipients, CurrentSelection, ChosenPeople };
-enum class CompanyFilter { All, ManagingCompany, ProjectClient, ExceptProjectClient, SelectedCompanies };
-struct AudienceRule { PeopleSource source=PeopleSource::ProjectTeam; CompanyFilter companyFilter=CompanyFilter::All; QStringList companyIds,chosenPersonIds; bool includeUnknownCompany=false,excludeProjectManager=true; };
-// Keep exclusions alongside eligible people so the presentation layer can
+enum class ContactSource { ProjectTeam, MeetingAttendees, StatusRecipients, CurrentSelection, ChosenContacts };
+enum class CompanyFilter { All, ManagingCompany, ProjectCompany, ExceptProjectClient, SelectedCompanies };
+struct AudienceRule { ContactSource source=ContactSource::ProjectTeam; CompanyFilter companyFilter=CompanyFilter::All; QStringList companyIds,chosenContactIds; bool includeUnknownCompany=false,excludeProjectManager=true; };
+// Keep exclusions alongside eligible contacts so the presentation layer can
 // explain a decision without reimplementing audience filtering in QML.
-struct AudienceExclusion { SnapshotPerson person; QString reason; };
-struct RecipientOverride { QString personId; bool selected=true; RecipientRole role=RecipientRole::To; };
+struct AudienceExclusion { SnapshotContact contact; QString reason; };
+struct RecipientOverride { QString contactId; bool selected=true; RecipientRole role=RecipientRole::To; };
 struct AudienceResolution {
-    QList<SnapshotPerson> people;
+    QList<SnapshotContact> contacts;
     QList<AudienceExclusion> exclusions;
     ValidationResult validation;
     // Initial choices are part of a workflow's default audience, rather than

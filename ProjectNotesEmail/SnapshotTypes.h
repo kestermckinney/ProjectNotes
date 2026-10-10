@@ -1,7 +1,7 @@
 #pragma once
 #include "EmailTypes.h"
 namespace PN::Comm {
-struct SnapshotPerson {
+struct SnapshotContact {
     QString id,name,email,companyId,companyName;
     bool receivesStatus=false;
     bool meetingAttendee=false;
@@ -21,13 +21,13 @@ struct CommunicationSnapshot {
     QString projectFolderPath;
     QString statusReportPeriod,budget,actual,bcwp,bcws,bac;
     quint64 databaseGeneration=0; QDateTime loadedAt;
-    QList<SnapshotPerson> people; QList<SnapshotNote> notes; QList<SnapshotActionItem> actionItems;
+    QList<SnapshotContact> contacts; QList<SnapshotNote> notes; QList<SnapshotActionItem> actionItems;
     QList<SnapshotStatusItem> statusItems; QList<SnapshotTrackerItem> trackerItems;
     // Content selection is note-oriented, while the audience's current
-    // selection is person-oriented. Keeping both avoids treating note IDs as
+    // selection is contact-oriented. Keeping both avoids treating note IDs as
     // recipient IDs when a review switches audience sources.
     QStringList currentSelectionIds;
-    QStringList currentSelectionPersonIds;
+    QStringList currentSelectionContactIds;
     QByteArray fingerprint;
     struct Location { QString id, description, path; };
     std::optional<Location> location;

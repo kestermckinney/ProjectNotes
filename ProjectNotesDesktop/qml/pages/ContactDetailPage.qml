@@ -6,48 +6,48 @@ import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import ProjectNotesDesktop
 
-// Person detail — editable fields, saved on navigate-away.
+// Contact detail — editable fields, saved on navigate-away.
 Item {
     id: page
-    property int    personRow: -1
-    property string personId: ""
+    property int    contactRow: -1
+    property string contactId: ""
     property bool   _changed: false
     readonly property string exportTable: "people"
-    readonly property string exportId: personId
-    property var    _clients: []
-    property string _clientId: ""
+    readonly property string exportId: contactId
+    property var    _companies: []
+    property string _companyId: ""
 
     // Navigation signal
-    signal goToClientRequested(string clientId)
+    signal goToCompanyRequested(string companyId)
     // Duplicate opens the copy — routed through Main so it gets a breadcrumb and
-    // a history entry like any other person opened from the list.
-    signal personActivated(int row, string personId)
+    // a history entry like any other contact opened from the list.
+    signal contactActivated(int row, string contactId)
 
-    function _clientNames() { return _clients.map(function(c){ return c.name }) }
-    function _idForName(n) { for (var i=0;i<_clients.length;i++) if (_clients[i].name===n) return _clients[i].id; return "" }
-    function _nameForId(id){ for (var i=0;i<_clients.length;i++) if (_clients[i].id===id) return _clients[i].name; return "" }
+    function _companyNames() { return _companies.map(function(c){ return c.name }) }
+    function _idForName(n) { for (var i=0;i<_companies.length;i++) if (_companies[i].name===n) return _companies[i].id; return "" }
+    function _nameForId(id){ for (var i=0;i<_companies.length;i++) if (_companies[i].id===id) return _companies[i].name; return "" }
 
     Component.onCompleted: {
-        _clients = DesktopAppController.clientList()
+        _companies = DesktopAppController.companyList()
         _reload()
     }
 
     function _reload() {
-        var d = DesktopAppController.getPersonData(page.personRow)
+        var d = DesktopAppController.getContactData(page.contactRow)
         nameField.text  = (d.name || "").toString()
         emailField.text = (d.email || "").toString()
         officeField.text = (d.office_phone || "").toString()
         cellField.text  = (d.cell_phone || "").toString()
         roleField.text  = (d.role || "").toString()
-        page._clientId  = (d.client_id || "").toString()
-        clientCombo.value = _nameForId(page._clientId)
+        page._companyId  = (d.client_id || "").toString()
+        companyCombo.value = _nameForId(page._companyId)
         page._changed = false
     }
 
     function _saveNow() {
         if (!page._changed) return true
-        var ok = DesktopAppController.savePerson(page.personRow, nameField.text, emailField.text,
-                    officeField.text, cellField.text, page._clientId, roleField.text)
+        var ok = DesktopAppController.saveContact(page.contactRow, nameField.text, emailField.text,
+                    officeField.text, cellField.text, page._companyId, roleField.text)
         if (ok) page._changed = false
         else _reload()   // revert fields to last valid values when an edit is rejected
         return ok
@@ -55,7 +55,7 @@ Item {
 
     function _openSelfMenu(sx, sy) {
         selfMenu.recordLabel = (nameField.text || "").toString()
-        selfMenu.clientId = page._clientId
+        selfMenu.companyId = page._companyId
         selfMenu.openAt(sx, sy)
     }
 
@@ -87,9 +87,9 @@ Item {
                 Layout.fillWidth: true; columns: 2; columnSpacing: 10; rowSpacing: 9
                 FormField { label: qsTr("Email"); id: emailField; onEdited: page._changed = true }
                 ComboField {
-                    label: qsTr("Client"); id: clientCombo; options: page._clientNames()
+                    label: qsTr("Company"); id: companyCombo; options: page._companyNames()
                     includeNone: true; searchable: true
-                    onActivated: (v) => { page._clientId = page._idForName(v); page._changed = true }
+                    onActivated: (v) => { page._companyId = page._idForName(v); page._changed = true }
                 }
                 FormField { label: qsTr("Office Phone"); id: officeField; onEdited: page._changed = true }
                 FormField { label: qsTr("Cell Phone"); id: cellField; onEdited: page._changed = true }
@@ -99,12 +99,12 @@ Item {
         }
     }
 
-    // Person's own record/plugin menu — opened by the kebab button
+    // Contact's own record/plugin menu — opened by the kebab button
     RecordContextMenu {
         id: selfMenu
-        recordType: qsTr("Person")
-        model: DesktopAppController.peopleModel
-        recordId: page.personId
+        recordType: qsTr("Contact")
+        model: DesktopAppController.contactsModel
+        recordId: page.contactId
         saveEmailSource: function() { return page._saveNow() }
         canOpen: false
         canNew: false
@@ -117,10 +117,10 @@ Item {
         onDuplicateRequested: {
             // Copy what's on screen, not what was last written.
             page._saveNow()
-            var newId = DesktopAppController.duplicateRecord(DesktopAppController.peopleModel, page.personId)
-            if (newId !== "") page.personActivated(DesktopAppController.peopleRowForId(newId), newId)
+            var newId = DesktopAppController.duplicateRecord(DesktopAppController.contactsModel, page.contactId)
+            if (newId !== "") page.contactActivated(DesktopAppController.contactsRowForId(newId), newId)
         }
         onRefreshRequested: page._reload()
-        onGoToClientRequested: page.goToClientRequested(clientId)
+        onGoToCompanyRequested: page.goToCompanyRequested(companyId)
     }
 }

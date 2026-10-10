@@ -158,7 +158,7 @@ ColumnLayout {
 
     Label { text: qsTr("Rich body"); color: Theme.text2 }
     Label { text: pane.templateModel && pane.templateModel.workflow === "project-email"
-                  ? qsTr("Configure the project email subject and body. Person fields refer to the person right-clicked; they are empty for a project-team email.")
+                  ? qsTr("Configure the project email subject and body. Contact fields refer to the contact right-clicked; they are empty for a project-team email.")
                   : qsTr("Include exactly one {{ content.body }} protected content block. It preserves the shared content while you add prose around it."); color: Theme.text3; font.pixelSize: Theme.fontSm; wrapMode: Text.WordWrap; Layout.fillWidth: true }
     RichTextEditor {
         id: richBody

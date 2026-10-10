@@ -236,7 +236,7 @@ inline QString extractVCardText(const QMimeData* mimeData)
 
 // Returns the client_id for companyName, creating the client record if it doesn't exist.
 // Returns an empty string if companyName is empty.
-inline QString findOrCreateClient(DatabaseObjects* dbo, const QString& companyName)
+inline QString findOrCreateCompany(DatabaseObjects* dbo, const QString& companyName)
 {
     if (companyName.isEmpty())
         return QString();
@@ -244,13 +244,13 @@ inline QString findOrCreateClient(DatabaseObjects* dbo, const QString& companyNa
     QString escaped = companyName;
     escaped.replace("'", "''");
 
-    QString clientId = dbo->execute(
+    QString companyId = dbo->execute(
         QString("SELECT id FROM clients WHERE client_name = '%1' AND deleted = 0").arg(escaped));
 
-    if (!clientId.isEmpty())
-        return clientId;
+    if (!companyId.isEmpty())
+        return companyId;
 
-    ClientsModel* cm = dbo->clientsmodel();
+    CompaniesModel* cm = dbo->companiesmodel();
     QVector<QVariant> qr = cm->emptyrecord();
     qr[1] = companyName;
     QModelIndex idx = cm->addRecord(qr);
@@ -264,24 +264,24 @@ inline QString findOrCreateClient(DatabaseObjects* dbo, const QString& companyNa
 }
 
 // Returns the people_id for the contact, creating the person record if it doesn't exist.
-inline QString findOrCreatePerson(DatabaseObjects* dbo, const VCardContact& contact, const QString& clientId)
+inline QString findOrCreateContact(DatabaseObjects* dbo, const VCardContact& contact, const QString& companyId)
 {
     QString escapedName = contact.name;
     escapedName.replace("'", "''");
 
-    QString personId = dbo->execute(
+    QString contactId = dbo->execute(
         QString("SELECT id FROM people WHERE name = '%1' AND deleted = 0").arg(escapedName));
 
-    if (!personId.isEmpty())
-        return personId;
+    if (!contactId.isEmpty())
+        return contactId;
 
-    PeopleModel* pm = dbo->unfilteredpeoplemodel();
+    ContactsModel* pm = dbo->unfilteredcontactsmodel();
     QVector<QVariant> qr = pm->emptyrecord();
     qr[1] = contact.name;
     qr[2] = contact.email;
     qr[3] = contact.officePhone;
     qr[4] = contact.cellPhone;
-    if (!clientId.isEmpty()) qr[5] = clientId;
+    if (!companyId.isEmpty()) qr[5] = companyId;
     qr[6] = contact.role;
 
     QModelIndex idx = pm->addRecord(qr);

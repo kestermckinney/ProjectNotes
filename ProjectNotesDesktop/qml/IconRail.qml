@@ -71,8 +71,8 @@ Rectangle {
 
         RailButton { icon: "description"; section: "projects" }
         RailButton { icon: "task_alt";    section: "items" }
-        RailButton { icon: "group";       section: "people" }
-        RailButton { icon: "apartment";   section: "clients" }
+        RailButton { icon: "group";       section: "contacts" }
+        RailButton { icon: "apartment";   section: "companies" }
         RailButton { icon: "search";      section: "search" }
 
         Item { Layout.fillHeight: true }

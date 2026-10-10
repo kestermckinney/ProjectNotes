@@ -6,10 +6,10 @@ import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import ProjectNotesDesktop
 
-// Clients master list (cards). Click a row to open ClientDetailPage.
+// Companies master list (cards). Click a row to open CompanyDetailPage.
 Item {
     id: page
-    signal clientActivated(int row, string clientId)
+    signal companyActivated(int row, string companyId)
     signal exportRequested(string table, string id)
     signal filterRequested()
     signal sortRequested(real sx, real sy)
@@ -19,23 +19,23 @@ Item {
 
     RecordContextMenu {
         id: ctxMenu
-        recordType: qsTr("Client")
-        model: DesktopAppController.clientsModel
+        recordType: qsTr("Company")
+        model: DesktopAppController.companiesModel
         recordId: page._ctxId
-        onOpenRequested:   page.clientActivated(page._ctxRow, page._ctxId)
+        onOpenRequested:   page.companyActivated(page._ctxRow, page._ctxId)
         onNewRequested: {
-            var cr = DesktopAppController.addClient()
-            if (cr >= 0) page.clientActivated(cr, DesktopAppController.clientIdAtProxyRow(cr))
+            var cr = DesktopAppController.addCompany()
+            if (cr >= 0) page.companyActivated(cr, DesktopAppController.companyIdAtProxyRow(cr))
         }
-        onDeleteRequested: DesktopAppController.deleteClient(page._ctxRow)
+        onDeleteRequested: DesktopAppController.deleteCompany(page._ctxRow)
         onDuplicateRequested: {
-            var newId = DesktopAppController.duplicateRecord(DesktopAppController.clientsModel, page._ctxId)
-            if (newId !== "") page.clientActivated(DesktopAppController.clientRowForId(newId), newId)
+            var newId = DesktopAppController.duplicateRecord(DesktopAppController.companiesModel, page._ctxId)
+            if (newId !== "") page.companyActivated(DesktopAppController.companyRowForId(newId), newId)
         }
         onExportRequested: page.exportRequested("clients", page._ctxId)
         onFilterRequested: page.filterRequested()
         onSortRequested: (sx, sy) => page.sortRequested(sx, sy)
-        onRefreshRequested: DesktopAppController.refreshModel(DesktopAppController.clientsModel)
+        onRefreshRequested: DesktopAppController.refreshModel(DesktopAppController.companiesModel)
     }
 
     // Virtualized list — only visible cards (plus cacheBuffer) are instantiated,
@@ -46,7 +46,7 @@ Item {
         anchors.margins: 12
         clip: true
         spacing: 7
-        model: DesktopAppController.clientsModel
+        model: DesktopAppController.companiesModel
         reuseItems: true
         cacheBuffer: 800
         boundsBehavior: Flickable.StopAtBounds
@@ -94,7 +94,7 @@ Item {
                     }
 
                     HoverHandler { id: hover }
-                    function openRecord() { page.clientActivated(card.index, card.cid) }
+                    function openRecord() { page.companyActivated(card.index, card.cid) }
                     TapHandler { onTapped: card.openRecord() }
                     TapHandler {
                         acceptedButtons: Qt.RightButton

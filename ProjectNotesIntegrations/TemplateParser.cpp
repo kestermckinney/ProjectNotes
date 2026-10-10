@@ -16,8 +16,8 @@ const QList<TemplateField> &templateFieldCatalog()
         {"report.date", TemplateFieldType::Date,
          {Workflow::TrackerItemsReport, Workflow::StatusReport, Workflow::MeetingNotesReport}},
         {"report.internal", TemplateFieldType::Boolean}, {"report.type"},
-        {"person.name", TemplateFieldType::Text, {Workflow::ProjectEmail}},
-        {"person.email", TemplateFieldType::Text, {Workflow::ProjectEmail}},
+        {"contact.name", TemplateFieldType::Text, {Workflow::ProjectEmail}},
+        {"contact.email", TemplateFieldType::Text, {Workflow::ProjectEmail}},
         {"location.description", TemplateFieldType::Text, {Workflow::ShareLocation}},
         {"location.url", TemplateFieldType::Text, {Workflow::ShareLocation}},
         {"location.fileName", TemplateFieldType::Text, {Workflow::ShareLocation}}

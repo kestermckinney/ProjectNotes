@@ -26,10 +26,10 @@ QByteArray canonicalFingerprint(const CommunicationSnapshot &snapshot)
            << snapshot.projectFolderPath
            << snapshot.statusReportPeriod << snapshot.budget << snapshot.actual << snapshot.bcwp << snapshot.bcws << snapshot.bac
            << snapshot.databaseGeneration << snapshot.currentSelectionIds
-           << snapshot.currentSelectionPersonIds;
-    for (const SnapshotPerson &person : snapshot.people)
-        stream << person.id << person.name << person.email << person.companyId << person.companyName
-               << person.receivesStatus << person.meetingAttendee << person.projectTeamMember;
+           << snapshot.currentSelectionContactIds;
+    for (const SnapshotContact &contact : snapshot.contacts)
+        stream << contact.id << contact.name << contact.email << contact.companyId << contact.companyName
+               << contact.receivesStatus << contact.meetingAttendee << contact.projectTeamMember;
     for (const SnapshotNote &note : snapshot.notes)
         stream << note.id << note.title << note.html << note.date.toSecsSinceEpoch() << note.internal
                << note.attendeeIds;
@@ -72,22 +72,22 @@ SnapshotResult SqliteSnapshotLoader::load(const SnapshotRequest &request) const
         if (!db.open()) result.error = {QStringLiteral("snapshot-open-failed"), db.lastError().text()};
         else if (!db.transaction()) result.error = {QStringLiteral("snapshot-transaction-failed"), db.lastError().text()};
         else {
-            if (request.source.workflow == Workflow::PersonEmail) {
+            if (request.source.workflow == Workflow::ContactEmail) {
                 QSqlQuery person(db);
                 person.prepare(QStringLiteral(
                     "SELECT p.id,p.name,p.email,p.client_id,COALESCE(c.client_name,'') FROM people p "
                     "LEFT JOIN clients c ON c.id=p.client_id AND c.deleted=0 WHERE p.id=? AND p.deleted=0"));
-                person.addBindValue(request.source.personId);
+                person.addBindValue(request.source.contactId);
                 if (!person.exec())
                     result.error = {QStringLiteral("snapshot-query-failed"), person.lastError().text()};
                 else if (!person.next())
-                    result.error = {QStringLiteral("person-not-found"), QStringLiteral("The selected person is no longer available.")};
+                    result.error = {QStringLiteral("contact-not-found"), QStringLiteral("The selected contact is no longer available.")};
                 else {
                     result.snapshot.databaseGeneration = request.source.databaseGeneration;
                     result.snapshot.loadedAt = request.capturedAt;
-                    result.snapshot.people.append({person.value(0).toString(), person.value(1).toString(),
+                    result.snapshot.contacts.append({person.value(0).toString(), person.value(1).toString(),
                         person.value(2).toString(), person.value(3).toString(), person.value(4).toString()});
-                    result.snapshot.currentSelectionPersonIds = {request.source.personId};
+                    result.snapshot.currentSelectionContactIds = {request.source.contactId};
                 }
             } else {
             QSqlQuery project(db);
@@ -136,9 +136,9 @@ SnapshotResult SqliteSnapshotLoader::load(const SnapshotRequest &request) const
                     "WHERE p.deleted=0 ORDER BY p.name,p.id"));
                 people.addBindValue(request.source.projectId);
                 if (!people.exec()) result.error={QStringLiteral("snapshot-query-failed"),people.lastError().text()};
-                while (result.error.code.isEmpty() && people.next()) result.snapshot.people.append({people.value(0).toString(),people.value(1).toString(),people.value(2).toString(),people.value(3).toString(),people.value(4).toString(),people.value(5).toBool(),false,true});
-                // A clicked person may be a meeting attendee rather than a team member.
-                if (result.error.code.isEmpty() && !request.source.personId.isEmpty()) {
+                while (result.error.code.isEmpty() && people.next()) result.snapshot.contacts.append({people.value(0).toString(),people.value(1).toString(),people.value(2).toString(),people.value(3).toString(),people.value(4).toString(),people.value(5).toBool(),false,true});
+                // A clicked contact may be a meeting attendee rather than a team member.
+                if (result.error.code.isEmpty() && !request.source.contactId.isEmpty()) {
                     QSqlQuery person(db);
                     person.prepare(QStringLiteral(
                         "SELECT p.id,p.name,p.email,p.client_id,COALESCE(c.client_name,'') FROM people p "
@@ -147,14 +147,14 @@ SnapshotResult SqliteSnapshotLoader::load(const SnapshotRequest &request) const
                         "WHERE pp.people_id=p.id AND pp.project_id=? AND pp.deleted=0) OR EXISTS "
                         "(SELECT 1 FROM meeting_attendees ma JOIN project_notes n ON n.id=ma.note_id "
                         "WHERE ma.person_id=p.id AND ma.deleted=0 AND n.project_id=? AND n.deleted=0))"));
-                    person.addBindValue(request.source.personId);
+                    person.addBindValue(request.source.contactId);
                     person.addBindValue(request.source.projectId);
                     person.addBindValue(request.source.projectId);
                     if (!person.exec() || !person.next())
-                        result.error = {QStringLiteral("person-not-in-project"), QStringLiteral("The selected person is no longer attached to this project.")};
-                    else if (std::none_of(result.snapshot.people.cbegin(), result.snapshot.people.cend(),
-                                         [&request](const SnapshotPerson &p) { return p.id == request.source.personId; }))
-                        result.snapshot.people.append({person.value(0).toString(), person.value(1).toString(),
+                        result.error = {QStringLiteral("contact-not-in-project"), QStringLiteral("The selected contact is no longer attached to this project.")};
+                    else if (std::none_of(result.snapshot.contacts.cbegin(), result.snapshot.contacts.cend(),
+                                         [&request](const SnapshotContact &p) { return p.id == request.source.contactId; }))
+                        result.snapshot.contacts.append({person.value(0).toString(), person.value(1).toString(),
                                                        person.value(2).toString(), person.value(3).toString(),
                                                        person.value(4).toString(), false, true, false});
                 }
@@ -173,11 +173,11 @@ SnapshotResult SqliteSnapshotLoader::load(const SnapshotRequest &request) const
                 // "Current selection" is the legacy workflow's initial
                 // recipient context, not the selected note-ID set below.
                 // Capture it before adding non-team meeting attendees.
-                for (const SnapshotPerson &person : result.snapshot.people) {
-                    if (request.source.workflow != Workflow::StatusReport || person.receivesStatus)
-                        result.snapshot.currentSelectionPersonIds.append(person.id);
+                for (const SnapshotContact &contact : result.snapshot.contacts) {
+                    if (request.source.workflow != Workflow::StatusReport || contact.receivesStatus)
+                        result.snapshot.currentSelectionContactIds.append(contact.id);
                 }
-                result.snapshot.currentSelectionPersonIds.sort();
+                result.snapshot.currentSelectionContactIds.sort();
                 QSqlQuery notes(db);
                 notes.prepare(QStringLiteral("SELECT id,note_title,note_date,note,internal_item FROM project_notes WHERE project_id=? AND deleted=0 ORDER BY note_date DESC,id"));
                 notes.addBindValue(request.source.projectId);
@@ -256,23 +256,23 @@ SnapshotResult SqliteSnapshotLoader::load(const SnapshotRequest &request) const
                         QSet<QString> attendeeIds;
                         QHash<QString, QStringList> attendeeIdsByNote;
                         while (attendees.next()) {
-                            const QString personId = attendees.value(1).toString();
-                            attendeeIds.insert(personId);
-                            attendeeIdsByNote[attendees.value(0).toString()].append(personId);
-                            const auto knownPerson = std::find_if(result.snapshot.people.cbegin(), result.snapshot.people.cend(),
-                                [&personId](const SnapshotPerson &person) { return person.id == personId; });
-                            if (knownPerson == result.snapshot.people.cend()) {
-                                result.snapshot.people.append({personId, attendees.value(2).toString(),
+                            const QString contactId = attendees.value(1).toString();
+                            attendeeIds.insert(contactId);
+                            attendeeIdsByNote[attendees.value(0).toString()].append(contactId);
+                            const auto knownContact = std::find_if(result.snapshot.contacts.cbegin(), result.snapshot.contacts.cend(),
+                                [&contactId](const SnapshotContact &contact) { return contact.id == contactId; });
+                            if (knownContact == result.snapshot.contacts.cend()) {
+                                result.snapshot.contacts.append({contactId, attendees.value(2).toString(),
                                     attendees.value(3).toString(), attendees.value(4).toString(),
                                     attendees.value(5).toString(), false, false});
                             }
                         }
-                        std::sort(result.snapshot.people.begin(), result.snapshot.people.end(),
-                                  [](const SnapshotPerson &left, const SnapshotPerson &right) {
+                        std::sort(result.snapshot.contacts.begin(), result.snapshot.contacts.end(),
+                                  [](const SnapshotContact &left, const SnapshotContact &right) {
                             return left.name == right.name ? left.id < right.id : left.name < right.name;
                         });
-                        for (SnapshotPerson &person : result.snapshot.people)
-                            person.meetingAttendee = attendeeIds.contains(person.id);
+                        for (SnapshotContact &contact : result.snapshot.contacts)
+                            contact.meetingAttendee = attendeeIds.contains(contact.id);
                         for (SnapshotNote &note : result.snapshot.notes) {
                             note.attendeeIds = attendeeIdsByNote.value(note.id);
                             note.attendeeIds.sort();

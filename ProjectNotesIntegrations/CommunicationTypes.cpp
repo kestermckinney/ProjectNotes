@@ -52,7 +52,7 @@ QString toStableString(Workflow value)
     case Workflow::ScheduleMeeting: return QStringLiteral("schedule-meeting");
     case Workflow::ProjectEmail: return QStringLiteral("project-email");
     case Workflow::ShareLocation: return QStringLiteral("share-location");
-    case Workflow::PersonEmail: return QStringLiteral("person-email");
+    case Workflow::ContactEmail: return QStringLiteral("person-email");
     }
     return {};
 }
@@ -101,7 +101,7 @@ std::optional<Workflow> workflowFromStableString(const QString &value)
                                              {"schedule-meeting", Workflow::ScheduleMeeting},
                                              {"project-email", Workflow::ProjectEmail},
                                              {"share-location", Workflow::ShareLocation},
-                                             {"person-email", Workflow::PersonEmail}});
+                                             {"person-email", Workflow::ContactEmail}});
 }
 
 std::optional<EmailMode> emailModeFromStableString(const QString &value)

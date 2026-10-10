@@ -22,7 +22,7 @@ struct SourceContext {
     QString projectId;
     QStringList noteIds;
     Workflow workflow = Workflow::SendMeetingNotes;
-    QString personId;
+    QString contactId;
     QString locationId;
 };
 

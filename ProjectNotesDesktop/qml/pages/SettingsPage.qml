@@ -12,8 +12,8 @@ Item {
     id: page
     objectName: "settingsPage"
 
-    property var _clients: []
-    property var _people: []
+    property var _companies: []
+    property var _contacts: []
     readonly property var _contactSync: DesktopAppController.contactSyncSettingsModel
     readonly property bool contactsNeedReview: _contactSync && _contactSync.reviews.length > 0
     readonly property var _finder: DesktopAppController.fileFinder
@@ -28,10 +28,10 @@ Item {
         refreshContactOptions()
     }
     function refreshContactOptions() {
-        _clients = DesktopAppController.clientList()
-        _people  = DesktopAppController.peopleList()
-        mgmtCombo.value = _nameForId(_clients, DesktopAppController.managingCompanyId())
-        pmCombo.value   = _nameForId(_people,  DesktopAppController.projectManagerId())
+        _companies = DesktopAppController.companyList()
+        _contacts  = DesktopAppController.contactList()
+        mgmtCombo.value = _nameForId(_companies, DesktopAppController.managingCompanyId())
+        pmCombo.value   = _nameForId(_contacts,  DesktopAppController.projectManagerId())
     }
     Connections {
         target: page._contactSync
@@ -52,8 +52,8 @@ Item {
         return emailTemplates.saveAndValidate() && meetingTemplates.saveAndValidate()
     }
 
-    function _clientNames() { return _clients.map(function(c){ return c.name }) }
-    function _peopleNames() { return _people.map(function(p){ return p.name }) }
+    function _companyNames() { return _companies.map(function(c){ return c.name }) }
+    function _contactNames() { return _contacts.map(function(p){ return p.name }) }
     function _idForName(list, n) { for (var i=0;i<list.length;i++) if (list[i].name===n) return list[i].id; return "" }
     function _nameForId(list, id){ for (var i=0;i<list.length;i++) if (list[i].id===id) return list[i].name; return "" }
     function selectTab(index) {
@@ -174,16 +174,16 @@ Item {
                     ComboField {
                         id: mgmtCombo
                         label: qsTr("Managing Company")
-                        options: page._clientNames()
+                        options: page._companyNames()
                         searchable: true
-                        onActivated: (v) => DesktopAppController.setManagingCompanyId(page._idForName(page._clients, v))
+                        onActivated: (v) => DesktopAppController.setManagingCompanyId(page._idForName(page._companies, v))
                     }
                     ComboField {
                         id: pmCombo
                         label: qsTr("Project Manager")
-                        options: page._peopleNames()
+                        options: page._contactNames()
                         searchable: true
-                        onActivated: (v) => DesktopAppController.setProjectManagerId(page._idForName(page._people, v))
+                        onActivated: (v) => DesktopAppController.setProjectManagerId(page._idForName(page._contacts, v))
                     }
                 }
             }

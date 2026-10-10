@@ -102,7 +102,7 @@ QString diagnosticDisplayText(const QString &code)
     if (code == QLatin1String("recipient-required"))
         return tr("Select at least one recipient, or choose to address the email later.");
     if (code == QLatin1String("recipient-address-invalid"))
-        return tr("A recipient has an invalid email address. Correct it in the person's record.");
+        return tr("A recipient has an invalid email address. Correct it in the contact's record.");
     if (code == QLatin1String("recipient-address-duplicate"))
         return tr("The same email address is listed more than once. Remove the duplicate.");
     if (code == QLatin1String("recipient-role-invalid"))

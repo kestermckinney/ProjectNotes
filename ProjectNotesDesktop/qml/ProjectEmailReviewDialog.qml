@@ -12,11 +12,11 @@ Dialog {
     anchors.centerIn: parent
     width: Math.min(720, parent ? parent.width - 36 : 720)
     height: Math.min(760, parent ? parent.height - 36 : 760)
-    title: sharingLocation ? qsTr("Share Location") : plainPerson ? qsTr("Email") : qsTr("Project Email")
+    title: sharingLocation ? qsTr("Share Location") : plainContact ? qsTr("Email") : qsTr("Project Email")
     objectName: "projectEmailReviewDialog"
     padding: 16
     property bool sharingLocation: false
-    property bool plainPerson: false
+    property bool plainContact: false
     readonly property var controller: DesktopAppController.communicationsController
     readonly property var recipients: DesktopAppController.recipientSelectionModel
     readonly property bool ready: controller && controller.stageName === "reviewing" && !controller.busy
@@ -41,19 +41,19 @@ Dialog {
         if (!controller || !controller.busy)
             DesktopAppController.cancelProjectEmailReview()
     }
-    function openProject(projectId, personId) {
+    function openProject(projectId, contactId) {
         sharingLocation = false
-        plainPerson = false
-        if (DesktopAppController.prepareProjectEmailReview(projectId, personId)) open()
+        plainContact = false
+        if (DesktopAppController.prepareProjectEmailReview(projectId, contactId)) open()
     }
-    function openPerson(personId) {
+    function openContact(contactId) {
         sharingLocation = false
-        plainPerson = true
-        if (DesktopAppController.preparePersonEmailReview(personId)) open()
+        plainContact = true
+        if (DesktopAppController.prepareContactEmailReview(contactId)) open()
     }
     function openLocation(projectId, locationId, attachment) {
         sharingLocation = true
-        plainPerson = false
+        plainContact = false
         if (DesktopAppController.prepareLocationEmailReview(projectId, locationId, attachment)) open()
     }
     contentItem: ScrollView {
@@ -73,8 +73,8 @@ Dialog {
             }
             Label {
                 Layout.fillWidth: true
-                text: dialog.plainPerson
-                    ? qsTr("Create a blank draft for this person, then write your message in your email client.")
+                text: dialog.plainContact
+                    ? qsTr("Create a blank draft for this contact, then write your message in your email client.")
                     : qsTr("Review the recipients, then create a draft using your configured email template. Review and edit the message in your email client.")
                 color: Theme.text2; wrapMode: Text.Wrap
             }
@@ -85,16 +85,16 @@ Dialog {
                 color: Theme.amber
             }
             Label {
-                visible: dialog.plainPerson && dialog.ready
+                visible: dialog.plainContact && dialog.ready
                 text: dialog.recipients ? qsTr("To: %1").arg(dialog.recipients.selectedRecipientCount > 0
-                    ? dialog.controller.recipientLabel : qsTr("The selected person has no valid email address.")) : ""
+                    ? dialog.controller.recipientLabel : qsTr("The selected contact has no valid email address.")) : ""
                 color: Theme.text2
                 Layout.fillWidth: true; wrapMode: Text.Wrap
             }
             RecipientSelectionPane {
                 objectName: "projectEmailAudience"
                 Layout.fillWidth: true
-                visible: !dialog.plainPerson
+                visible: !dialog.plainContact
                 enabled: dialog.ready
                 recipientModel: dialog.recipients
                 reviewController: dialog.controller

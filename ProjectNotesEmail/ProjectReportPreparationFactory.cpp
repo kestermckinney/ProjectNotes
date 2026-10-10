@@ -99,9 +99,9 @@ std::optional<ProjectReportReview> ProjectReportPreparationFactory::createStatus
     input.activitiesInProgress = activity(snapshot, QStringLiteral("In Progress"));
     input.activitiesNextPeriod = activity(snapshot, QStringLiteral("Next Period"));
     input.activitiesCompleted = activity(snapshot, QStringLiteral("Completed"));
-    for (const SnapshotPerson &person : snapshot.people) {
-        if (person.id == snapshot.projectManagerId) input.managerName = person.name;
-        if (person.receivesStatus && !person.name.trimmed().isEmpty()) input.stakeholders.append(person.name);
+    for (const SnapshotContact &contact : snapshot.contacts) {
+        if (contact.id == snapshot.projectManagerId) input.managerName = contact.name;
+        if (contact.receivesStatus && !contact.name.trimmed().isEmpty()) input.stakeholders.append(contact.name);
     }
     for (const SnapshotTrackerItem &item : snapshot.trackerItems) {
         if (item.itemType.compare(QStringLiteral("Tracker"), Qt::CaseInsensitive) == 0
@@ -115,12 +115,12 @@ std::optional<ProjectReportReview> ProjectReportPreparationFactory::createStatus
         return std::nullopt;
     // The report dialog may offer every member of this project, but starts
     // with only members who opted in to status reports selected.
-    AudienceRule audienceRule; audienceRule.source = PeopleSource::ProjectTeam;
+    AudienceRule audienceRule; audienceRule.source = ContactSource::ProjectTeam;
     audienceRule.companyFilter = CompanyFilter::All; audienceRule.excludeProjectManager = true;
     AudienceResolution audience = resolveAudience(snapshot, audienceRule);
-    for (const SnapshotPerson &person : audience.people)
-        if (!person.receivesStatus)
-            audience.initialOverrides.append({person.id, false, RecipientRole::To});
+    for (const SnapshotContact &contact : audience.contacts)
+        if (!contact.receivesStatus)
+            audience.initialOverrides.append({contact.id, false, RecipientRole::To});
     return finish(*document, std::move(source), backend, options.emailMode, options.retainHtml, options.displayPdf, snapshot.projectFolderPath,
                   std::move(audience), std::move(validation));
 }
@@ -147,12 +147,12 @@ std::optional<ProjectReportReview> ProjectReportPreparationFactory::createTracke
     if (!document || !validation.ok()) return std::nullopt;
     if (!applyContentTemplate(&*document, snapshot, Workflow::TrackerItemsReport, options, contentTemplate, &validation))
         return std::nullopt;
-    AudienceRule audienceRule; audienceRule.source = PeopleSource::ProjectTeam;
+    AudienceRule audienceRule; audienceRule.source = ContactSource::ProjectTeam;
     audienceRule.companyFilter = CompanyFilter::All; audienceRule.excludeProjectManager = true;
     AudienceResolution audience = resolveAudience(snapshot, audienceRule);
-    for (const SnapshotPerson &person : audience.people)
-        if (!person.receivesStatus)
-            audience.initialOverrides.append({person.id, false, RecipientRole::To});
+    for (const SnapshotContact &contact : audience.contacts)
+        if (!contact.receivesStatus)
+            audience.initialOverrides.append({contact.id, false, RecipientRole::To});
     return finish(*document, std::move(source), backend, options.emailMode, options.retainHtml, options.displayPdf, snapshot.projectFolderPath,
                   std::move(audience), std::move(validation));
 }

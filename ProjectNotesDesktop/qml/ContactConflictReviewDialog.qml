@@ -42,8 +42,8 @@ Dialog {
     width: Math.min(940, parent ? (parent.width - 36) / scale : 940)
     height: Math.min(720, parent ? (parent.height - 36) / scale : 720)
     padding: 0
-    readonly property bool clientStage: syncModel && syncModel.reviews.some(entry => entry.stage === "client")
-    title: clientStage ? qsTr("Step 1: Resolve Duplicate Clients") : qsTr("Step 2: Resolve Duplicate Contacts")
+    readonly property bool companyStage: syncModel && syncModel.reviews.some(entry => entry.stage === "client")
+    title: companyStage ? qsTr("Step 1: Resolve Duplicate Companies") : qsTr("Step 2: Resolve Duplicate Contacts")
     header: null
     ClickShield { host: dialog }
     background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
@@ -81,7 +81,7 @@ Dialog {
                     Layout.fillWidth: true
                 }
                 Label {
-                    text: dialog.clientStage ? qsTr("Compare each imported client with the possible Project Notes client. Choose either client, or keep both. Contact duplicates will be checked after all client choices are saved.") : qsTr("Client matches are resolved. Choose which contact details to keep.")
+                    text: dialog.companyStage ? qsTr("Compare each imported company with the possible Project Notes company. Choose either company, or keep both. Contact duplicates will be checked after all company choices are saved.") : qsTr("Company matches are resolved. Choose which contact details to keep.")
                     visible: reviewRepeater.count > 0
                     color: Theme.text2
                     wrapMode: Text.Wrap
@@ -94,16 +94,16 @@ Dialog {
                     ColumnLayout {
                         id: review
                         required property var modelData
-                        readonly property bool clientReview: modelData.stage === "client"
+                        readonly property bool companyReview: modelData.stage === "client"
                         readonly property var contact: modelData.contact || ({})
                         readonly property var rightContact: hasPerson ? modelData.people[personChoice.currentIndex].contact || ({}) : ({})
-                        readonly property bool hasClient: clientChoice.currentIndex >= 0 && clientChoice.currentIndex < (modelData.clients || []).length
-                        readonly property var rightClient: hasClient ? modelData.clients[clientChoice.currentIndex] : ({})
+                        readonly property bool hasCompany: companyChoice.currentIndex >= 0 && companyChoice.currentIndex < (modelData.clients || []).length
+                        readonly property var rightCompany: hasCompany ? modelData.clients[companyChoice.currentIndex] : ({})
                         readonly property bool exportReview: modelData.key.startsWith("export/")
                         readonly property bool hasPerson: personChoice.currentIndex >= 0 && personChoice.currentIndex < (modelData.people || []).length
                         Layout.fillWidth: true
                         ColumnLayout {
-                            visible: review.clientReview
+                            visible: review.companyReview
                             Layout.fillWidth: true
                             RowLayout {
                                 Layout.fillWidth: true
@@ -114,7 +114,7 @@ Dialog {
                                     Layout.alignment: Qt.AlignTop
                                     spacing: 10
                                     Label { text: dialog.sourceName(review.modelData.scope); color: Theme.text; font.bold: true; font.pixelSize: Theme.fontLg }
-                                    ContactDetail { caption: qsTr("Client:"); value: review.modelData.company || "" }
+                                    ContactDetail { caption: qsTr("Company:"); value: review.modelData.company || "" }
                                     Text {
                                         text: review.modelData.reason || ""
                                         color: Theme.text2
@@ -122,10 +122,10 @@ Dialog {
                                         Layout.fillWidth: true
                                     }
                                     Button {
-                                        objectName: "useLeftClientButton"
-                                        text: qsTr("Use This Client")
-                                        enabled: review.hasClient && dialog.syncModel && !dialog.syncModel.busy
-                                        onClicked: dialog.syncModel.resolve(review.modelData.key, "clientUseLeft", "", review.rightClient.id, "")
+                                        objectName: "useLeftCompanyButton"
+                                        text: qsTr("Use This Company")
+                                        enabled: review.hasCompany && dialog.syncModel && !dialog.syncModel.busy
+                                        onClicked: dialog.syncModel.resolve(review.modelData.key, "clientUseLeft", "", review.rightCompany.id, "")
                                     }
                                 }
                                 ColumnLayout {
@@ -135,38 +135,38 @@ Dialog {
                                     spacing: 10
                                     Label { text: qsTr("Project Notes"); color: Theme.text; font.bold: true; font.pixelSize: Theme.fontLg }
                                     StyledComboBox {
-                                        id: clientChoice
-                                        objectName: "duplicateClientChoice"
+                                        id: companyChoice
+                                        objectName: "duplicateCompanyChoice"
                                         model: review.modelData.clients || []
                                         textRole: "label"
                                         Layout.fillWidth: true
                                         visible: count > 1
                                     }
-                                    ContactDetail { caption: qsTr("Client:"); value: review.rightClient.label || "" }
+                                    ContactDetail { caption: qsTr("Company:"); value: review.rightCompany.label || "" }
                                     Text {
-                                        text: review.hasClient ? review.rightClient.reason : ""
+                                        text: review.hasCompany ? review.rightCompany.reason : ""
                                         color: Theme.text2
                                         wrapMode: Text.Wrap
                                         Layout.fillWidth: true
                                     }
                                     Button {
-                                        objectName: "useRightClientButton"
-                                        text: qsTr("Use This Client")
-                                        enabled: review.hasClient && dialog.syncModel && !dialog.syncModel.busy
-                                        onClicked: dialog.syncModel.resolve(review.modelData.key, "clientUseRight", "", review.rightClient.id, "")
+                                        objectName: "useRightCompanyButton"
+                                        text: qsTr("Use This Company")
+                                        enabled: review.hasCompany && dialog.syncModel && !dialog.syncModel.busy
+                                        onClicked: dialog.syncModel.resolve(review.modelData.key, "clientUseRight", "", review.rightCompany.id, "")
                                     }
                                 }
                             }
                             Button {
-                                objectName: "useBothClientsButton"
+                                objectName: "useBothCompaniesButton"
                                 text: qsTr("Use Both")
-                                enabled: review.hasClient && dialog.syncModel && !dialog.syncModel.busy
+                                enabled: review.hasCompany && dialog.syncModel && !dialog.syncModel.busy
                                 Layout.alignment: Qt.AlignRight
                                 onClicked: dialog.syncModel.resolve(review.modelData.key, "clientUseBoth", "", "", "")
                             }
                         }
                         RowLayout {
-                            visible: !review.clientReview
+                            visible: !review.companyReview
                             Layout.fillWidth: true
                             spacing: 24
                             ColumnLayout {
@@ -214,7 +214,7 @@ Dialog {
                                 Button {
                                     objectName: "useLeftContactButton"
                                     text: qsTr("Use This One")
-                                    visible: !review.exportReview && !review.clientReview
+                                    visible: !review.exportReview && !review.companyReview
                                     enabled: dialog.syncModel && !dialog.syncModel.busy
                                     onClicked: dialog.syncModel.resolve(review.modelData.key, "useLeft", review.hasPerson ? review.modelData.people[personChoice.currentIndex].id : "", "", "")
                                 }
@@ -262,7 +262,7 @@ Dialog {
                                 Button {
                                     objectName: "useRightContactButton"
                                     text: qsTr("Use This One")
-                                    visible: !review.exportReview && !review.clientReview
+                                    visible: !review.exportReview && !review.companyReview
                                     enabled: review.hasPerson && dialog.syncModel && !dialog.syncModel.busy
                                     onClicked: dialog.syncModel.resolve(review.modelData.key, "ignore", "", "", "")
                                 }
@@ -284,7 +284,7 @@ Dialog {
                         Button {
                             objectName: "useBothContactsButton"
                             text: qsTr("Use Both")
-                            visible: !review.exportReview && !review.clientReview
+                            visible: !review.exportReview && !review.companyReview
                             enabled: review.hasPerson && dialog.syncModel && !dialog.syncModel.busy
                             Layout.alignment: Qt.AlignRight
                             onClicked: dialog.syncModel.resolve(review.modelData.key, "useBoth", "", "", "")

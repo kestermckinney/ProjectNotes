@@ -14,7 +14,7 @@ Item {
     property string itemId: ""
     property string projectId: ""
     property bool   _changed: false
-    property var    _people: []
+    property var    _contacts: []
     readonly property string exportTable: "item_tracker"
     readonly property string exportId: itemId
 
@@ -37,9 +37,9 @@ Item {
         return true
     }
 
-    function _peopleNames() { return _people.map(function(p){ return p.name }) }
-    function _idForName(n){ for (var i=0;i<_people.length;i++) if (_people[i].name===n) return _people[i].id; return "" }
-    function _nameForId(id){ for (var i=0;i<_people.length;i++) if (_people[i].id===id) return _people[i].name; return "" }
+    function _contactNames() { return _contacts.map(function(p){ return p.name }) }
+    function _idForName(n){ for (var i=0;i<_contacts.length;i++) if (_contacts[i].name===n) return _contacts[i].id; return "" }
+    function _nameForId(id){ for (var i=0;i<_contacts.length;i++) if (_contacts[i].id===id) return _contacts[i].name; return "" }
 
     property string _identifiedBy: ""
     property string _assignedTo: ""
@@ -115,7 +115,7 @@ Item {
         page._assignedTo   = (d.assigned_to || "").toString()
         // Assigned To / Identified By list only this project's team members (plus
         // whoever is already assigned, so an existing value keeps displaying).
-        page._people = DesktopAppController.teamMemberList(page.projectId,
+        page._contacts = DesktopAppController.teamMemberList(page.projectId,
                             [page._identifiedBy, page._assignedTo])
         identifiedCombo.value = _nameForId(page._identifiedBy)
         assignedCombo.value   = _nameForId(page._assignedTo)
@@ -249,14 +249,14 @@ Item {
                 Layout.fillWidth: true; columns: 2; columnSpacing: 10; rowSpacing: 9
                 ComboField {
                     label: qsTr("Identified By"); id: identifiedCombo
-                    options: page._peopleNames()
+                    options: page._contactNames()
                     includeNone: true
                     searchable: true
                     onActivated: (v) => { page._identifiedBy = page._idForName(v); page._markChanged() }
                 }
                 ComboField {
                     label: qsTr("Assigned To"); id: assignedCombo
-                    options: page._peopleNames()
+                    options: page._contactNames()
                     includeNone: true
                     searchable: true
                     onActivated: (v) => {
@@ -386,7 +386,7 @@ Item {
                                 id: byCombo
                                 label: qsTr("Updated By")
                                 Layout.fillWidth: true
-                                options: page._peopleNames()
+                                options: page._contactNames()
                                 includeNone: true
                                 searchable: true
                                 value: page._nameForId((cCard.model.updated_by || "").toString())
