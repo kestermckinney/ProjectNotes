@@ -229,8 +229,8 @@ private slots:
         QVERIFY(!menu->property("canShareLocation").toBool());
         menu->setProperty("recordTable", "people");
         menu->setProperty("emailProjectId", "");
-        menu->setProperty("personId", "");
-        QVERIFY(menu->property("canPersonEmail").toBool());
+        menu->setProperty("contactId", "");
+        QVERIFY(menu->property("canContactEmail").toBool());
         QVERIFY(!menu->property("canProjectEmail").toBool());
         menu->setProperty("recordTable", "project_locations");
         menu->setProperty("emailProjectId", projectId);
@@ -240,7 +240,7 @@ private slots:
         menu->setProperty("locationPath", "/tmp/file.pdf");
         QVERIFY(!menu->property("canShareLink").toBool());
         menu->setProperty("recordTable", "meeting_attendees");
-        menu->setProperty("personId", "person");
+        menu->setProperty("contactId", "person");
         QVERIFY(menu->property("canProjectEmail").toBool());
         QVERIFY(!menu->property("canShareLocation").toBool());
         // Use a menu-owned dialog in the real scene so its Overlay parent and
@@ -272,12 +272,12 @@ private slots:
         if (!screenshot.isNull()) screenshot.save(QDir::temp().filePath("projectnotes-project-email-review.png"));
         assertClean("Project Email and location sharing menus/review");
         QVERIFY(QMetaObject::invokeMethod(dialog, "close"));
-        const auto people = c->peopleList();
+        const auto people = c->contactList();
         QVERIFY(!people.isEmpty());
-        QVERIFY(QMetaObject::invokeMethod(dialog, "openPerson",
+        QVERIFY(QMetaObject::invokeMethod(dialog, "openContact",
             Q_ARG(QVariant, people.first().toMap().value("id"))));
         QTRY_VERIFY_WITH_TIMEOUT(dialog->property("ready").toBool(), 5000);
-        QVERIFY(dialog->property("plainPerson").toBool());
+        QVERIFY(dialog->property("plainContact").toBool());
         QVERIFY(!audience->isVisible());
         QVERIFY(!dialog->findChild<QQuickItem *>("projectEmailSubject"));
         QVERIFY(!dialog->findChild<QQuickItem *>("projectEmailBody"));
@@ -297,9 +297,9 @@ private slots:
         QVERIFY(pages);
         QVariant selected;
         QVERIFY(QMetaObject::invokeMethod(settings, "selectTab", Q_RETURN_ARG(QVariant, selected),
-                                          Q_ARG(QVariant, 3)));
+                                          Q_ARG(QVariant, 8)));
         QVERIFY(selected.toBool());
-        QTRY_COMPARE_WITH_TIMEOUT(pages->property("currentIndex").toInt(), 3, 1000);
+        QTRY_COMPARE_WITH_TIMEOUT(pages->property("currentIndex").toInt(), 8, 1000);
         assertClean("Email Templates selected first");
     }
 
@@ -314,9 +314,9 @@ private slots:
         QVERIFY(pages);
         QVariant selected;
         QVERIFY(QMetaObject::invokeMethod(settings, "selectTab", Q_RETURN_ARG(QVariant, selected),
-                                          Q_ARG(QVariant, 4)));
+                                          Q_ARG(QVariant, 9)));
         QVERIFY(selected.toBool());
-        QTRY_COMPARE_WITH_TIMEOUT(pages->property("currentIndex").toInt(), 4, 1000);
+        QTRY_COMPARE_WITH_TIMEOUT(pages->property("currentIndex").toInt(), 9, 1000);
         assertClean("Meeting Templates selected");
 
         // Showing the editor for a new, blank meeting type must bind cleanly,
@@ -337,7 +337,7 @@ private slots:
         // A named draft with no subject is kept but blocks leaving the tab
         // behind the themed validation dialog.
         QVERIFY(QMetaObject::invokeMethod(settings, "selectTab", Q_RETURN_ARG(QVariant, selected),
-                                          Q_ARG(QVariant, 4)));
+                                          Q_ARG(QVariant, 9)));
         QVERIFY(QMetaObject::invokeMethod(model, "beginNew"));
         model->setProperty("draftName", QStringLiteral("Smoke meeting"));
         QVERIFY(QMetaObject::invokeMethod(settings, "selectTab", Q_RETURN_ARG(QVariant, selected),
@@ -360,7 +360,7 @@ private slots:
     void test_01_sections()
     {
         const QStringList sections = {
-            "projects", "items", "people", "clients", "search", "settings", "help", "projects"
+            "projects", "items", "contacts", "companies", "search", "settings", "help", "projects"
         };
         for (const QString& s : sections) {
             clearWarnings();
@@ -378,7 +378,7 @@ private slots:
         auto* stack = findVisualChild(window->contentItem(), "contentStack");
         QVERIFY(stack);
         for (const QString& section : {QString("projects"), QString("items"),
-                                       QString("people"), QString("clients"), QString("projects")}) {
+                                       QString("contacts"), QString("companies"), QString("projects")}) {
             nav("selectSection", section);
             auto* page = qvariant_cast<QQuickItem*>(stack->property("currentItem"));
             QVERIFY(page);
@@ -463,7 +463,7 @@ private slots:
         struct Case { const char* section; const char* rowId; const char* detailId; };
         const Case cases[] = {
             {"projects", "projId", "projectId"}, {"items", "iid", "itemId"},
-            {"people", "pid", "personId"}, {"clients", "cid", "clientId"}
+            {"contacts", "pid", "contactId"}, {"companies", "cid", "companyId"}
         };
         for (const auto& entry : cases) {
             nav("selectSection", QString::fromLatin1(entry.section));
@@ -534,8 +534,8 @@ private slots:
             }
         }
         QCOMPARE(destinations.size(), 7);
-        const QStringList sections = {"projects", "items", "people", "clients", "search", "help", "settings"};
-        const QStringList labels = {"Projects", "Action Items", "People", "Clients", "Search", "User Guide", "Settings"};
+        const QStringList sections = {"projects", "items", "contacts", "companies", "search", "help", "settings"};
+        const QStringList labels = {"Projects", "Action Items", "Contacts", "Companies", "Search", "User Guide", "Settings"};
         const QString projectId = projectWithNote();
         QVERIFY(!projectId.isEmpty());
         for (int i = 0; i < sections.size(); ++i) {
@@ -594,36 +594,36 @@ private slots:
         QTRY_COMPARE(root->property("currentSection").toString(), QString("search"));
         QTest::keyClick(window, Qt::Key_Comma, Qt::ControlModifier);
         QTRY_COMPARE(root->property("currentSection").toString(), QString("settings"));
-        nav("selectSection", "clients");
+        nav("selectSection", "companies");
         QTest::keyClick(window, Qt::Key_F1);
         QTRY_COMPARE(root->property("currentSection").toString(), QString("help"));
         auto* helpPage = qvariant_cast<QQuickItem*>(stack->property("currentItem"));
         QCOMPARE(helpPage->property("topic").toString(), QString("InterfaceOverview/ClientListPage.md"));
         // A shortcut while typing uses the same save path as a rail click.
-        const QString clientId = c->clientIdAtProxyRow(0);
+        const QString clientId = c->companyIdAtProxyRow(0);
         QVERIFY(!clientId.isEmpty());
-        int clientRow = c->clientRowForId(clientId);
-        const QString oldName = c->getClientData(clientRow).value("client_name").toString();
-        nav("selectSection", "clients");
-        nav("openClient", clientRow, clientId);
+        int clientRow = c->companyRowForId(clientId);
+        const QString oldName = c->getCompanyData(clientRow).value("client_name").toString();
+        nav("selectSection", "companies");
+        nav("openCompany", clientRow, clientId);
         QTRY_VERIFY(!stack->property("busy").toBool());
-        auto* name = findVisualChild(window->contentItem(), "Client NameInput");
+        auto* name = findVisualChild(window->contentItem(), "Company NameInput");
         QVERIFY(name);
         name->forceActiveFocus();
         QTest::keyClick(window, Qt::Key_A, Qt::ControlModifier);
         for (char key : QByteArray("Rail Shortcut Saved Client")) QTest::keyClick(window, key);
         QTest::keyClick(window, Qt::Key_1, Qt::ControlModifier);
         QTRY_COMPARE(root->property("currentSection").toString(), QString("projects"));
-        QCOMPARE(c->getClientData(c->clientRowForId(clientId)).value("client_name").toString(),
+        QCOMPARE(c->getCompanyData(c->companyRowForId(clientId)).value("client_name").toString(),
                  QString("Rail Shortcut Saved Client"));
-        QVERIFY(c->saveClient(c->clientRowForId(clientId), oldName));
+        QVERIFY(c->saveCompany(c->companyRowForId(clientId), oldName));
         // Invalid settings drafts keep the user on the current page.
         nav("selectSection", "settings");
         auto* settings = findVisualChild(window->contentItem(), "settingsPage");
         QVERIFY(settings);
         QVariant selected;
         QVERIFY(QMetaObject::invokeMethod(settings, "selectTab", Q_RETURN_ARG(QVariant, selected),
-                                          Q_ARG(QVariant, 4)));
+                                          Q_ARG(QVariant, 9)));
         QVERIFY(selected.toBool());
         QObject* model = c->meetingTemplateEditorModel();
         QVERIFY(QMetaObject::invokeMethod(model, "beginNew"));
@@ -781,20 +781,20 @@ private slots:
         QCOMPARE(settings->property("currentTab").toInt(), 0);
         // Arrows don't validate or save a draft; Enter retains the existing gate.
         QVERIFY(QMetaObject::invokeMethod(settings, "selectTab", Q_RETURN_ARG(QVariant, selected),
-                                          Q_ARG(QVariant, 4)));
+                                          Q_ARG(QVariant, 9)));
         QVERIFY(selected.toBool());
         auto* model = c->meetingTemplateEditorModel();
         QVERIFY(QMetaObject::invokeMethod(model, "beginNew"));
         model->setProperty("draftName", "Keyboard tab validation");
         tabs->forceActiveFocus();
         QTest::keyClick(window, Qt::Key_Up);
-        QCOMPARE(settings->property("currentTab").toInt(), 4);
-        QCOMPARE(tabs->property("currentIndex").toInt(), 3);
+        QCOMPARE(settings->property("currentTab").toInt(), 9);
+        QCOMPARE(tabs->property("currentIndex").toInt(), 8);
         auto* validation = root->findChild<QObject*>("meetingValidationDialog");
         QVERIFY(validation);
         QVERIFY(!validation->property("visible").toBool());
         QTest::keyClick(window, Qt::Key_Return);
-        QCOMPARE(settings->property("currentTab").toInt(), 4);
+        QCOMPARE(settings->property("currentTab").toInt(), 9);
         QTRY_VERIFY(validation->property("visible").toBool());
         QVERIFY(QMetaObject::invokeMethod(validation, "close"));
         QVERIFY(QMetaObject::invokeMethod(model, "deleteSelected"));
@@ -824,7 +824,7 @@ private slots:
             const bool showInternal = c->showInternalItems();
             c->setShowInternalItems(true);
             const QStringList order = {"Project NumberInput", "Project NameInput", "StatusInput",
-                                       "ClientInput", "Primary ContactInput", "Status DateInput",
+                                       "CompanyInput", "Primary ContactInput", "Status DateInput",
                                        "Invoice DateInput", "Invoicing PeriodInput",
                                        "Status Report PeriodInput", "BudgetInput", "Actual (ACWP)Input",
                                        "BCWPInput", "BCWSInput", "BACInput"};
@@ -890,10 +890,10 @@ private slots:
         const QString secondName = QStringLiteral("KeyboardChoice Beta");
         QStringList ids;
         for (const QString& name : {firstName, secondName}) {
-            const int row = c->addClient();
+            const int row = c->addCompany();
             QVERIFY(row >= 0);
-            QVERIFY2(c->saveClient(row, name), qPrintable(c->lastSaveError()));
-            for (const QVariant& entry : c->clientList()) {
+            QVERIFY2(c->saveCompany(row, name), qPrintable(c->lastSaveError()));
+            for (const QVariant& entry : c->companyList()) {
                 const QVariantMap client = entry.toMap();
                 if (client.value(QStringLiteral("name")).toString() == name) {
                     ids.append(client.value(QStringLiteral("id")).toString());
@@ -912,7 +912,7 @@ private slots:
         QVERIFY(QMetaObject::invokeMethod(settings, "refreshContactOptions"));
         QVariant selected;
         QVERIFY(QMetaObject::invokeMethod(settings, "selectTab", Q_RETURN_ARG(QVariant, selected),
-                                          Q_ARG(QVariant, 7)));
+                                          Q_ARG(QVariant, 0)));
         QVERIFY(selected.toBool());
         QQuickItem* combo = findVisualChild(window->contentItem(), QStringLiteral("Managing CompanyInput"));
         QVERIFY(combo);
@@ -958,9 +958,9 @@ private slots:
 
         c->setManagingCompanyId(originalId);
         for (const QString& id : ids) {
-            const int row = c->clientRowForId(id);
+            const int row = c->companyRowForId(id);
             QVERIFY(row >= 0);
-            QVERIFY2(c->deleteClient(row), qPrintable(c->lastSaveError()));
+            QVERIFY2(c->deleteCompany(row), qPrintable(c->lastSaveError()));
         }
         QVERIFY(QMetaObject::invokeMethod(settings, "refreshContactOptions"));
     }
@@ -1052,16 +1052,16 @@ private slots:
         QSqlQuery client(global_DBObjects.getDb());
         QVERIFY(client.exec("INSERT INTO clients(id,client_name) VALUES('review-stage-client','Review Test Company')"));
         provider.clientReview=true;model.syncNow();QTRY_VERIFY(!model.busy());
-        QTRY_VERIFY(reviewDialog->property("clientStage").toBool());
+        QTRY_VERIFY(reviewDialog->property("companyStage").toBool());
         QTRY_COMPARE(reviews->property("count").toInt(),1);
-        auto *useLeftClient=findVisualChild(window->contentItem(),QStringLiteral("useLeftClientButton"));
-        auto *useRightClient=findVisualChild(window->contentItem(),QStringLiteral("useRightClientButton"));
-        auto *useBothClients=findVisualChild(window->contentItem(),QStringLiteral("useBothClientsButton"));
+        auto *useLeftClient=findVisualChild(window->contentItem(),QStringLiteral("useLeftCompanyButton"));
+        auto *useRightClient=findVisualChild(window->contentItem(),QStringLiteral("useRightCompanyButton"));
+        auto *useBothClients=findVisualChild(window->contentItem(),QStringLiteral("useBothCompaniesButton"));
         QVERIFY(useLeftClient);QVERIFY(useLeftClient->isVisible());QVERIFY(useLeftClient->isEnabled());
         QVERIFY(useRightClient);QVERIFY(useRightClient->isVisible());QVERIFY(useRightClient->isEnabled());
         QVERIFY(useBothClients);QVERIFY(useBothClients->isVisible());QVERIFY(useBothClients->isEnabled());
         QVERIFY(QMetaObject::invokeMethod(useRightClient,"clicked"));
-        QTRY_VERIFY(!reviewDialog->property("clientStage").toBool());
+        QTRY_VERIFY(!reviewDialog->property("companyStage").toBool());
         QTRY_VERIFY(!model.busy());QCOMPARE(model.reviews().size(),1);
         QVERIFY(model.reviews().first().toMap().value("reason").toString().contains("missing"));
         model.resolve(model.reviews().first().toMap().value("key").toString(),"ignore","","","");
@@ -1092,9 +1092,9 @@ private slots:
         QVERIFY(pages);
         QVariant selected;
         QVERIFY(QMetaObject::invokeMethod(settings, "selectTab", Q_RETURN_ARG(QVariant, selected),
-                                          Q_ARG(QVariant, 8)));
+                                          Q_ARG(QVariant, 3)));
         QVERIFY(selected.toBool());
-        QTRY_COMPARE_WITH_TIMEOUT(pages->property("currentIndex").toInt(), 8, 1000);
+        QTRY_COMPARE_WITH_TIMEOUT(pages->property("currentIndex").toInt(), 3, 1000);
 
         QObject* box = root->findChild<QObject*>(QStringLiteral("viewOptionShowClosedBox"));
         QVERIFY2(box, "View Options 'Show closed projects' checkbox not found");
@@ -1231,22 +1231,22 @@ private slots:
     void test_04_personDetail()
     {
         clearWarnings();
-        nav("selectSection", "people");
-        const QString id = firstId(c->peopleModel());
+        nav("selectSection", "contacts");
+        const QString id = firstId(c->contactsModel());
         if (!id.isEmpty()) {
-            nav("openPerson", c->peopleRowForId(id), id);
-            assertClean("openPerson");
+            nav("openContact", c->contactsRowForId(id), id);
+            assertClean("openContact");
         }
     }
 
     void test_05_clientDetail()
     {
         clearWarnings();
-        nav("selectSection", "clients");
-        const QString id = firstId(c->clientsModel());
+        nav("selectSection", "companies");
+        const QString id = firstId(c->companiesModel());
         if (!id.isEmpty()) {
-            nav("openClient", c->clientRowForId(id), id);
-            assertClean("openClient");
+            nav("openCompany", c->companyRowForId(id), id);
+            assertClean("openCompany");
         }
     }
 

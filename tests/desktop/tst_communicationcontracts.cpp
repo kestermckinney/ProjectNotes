@@ -197,7 +197,7 @@ void CommunicationContractsTest::init()
 void CommunicationContractsTest::stableEnumRoundTrips()
 {
     QVERIFY(workflowFromStableString(toStableString(Workflow::StatusReport)) == Workflow::StatusReport);
-    QVERIFY(workflowFromStableString(toStableString(Workflow::PersonEmail)) == Workflow::PersonEmail);
+    QVERIFY(workflowFromStableString(toStableString(Workflow::ContactEmail)) == Workflow::ContactEmail);
     QVERIFY(emailModeFromStableString(toStableString(EmailMode::PdfAttachment)) == EmailMode::PdfAttachment);
     QVERIFY(backendIdFromStableString(toStableString(BackendId::Thunderbird)) == BackendId::Thunderbird);
     QVERIFY(backendIdFromStableString(toStableString(BackendId::Outlook)) == BackendId::Outlook);
@@ -259,77 +259,77 @@ void CommunicationContractsTest::resolvesAudienceWithoutExpandingSource()
     snapshot.clientCompanyId = "client";
     snapshot.managingCompanyId = "ours";
     snapshot.projectManagerId = "manager";
-    snapshot.people = {{"manager", "Manager", "manager@example.test", "ours", "Ours", true, true, true},
+    snapshot.contacts = {{"manager", "Manager", "manager@example.test", "ours", "Ours", true, true, true},
                        {"client", "Client", "client@example.test", "client", "Client Co", true, false, true},
                        {"partner", "Partner", "partner@example.test", "partner", "Partner Co", false, true, true},
                        {"unknown", "Unknown", "unknown@example.test", {}, {}, true, false, true}};
-    AudienceRule rule; rule.source = PeopleSource::StatusRecipients; rule.companyFilter = CompanyFilter::ExceptProjectClient;
+    AudienceRule rule; rule.source = ContactSource::StatusRecipients; rule.companyFilter = CompanyFilter::ExceptProjectClient;
     auto result = resolveAudience(snapshot, rule);
-    QVERIFY(result.people.isEmpty());
+    QVERIFY(result.contacts.isEmpty());
     rule.includeUnknownCompany = true;
     result = resolveAudience(snapshot, rule);
-    QCOMPARE(result.people.size(), 1);
-    QCOMPARE(result.people.first().id, QStringLiteral("unknown"));
-    rule.source = PeopleSource::ChosenPeople;
-    rule.chosenPersonIds = {QStringLiteral("missing")};
+    QCOMPARE(result.contacts.size(), 1);
+    QCOMPARE(result.contacts.first().id, QStringLiteral("unknown"));
+    rule.source = ContactSource::ChosenContacts;
+    rule.chosenContactIds = {QStringLiteral("missing")};
     result = resolveAudience(snapshot, rule);
     QVERIFY(result.validation.ok());
     QCOMPARE(result.validation.issues.constFirst().code, QStringLiteral("audience-empty"));
 
-    rule.source = PeopleSource::CurrentSelection;
-    snapshot.currentSelectionPersonIds = {QStringLiteral("client"), QStringLiteral("partner")};
+    rule.source = ContactSource::CurrentSelection;
+    snapshot.currentSelectionContactIds = {QStringLiteral("client"), QStringLiteral("partner")};
     rule.companyFilter = CompanyFilter::All;
     rule.excludeProjectManager = false;
     result = resolveAudience(snapshot, rule);
-    QCOMPARE(result.people.size(), 2);
+    QCOMPARE(result.contacts.size(), 2);
 
-    rule.source = PeopleSource::ProjectTeam;
+    rule.source = ContactSource::ProjectTeam;
     rule.companyFilter = CompanyFilter::ManagingCompany;
     rule.includeUnknownCompany = false;
     rule.excludeProjectManager = false;
     result = resolveAudience(snapshot, rule);
-    QCOMPARE(result.people.size(), 1);
-    QCOMPARE(result.people.first().id, QStringLiteral("manager"));
+    QCOMPARE(result.contacts.size(), 1);
+    QCOMPARE(result.contacts.first().id, QStringLiteral("manager"));
 
-    rule.companyFilter = CompanyFilter::ProjectClient;
+    rule.companyFilter = CompanyFilter::ProjectCompany;
     result = resolveAudience(snapshot, rule);
-    QCOMPARE(result.people.size(), 1);
-    QCOMPARE(result.people.first().id, QStringLiteral("client"));
+    QCOMPARE(result.contacts.size(), 1);
+    QCOMPARE(result.contacts.first().id, QStringLiteral("client"));
 
     rule.companyFilter = CompanyFilter::ExceptProjectClient;
     rule.includeUnknownCompany = false;
     result = resolveAudience(snapshot, rule);
-    QCOMPARE(result.people.size(), 2);
-    QCOMPARE(result.people.at(0).id, QStringLiteral("manager"));
-    QCOMPARE(result.people.at(1).id, QStringLiteral("partner"));
+    QCOMPARE(result.contacts.size(), 2);
+    QCOMPARE(result.contacts.at(0).id, QStringLiteral("manager"));
+    QCOMPARE(result.contacts.at(1).id, QStringLiteral("partner"));
 
-    rule.source = PeopleSource::ChosenPeople;
-    rule.chosenPersonIds = {QStringLiteral("manager"), QStringLiteral("partner")};
+    rule.source = ContactSource::ChosenContacts;
+    rule.chosenContactIds = {QStringLiteral("manager"), QStringLiteral("partner")};
     rule.companyFilter = CompanyFilter::All;
     rule.excludeProjectManager = true;
     result = resolveAudience(snapshot, rule);
-    QCOMPARE(result.people.size(), 1);
-    QCOMPARE(result.people.first().id, QStringLiteral("partner"));
+    QCOMPARE(result.contacts.size(), 1);
+    QCOMPARE(result.contacts.first().id, QStringLiteral("partner"));
 
-    rule.source = PeopleSource::ProjectTeam;
+    rule.source = ContactSource::ProjectTeam;
     rule.companyFilter = CompanyFilter::SelectedCompanies;
     rule.companyIds = {QStringLiteral("partner")};
     rule.includeUnknownCompany = false;
     rule.excludeProjectManager = true;
     result = resolveAudience(snapshot, rule);
-    QCOMPARE(result.people.size(), 1);
-    QCOMPARE(result.people.first().id, QStringLiteral("partner"));
+    QCOMPARE(result.contacts.size(), 1);
+    QCOMPARE(result.contacts.first().id, QStringLiteral("partner"));
     rule.includeUnknownCompany = true;
     result = resolveAudience(snapshot, rule);
-    QCOMPARE(result.people.size(), 2);
+    QCOMPARE(result.contacts.size(), 2);
 
-    snapshot.people.append({"outside", "Outside", "outside@example.test", "partner", "Partner Co", false, true, false});
+    snapshot.contacts.append({"outside", "Outside", "outside@example.test", "partner", "Partner Co", false, true, false});
     rule.companyFilter = CompanyFilter::All;
     rule.excludeProjectManager = false;
     result = resolveAudience(snapshot, rule);
-    QCOMPARE(result.people.size(), 4);
-    QVERIFY(std::none_of(result.people.cbegin(), result.people.cend(),
-                         [](const SnapshotPerson &person) { return person.id == QStringLiteral("outside"); }));
+    QCOMPARE(result.contacts.size(), 4);
+    QVERIFY(std::none_of(result.contacts.cbegin(), result.contacts.cend(),
+                         [](const SnapshotContact &person) { return person.id == QStringLiteral("outside"); }));
 
     rule.companyFilter = CompanyFilter::ManagingCompany;
     snapshot.managingCompanyId.clear();
@@ -345,19 +345,19 @@ void CommunicationContractsTest::resolvesAudienceWithoutExpandingSource()
     QCOMPARE(result.validation.issues.constFirst().code, QStringLiteral("company-setup-required"));
 
     snapshot.clientCompanyId = QStringLiteral("client");
-    snapshot.people.append({"invalid", "Invalid", "invalid@example.test;other@example.test",
+    snapshot.contacts.append({"invalid", "Invalid", "invalid@example.test;other@example.test",
                             "partner", "Partner Co", false, true, true});
     rule.companyFilter = CompanyFilter::All;
     rule.excludeProjectManager = false;
     result = resolveAudience(snapshot, rule);
-    QVERIFY(std::none_of(result.people.cbegin(), result.people.cend(),
-                         [](const SnapshotPerson &person) { return person.id == QStringLiteral("invalid"); }));
+    QVERIFY(std::none_of(result.contacts.cbegin(), result.contacts.cend(),
+                         [](const SnapshotContact &person) { return person.id == QStringLiteral("invalid"); }));
 }
 
 void CommunicationContractsTest::appliesRecipientOverridesSafely()
 {
     AudienceResolution audience;
-    audience.people = {{"one", "One", "same@example.test", {}, {}, false, false},
+    audience.contacts = {{"one", "One", "same@example.test", {}, {}, false, false},
                        {"two", "Two", "SAME@example.test", {}, {}, false, false},
                        {"bad", "Bad", "bad@example.test\r\nBcc:x@example.test", {}, {}, false, false}};
     const auto result = applyRecipientOverrides(audience, {{"one", true, RecipientRole::Cc}});
@@ -376,7 +376,7 @@ void CommunicationContractsTest::retainsRecipientEditsAndManualEntries()
 {
     RecipientSelectionModel model;
     AudienceResolution audience;
-    audience.people = {{"one", "One", "one@example.test"}, {"two", "Two", "two@example.test"}};
+    audience.contacts = {{"one", "One", "one@example.test"}, {"two", "Two", "two@example.test"}};
     model.setAudience(audience);
     model.applyOverrides({{"one", false, RecipientRole::Bcc}});
     QCOMPARE(model.resolve().recipients.size(), 1);
@@ -393,7 +393,7 @@ void CommunicationContractsTest::retainsRecipientEditsAndManualEntries()
     QCOMPARE(resolved.recipients.at(0).role, RecipientRole::Bcc);
     QVERIFY(resolved.addressLaterExplicitlyChosen);
     AudienceResolution replacement;
-    replacement.people = {{"replacement", "Replacement", "replacement@example.test"}};
+    replacement.contacts = {{"replacement", "Replacement", "replacement@example.test"}};
     model.setAudience(replacement);
     QCOMPARE(model.recipientCount(), 1);
     QVERIFY(!model.resolve().addressLaterExplicitlyChosen);
@@ -404,7 +404,7 @@ void CommunicationContractsTest::retainsRecipientEditsAndManualEntries()
     QCOMPARE(model.resolve().recipients.size(), 2);
     QVERIFY(!model.resolve().addressLaterExplicitlyChosen);
     AudienceResolution duplicateAddresses;
-    duplicateAddresses.people = {{"dup-one", "Duplicate one", "same@example.test"},
+    duplicateAddresses.contacts = {{"dup-one", "Duplicate one", "same@example.test"},
                                  {"dup-two", "Duplicate two", "SAME@example.test"}};
     model.setAudience(duplicateAddresses);
     QCOMPARE(model.recipientCount(), 1);
@@ -424,7 +424,7 @@ void CommunicationContractsTest::preservesRecipientResolutionOrderWhileGroupingA
 {
     CommunicationSnapshot snapshot;
     snapshot.projectManagerId = QStringLiteral("manager");
-    snapshot.people = {
+    snapshot.contacts = {
         {"partner", "Partner", "partner@example.test", "partner", "Partner Co", false, false, true},
         {"manager", "Manager", "manager@example.test", "ours", "Our Company", false, false, true},
         {"client", "Client", "client@example.test", "client", "Client Co", false, false, true},
@@ -432,10 +432,10 @@ void CommunicationContractsTest::preservesRecipientResolutionOrderWhileGroupingA
         {"outside", "Outside", "outside@example.test", "other", "Other Co", false, false, false}
     };
     AudienceRule rule;
-    rule.source = PeopleSource::ProjectTeam;
+    rule.source = ContactSource::ProjectTeam;
     rule.excludeProjectManager = true;
     const AudienceResolution audience = resolveAudience(snapshot, rule);
-    QCOMPARE(audience.people.size(), 2);
+    QCOMPARE(audience.contacts.size(), 2);
     QCOMPARE(audience.exclusions.size(), 3);
 
     RecipientSelectionModel model;
@@ -986,7 +986,7 @@ void CommunicationContractsTest::buildsContextSpecificMeetingNotes()
 {
     MeetingNotesBuildInput input;
     input.snapshot.projectNumber = "P-1"; input.snapshot.projectName = "North";
-    input.snapshot.people = {{"a", "Alice", {}, {}, {}, false, true}};
+    input.snapshot.contacts = {{"a", "Alice", {}, {}, {}, false, true}};
     input.snapshot.notes = {{"note", "Kickoff", "<p>Discussed <b>scope</b></p>",
                              QDateTime(QDate(2026, 9, 12), QTime(9, 0)), false, {"a"}}};
     input.noteId = "note"; input.snapshot.actionItems = {{"note", "Draft", "Alice", "Assigned", "09/20/2026"}};
@@ -1021,7 +1021,7 @@ void CommunicationContractsTest::createsMeetingNotesReviewFromSnapshot()
     snapshot.projectId = "project"; snapshot.projectNumber = "P-1"; snapshot.projectName = "North";
     snapshot.databaseGeneration = 4;
     snapshot.projectManagerId = "manager";
-    snapshot.people = {{"manager", "Manager", "manager@example.test", {}, {}, false, false, true},
+    snapshot.contacts = {{"manager", "Manager", "manager@example.test", {}, {}, false, false, true},
                        {"member", "Member", "member@example.test", {}, {}, false, false, true},
                        {"absent", "Absent", "absent@example.test", {}, {}, false, true, true},
                        {"guest", "Guest", "guest@example.test", {}, {}, false, false, false},
@@ -1050,7 +1050,7 @@ void CommunicationContractsTest::createsMeetingNotesReviewFromSnapshot()
     ServiceError stagingError;
     QVERIFY2(store.createOperation(manifest, &stagingError), qPrintable(stagingError.code));
     QCOMPARE(review->preparation.recipients.size(), 2);
-    QCOMPARE(review->audience.people.size(), 3); // Attendees and absent team, excluding the manager.
+    QCOMPARE(review->audience.contacts.size(), 3); // Attendees and absent team, excluding the manager.
     RecipientSelectionModel recipients;
     recipients.setAudience(review->audience);
     QCOMPARE(recipients.rowCount(), 3);
@@ -1059,7 +1059,7 @@ void CommunicationContractsTest::createsMeetingNotesReviewFromSnapshot()
     QCOMPARE(recipients.ccRecipientCount(), 0);
     for (int row = 0; row < recipients.rowCount(); ++row) {
         const auto index = recipients.index(row);
-        const bool absent = recipients.data(index, RecipientSelectionModel::PersonIdRole).toString() == "absent";
+        const bool absent = recipients.data(index, RecipientSelectionModel::ContactIdRole).toString() == "absent";
         QCOMPARE(recipients.data(index, RecipientSelectionModel::SelectedRole).toBool(), !absent);
         QCOMPARE(recipients.data(index, RecipientSelectionModel::RecipientRoleRole).toInt(),
                  static_cast<int>(absent ? RecipientRole::Cc : RecipientRole::To));
@@ -1187,7 +1187,7 @@ void CommunicationContractsTest::preparesStatusAndTrackerReportsFromSnapshot()
     snapshot.projectName="North"; snapshot.databaseGeneration=3; snapshot.projectManagerId="manager";
     snapshot.statusReportPeriod="Weekly"; snapshot.budget="100"; snapshot.actual="25";
     snapshot.bcwp="30"; snapshot.bcws="35"; snapshot.bac="100";
-    snapshot.people={{"manager","Manager","manager@example.test",{}, {}, false, false, true},
+    snapshot.contacts={{"manager","Manager","manager@example.test",{}, {}, false, false, true},
                      {"status","Status","status@example.test",{}, {}, true, false, true},
                      {"outside","Outside","outside@example.test",{}, {}, true, false, false}};
     snapshot.statusItems={{"In Progress", "Build"}, {"Next Period", "Review"}, {"Completed", "Plan"}};
@@ -1208,7 +1208,7 @@ void CommunicationContractsTest::preparesStatusAndTrackerReportsFromSnapshot()
     QVERIFY(status->preparation.document.emailFragment.contains("Build")); QVERIFY(status->preparation.document.emailFragment.contains("Risk"));
     QVERIFY(!status->preparation.document.emailFragment.contains("Resolved risk"));
     QVERIFY(!status->preparation.document.emailFragment.contains("Internal risk"));
-    QCOMPARE(status->audience.people.size(), 1);
+    QCOMPARE(status->audience.contacts.size(), 1);
     QCOMPARE(status->audience.initialOverrides.size(), 0);
     RecipientSelectionModel statusRecipients;
     statusRecipients.setAudience(status->audience);
@@ -1245,7 +1245,7 @@ void CommunicationContractsTest::preparesStatusAndTrackerReportsFromSnapshot()
     QVERIFY(tracker->preparation.retainHtml);
     QVERIFY(tracker->preparation.displayPdf);
     QVERIFY(tracker->preparation.document.emailFragment.contains("Task"));
-    QCOMPARE(tracker->audience.people.size(), 1);
+    QCOMPARE(tracker->audience.contacts.size(), 1);
     QCOMPARE(tracker->preparation.recipients.size(), 1);
     QCOMPARE(tracker->preparation.recipients.constFirst().address, QStringLiteral("status@example.test"));
 }
@@ -1539,11 +1539,11 @@ void CommunicationContractsTest::serializesEmailHandoffsAndRejectsStaleCompletio
 void CommunicationContractsTest::scopesAudiencePresetsByDatabaseAndProject()
 {
     AudiencePresetStore store; AudiencePreset preset{"team", "Team", "p"};
-    preset.rule.source=PeopleSource::StatusRecipients; preset.rule.companyFilter=CompanyFilter::ManagingCompany; preset.overrides={{"person", false, RecipientRole::To}};
+    preset.rule.source=ContactSource::StatusRecipients; preset.rule.companyFilter=CompanyFilter::ManagingCompany; preset.overrides={{"person", false, RecipientRole::To}};
     QVERIFY(store.save(preset).ok());
     const auto saved=store.presets("p"); QCOMPARE(saved.size(), 1); QCOMPARE(saved.constFirst().name, QStringLiteral("Team"));
-    QCOMPARE(saved.constFirst().rule.source, PeopleSource::ProjectTeam);
-    QVERIFY(saved.constFirst().rule.chosenPersonIds.isEmpty());
+    QCOMPARE(saved.constFirst().rule.source, ContactSource::ProjectTeam);
+    QVERIFY(saved.constFirst().rule.chosenContactIds.isEmpty());
     QCOMPARE(saved.constFirst().rule.companyFilter, CompanyFilter::All);
     QVERIFY(saved.constFirst().rule.companyIds.isEmpty());
     QVERIFY(saved.constFirst().rule.includeUnknownCompany);
@@ -2039,7 +2039,7 @@ void CommunicationContractsTest::resolvesEveryOfferedTemplateField()
     snapshot.databaseGeneration = 3; snapshot.projectManagerId = "manager";
     snapshot.statusReportPeriod = "Weekly"; snapshot.budget = "100"; snapshot.actual = "25";
     snapshot.bcwp = "30"; snapshot.bcws = "35"; snapshot.bac = "100";
-    snapshot.people = {{"manager", "Manager", "manager@example.test", {}, {}, true, false, true}};
+    snapshot.contacts = {{"manager", "Manager", "manager@example.test", {}, {}, true, false, true}};
     snapshot.notes = {{"note", "Kickoff", "<p>Body</p>", QDateTime(QDate(2026, 9, 1), QTime(9, 0)), false,
                        {"manager"}}};
     snapshot.statusItems = {{"In Progress", "Build"}};

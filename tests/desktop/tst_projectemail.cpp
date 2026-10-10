@@ -21,7 +21,7 @@ private:
         value.projectId = "project"; value.projectNumber = "P1"; value.projectName = "A & B";
         value.databaseGeneration = 3;
         value.projectManagerId = "manager";
-        value.people = {{"manager", "Manager", "manager@example.test", {}, {}, false, false, true},
+        value.contacts = {{"manager", "Manager", "manager@example.test", {}, {}, false, false, true},
                         {"person", "<Alice>", "alice@example.test", {}, {}, false, false, true},
                         {"attendee", "Attendee", "attendee@example.test", {}, {}, false, true, false}};
         value.location = CommunicationSnapshot::Location{"location", "Spec & notes", "https://example.test/spec.pdf?x=1&y=2"};
@@ -30,12 +30,12 @@ private:
     SourceContext source(Workflow workflow) const { return {"db", 3, "project", {}, workflow}; }
 private slots:
     void newEmailReviewsRejectSubjectAndBodyEdits() {
-        for (const auto workflow : {Workflow::ProjectEmail, Workflow::ShareLocation, Workflow::PersonEmail}) {
+        for (const auto workflow : {Workflow::ProjectEmail, Workflow::ShareLocation, Workflow::ContactEmail}) {
             CommunicationsController controller(nullptr);
             EmailPreparation preparation;
             preparation.source.workflow = workflow;
-            preparation.document.defaultSubject = workflow == Workflow::PersonEmail ? "" : "Configured subject";
-            preparation.document.emailFragment = workflow == Workflow::PersonEmail ? "" : "<p>Configured body</p>";
+            preparation.document.defaultSubject = workflow == Workflow::ContactEmail ? "" : "Configured subject";
+            preparation.document.emailFragment = workflow == Workflow::ContactEmail ? "" : "<p>Configured body</p>";
             const auto subject = preparation.document.defaultSubject;
             const auto body = preparation.document.emailFragment;
             QVERIFY(controller.setPreparation(preparation));
@@ -46,9 +46,9 @@ private slots:
         }
     }
     void personEmailUsesConfiguredSubjectBodyAndOnlyClickedPerson() {
-        auto context = source(Workflow::ProjectEmail); context.personId = "person";
+        auto context = source(Workflow::ProjectEmail); context.contactId = "person";
         CommunicationTemplate value{"custom", "Custom", Workflow::ProjectEmail,
-            "{{ project.number }}: {{ person.name }}", "<p>Hello {{ person.name }} at {{ person.email }}; {{ project.name }}</p>"};
+            "{{ project.number }}: {{ contact.name }}", "<p>Hello {{ contact.name }} at {{ contact.email }}; {{ project.name }}</p>"};
         const auto review = ProjectEmailPreparationFactory::create(snapshot(), context, BackendId::DefaultApp, value);
         QVERIFY(review.validation.ok());
         QCOMPARE(review.preparation.document.defaultSubject, "P1: <Alice>");
@@ -56,26 +56,26 @@ private slots:
         QVERIFY(review.preparation.document.emailFragment.contains("A &amp; B"));
         QCOMPARE(review.preparation.recipients.size(), 1);
         QCOMPARE(review.preparation.recipients.first().address, "alice@example.test");
-        QCOMPARE(review.audience.people.size(), 2);
+        QCOMPARE(review.audience.contacts.size(), 2);
         const auto editedAudience = applyRecipientOverrides(review.audience,
             {{"person", false, RecipientRole::To}, {"manager", true, RecipientRole::Cc}});
         QCOMPARE(editedAudience.recipients.size(), 1);
         QCOMPARE(editedAudience.recipients.first().address, "manager@example.test");
         QCOMPARE(editedAudience.recipients.first().role, RecipientRole::Cc);
         QVERIFY(EmailContentBuilder::prepare(review.preparation).request.has_value());
-        context.personId = "attendee";
+        context.contactId = "attendee";
         const auto attendee = ProjectEmailPreparationFactory::create(snapshot(), context, BackendId::DefaultApp, value);
         QVERIFY(attendee.validation.ok());
         QCOMPARE(attendee.preparation.recipients.first().address, "attendee@example.test");
-        context.personId = "missing";
+        context.contactId = "missing";
         QVERIFY(!ProjectEmailPreparationFactory::create(snapshot(), context, BackendId::DefaultApp, value).validation.ok());
-        auto invalidPerson = snapshot(); invalidPerson.people[1].email.clear();
-        context.personId = "person";
+        auto invalidPerson = snapshot(); invalidPerson.contacts[1].email.clear();
+        context.contactId = "person";
         QVERIFY(!ProjectEmailPreparationFactory::create(invalidPerson, context, BackendId::DefaultApp, value).validation.ok());
     }
     void standalonePersonEmailIsBlankAndNeedsNoProjectOrTemplate() {
         auto value = snapshot(); value.projectId.clear(); value.location.reset();
-        auto context = source(Workflow::PersonEmail); context.projectId.clear(); context.personId = "attendee";
+        auto context = source(Workflow::ContactEmail); context.projectId.clear(); context.contactId = "attendee";
         const auto review = ProjectEmailPreparationFactory::create(value, context, BackendId::DefaultApp, {});
         QVERIFY(review.validation.ok());
         QVERIFY(review.preparation.document.defaultSubject.isEmpty());
@@ -89,10 +89,10 @@ private slots:
         QVERIFY(emlValidation.ok());
         QVERIFY(eml.contains("attendee@example.test"));
         QVERIFY(!eml.contains("Subject:"));
-        context.personId.clear();
+        context.contactId.clear();
         QVERIFY(!validate(context).ok());
-        context.personId = "person";
-        value.people[1].email = "not an address";
+        context.contactId = "person";
+        value.contacts[1].email = "not an address";
         QVERIFY(!ProjectEmailPreparationFactory::create(value, context, BackendId::DefaultApp, {}).validation.ok());
     }
     void projectEmailIncludesTeamAndManagerWithoutAttendees() {
