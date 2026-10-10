@@ -1135,7 +1135,7 @@ Item {
                             { value: "default-app", label: qsTr("Default Application") },
                             { value: "icloud", label: qsTr("iCloud") },
                             { value: "thunderbird", label: qsTr("Thunderbird") },
-                            { value: "graph", label: qsTr("Microsoft 365 drafts") }
+                            { value: "graph", label: qsTr("Microsoft Office 365") }
                         ]
                         if (Qt.platform.os === "osx")
                             list.splice(1, 0, { value: "mac-mail", label: qsTr("MacOS Email and Calendar") })
