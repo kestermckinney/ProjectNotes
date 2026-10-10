@@ -1,6 +1,6 @@
 # Preferences
 
-The Project Notes Settings page allows you to configure application-wide settings that affect how Project Notes operates and communicates with team members and clients.
+The Project Notes Settings page allows you to configure application-wide settings that affect how Project Notes operates and communicates with team members and companies.
 
 ## Accessing Preferences
 
@@ -36,25 +36,25 @@ The **Project Manager** setting, under the **Preferences** section of Settings, 
 
 1. Open **Settings** and find the **Preferences** section.
 2. Click the **Project Manager** drop down.
-3. Select your name from the list of people in your database — the setting saves immediately.
+3. Select your name from the list of contacts in your database — the setting saves immediately.
 
-**Note:** The project manager list is populated from the **People** data in your database. If you don't see your name in the list, add yourself as a person first (see [People List Page](PeopleListPage.md)).
+**Note:** The project manager list is populated from the **Contacts** data in your database. If you don't see your name in the list, add yourself as a contact first (see [Contacts List Page](ContactsListPage.md)).
 
 ## Managing Company
 
 The **Managing Company** setting, also under the **Preferences** section of Settings, specifies your organization or company. This setting is used to:
 
-- **Identify internal communications** — Project Notes distinguishes between internal-only communications and communications that include clients
-- **Exclude your company from client communications** — When generating client-facing documents, your company information may be filtered differently than client information
-- **Organize team members** — Helps Project Notes understand the structure of your organization vs. client organizations
+- **Identify internal communications** — Project Notes distinguishes between internal-only communications and communications that include companies
+- **Exclude your company from company communications** — When generating company-facing documents, your company information may be filtered differently than company information
+- **Organize team members** — Helps Project Notes understand the structure of your organization vs. company organizations
 
 **To set the Managing Company:**
 
 1. Open **Settings** and find the **Preferences** section.
 2. Click the **Managing Company** drop down.
-3. Select your company name from the list of clients in your database — the setting saves immediately.
+3. Select your company name from the list of companies in your database — the setting saves immediately.
 
-**Note:** The managing company list is populated from the **Clients** data in your database. If you don't see your company in the list, add it as a client first (see [Client List Page](ClientListPage.md)).
+**Note:** The managing company list is populated from the **Companies** data in your database. If you don't see your company in the list, add it as a company first (see [Companies List Page](CompaniesListPage.md)).
 
 ## View Report After Save
 
@@ -75,9 +75,9 @@ Use **Test Connection** to discover books without importing or exporting. Select
 
 Contact synchronization runs on a dedicated background thread, including matching and database writes. Settings and review actions remain in the main interface; progress and refreshed records are delivered back to it safely.
 
-The source's supplied values replace corresponding Project Notes fields, including explicit empty values. Omitted fields are retained. Remote deletions never delete local records, and deleted linked local people are never restored. Full Contact Export saves a separate link from each Project Notes person to the external contact after a successful create or update. Updates replace only the name, company, job title, primary work email, work phone, and mobile phone managed by Project Notes; unrelated external fields are retained.
+The source's supplied values replace corresponding Project Notes fields, including explicit empty values. Omitted fields are retained. Remote deletions never delete local records, and deleted linked local contacts are never restored. Full Contact Export saves a separate link from each Project Notes contact to the external contact after a successful create or update. Updates replace only the name, company, job title, primary work email, work phone, and mobile phone managed by Project Notes; unrelated external fields are retained.
 
-Names are compared using normalization, token reordering, edit distance, and company legal suffix variants. Saved source identities take precedence. Strong matches reuse existing IDs. **Review Contact Conflicts** enables when uncertain clients or contacts need attention and opens a separate review dialog. First resolve duplicate clients: choose **Use Selected Client** to associate the source company with an existing client, or **Keep as a Separate Client** to create a distinct client. Each company choice applies to all its source contacts and is saved for later synchronization. Once all client choices are resolved, contact matching resumes using those clients. Uncertain contacts then wait before people are created: choose **Use This One** under either contact, or **Use Both** to retain the existing person and import a separate person. Both sides show name, company, email, and phone details. The client association follows the saved client choice, and the display name comes from the chosen contact; when keeping both identical names, a unique display name is derived automatically from the source company. Existing duplicate records are not merged. Review includes the external fields that will be applied.
+Names are compared using normalization, token reordering, edit distance, and company legal suffix variants. Saved source identities take precedence. Strong matches reuse existing IDs. **Review Contact Conflicts** enables when uncertain companies or contacts need attention and opens a separate review dialog. First resolve duplicate companies: choose **Use Selected Company** to associate the source company with an existing company, or **Keep as a Separate Company** to create a distinct company. Each company choice applies to all its source contacts and is saved for later synchronization. Once all company choices are resolved, contact matching resumes using those companies. Uncertain contacts then wait before contacts are created: choose **Use This One** under either contact, or **Use Both** to retain the existing contact and import a separate contact. Both sides show name, company, email, and phone details. The company association follows the saved company choice, and the display name comes from the chosen contact; when keeping both identical names, a unique display name is derived automatically from the source company. Existing duplicate records are not merged. Review includes the external fields that will be applied.
 
 If a full export stops with an uncertain result, start the export again to refresh and review the destination before retrying the affected contact. Local state and credentials are scoped to this computer and developer profile; moving a database may require matching its contacts again.
 
@@ -120,7 +120,7 @@ For the full walk-through, including what to set up on Windows, macOS and Linux,
 The **View Options** section holds three checkboxes that control what the Projects, Items, and Search lists show. Each takes effect immediately:
 
 - **Show closed projects** — Shows or hides projects whose **Project Status** is **Closed** on the [Project List Page](<ProjectListPage.md>).
-- **Show internal items** — Shows or hides notes and tracker items marked **Internal**, and the earned value/budget figures on the Project List and Project Page. See [Presenting to Clients](<PresentingToClients.md>).
+- **Show internal items** — Shows or hides notes and tracker items marked **Internal**, and the earned value/budget figures on the Project List and Project Page. See [Presenting to Companies](<PresentingToCompanies.md>).
 - **Show resolved items** — When cleared, hides tracker items whose **Status** is **Resolved**, **Deferred**, or **Canceled**, on the [Item Tracker Page](<ItemTrackerPage.md>), leaving only **New** and **Assigned** items.
 
 These same three toggles are also reachable from the [Application Menu](<ApplicationMenu.md>)'s **View** group as **Show Closed Projects**, **Show Internal / Budget Items**, and **Show Resolved Items** — the two locations stay in sync.
@@ -135,7 +135,7 @@ The **Data** section imports records from a [Project Notes XML](<../PluginsOverv
 2. Click **Import from XML…**.
 3. Choose the `.xml` file and click **Open**.
 
-Export is handled separately, per record — open any project, note, item, person, or client and use its **Export** button (or **Export XML…** in the [Application Menu](<ApplicationMenu.md>)) to export just that record.
+Export is handled separately, per record — open any project, note, item, contact, or company and use its **Export** button (or **Export XML…** in the [Application Menu](<ApplicationMenu.md>)) to export just that record.
 
 ## About
 
@@ -161,7 +161,7 @@ When you send a report or schedule a meeting, Project Notes uses your preference
 
 - **Determine recipients** — The project manager is kept off recipient lists to avoid sending information to yourself
 - **Name the organizer** — Meeting invitations list the project manager as the organizer, never as an attendee
-- **Filter content** — Items and notes marked **Internal** are excluded from client-facing reports
+- **Filter content** — Items and notes marked **Internal** are excluded from company-facing reports
 - **Fill in templates** — `preferences.managerName` and `preferences.managingCompanyName` resolve from these two settings
 
 ### In Reports
@@ -169,14 +169,14 @@ When you send a report or schedule a meeting, Project Notes uses your preference
 When generating reports (such as meeting minutes or tracker item reports), Project Notes:
 
 - **Filters recipients** — Excludes the project manager from the "Send to" list by default
-- **Marks internal items** — Uses the managing company setting to identify which notes and items are internal vs. client-facing
+- **Marks internal items** — Uses the managing company setting to identify which notes and items are internal vs. company-facing
 
 ### In Filtering
 
 When you use the [Filter Tool](FilterTool.md) or the **Show Internal / Budget Items** toggle:
 
-- **Client filtering** — You can filter data by the managing company to see only your organization's data
-- **Internal item visibility** — The "Show Internal / Budget Items" option works in conjunction with your project manager setting to determine what should be hidden when presenting to clients
+- **Company filtering** — You can filter data by the managing company to see only your organization's data
+- **Internal item visibility** — The "Show Internal / Budget Items" option works in conjunction with your project manager setting to determine what should be hidden when presenting to companies
 
 ## Where Preferences Are Saved
 
@@ -186,8 +186,8 @@ The **Email, Contact and Calendar Integration** choice and the Thunderbird path 
 
 ## Related Documentation
 
-- [People List Page](PeopleListPage.md) — Manage people in your database
-- [Client List Page](ClientListPage.md) — Manage clients/companies in your database
-- [Presenting to Clients](PresentingToClients.md) — How to use preferences when presenting to clients
+- [Contacts List Page](ContactsListPage.md) — Manage contacts in your database
+- [Companies List Page](CompaniesListPage.md) — Manage companies in your database
+- [Presenting to Companies](PresentingToCompanies.md) — How to use preferences when presenting to companies
 - [Email and Meeting Setup](<EmailAndMeetingSetup.md>) — Setting up mail and calendar handoff
 - [Reports and Email](<ReportsAndEmail.md>) — Generating and sending project reports

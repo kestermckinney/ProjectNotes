@@ -1745,8 +1745,8 @@ ApplicationWindow {
     function _helpTopicForSection(section) {
         switch (section) {
         case "projects": return "InterfaceOverview/ProjectListPage.md"
-        case "contacts": return "InterfaceOverview/PeopleListPage.md"
-        case "companies":return "InterfaceOverview/ClientListPage.md"
+        case "contacts": return "InterfaceOverview/ContactsListPage.md"
+        case "companies":return "InterfaceOverview/CompaniesListPage.md"
         case "items":    return "InterfaceOverview/ItemTrackerPage.md"
         case "search":   return "InterfaceOverview/SearchPage.md"
         case "settings": return "InterfaceOverview/Preferences.md"

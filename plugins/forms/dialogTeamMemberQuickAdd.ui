@@ -80,14 +80,14 @@
     <widget class="QLineEdit" name="lineEditRole"/>
    </item>
    <item>
-    <widget class="QLabel" name="labelClientName">
+    <widget class="QLabel" name="labelCompanyName">
      <property name="text">
-      <string>Client Name:</string>
+      <string>Company Name:</string>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="QComboBox" name="comboBoxClientName">
+    <widget class="QComboBox" name="comboBoxCompanyName">
      <property name="editable">
       <bool>true</bool>
      </property>

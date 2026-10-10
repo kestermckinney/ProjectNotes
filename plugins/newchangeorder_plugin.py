@@ -96,7 +96,7 @@ if (platform.system() == 'Windows'):
         projtab = pnc.find_node(xmlroot, "table", "name", "projects")
         projnum = pnc.get_column_value(projtab.firstChild(), "project_number")
         projnam = pnc.get_column_value(projtab.firstChild(), "project_name")
-        clientnam = pnc.get_column_value(projtab.firstChild(), "client_name")
+        companyname = pnc.get_column_value(projtab.firstChild(), "client_name")
 
         ok = False
 
@@ -142,7 +142,7 @@ if (platform.system() == 'Windows'):
         doc = word.Documents.Open(projectfile)
 
         replace_text(doc, "<PROJECTNUMBER>", projnum)
-        replace_text(doc, "<CLIENTNAME>", clientnam)
+        replace_text(doc, "<CLIENTNAME>", companyname)
         replace_text(doc, "<PROJECTNAME>", projnam)
         replace_text(doc, "<CRDATE>", statusdate.toString("MM/dd/yyyy"))
         replace_text(doc, "<CRNUMBER>", re.sub(r"\D", "", projnum) + '-' + changenum)

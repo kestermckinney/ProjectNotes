@@ -8,7 +8,7 @@ Two things must exist first: at least one meeting type in **Settings > Meeting T
 
 1. Right-click a project, on the Projects list or on the project's own page, and choose **Schedule Meeting…**.
 2. Under **Which meeting?**, pick a **Meeting type**. Project Notes fills the subject and agenda from the project and the type.
-3. Under **Who should attend?**, check the people to invite and set each one **Required** or **Optional**.
+3. Under **Who should attend?**, check the contacts to invite and set each one **Required** or **Optional**.
 4. Click **Open Invite**.
 
 The invite opens straight away. There is no confirmation step between the button and your calendar application.
@@ -23,8 +23,8 @@ If the meeting type list is empty, the dialog says so. Add a type in **Settings 
 | Body | The meeting type's agenda |
 | Start | The next whole hour |
 | Duration | The meeting type's duration |
-| Organizer | The project manager from **Settings > Preferences**, when that person has an email address |
-| Attendees | The people you checked, as Required or Optional |
+| Organizer | The project manager from **Settings > Preferences**, when that contact has an email address |
+| Attendees | The contacts you checked, as Required or Optional |
 
 The organizer is never also listed as an attendee. Everything above is editable in your calendar application, so treat the proposed time as a starting point rather than a decision.
 
@@ -32,7 +32,7 @@ There is no location field in the dialog. Add the room or the meeting link in yo
 
 ## Choosing attendees
 
-Attendees come from the project team, exactly as report recipients do. A person with no email address cannot be selected, and you cannot type an address into the dialog.
+Attendees come from the project team, exactly as report recipients do. A contact with no email address cannot be selected, and you cannot type an address into the dialog.
 
 Saved audiences are shared with the project's reports. An audience saved here appears in the **Run report** dialog, and one saved there appears here. **Required** is stored as To and **Optional** as Cc, so a report's Bcc recipients load as Optional.
 

@@ -4,4 +4,4 @@ Contact synchronization is built into Project Notes. On macOS, open **Settings â
 
 See [Contact Synchronization](../InterfaceOverview/Preferences.md#contact-synchronization) for scheduling, the separate Full Contact Export action, matching, review decisions, and recovery. Credentials remain in the operating system credential store. New configurations are paused until enabled; legacy account settings and valid identity links are migrated where available.
 
-Photos, postal addresses, notes, groups, and list membership are outside the mapped contact fields. Remote deletions do not delete Project Notes people.
+Photos, postal addresses, notes, groups, and list membership are outside the mapped contact fields. Remote deletions do not delete Project Notes contacts.

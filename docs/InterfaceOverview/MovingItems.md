@@ -28,7 +28,7 @@ Dragging has no meeting-picker step: if the item is linked to a meeting, that li
 Moving an item to a different project can trigger two side effects, both shown to you before the move completes:
 
 - **Renumbering** — Item numbers restart at 0001 within each project, so if the item's current number is already taken in the destination project, it's assigned the next available number there. The dialog shows both the old and new numbers.
-- **Team membership** — If the item's **Assigned To** or **Identified By** person is not yet on the destination project's team, they are added to it automatically as part of the move. The dialog lists anyone who will be added.
+- **Team membership** — If the item's **Assigned To** or **Identified By** contact is not yet on the destination project's team, they are added to it automatically as part of the move. The dialog lists anyone who will be added.
 
 If neither applies, the move happens immediately without a confirmation step.
 

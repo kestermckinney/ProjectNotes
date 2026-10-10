@@ -25,7 +25,7 @@ class CollaborationTools:
     def list_builder(self, xmlroot, listtype, invitees):
         pm = xmlroot.toElement().attribute("managing_manager_name")
         co = xmlroot.toElement().attribute("managing_company_name")
-        cli = None
+        company = None
         company_filter = None
         company_exclude = None
         receives_status = False
@@ -35,20 +35,20 @@ class CollaborationTools:
         projects = self.pnc.find_node(xmlroot, "table", "name", "projects")
         if not projects.isNull():
             project = projects.firstChild()
-            # use the project's client company NAME (the client_id lookupvalue) so it can be
-            # compared against each person's client_name below
-            cli = self.pnc.get_column_value(project, "client_id")
+            # use the project's company NAME (the client_id lookupvalue) so it can be
+            # compared against each contact's client_name below
+            company = self.pnc.get_column_value(project, "client_id")
             colnode = self.pnc.find_node(project, "column", "name", "client_id")
             if not colnode.isNull() and colnode.attributes().namedItem("lookupvalue").nodeValue() is not None and colnode.attributes().namedItem("lookupvalue").nodeValue() != '':
-                cli = colnode.attributes().namedItem("lookupvalue").nodeValue()
+                company = colnode.attributes().namedItem("lookupvalue").nodeValue()
 
 
         if invitees == "Internal Project Team":
             company_filter = co
-        elif invitees == "Exclude Client":
-            company_exclude = cli
-        elif invitees == "Only Client":
-            company_filter = cli
+        elif invitees == "Exclude Company":
+            company_exclude = company
+        elif invitees == "Only Company":
+            company_filter = company
         elif invitees == "Full Project Team":
             company_filter = None
             company_exclude = None
@@ -73,7 +73,7 @@ class CollaborationTools:
                 pco = self.pnc.get_column_value(memberrow, "client_name")
                 rs = (self.pnc.get_column_value(memberrow, "receive_status_report") == "1")
 
-                # if filtering by company only includ matching client names
+                # if filtering by company only include matching company names
                 # don't email to yourself, exclude the PM
                 if (nm != pm):
                     if (email is not None and email != "" and ((company_filter is None or pco == company_filter) and (company_exclude is None or pco != company_exclude)) or (rs and receives_status)):

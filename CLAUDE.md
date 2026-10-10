@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ProjectNotes is a Qt/C++ desktop application (v6.4.0) for project management — tracking notes, meeting minutes, risks, issues, action items, contacts, and clients. It embeds a Python plugin system for extensibility and integrates with tools like Outlook, IFS ERP, and MS Office. A companion iOS/iPadOS app, ProjectNotesMobile, shares the same data layer and syncs with the desktop app via SqliteSyncPro.
+ProjectNotes is a Qt/C++ desktop application (v6.4.0) for project management — tracking notes, meeting minutes, risks, issues, action items, contacts, and companies. It embeds a Python plugin system for extensibility and integrates with tools like Outlook, IFS ERP, and MS Office. A companion iOS/iPadOS app, ProjectNotesMobile, shares the same data layer and syncs with the desktop app via SqliteSyncPro.
 
 ## Build Commands
 
@@ -34,13 +34,13 @@ Single-instance Qt application enforced via `RunGuard` (UUID-based). Two fronten
 2. **Qt QML (Mobile)** - iOS/iPadOS companion app via `ProjectNotesMobile/` with reactive components; built and shipped separately from the desktop targets
 
 **Main.qml** (QML desktop frontend) manages:
-- Section-based navigation (People, Clients, Projects, Items, Search)
+- Section-based navigation (Contacts, Companies, Projects, Items, Search)
 - Dynamic page component stack
 - Filter/Sort dialog coordination
 - Plugin menu integration with RecordContextMenu
 
 **Main.qml** (QML mobile frontend, `ProjectNotesMobile/qml/`) manages:
-- Bottom tab bar navigation (Projects, People, Clients, Items) plus a hamburger-menu drawer for settings and utilities
+- Bottom tab bar navigation (Projects, Contacts, Companies, Items) plus a hamburger-menu drawer for settings and utilities
 - Its own page set under `ProjectNotesMobile/qml/pages/` — sized and interaction-patterned for touch, not a reuse of the desktop QML pages
 - `AppController` (mobile) and `MobileSettings` fill the role `DesktopAppController` plays on desktop
 - User-facing behavior is documented in `docs/Mobile/ProjectNotesMobile.md`
@@ -48,8 +48,8 @@ Single-instance Qt application enforced via `RunGuard` (UUID-based). Two fronten
 ### Page System (QML)
 
 **QML pages:** Reactive components in `ProjectNotesDesktop/qml/pages/`:
-- `PeoplePage.qml`, `ClientsPage.qml` - Master lists with card-based UI
-- `PersonDetailPage.qml`, `ClientDetailPage.qml` - Detail pages with inline editing
+- `ContactsPage.qml`, `CompaniesPage.qml` - Master lists with card-based UI
+- `ContactDetailPage.qml`, `CompanyDetailPage.qml` - Detail pages with inline editing
 - `ProjectDetailPage.qml` - Complex detail page with multiple sub-tabs
 - `SearchPage.qml` - Unified search results
 
@@ -73,11 +73,11 @@ Key tables: `projects`, `project_notes`, `item_tracker`, `item_tracker_updates`,
 ### QML Context Menus & Navigation
 
 The QML desktop frontend uses `RecordContextMenu` for consistent right-click behavior across all detail pages:
-- **RecordContextMenu** - Main menu component showing Open/New/Delete/Duplicate/MoveTo actions, navigation actions (Go To Person/Client), export/filter/refresh, and plugins
+- **RecordContextMenu** - Main menu component showing Open/New/Delete/Duplicate/MoveTo actions, navigation actions (Go To Contact/Company), export/filter/refresh, and plugins
 - **RecordRowMenu** - Extends RecordContextMenu for detail page sub-table rows (team, tracker items, etc.)
-- **Navigation Actions** - "Go To Person" and "Go To Client" actions allow quick navigation between related records
-  - People → Client: Navigate from a person's list/detail to their assigned client
-  - Team Member → Person: Navigate from a project team list to a team member's full person record
+- **Navigation Actions** - "Go To Contact" and "Go To Company" actions allow quick navigation between related records
+  - Contact → Company: Navigate from a contact's list/detail to their assigned company
+  - Team Member → Contact: Navigate from a project team list to a team member's full contact record
 
 ### Custom Delegates
 

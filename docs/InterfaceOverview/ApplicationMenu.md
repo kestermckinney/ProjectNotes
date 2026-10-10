@@ -13,9 +13,9 @@ Most items also have a keyboard shortcut, shown beside the item's label. The tab
 
 | **Item** | **What it does** | **Shortcut** |
 | :--- | :--- | :--- |
-| New Record | Creates a new record in whatever section is currently active — a project, person, or client. Same action as the **+ New** button on those pages. | Ctrl+N |
+| New Record | Creates a new record in whatever section is currently active — a project, contact, or company. Same action as the **+ New** button on those pages. | Ctrl+N |
 | Search… | Switches to the [Search Page](<SearchPage.md>). | Ctrl+K |
-| Export XML… | Exports the record currently open (a project, note, item, person, or client) to a [Project Notes XML](<../PluginsOverview/ProjectNotesXML.md>) file. Only enabled when a record is open — same action as the **Export** button in the top bar. | Ctrl+Shift+E |
+| Export XML… | Exports the record currently open (a project, note, item, contact, or company) to a [Project Notes XML](<../PluginsOverview/ProjectNotesXML.md>) file. Only enabled when a record is open — same action as the **Export** button in the top bar. | Ctrl+Shift+E |
 | Import XML… | Imports records from a Project Notes XML file — see [Getting Started](<../Introduction/GettingStarted.md>). | Ctrl+Shift+I |
 | Preferences | Opens the [Settings page](<Preferences.md>). | Ctrl+, |
 | Sync Now | Runs an immediate incremental sync cycle — see [Cloud Sync](<RemoteHost.md>). | — |
@@ -40,7 +40,7 @@ When a record with its own plugin menus is open (for example a project with an *
 | **Item** | **What it does** | **Shortcut** |
 | :--- | :--- | :--- |
 | Dark Mode | Toggles between light and dark theme. Shows a check mark when dark mode is on. The same three-way choice (System, Light, Dark) is also available from **Settings > Appearance** — see [Preferences](<Preferences.md>). | — |
-| Show Internal / Budget Items | Shows or hides notes and tracker items marked **Internal**, and the earned value/budget figures on the [Project List Page](<ProjectListPage.md>) and [Project Page](<ProjectPage.md>). See [Presenting to Clients](<PresentingToClients.md>) for a typical use of this toggle. | — |
+| Show Internal / Budget Items | Shows or hides notes and tracker items marked **Internal**, and the earned value/budget figures on the [Project List Page](<ProjectListPage.md>) and [Project Page](<ProjectPage.md>). See [Presenting to Companies](<PresentingToCompanies.md>) for a typical use of this toggle. | — |
 | Show Closed Projects | Shows or hides projects whose **Project Status** is **Closed** on the [Project List Page](<ProjectListPage.md>). | — |
 | Show Resolved Items | Shows or hides tracker items whose **Status** is **Resolved** on the [Item Tracker Page](<ItemTrackerPage.md>). | — |
 | Show Project Folders | Shows or hides the project sidebar beside the icon rail — see [Project Folders](<ProjectFolders.md>). The panel button near the bottom of the icon rail does the same thing. | — |

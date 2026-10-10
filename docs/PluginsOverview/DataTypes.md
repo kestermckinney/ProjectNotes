@@ -16,9 +16,9 @@ Each data type corresponds to one or more views (pages/tables) in the Project No
 | Data Type | Application View(s) | Right-Click Menu Appears On | Purpose |
 | :--- | :--- | :--- | :--- |
 | `projects` | Project List Page, Project Page | Project rows in the Project List; Project detail pages | Core project records with schedule, budget, and status information |
-| `people` | People List Page | People rows in the People List; People context menus | Contact and team member information |
-| `clients` | Client List Page | Client rows in the Client List | Client company information and contact details |
-| `project_people` | Project Page (Team tab) | Team member rows within a project | Association between people and projects (roles, responsibilities) |
+| `people` | Contacts List Page | Contact rows in the Contacts List; Contacts context menus | Contact and team member information |
+| `clients` | Companies List Page | Company rows in the Companies List | Company information and contact details |
+| `project_people` | Project Page (Team tab) | Team member rows within a project | Association between contacts and projects (roles, responsibilities) |
 | `project_locations` | Project Page (Files & Folders tab) | File/folder entries in the Files & Folders list | Project files, folders, and document locations |
 | `project_notes` | Notes Page, Project Page (Notes tab) | Note entries in the Notes section | Meeting minutes, status notes, and project documentation |
 | `meeting_attendees` | Notes Page (Action Items tab for meetings) | Meeting attendee records | Attendees and participants for specific meetings |
@@ -31,19 +31,19 @@ Each data type corresponds to one or more views (pages/tables) in the Project No
 ### Projects View
 - **Page**: Project List Page
 - **Data Type**: `projects`
-- **Contains**: All project records with columns for project number, name, client, status, budget, and schedule
+- **Contains**: All project records with columns for project number, name, company, status, budget, and schedule
 - **Right-Click Menu**: Shows menus configured for `projects` data type
 
-### People View
-- **Page**: People List Page
+### Contacts View
+- **Page**: Contacts List Page
 - **Data Type**: `people`
 - **Contains**: All contact/team member records with contact information
 - **Right-Click Menu**: Shows menus configured for `people` data type
 
-### Clients View
-- **Page**: Client List Page
+### Companies View
+- **Page**: Companies List Page
 - **Data Type**: `clients`
-- **Contains**: Client company records with company information and primary contacts
+- **Contains**: Company records with company information and primary contacts
 - **Right-Click Menu**: Shows menus configured for `clients` data type
 
 ### Project Detail Page
@@ -127,7 +127,7 @@ When a plugin processes data, the XML structure is determined by the data type b
 </projectnotes>
 ```
 
-### Exporting a Person (people data type)
+### Exporting a Contact (people data type)
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -152,7 +152,7 @@ The [My Shortcuts](<../StandardPlugins/MyShortcuts.md>) plugin uses data types t
 | Menu | Data Type | Behavior |
 | :--- | :--- | :--- |
 | Open in Jira | `projects` | Appears when right-clicking on a project; can access `$projects.project_number.1` |
-| Email Contact | `people` | Appears when right-clicking on a person; can access `$people.email.1` |
+| Email Contact | `people` | Appears when right-clicking on a contact; can access `$people.email.1` |
 | (blank) | (none) | Appears in the **Plugins** menu; available globally |
 
 ### File Finder

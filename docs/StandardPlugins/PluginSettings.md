@@ -106,7 +106,7 @@ Variable replacement bridges Project Notes data with plugin configurations:
 
 ### Relationship to XML
 
-Project Notes internally represents all data as XML. When you invoke a plugin, the application exports the relevant data (project, person, meeting, etc.) as XML and passes it to the plugin. The plugin uses this XML to:
+Project Notes internally represents all data as XML. When you invoke a plugin, the application exports the relevant data (project, contact, meeting, etc.) as XML and passes it to the plugin. The plugin uses this XML to:
 
 - Extract field values for variable substitution
 - Determine which variables are available in the current context
@@ -128,8 +128,8 @@ The variable name must follow the XML tree path from the exported data. For exam
 
 - `[$projects.project_number.1]` — The first project's project number
 - `[$projects.project_name.1]` — The first project's name
-- `[$people.email.1]` — The first person's email address
-- `[$people.name.1]` — The first person's name
+- `[$people.email.1]` — The first contact's email address
+- `[$people.name.1]` — The first contact's name
 
 ### Understanding XML Tree Paths
 
@@ -164,9 +164,9 @@ Common patterns include:
 - `[$projects.project_name.1]` — Project name
 - `[$projects.project_status.1]` — Project status
 
-**When right-clicking a Person:**
-- `[$people.name.1]` — Person's name
-- `[$people.email.1]` — Person's email address
+**When right-clicking a Contact:**
+- `[$people.name.1]` — Contact's name
+- `[$people.email.1]` — Contact's email address
 - `[$people.office_phone.1]` — Office phone number
 
 **When right-clicking a Meeting/Note:**

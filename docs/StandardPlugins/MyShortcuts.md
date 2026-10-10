@@ -19,8 +19,8 @@ The URL field supports variable placeholders that Project Notes replaces at runt
 | :--- | :--- |
 | `[$projects.project_number.1]` | The project number for row 1 of the XML. |
 | `[$projets.project_name.2]` | The project name for row 2 of the XML.|
-| `[$people.name.1]` | The name of the right-clicked person or attendee |
-| `[$people.email.1]` | The email of the right-clicked person |
+| `[$people.name.1]` | The name of the right-clicked contact or attendee |
+| `[$people.email.1]` | The email of the right-clicked contact |
 
 See [Project Notes XML](<../PluginsOverview/ProjectNotesXML.md>) for the complete list of available XML fields that can be used as variables.
 

@@ -11,11 +11,11 @@ Four things must be in place before any email or invitation is worth sending.
 | Requirement | Where to set it | Why it matters |
 | :--- | :--- | :--- |
 | **Project Manager** | **Settings > Preferences** | Identifies you. You are kept off recipient lists and become the organizer on meeting invitations. |
-| **Managing Company** | **Settings > Preferences** | Separates your own people from client people, which drives internal reports and the client audience filters. |
-| People with email addresses | **People** page | Recipients come only from people records. A person with a blank **Email** cannot be selected. |
-| A project team | project's **Team** tab | Audiences are built from the team. Mark the people who should get status reports with **Receive Status**. |
+| **Managing Company** | **Settings > Preferences** | Separates your own contacts from company contacts, which drives internal reports and the company audience filters. |
+| Contacts with email addresses | **Contacts** page | Recipients come only from contact records. A contact with a blank **Email** cannot be selected. |
+| A project team | project's **Team** tab | Audiences are built from the team. Mark the contacts who should get status reports with **Receive Status**. |
 
-You cannot type an address into a review dialog. If someone needs a copy, add them as a person and put them on the project team.
+You cannot type an address into a review dialog. If someone needs a copy, add them as a contact and put them on the project team.
 
 ## Choose how mail and meetings leave Project Notes
 
@@ -152,7 +152,7 @@ Right-click the subject or the body to insert a field instead of typing it. The 
 | :--- | :--- |
 | `project.number` | The project number |
 | `project.name` | The project name |
-| `client.name` | The client on the project |
+| `client.name` | The company on the project |
 | `preferences.managerName` | The project manager from **Settings > Preferences** |
 | `preferences.managingCompanyName` | The managing company from **Settings > Preferences** |
 | `current.date` | The date the email is prepared, as MM/DD/YYYY |
@@ -161,7 +161,7 @@ Right-click the subject or the body to insert a field instead of typing it. The 
 | `report.date` | The reporting date you choose in the review, on the three project reports |
 | `meeting.title` | The meeting note's title, on Send Meeting Notes |
 | `meeting.date` | The meeting date, on Send Meeting Notes and the Meeting Notes Report |
-| `person.name`, `person.email` | The person right-clicked for Project Email; empty when emailing the whole team |
+| `contact.name`, `contact.email` | The contact right-clicked for Project Email; empty when emailing the whole team |
 | `location.description`, `location.url`, `location.fileName` | The location being shared |
 
 A field that does not apply to the selected workflow is not offered.
@@ -206,7 +206,7 @@ Run one of each before you rely on it.
 | The meeting opens in the new Outlook with no attendees | The new Outlook drops them when it imports a calendar file. Click **Copy Attendees** before **Open Invite** and paste them into the event, or switch to **Outlook (Classic)**. |
 | Outlook reports it is not installed | The Outlook you chose is missing. **Outlook** needs the new Outlook for Windows from the Microsoft Store; **Outlook (Classic)** needs Microsoft Office's Outlook. |
 | The wrong mail application opens | Another application holds the `.eml` association. Reassign it in your operating system's default applications settings. |
-| A person cannot be selected as a recipient | Their person record has no **Email**. Add one. |
+| A contact cannot be selected as a recipient | Their contact record has no **Email**. Add one. |
 | The audience is empty | Nobody is on the project team, or nobody is marked **Receive Status** for a status report. |
 | Microsoft 365 reports it is not signed in | Open **Settings > Office 365 Integration** and sign in again. A refresh token expires if it goes unused for a long time. |
 | A meeting draft is created but has no attendees | The sign-in predates calendar permission. Sign out, then sign in again to grant `Calendars.ReadWrite`. |
