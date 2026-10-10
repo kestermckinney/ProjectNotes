@@ -39,7 +39,7 @@ When a record with its own plugin menus is open (for example a project with an *
 
 | **Item** | **What it does** | **Shortcut** |
 | :--- | :--- | :--- |
-| Dark Mode | Toggles between light and dark theme. Shows a check mark when dark mode is on. The same three-way choice (System, Light, Dark) is also available from **Settings > Appearance** — see [Preferences](<Preferences.md>). | — |
+| Dark Mode | Toggles between light and dark theme. Shows a check mark when dark mode is on. The same three-way choice (System, Light, Dark) is also available from **Settings > Preferences > Appearance** — see [Preferences](<Preferences.md>). | — |
 | Show Internal / Budget Items | Shows or hides notes and tracker items marked **Internal**, and the earned value/budget figures on the [Project List Page](<ProjectListPage.md>) and [Project Page](<ProjectPage.md>). See [Presenting to Companies](<PresentingToCompanies.md>) for a typical use of this toggle. | — |
 | Show Closed Projects | Shows or hides projects whose **Project Status** is **Closed** on the [Project List Page](<ProjectListPage.md>). | — |
 | Show Resolved Items | Shows or hides tracker items whose **Status** is **Resolved** on the [Item Tracker Page](<ItemTrackerPage.md>). | — |

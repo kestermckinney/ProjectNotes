@@ -41,7 +41,7 @@ You will need to setup yourself to manage all of the projects. First you need to
 7. Choose **Preferences** from the app menu (the menu icon at the top of the icon rail).
 8. Select yourself as the **Project Manager**.
 9. Select ***"Your Company Name"*** as the **Managing Company**.
-10. Still in **Settings**, open **Preferences** and choose your **Email, Contact and Calendar Integration**.
+10. Still in **Settings**, open **Email, Contacts, and Calendar** and choose your **Integration**.
 11. Open **Settings > Meeting Templates** and review the standard meeting types, such as status meetings and kickoffs. Customize their subjects, agendas and durations, or add your own types.
 12. Open **Settings > File Finder** and add the root folder where your project files are stored.
 

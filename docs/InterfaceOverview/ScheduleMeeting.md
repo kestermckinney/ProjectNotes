@@ -2,7 +2,7 @@
 
 Project Notes turns a project and a meeting type into a ready invitation, then opens it in your calendar application. You confirm the details and send the invitations from there.
 
-Two things must exist first: at least one meeting type in **Settings > Meeting Templates**, and an integration chosen in **Settings > Preferences**. Project Notes adds standard meeting types at startup when the list is empty. Both settings are covered in [Email and Meeting Setup](<EmailAndMeetingSetup.md>).
+Two things must exist first: at least one meeting type in **Settings > Meeting Templates**, and an integration chosen in **Settings > Email, Contacts, and Calendar**. Project Notes adds standard meeting types at startup when the list is empty. Both settings are covered in [Email and Meeting Setup](<EmailAndMeetingSetup.md>).
 
 ## Creating an invitation
 
@@ -40,7 +40,7 @@ Saved audiences are shared with the project's reports. An audience saved here ap
 
 ## What happens after Open Invite
 
-The route depends on **Settings > Preferences > Email, Contact and Calendar Integration**. The list there only offers the choices your platform supports; see [Email and Meeting Setup](<EmailAndMeetingSetup.md>) for which appear where.
+The route depends on **Settings > Email, Contacts, and Calendar**. The list there only offers the choices your platform supports; see [Email and Meeting Setup](<EmailAndMeetingSetup.md>) for which appear where.
 
 Some routes cannot carry the attendees. For those, the Schedule meeting window shows a **Copy Attendees** button that puts every required and optional attendee on the clipboard, ready to paste into the event.
 

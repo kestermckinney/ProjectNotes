@@ -4,6 +4,9 @@ theme:
   name: readthedocs
   highlightjs: true
 
+extra_css:
+  - css/extra.css
+
 nav:
   - 'Home': index.md
   - 'Introduction':

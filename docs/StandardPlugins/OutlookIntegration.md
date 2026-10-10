@@ -19,7 +19,7 @@ Open **Plugins · Settings → Outlook Integration**. Choose the integration typ
 
 Set **Backup Emails** and its inbox and sent folder settings to choose which project messages to archive. Use **Sync ToDo Items with Due Dates** and **Sync ToDo Items without Due Dates** to control task publishing. **Send Emails using Office 365** applies only to the optional IFS Cloud report plugin; it does not change Project Notes' built-in email handoff.
 
-Older plugin settings or dialogs may still show **Import Contacts** or **Export New Contacts**. Those controls no longer run contact actions. Use **Settings → Preferences → Email, Contact and Calendar Integration** instead. The native **Full Contact Export** checks for possible existing contacts and lets you update, skip, or deliberately create a new contact.
+Older plugin settings or dialogs may still show **Import Contacts** or **Export New Contacts**. Those controls no longer run contact actions. Use **Settings → Email, Contacts, and Calendar** instead. The native **Full Contact Export** checks for possible existing contacts and lets you update, skip, or deliberately create a new contact.
 
 ## Run manually
 

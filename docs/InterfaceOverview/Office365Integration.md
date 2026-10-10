@@ -8,7 +8,7 @@ Native [Contact Synchronization](Preferences.md#contact-synchronization) and **F
 
 ## Before You Sign In
 
-Your organization must provide a **dedicated** Microsoft Entra app registration for Office 365 Integration. Do not reuse the app registration configured for [Outlook Integration](<OutlookIntegration.md>) — its consent only covers Mail, Calendar, Contacts, and Tasks scopes. Office 365 Integration requests different, higher-privilege delegated Microsoft Graph scopes:
+Your organization must provide a **dedicated** Microsoft Entra app registration for Office 365 Integration. Do not reuse the app registration configured for [Outlook Integration](<../StandardPlugins/OutlookIntegration.md>) — its consent only covers Mail, Calendar, Contacts, and Tasks scopes. Office 365 Integration requests different, higher-privilege delegated Microsoft Graph scopes:
 
 For email drafts and meeting invitations:
 
@@ -42,7 +42,7 @@ The status panel reports whether Project Notes is signed in and shows the device
 
 ## Credential Storage
 
-Project Notes stores the Microsoft refresh token in the operating system's credential vault. Access tokens remain in memory. The tenant ID, client ID, and connection state are stored in the local Project Notes settings profile and do not sync through the project database. These settings are kept independent of [Outlook Integration](<OutlookIntegration.md>)'s tenant ID and application ID — changing one never affects the other.
+Project Notes stores the Microsoft refresh token in the operating system's credential vault. Access tokens remain in memory. The tenant ID, client ID, and connection state are stored in the local Project Notes settings profile and do not sync through the project database. These settings are kept independent of [Outlook Integration](<../StandardPlugins/OutlookIntegration.md>)'s tenant ID and application ID — changing one never affects the other.
 
 ## Use with File Finder
 
@@ -71,8 +71,8 @@ See [File Finder](<FileFinder.md>) for discovery, matching, classification setti
 
 After authentication succeeds:
 
-1. Open **Settings > Preferences**.
-2. Under **Email, Contact and Calendar Integration**, set **Integration** to **Microsoft 365 drafts**.
+1. Open **Settings > Email, Contacts, and Calendar**.
+2. Set **Integration** to **Microsoft 365 drafts**.
 
 Reports then become drafts in your mailbox and meetings become draft events in your calendar, both opened in Outlook on the web for review. Nothing is sent by Project Notes.
 

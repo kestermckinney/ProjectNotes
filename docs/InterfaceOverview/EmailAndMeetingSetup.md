@@ -19,7 +19,7 @@ You cannot type an address into a review dialog. If someone needs a copy, add th
 
 ## Choose how mail and meetings leave Project Notes
 
-Open **Settings > Preferences** and find **Email, Contact and Calendar Integration**. One choice covers both email and meeting invitations.
+Open **Settings > Email, Contacts, and Calendar**. One choice covers both email and meeting invitations.
 
 | Integration | Email becomes | Meeting becomes | Works on |
 | :--- | :--- | :--- | :--- |
@@ -43,7 +43,7 @@ If your settings came from another computer and name a choice this one lacks, su
 
 ## Windows with Outlook Classic
 
-1. Open **Settings > Preferences > Email, Contact and Calendar Integration** and set **Integration** to **Outlook (Classic)**.
+1. Open **Settings > Email, Contacts, and Calendar** and set **Integration** to **Outlook (Classic)**.
 2. Start Outlook and leave it running. Handoff is faster when Outlook is already open.
 
 Project Notes starts Outlook (classic) itself, so the `.eml` and `.ics` file associations don't matter.
@@ -72,6 +72,8 @@ If you want the meeting to arrive with its attendees already filled in, use **Ou
 1. Set **Integration** to **MacOS Email and Calendar**.
 2. Open Mail and Calendar at least once and add the account you send project mail from.
 3. Schedule a test meeting. macOS asks whether Project Notes may access your calendars, then whether it may control Calendar. Allow both.
+
+This mode also turns on contact synchronization against the Contacts app on this Mac directly — there is no separate account or password to enter. The first sync asks for access under **System Settings > Privacy & Security > Contacts**. See [Contact Synchronization](<Preferences.md#contact-synchronization>) for matching, export, and review details.
 
 Reports open in a Mail compose window with the recipients, formatted body, and file attachments already in place. Cc recipients appear alongside the To recipients. Bcc recipients cannot be carried; choose **Default Application** or another integration for messages that need Bcc.
 
@@ -133,7 +135,7 @@ Some organizations require administrator consent before anyone can sign in.
 
 Your refresh token goes into the operating system credential vault. Access tokens stay in memory only.
 
-7. Go back to **Settings > Preferences** and set **Integration** to **Microsoft 365 drafts**.
+7. Go back to **Settings > Email, Contacts, and Calendar** and set **Integration** to **Microsoft 365 drafts**.
 
 If you signed in before meeting scheduling existed, sign out and sign in again. The older sign-in did not ask for calendar permission, and a draft event cannot be created without it.
 
@@ -211,6 +213,7 @@ Run one of each before you rely on it.
 | Microsoft 365 reports it is not signed in | Open **Settings > Office 365 Integration** and sign in again. A refresh token expires if it goes unused for a long time. |
 | A meeting draft is created but has no attendees | The sign-in predates calendar permission. Sign out, then sign in again to grant `Calendars.ReadWrite`. |
 | Calendar reports it is not allowed, or no event appears | Open **System Settings > Privacy & Security**. Under **Calendars**, give Project Notes full access. Under **Automation**, turn on **Calendar** for Project Notes. |
+| No contacts sync under MacOS Email and Calendar | Open **System Settings > Privacy & Security > Contacts** and give Project Notes access, then try **Test Connection** again. |
 | Mail opens without the attachment | Keep Project Notes open until the draft has saved its attachments. If your mail client cannot import the native sharing items, try **Default Application**. |
 | Thunderbird does not start | The **Thunderbird executable** value is wrong. Try the bare command `thunderbird`, a full path, or `flatpak run org.mozilla.Thunderbird`. |
 | An attachment is missing after you reopen a draft | Staged files are removed when Project Notes closes. Send or save the draft before you quit. |

@@ -7,13 +7,14 @@ The Project Notes Settings page allows you to configure application-wide setting
 **To open the Settings page:**
 
 1. Click the **Settings** icon in the icon rail, or choose **Preferences** from the app menu (the menu icon at the top of the icon rail).
-2. The Settings page opens with sections for Appearance, Cloud Sync, Office 365 Integration, Email Templates, Meeting Templates, File Finder, Project Folders, Preferences, View Options, and Data.
+2. The Settings page opens with a tab list, in order: Preferences, Cloud Sync, Data, View Options, Project Folders, Office 365 Integration, Email, Contacts, and Calendar, File Finder, Email Templates, and Meeting Templates.
 
 ## Related Settings Pages
 
-This page covers Appearance, Project Manager/Managing Company, View Options,
-Data, and About. A few other Settings-page sections are substantial enough to
-have their own documentation:
+This page covers Preferences (Appearance, Project Manager/Managing Company,
+and View Report After Save), the Email, Contacts, and Calendar tab, View
+Options, Data, and About. A few other Settings-page tabs are substantial
+enough to have their own documentation:
 
 - [Cloud Sync](<RemoteHost.md>) — Sync your database with Project Notes Pro
 - [Project Folders](<ProjectFolders.md>) — Configure per-project folder locations
@@ -22,7 +23,7 @@ have their own documentation:
 
 ## Appearance
 
-The **Appearance** section at the top of Settings controls the app's theme: **System**, **Light**, or **Dark**. **System** follows your operating system's current theme and switches automatically if it changes. Click a button to switch immediately — there is nothing to save. The same choice, as a quick two-way toggle, is also available as **Dark Mode** in the [Application Menu](<ApplicationMenu.md>)'s **View** group.
+**Appearance**, near the bottom of the **Preferences** tab, controls the app's theme: **System**, **Light**, or **Dark**. **System** follows your operating system's current theme and switches automatically if it changes. Click a button to switch immediately — there is nothing to save. The same choice, as a quick two-way toggle, is also available as **Dark Mode** in the [Application Menu](<ApplicationMenu.md>)'s **View** group.
 
 ## Project Manager
 
@@ -62,7 +63,7 @@ The **Managing Company** setting, also under the **Preferences** section of Sett
 
 ## Contact Synchronization
 
-Contact synchronization is part of **Preferences → Email, Contact and Calendar Integration** and follows its **Integration** selection. Thunderbird uses Thunderbird contacts; Outlook (Classic) uses classic Outlook contacts; Outlook and Microsoft 365 drafts use the shared Office 365 account; iCloud and MacOS Email and Calendar use iCloud contacts. Default Application does not provide contact synchronization. There is no separate contact-source selector.
+Contact synchronization is part of the **Email, Contacts, and Calendar** tab and follows its **Integration** selection. Thunderbird uses Thunderbird contacts; Outlook (Classic) uses classic Outlook contacts; Outlook and Microsoft 365 drafts use the shared Office 365 account; iCloud uses iCloud contacts; MacOS Email and Calendar uses the Contacts app on this Mac directly. Default Application does not provide contact synchronization. There is no separate contact-source selector.
 
 - **Outlook** is offered only on Windows and reads classic Outlook's active profile. New Outlook and other platforms use Office 365 for Microsoft cloud contacts.
 - **Office 365** uses the shared account configured under **Office 365 Integration**. Sign in from that tab to grant contact access for synchronization and full export. Preferences has no separate Microsoft sign-in.
@@ -70,8 +71,9 @@ Contact synchronization is part of **Preferences → Email, Contact and Calendar
 
   On Linux, setup detects Thunderbird Flatpak data folders, maps its `.mozilla` registration folder into the sandbox, installs a native-messaging launcher in each, and copies the add-on into Thunderbird's own data folder. Before applying the change, the dialog explains that it grants Thunderbird permission to launch host programs (`org.freedesktop.Flatpak`); that permission applies to the entire Thunderbird app. The folder mapping and permissions take effect after Thunderbird is fully restarted. The helper and Project Notes use a shared runtime socket location despite their different temporary directories. If permission setup fails (including when Project Notes itself is sandboxed), the result dialog supplies the terminal commands to run before following the add-on installation steps. A packaged Project Notes helper is launched through its own Flatpak runtime.
 - **iCloud** uses your Apple Account and an app-specific password saved in your operating system credential store. A blank password leaves the stored password unchanged.
+- **MacOS Email and Calendar** reads and writes the Contacts app on this Mac directly through Apple's Contacts framework — there is no separate account or password to enter. The first sync asks for access under **System Settings > Privacy & Security > Contacts**.
 
-Use **Test Connection** to discover books without importing or exporting. Select import books, or leave all unchecked to import all books. **Full Contact Export** checks every active Project Notes contact against contacts in the selected system, whether or not synchronization is enabled. Unmatched contacts are created in the default writable address book. Possible matches pause for a side-by-side review. Choose **Use This One** under Project Notes to update the existing contact, choose **Use This One** under the external contact to keep it unchanged and skip the export, or choose **Use Both** to create a separate contact. Previously exported identities, exact email addresses, normalized phone numbers, complete profiles, and strong name/company similarity are used to find candidates. Matches in read-only address books can be skipped or duplicated but cannot be updated. Outlook and Office 365 use their default Contacts folder for new contacts. Thunderbird and iCloud use a provider-designated default writable address book when available, otherwise the first writable book ordered by stable ID (not display name). Thunderbird creates contacts only in local writable books. If no writable book is available, the export stops with an explanatory status. Synchronization imports contacts but never exports them. The interval can be changed from 1 to 1,440 minutes; startup sync is optional.
+Use **Test Connection** to discover books without importing or exporting. Select import books, or leave all unchecked to import all books. **Full Contact Export** checks every active Project Notes contact against contacts in the selected system, whether or not synchronization is enabled. Unmatched contacts are created in the default writable address book. Possible matches pause for a side-by-side review. Choose **Use This One** under Project Notes to update the existing contact, choose **Use This One** under the external contact to keep it unchanged and skip the export, or choose **Use Both** to create a separate contact. Previously exported identities, exact email addresses, normalized phone numbers, complete profiles, and strong name/company similarity are used to find candidates. Matches in read-only address books can be skipped or duplicated but cannot be updated. Outlook and Office 365 use their default Contacts folder for new contacts. Thunderbird, iCloud, and MacOS Email and Calendar use a provider-designated default writable address book when available, otherwise the first writable book ordered by stable ID (not display name). Thunderbird creates contacts only in local writable books. If no writable book is available, the export stops with an explanatory status. Synchronization imports contacts but never exports them. The interval can be changed from 1 to 1,440 minutes; startup sync is optional.
 
 Contact synchronization runs on a dedicated background thread, including matching and database writes. Settings and review actions remain in the main interface; progress and refreshed records are delivered back to it safely.
 
@@ -83,9 +85,9 @@ If a full export stops with an uncertain result, start the export again to refre
 
 Legacy contact actions have moved out of Python plugins. Existing iCloud account settings and valid links are carried forward where available, but synchronization stays paused until enabled here. Other plugin functions remain available.
 
-## Email, Contact and Calendar Integration
+## Email, Contacts, and Calendar
 
-The **Email, Contact and Calendar Integration** section, below **Preferences**, decides how Project Notes hands finished emails and meeting invitations to you. One choice covers email, contacts, and calendars.
+The **Email, Contacts, and Calendar** tab decides how Project Notes hands finished emails and meeting invitations to you. One choice covers email, contacts, and calendars.
 
 The **Integration** list only offers what your operating system supports:
 
@@ -182,7 +184,7 @@ When you use the [Filter Tool](FilterTool.md) or the **Show Internal / Budget It
 
 The **Project Manager** and **Managing Company** settings are saved in the `application_settings` table inside the Project Notes database (`ProjectNotes.db`). This means they travel with the database — if you share a database or copy it to another machine, your preferences move with it. They are also included in cloud sync when synchronization is enabled.
 
-The **Email, Contact and Calendar Integration** choice and the Thunderbird path are stored in your local OS profile instead, so each machine can use a different mail application. See [Plugin Settings — Where Settings Are Stored](<../StandardPlugins/PluginSettings.md>) for the full breakdown.
+The **Email, Contacts, and Calendar** choice and the Thunderbird path are stored in your local OS profile instead, so each machine can use a different mail application. See [Plugin Settings — Where Settings Are Stored](<../StandardPlugins/PluginSettings.md>) for the full breakdown.
 
 ## Related Documentation
 
