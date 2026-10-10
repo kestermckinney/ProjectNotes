@@ -78,7 +78,7 @@ ColumnLayout {
     }
 
     Label {
-        text: qsTr("Email templates")
+        text: qsTr("Email Templates")
         color: Theme.text
         font.pixelSize: Theme.fontXl
         font.weight: Font.DemiBold
