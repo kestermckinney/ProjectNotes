@@ -59,7 +59,7 @@ QString nativeTemplateId(Workflow workflow)
     case Workflow::StatusReport: return QStringLiteral("status-report-native-v1");
     case Workflow::TrackerItemsReport: return QStringLiteral("tracker-items-report-native-v1");
     case Workflow::ScheduleMeeting: break; // Meeting types have their own store.
-    case Workflow::PersonEmail: break; // Plain people emails have no template.
+    case Workflow::ContactEmail: break; // Plain contact emails have no template.
     case Workflow::ProjectEmail: return QStringLiteral("project-email-native-v1");
     case Workflow::ShareLocation: return QStringLiteral("share-location-native-v1");
     }

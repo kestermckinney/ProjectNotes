@@ -110,14 +110,14 @@ qt_add_qml_module(ProjectNotesMobile
         qml/ActiveIndicator.qml
         qml/Main.qml
         qml/pages/ProjectsListPage.qml
-        qml/pages/PeoplePage.qml
-        qml/pages/ClientsPage.qml
+        qml/pages/ContactsPage.qml
+        qml/pages/CompaniesPage.qml
         qml/pages/SyncSettingsPage.qml
         qml/pages/ViewOptionsPage.qml
         qml/pages/PreferencesPage.qml
         qml/pages/AboutPage.qml
-        qml/pages/PersonDetailPage.qml
-        qml/pages/ClientDetailPage.qml
+        qml/pages/ContactDetailPage.qml
+        qml/pages/CompanyDetailPage.qml
         qml/pages/AllItemsPage.qml
         qml/pages/ProjectDetailsPage.qml
         qml/pages/DateFieldRow.qml

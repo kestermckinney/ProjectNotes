@@ -59,18 +59,18 @@ Page {
     // deliberately NOT a live model proxy, which a Sort elsewhere can reorder
     // or reset out from under a ComboBox bound directly to it (see
     // AppController::teamMemberList doc comment).
-    property var _people: []
-    function _peopleNames() { return root._people.map(function(p){ return p.name }) }
-    function _personIndexForId(id) {
-        for (var i = 0; i < root._people.length; i++)
-            if (root._people[i].id === id) return i
+    property var _contacts: []
+    function _contactNames() { return root._contacts.map(function(p){ return p.name }) }
+    function _contactIndexForId(id) {
+        for (var i = 0; i < root._contacts.length; i++)
+            if (root._contacts[i].id === id) return i
         return -1
     }
 
     // Stable {id,name} snapshot backing meetingCombo — deliberately NOT the
     // live actionitemsdetailsmeetingsmodelproxy, which sort() elsewhere can
     // reorder out from under a ComboBox bound directly to it (see the
-    // AppController teamMemberList/clientList doc comments).
+    // AppController teamMemberList/companyList doc comments).
     property var _meetings: []
     function _meetingNames() { return root._meetings.map(function(m){ return m.name }) }
     function _meetingIndexForId(id) {
@@ -83,9 +83,9 @@ Page {
     // either field already names so an existing value keeps displaying — the
     // same rule as desktop's ItemDetailPage. The project id is read off the item
     // row; none of the pages that push this one carry one of their own.
-    function _loadPeople(identifiedBy, assignedTo) {
+    function _loadContacts(identifiedBy, assignedTo) {
         var d = AppController.getTrackerItemDetailData(root.itemRow)
-        root._people = AppController.teamMemberList((d.project_id || "").toString(),
+        root._contacts = AppController.teamMemberList((d.project_id || "").toString(),
                                                     [identifiedBy, assignedTo])
     }
 
@@ -136,8 +136,8 @@ Page {
             typeCombo.selection,
             nameField.text,
             descEdit.text,
-            root._idAt(root._people,   identifiedByCombo.optionIndex),
-            root._idAt(root._people,   assignedToCombo.optionIndex),
+            root._idAt(root._contacts,   identifiedByCombo.optionIndex),
+            root._idAt(root._contacts,   assignedToCombo.optionIndex),
             priorityCombo.selection,
             statusCombo.selection,
             dateIdentifiedField.text,
@@ -156,9 +156,9 @@ Page {
         typeCombo.selectText((d.item_type || "").toString(), 0)
         nameField.text   = (d.item_name    || "").toString()
         descEdit.text    = (d.description  || "").toString()
-        root._loadPeople((d.identified_by || "").toString(), (d.assigned_to || "").toString())
-        identifiedByCombo.selectOption(root._personIndexForId((d.identified_by || "").toString()))
-        assignedToCombo.selectOption(root._personIndexForId((d.assigned_to   || "").toString()))
+        root._loadContacts((d.identified_by || "").toString(), (d.assigned_to || "").toString())
+        identifiedByCombo.selectOption(root._contactIndexForId((d.identified_by || "").toString()))
+        assignedToCombo.selectOption(root._contactIndexForId((d.assigned_to   || "").toString()))
         priorityCombo.selectText((d.priority || "").toString())
         statusCombo.selectText((d.status || "").toString())
         root._prevStatus = (d.status || "").toString()
@@ -357,11 +357,11 @@ Page {
             FieldRow {
                 FormCombo {
                     id: identifiedByCombo
-                    options: root._peopleNames()
+                    options: root._contactNames()
                     includeNone: true
                     Component.onCompleted: {
-                        root._loadPeople(root.initialIdentifiedBy, root.initialAssignedTo)
-                        selectOption(root._personIndexForId(root.initialIdentifiedBy))
+                        root._loadContacts(root.initialIdentifiedBy, root.initialAssignedTo)
+                        selectOption(root._contactIndexForId(root.initialIdentifiedBy))
                     }
                     onActivated: root._touch()
                 }
@@ -371,11 +371,11 @@ Page {
             FieldRow {
                 FormCombo {
                     id: assignedToCombo
-                    options: root._peopleNames()
+                    options: root._contactNames()
                     includeNone: true
                     Component.onCompleted: {
-                        root._loadPeople(root.initialIdentifiedBy, root.initialAssignedTo)
-                        selectOption(root._personIndexForId(root.initialAssignedTo))
+                        root._loadContacts(root.initialIdentifiedBy, root.initialAssignedTo)
+                        selectOption(root._contactIndexForId(root.initialAssignedTo))
                     }
                     onActivated: {
                         root._touch()

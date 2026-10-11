@@ -47,17 +47,17 @@ RecordContextMenu {
 
     // Configure for one row and open at scene coordinates. Pass allowMoveTo true
     // for row types that support Move To… (tracker items only, so far). Optional
-    // personId/clientId enable "Go To Person"/"Go To Client" actions. Duplicate
+    // contactId/companyId enable "Go To Contact"/"Go To Company" actions. Duplicate
     // needs no argument — the base menu derives it from the row's own table.
-    function openFor(rowModel, id, type, label, sx, sy, allowMoveTo, personId, clientId, locationPath) {
+    function openFor(rowModel, id, type, label, sx, sy, allowMoveTo, contactId, companyId, locationPath) {
         rowMenu.model = rowModel
         rowMenu.recordId = id
         rowMenu.recordType = type
         rowMenu.recordLabel = label
         rowMenu.canMoveTo = (allowMoveTo === true)
         rowMenu.canReviewEmail = DesktopAppController.tableNameForModel(rowModel) === "project_notes"
-        rowMenu.personId = personId || ""
-        rowMenu.clientId = clientId || ""
+        rowMenu.contactId = contactId || ""
+        rowMenu.companyId = companyId || ""
         rowMenu.locationPath = locationPath || ""
         rowMenu.openAt(sx, sy)
     }

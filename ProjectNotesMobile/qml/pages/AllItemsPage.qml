@@ -33,7 +33,7 @@ Page {
 
     // Quick Filter entries for a long-pressed item row: leads with "Assigned
     // to Me" — the Project Manager configured in Preferences, omitted when
-    // none is set — then entries pre-filled from that row's own client/
+    // none is set — then entries pre-filled from that row's own company/
     // assigned-to/identified-by (omitted when unset), then the overdue toggle
     // and the three priority shortcuts. "Assigned to Me" goes first so the one
     // entry that doesn't depend on the pressed row keeps a stable position in
@@ -45,9 +45,9 @@ Page {
         var pmId = AppController.projectManagerId()
         if (pmId !== "")
             qf.push({ label: qsTr("Assigned to Me"), field: "assigned_to", values: [pmId] })
-        var clientId = (m.client_id || "").toString()
-        if (clientId !== "")
-            qf.push({ label: qsTr("This Client"), field: "client_id", values: [clientId] })
+        var companyId = (m.client_id || "").toString()
+        if (companyId !== "")
+            qf.push({ label: qsTr("This Company"), field: "client_id", values: [companyId] })
         var assignedId = (m.assigned_to || "").toString()
         // Identical field/values to "Assigned to Me" when the pressed row is
         // the PM's own — skip it rather than list the same shortcut twice.
@@ -194,7 +194,7 @@ Page {
                         visible: (delegateRoot.model.assigned_to || "") !== ""
                         text: {
                             var sep = (delegateRoot.model.status || delegateRoot.model.priority) ? "  ·  " : ""
-                            return sep + AppController.peopleNameForId(delegateRoot.model.assigned_to || "")
+                            return sep + AppController.contactNameForId(delegateRoot.model.assigned_to || "")
                         }
                         font.pixelSize: 12
                         color: Theme.mutedText

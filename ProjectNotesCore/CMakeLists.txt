@@ -44,11 +44,11 @@ set(CORE_SOURCES
     # Data models
     ../actionitemprojectnotesmodel.cpp  ../actionitemprojectnotesmodel.h
     ../actionitemsdetailsmeetingsmodel.cpp ../actionitemsdetailsmeetingsmodel.h
-    ../clientsmodel.cpp     ../clientsmodel.h
+    ../companiesmodel.cpp   ../companiesmodel.h
     ../itemdetailteamlistmodel.cpp ../itemdetailteamlistmodel.h
     ../meetingattendeesmodel.cpp ../meetingattendeesmodel.h
     ../notesactionitemsmodel.cpp ../notesactionitemsmodel.h
-    ../peoplemodel.cpp      ../peoplemodel.h
+    ../contactsmodel.cpp    ../contactsmodel.h
     ../projectlocationsmodel.cpp ../projectlocationsmodel.h
     ../projectnotesmodel.cpp ../projectnotesmodel.h
     ../projectslistmodel.cpp ../projectslistmodel.h

@@ -47,10 +47,10 @@ std::optional<MeetingNotesReview> MeetingNotesPreparationFactory::create(
         // The manager may not be on this project's team, so prefer the name
         // resolved at snapshot time and fall back to the team roster.
         if (context.values.value(QStringLiteral("preferences.managerName")).isEmpty()) {
-            const auto manager = std::find_if(snapshot.people.cbegin(), snapshot.people.cend(), [&snapshot](const SnapshotPerson &person) {
-                return person.id == snapshot.projectManagerId;
+            const auto manager = std::find_if(snapshot.contacts.cbegin(), snapshot.contacts.cend(), [&snapshot](const SnapshotContact &contact) {
+                return contact.id == snapshot.projectManagerId;
             });
-            if (manager != snapshot.people.cend())
+            if (manager != snapshot.contacts.cend())
                 context.values.insert(QStringLiteral("preferences.managerName"), manager->name);
         }
         context.values.insert(QStringLiteral("meeting.title"), note == snapshot.notes.cend() ? QString() : note->title);
@@ -73,23 +73,22 @@ std::optional<MeetingNotesReview> MeetingNotesPreparationFactory::create(
     // List this note's attendees together with the remaining project team.
     // Only attendees start selected; absent team members default to CC.
     AudienceRule defaultAudience;
-    defaultAudience.source = PeopleSource::ChosenPeople;
-    defaultAudience.companyFilter = CompanyFilter::All;
+    defaultAudience.source = ContactSource::ChosenContacts;
     defaultAudience.excludeProjectManager = true;
     const auto selectedNote = std::find_if(snapshot.notes.cbegin(), snapshot.notes.cend(), [&source](const SnapshotNote &note) {
         return note.id == source.noteIds.constFirst();
     });
     if (selectedNote != snapshot.notes.cend())
-        defaultAudience.chosenPersonIds = selectedNote->attendeeIds;
-    for (const SnapshotPerson &person : snapshot.people)
-        if (person.projectTeamMember && !defaultAudience.chosenPersonIds.contains(person.id))
-            defaultAudience.chosenPersonIds.append(person.id);
+        defaultAudience.chosenContactIds = selectedNote->attendeeIds;
+    for (const SnapshotContact &contact : snapshot.contacts)
+        if (contact.projectTeamMember && !defaultAudience.chosenContactIds.contains(contact.id))
+            defaultAudience.chosenContactIds.append(contact.id);
     review.audience = resolveAudience(snapshot, defaultAudience);
-    for (SnapshotPerson &person : review.audience.people) {
-        person.meetingAttendee = selectedNote != snapshot.notes.cend()
-            && selectedNote->attendeeIds.contains(person.id);
-        review.audience.initialOverrides.append({person.id, person.meetingAttendee,
-                                                person.meetingAttendee ? RecipientRole::To : RecipientRole::Cc});
+    for (SnapshotContact &contact : review.audience.contacts) {
+        contact.meetingAttendee = selectedNote != snapshot.notes.cend()
+            && selectedNote->attendeeIds.contains(contact.id);
+        review.audience.initialOverrides.append({contact.id, contact.meetingAttendee,
+                                                contact.meetingAttendee ? RecipientRole::To : RecipientRole::Cc});
     }
     review.validation.issues += review.audience.validation.issues;
 

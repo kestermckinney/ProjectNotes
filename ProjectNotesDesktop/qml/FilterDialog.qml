@@ -70,8 +70,8 @@ Popup {
         switch (section) {
         case "projects": _sectionLabel = qsTr("Projects"); break
         case "items":    _sectionLabel = qsTr("Master Items"); break
-        case "people":   _sectionLabel = qsTr("People"); break
-        case "clients":  _sectionLabel = qsTr("Clients"); break
+        case "contacts": _sectionLabel = qsTr("Contacts"); break
+        case "companies":_sectionLabel = qsTr("Companies"); break
         case "statusreport": _sectionLabel = qsTr("Status Report Items"); break
         case "trackeritems": _sectionLabel = qsTr("Tracker Items"); break
         case "team":          _sectionLabel = qsTr("Team"); break

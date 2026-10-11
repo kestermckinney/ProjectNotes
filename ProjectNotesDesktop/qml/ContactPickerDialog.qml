@@ -6,27 +6,27 @@ import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import ProjectNotesDesktop
 
-// Modal dialog for picking one person from a list, with type-to-search and
+// Modal dialog for picking one contact from a list, with type-to-search and
 // keyboard navigation. Type to filter; Down/Up move the highlight through the
 // matching names; Return picks the highlighted row; Escape (or a click away)
-// dismisses. Used everywhere a person is chosen from a list — the project Team
+// dismisses. Used everywhere a contact is chosen from a list — the project Team
 // roster and a meeting note's Attendees.
 //
-//   PeoplePickerDialog {
+//   ContactPickerDialog {
 //       id: teamPicker
 //       headingText: qsTr("Add Team Member")
-//       model: DesktopAppController.peopleList()
-//       onPicked: (person) => { ... person.id ... person.name ... }
+//       model: DesktopAppController.contactList()
+//       onPicked: (contact) => { ... contact.id ... contact.name ... }
 //   }
 Dialog {
     id: root
 
     // Bold title shown at the top of the dialog.
-    property string headingText: qsTr("Add Person")
+    property string headingText: qsTr("Add Contact")
 
     // A list of objects, each exposing `name` and `id` (e.g. the QVariantList
-    // returned by DesktopAppController.peopleList() / teamMemberList()).
-    property alias model: peopleList.model
+    // returned by DesktopAppController.contactList() / teamMemberList()).
+    property alias model: contactsList.model
 
     // Optional function called each time the dialog opens; its return value
     // replaces `model`. Use it when the underlying list can change while the
@@ -35,7 +35,7 @@ Dialog {
 
     // Emitted with the chosen row's object when the user picks someone. The
     // dialog closes itself immediately afterward.
-    signal picked(var person)
+    signal picked(var contact)
 
     anchors.centerIn: parent
     width: 320
@@ -61,7 +61,7 @@ Dialog {
     onModelChanged: _recompute()
     onOpened: {
         if (reload)
-            peopleList.model = reload()
+            contactsList.model = reload()
         _filter = ""
         searchField.text = ""
         _hi = 0
@@ -71,7 +71,7 @@ Dialog {
 
     function _recompute() {
         var rows = []
-        var m = peopleList.model
+        var m = contactsList.model
         var n = m ? m.length : 0
         var needle = _filter.toLowerCase()
         for (var i = 0; i < n; i++) {
@@ -88,13 +88,13 @@ Dialog {
         if (_visible.length === 0)
             return
         _hi = Math.max(0, Math.min(_visible.length - 1, _hi + delta))
-        peopleList.positionViewAtIndex(_visible[_hi], ListView.Contain)
+        contactsList.positionViewAtIndex(_visible[_hi], ListView.Contain)
     }
 
     function _pick(modelIndex) {
-        if (modelIndex < 0 || !peopleList.model || modelIndex >= peopleList.model.length)
+        if (modelIndex < 0 || !contactsList.model || modelIndex >= contactsList.model.length)
             return
-        root.picked(peopleList.model[modelIndex])
+        root.picked(contactsList.model[modelIndex])
         root.close()
     }
 
@@ -136,7 +136,7 @@ Dialog {
                 TextField {
                     id: searchField
                     Layout.fillWidth: true
-                    placeholderText: qsTr("Search people…")
+                    placeholderText: qsTr("Search contacts…")
                     placeholderTextColor: Theme.text3
                     color: Theme.text
                     font.pixelSize: Theme.fontBody
@@ -154,7 +154,7 @@ Dialog {
                     Keys.onPressed: (event) => {
                         if (event.key === Qt.Key_PageUp || event.key === Qt.Key_PageDown) {
                             root._move((event.key === Qt.Key_PageDown ? 1 : -1)
-                                       * Math.max(1, Math.floor(peopleList.height / 34)))
+                                       * Math.max(1, Math.floor(contactsList.height / 34)))
                             event.accepted = true
                         }
                     }
@@ -165,7 +165,7 @@ Dialog {
         }
 
         ListView {
-            id: peopleList
+            id: contactsList
             activeFocusOnTab: true
             Keys.onDownPressed: root._move(1)
             Keys.onUpPressed: root._move(-1)
@@ -182,7 +182,7 @@ Dialog {
             Layout.fillHeight: true
             clip: true
             delegate: ItemDelegate {
-                id: personDelegate
+                id: contactDelegate
                 required property int index
                 required property var modelData
                 // Collapse rows that don't contain the search text.
@@ -190,18 +190,18 @@ Dialog {
                 readonly property bool _isHi: root._visible.length > 0
                     && root._visible[root._hi] === index
                 visible: _match
-                width: peopleList.width
+                width: contactsList.width
                 height: _match ? 34 : 0
                 contentItem: Text {
-                    text: personDelegate.modelData.name
+                    text: contactDelegate.modelData.name
                     color: Theme.text
                     font.pixelSize: Theme.fontBody
                     leftPadding: 12
                     verticalAlignment: Text.AlignVCenter
                 }
                 background: Rectangle {
-                    color: personDelegate._isHi ? Theme.accentSoft
-                         : personDelegate.hovered ? Theme.surface2
+                    color: contactDelegate._isHi ? Theme.accentSoft
+                         : contactDelegate.hovered ? Theme.surface2
                          : "transparent"
                 }
                 // Keep the keyboard highlight in step with the mouse.

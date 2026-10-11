@@ -14,34 +14,33 @@ ProjectEmailReview ProjectEmailPreparationFactory::create(
     review.validation = validate(source);
     if (snapshot.projectId != source.projectId || snapshot.databaseGeneration != source.databaseGeneration)
         review.validation.addError("snapshot-source-mismatch", "source");
-    const bool plainPerson = source.workflow == Workflow::PersonEmail;
-    if (source.workflow != Workflow::ProjectEmail && source.workflow != Workflow::ShareLocation && !plainPerson)
+    const bool plainContact = source.workflow == Workflow::ContactEmail;
+    if (source.workflow != Workflow::ProjectEmail && source.workflow != Workflow::ShareLocation && !plainContact)
         review.validation.addError("email-workflow-invalid", "source.workflow");
-    review.rule.includeUnknownCompany = true;
     review.rule.excludeProjectManager = source.workflow == Workflow::ShareLocation;
     TemplateContext context = communicationTemplateContext(snapshot, source.workflow);
     context.values.insert("report.internal", templateBoolean(false));
     QString nativeHtml;
-    if (source.workflow == Workflow::ProjectEmail || plainPerson) {
-        context.values.insert("person.name", QString());
-        context.values.insert("person.email", QString());
-        if (!source.personId.isEmpty()) {
-            review.rule.source = PeopleSource::ChosenPeople;
-            review.rule.chosenPersonIds = {source.personId};
+    if (source.workflow == Workflow::ProjectEmail || plainContact) {
+        context.values.insert("contact.name", QString());
+        context.values.insert("contact.email", QString());
+        if (!source.contactId.isEmpty()) {
+            review.rule.source = ContactSource::ChosenContacts;
+            review.rule.chosenContactIds = {source.contactId};
             // Keep the project's other recipients available to the shared
-            // audience editor, but initially address only the clicked person.
-            if (!plainPerson)
-                for (const SnapshotPerson &person : snapshot.people)
-                    if (person.projectTeamMember && !review.rule.chosenPersonIds.contains(person.id))
-                        review.rule.chosenPersonIds.append(person.id);
+            // audience editor, but initially address only the clicked contact.
+            if (!plainContact)
+                for (const SnapshotContact &contact : snapshot.contacts)
+                    if (contact.projectTeamMember && !review.rule.chosenContactIds.contains(contact.id))
+                        review.rule.chosenContactIds.append(contact.id);
             bool found = false;
-            for (const SnapshotPerson &person : snapshot.people) {
-                if (person.id != source.personId) continue;
+            for (const SnapshotContact &contact : snapshot.contacts) {
+                if (contact.id != source.contactId) continue;
                 found = true;
-                context.values.insert("person.name", person.name);
-                context.values.insert("person.email", person.email);
+                context.values.insert("contact.name", contact.name);
+                context.values.insert("contact.email", contact.email);
             }
-            if (!found) review.validation.addError(plainPerson ? "person-not-found" : "person-not-in-project", "source.personId");
+            if (!found) review.validation.addError(plainContact ? "contact-not-found" : "contact-not-in-project", "source.contactId");
         }
     } else if (!snapshot.location || snapshot.location->id != source.locationId) {
         review.validation.addError("location-not-in-project", "source.locationId");
@@ -73,22 +72,22 @@ ProjectEmailReview ProjectEmailPreparationFactory::create(
         if (attachLocation) review.attachmentUrl = url;
     }
     if (!review.validation.ok()) return review;
-    const auto rendered = plainPerson
+    const auto rendered = plainContact
         ? TemplateApplicationResult{} : TemplateApplication::apply(contentTemplate, context, nativeHtml);
     review.validation.issues += rendered.validation.issues;
     if (!review.validation.ok()) return review;
     review.audience = resolveAudience(snapshot, review.rule);
     review.validation.issues += review.audience.validation.issues;
-    if (!source.personId.isEmpty()) {
-        bool clickedPersonAvailable = false;
-        for (const SnapshotPerson &person : review.audience.people) {
-            const bool selected = person.id == source.personId;
-            review.audience.initialOverrides.append({person.id, selected, RecipientRole::To});
-            clickedPersonAvailable |= selected;
+    if (!source.contactId.isEmpty()) {
+        bool clickedContactAvailable = false;
+        for (const SnapshotContact &contact : review.audience.contacts) {
+            const bool selected = contact.id == source.contactId;
+            review.audience.initialOverrides.append({contact.id, selected, RecipientRole::To});
+            clickedContactAvailable |= selected;
         }
-        if (!clickedPersonAvailable)
-            review.validation.addError("recipient-address-invalid", "person.email",
-                                      QStringLiteral("The selected person has no valid email address. Correct it on the People page."));
+        if (!clickedContactAvailable)
+            review.validation.addError("recipient-address-invalid", "contact.email",
+                                      QStringLiteral("The selected contact has no valid email address. Correct it on the Contacts page."));
     }
     if (!review.validation.ok()) return review;
     auto &prepared = review.preparation;

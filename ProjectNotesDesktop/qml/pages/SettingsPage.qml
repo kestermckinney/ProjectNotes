@@ -12,8 +12,8 @@ Item {
     id: page
     objectName: "settingsPage"
 
-    property var _clients: []
-    property var _people: []
+    property var _companies: []
+    property var _contacts: []
     readonly property var _contactSync: DesktopAppController.contactSyncSettingsModel
     readonly property bool contactsNeedReview: _contactSync && _contactSync.reviews.length > 0
     readonly property var _finder: DesktopAppController.fileFinder
@@ -22,16 +22,16 @@ Item {
     property int highlightedTab: currentTab
     onCurrentTabChanged: highlightedTab = currentTab
     function keyboardNavigationTarget() { return tabList }
-    readonly property int emailTemplatesTabIndex: 3
-    readonly property int meetingTemplatesTabIndex: 4
+    readonly property int emailTemplatesTabIndex: 8
+    readonly property int meetingTemplatesTabIndex: 9
     Component.onCompleted: {
         refreshContactOptions()
     }
     function refreshContactOptions() {
-        _clients = DesktopAppController.clientList()
-        _people  = DesktopAppController.peopleList()
-        mgmtCombo.value = _nameForId(_clients, DesktopAppController.managingCompanyId())
-        pmCombo.value   = _nameForId(_people,  DesktopAppController.projectManagerId())
+        _companies = DesktopAppController.companyList()
+        _contacts  = DesktopAppController.contactList()
+        mgmtCombo.value = _nameForId(_companies, DesktopAppController.managingCompanyId())
+        pmCombo.value   = _nameForId(_contacts,  DesktopAppController.projectManagerId())
     }
     Connections {
         target: page._contactSync
@@ -52,8 +52,8 @@ Item {
         return emailTemplates.saveAndValidate() && meetingTemplates.saveAndValidate()
     }
 
-    function _clientNames() { return _clients.map(function(c){ return c.name }) }
-    function _peopleNames() { return _people.map(function(p){ return p.name }) }
+    function _companyNames() { return _companies.map(function(c){ return c.name }) }
+    function _contactNames() { return _contacts.map(function(p){ return p.name }) }
     function _idForName(list, n) { for (var i=0;i<list.length;i++) if (list[i].name===n) return list[i].id; return "" }
     function _nameForId(list, id){ for (var i=0;i<list.length;i++) if (list[i].id===id) return list[i].name; return "" }
     function selectTab(index) {
@@ -92,16 +92,16 @@ Item {
                 selectIndex: (row) => { page.highlightedTab = row }
                 focusOnTap: false
                 model: [
-                    { key: "appearance", label: qsTr("Appearance") },
-                    { key: "cloudSync", label: qsTr("Cloud Sync") },
-                    { key: "office365", label: qsTr("Office 365 Integration") },
-                    { key: "emailTemplates", label: qsTr("Email Templates") },
-                    { key: "meetingTemplates", label: qsTr("Meeting Templates") },
-                    { key: "fileFinder", label: qsTr("File Finder") },
-                    { key: "projectFolders", label: qsTr("Project Folders") },
                     { key: "preferences", label: qsTr("Preferences") },
+                    { key: "cloudSync", label: qsTr("Cloud Sync") },
+                    { key: "data", label: qsTr("Data") },
                     { key: "viewOptions", label: qsTr("View Options") },
-                    { key: "data", label: qsTr("Data") }
+                    { key: "projectFolders", label: qsTr("Project Folders") },
+                    { key: "office365", label: qsTr("Office 365 Integration") },
+                    { key: "emailContactsCalendar", label: qsTr("Email, Contacts, and Calendar") },
+                    { key: "fileFinder", label: qsTr("File Finder") },
+                    { key: "emailTemplates", label: qsTr("Email Templates") },
+                    { key: "meetingTemplates", label: qsTr("Meeting Templates") }
                 ]
 
                 delegate: Rectangle {
@@ -156,7 +156,38 @@ Item {
             currentIndex: page.currentTab
 
             SettingsTab {
-                // Appearance
+                // Preferences
+                SettingsSection {
+                title: "Preferences"
+                subtitle: "Defaults applied to new projects and reports."
+                SettingsCheck {
+                    label: qsTr("View report after save")
+                    checked: DesktopAppController.viewReportAfterSave
+                    onToggledValue: (v) => DesktopAppController.viewReportAfterSave = v
+                }
+                GridLayout {
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 0
+                    columns: width < 760 ? 1 : 2
+                    columnSpacing: 10
+                    rowSpacing: 9
+                    ComboField {
+                        id: mgmtCombo
+                        label: qsTr("Managing Company")
+                        options: page._companyNames()
+                        searchable: true
+                        onActivated: (v) => DesktopAppController.setManagingCompanyId(page._idForName(page._companies, v))
+                    }
+                    ComboField {
+                        id: pmCombo
+                        label: qsTr("Project Manager")
+                        options: page._contactNames()
+                        searchable: true
+                        onActivated: (v) => DesktopAppController.setProjectManagerId(page._idForName(page._contacts, v))
+                    }
+                }
+            }
+
                 SettingsSection {
                 title: "Appearance"
                 subtitle: "Theme used across the application."
@@ -309,6 +340,202 @@ Item {
             }
 
             SettingsTab {
+                // Data
+                SettingsSection {
+                title: "Data"
+                subtitle: "Import records from a Project Notes XML file. Export is available from any record's detail page."
+                Button {
+                    implicitHeight: 30
+                    leftPadding: 12; rightPadding: 12; topPadding: 0; bottomPadding: 0
+                    contentItem: RowLayout {
+                        spacing: 5
+                        MaterialIcon { name: "upload"; size: 16; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
+                        Text { text: qsTr("Import from XML…"); color: Theme.text; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
+                               verticalAlignment: Text.AlignVCenter; Layout.alignment: Qt.AlignVCenter }
+                    }
+                    onClicked: importDialog.open()
+                }
+            }
+
+            }
+
+            SettingsTab {
+                // View Options
+                SettingsSection {
+                title: "View Options"
+                subtitle: "Control what the lists show. Changes apply immediately."
+                SettingsCheck {
+                    objectName: "viewOptionShowClosed"
+                    label: qsTr("Show closed projects")
+                    checked: DesktopAppController.showClosedProjects
+                    onToggledValue: (v) => DesktopAppController.showClosedProjects = v
+                }
+                SettingsCheck {
+                    objectName: "viewOptionShowInternal"
+                    label: qsTr("Show internal items")
+                    checked: DesktopAppController.showInternalItems
+                    onToggledValue: (v) => DesktopAppController.showInternalItems = v
+                }
+                SettingsCheck {
+                    // Same name and same sense as the View menu's own row —
+                    // the controller property is the inverse of both, so this
+                    // is the one view option that binds through a negation.
+                    objectName: "viewOptionShowResolved"
+                    label: qsTr("Show resolved items")
+                    checked: !DesktopAppController.newAndAssignedOnly
+                    onToggledValue: (v) => DesktopAppController.newAndAssignedOnly = !v
+                }
+            }
+
+            }
+
+            SettingsTab {
+                // Project Folder
+                SettingsSection {
+                title: "Project Folders"
+                subtitle: "Group projects into folders (e.g. Favorites). A project can belong to several folders. Drag projects onto a folder in the sidebar to add them."
+
+                // New-folder row
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: 30
+                        radius: Theme.radiusSm
+                        color: Theme.surface
+                        border.color: Theme.border
+                        TextField {
+                            id: newFolderField
+                            anchors.fill: parent
+                            anchors.leftMargin: 9
+                            anchors.rightMargin: 9
+                            placeholderText: "New folder name…"
+                            color: Theme.text
+                            placeholderTextColor: Theme.text3
+                            background: null
+                            font.pixelSize: Theme.fontBody
+                            verticalAlignment: Text.AlignVCenter
+                            onAccepted: page._createFolder()
+                            SpellCheckField { spellCheckEnabled: false }
+                        }
+                    }
+
+                    Button {
+                        primary: true
+                        implicitHeight: 30
+                        leftPadding: 12; rightPadding: 12; topPadding: 0; bottomPadding: 0
+                        enabled: newFolderField.text.trim().length > 0
+                        contentItem: RowLayout {
+                            spacing: 5
+                            MaterialIcon { name: "add"; size: 16; color: "#ffffff"; Layout.alignment: Qt.AlignVCenter }
+                            Text { text: "Add Folder"; color: "#ffffff"; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
+                                   verticalAlignment: Text.AlignVCenter; Layout.alignment: Qt.AlignVCenter }
+                        }
+                        onClicked: page._createFolder()
+                    }
+                }
+
+                // Existing folders
+                Repeater {
+                    model: FolderManager.folders
+                    delegate: Rectangle {
+                        id: folderRow
+                        required property var modelData
+                        readonly property var folder: modelData
+                        Layout.fillWidth: true
+                        implicitHeight: 40
+                        radius: Theme.radiusSm
+                        color: Theme.surface
+                        border.color: Theme.border
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 9
+                            anchors.rightMargin: 7
+                            spacing: 8
+
+                            // Icon picker: click to open a grid of all available icons,
+                            // highlighting the one currently selected.
+                            Rectangle {
+                                id: iconSwatch
+                                width: 26; height: 26; radius: Theme.radiusSm
+                                color: "transparent"
+                                border.color: Theme.border
+                                MaterialIcon {
+                                    anchors.centerIn: parent
+                                    name: folderRow.folder.icon
+                                    size: 15
+                                    color: folderRow.folder.color
+                                }
+                                TapHandler {
+                                    onTapped: {
+                                        var p = iconSwatch.mapToItem(null, 0, iconSwatch.height)
+                                        iconPickerMenu.openFor(folderRow.folder, p.x, p.y)
+                                    }
+                                }
+                            }
+
+                            Text {
+                                text: folderRow.folder.name
+                                color: Theme.text
+                                font.pixelSize: Theme.fontLg
+                                font.weight: Font.DemiBold
+                                Layout.fillWidth: true
+                                elide: Text.ElideRight
+                            }
+
+                            Text {
+                                text: folderRow.folder.count
+                                      + (folderRow.folder.count === 1 ? " project" : " projects")
+                                color: Theme.text3
+                                font.pixelSize: Theme.fontXs
+                            }
+
+                            // Color swatches
+                            Row {
+                                spacing: 3
+                                Repeater {
+                                    model: Theme.folderColors
+                                    delegate: Rectangle {
+                                        required property var modelData
+                                        width: 14; height: 14; radius: 7
+                                        color: modelData
+                                        border.width: 2
+                                        border.color: folderRow.folder.color === modelData
+                                                      ? Theme.text : "transparent"
+                                        TapHandler {
+                                            onTapped: FolderManager.setFolderColor(
+                                                          folderRow.folder.id, modelData)
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Delete
+                            Rectangle {
+                                width: 26; height: 26; radius: Theme.radiusSm
+                                color: delHover.hovered ? Theme.redSoft : "transparent"
+                                MaterialIcon { anchors.centerIn: parent; name: "delete"; size: 15; color: Theme.red }
+                                HoverHandler { id: delHover }
+                                TapHandler { onTapped: FolderManager.removeFolder(folderRow.folder.id) }
+                            }
+                        }
+                    }
+                }
+
+                Text {
+                    visible: FolderManager.folders.length === 0
+                    text: "No folders yet. Add one above — it will appear in the project sidebar."
+                    color: Theme.text3
+                    font.pixelSize: Theme.fontSm
+                }
+            }
+
+            }
+
+            SettingsTab {
                 // Office 365 Integration
                 SettingsSection {
                     title: qsTr("Office 365 Integration")
@@ -407,21 +634,96 @@ Item {
             }
 
             SettingsTab {
-                // Email Templates
-                TemplateSettingsPane {
-                    id: emailTemplates
-                    Layout.fillWidth: true
-                    templateModel: DesktopAppController.templateEditorModel
+                // Email, Contacts, and Calendar
+                SettingsSection {
+                    id: integrationSection
+                    title: qsTr("Email, Contacts, and Calendar")
+                    subtitle: qsTr("Choose the service or application for email, contact synchronization, and calendar invitations. Emails and invitations are prepared for your review before you send them.")
+                    readonly property var backends: {
+                        var list = [
+                            { value: "default-app", label: qsTr("Default Application") },
+                            { value: "icloud", label: qsTr("iCloud") },
+                            { value: "thunderbird", label: qsTr("Thunderbird") },
+                            { value: "graph", label: qsTr("Microsoft Office 365") }
+                        ]
+                        if (Qt.platform.os === "osx")
+                            list.splice(1, 0, { value: "mac-mail", label: qsTr("MacOS Email and Calendar") })
+                        if (Qt.platform.os === "windows")
+                            list.splice(1, 0, { value: "outlook", label: qsTr("Outlook") },
+                                              { value: "outlook-classic", label: qsTr("Outlook (Classic)") })
+                        return list
+                    }
+                    function labelFor(value) {
+                        for (var i = 0; i < backends.length; ++i)
+                            if (backends[i].value === value) return backends[i].label
+                        return backends[0].label
+                    }
+                    function valueFor(label) {
+                        for (var i = 0; i < backends.length; ++i)
+                            if (backends[i].label === label) return backends[i].value
+                        return backends[0].value
+                    }
+                    ComboField {
+                        Layout.minimumWidth: 0
+                        Layout.fillWidth: true
+                        label: qsTr("Integration")
+                        options: integrationSection.backends.map(function(backend) { return backend.label })
+                        value: integrationSection.labelFor(DesktopAppController.preferredEmailBackend)
+                        onActivated: (v) => DesktopAppController.preferredEmailBackend = integrationSection.valueFor(v)
+                    }
+                    FormField {
+                        visible: DesktopAppController.preferredEmailBackend === "thunderbird"
+                        Layout.fillWidth: true
+                        label: qsTr("Thunderbird executable")
+                        placeholder: qsTr("Path or command, such as flatpak run org.mozilla.Thunderbird")
+                        text: DesktopAppController.thunderbirdExecutable
+                        onEditingFinished: DesktopAppController.thunderbirdExecutable = text
+                    }
+                    Text {
+                        Layout.fillWidth: true
+                        wrapMode: Text.WordWrap
+                        color: Theme.text3
+                        font.pixelSize: Theme.fontSm
+                        text: {
+                            switch (DesktopAppController.preferredEmailBackend) {
+                            case "graph":
+                                return qsTr("Emails become drafts in your Microsoft 365 mailbox, and meetings become draft events in your Microsoft 365 calendar. Both open in Outlook for review. Sign in under Office 365 Integration first.")
+                            case "icloud":
+                                return qsTr("Emails become drafts in iCloud Mail, and meetings become events in iCloud Calendar without attendees. Copy the meeting attendees and paste them into the event before sending invitations. iCloud does not provide a link to a newly created draft or event, so open iCloud Mail or iCloud Calendar to review it. Enter your Apple Account and app-specific password below.")
+                            case "outlook":
+                                return qsTr("Emails and meetings open in the new Outlook, even when another app handles .eml and .ics files. The new Outlook drops the attendees when it opens a meeting, so use Copy Attendees in the Schedule meeting window and paste them into the event before you send it.")
+                            case "outlook-classic":
+                                return qsTr("Emails and meetings open in Outlook (classic), even when another app handles .eml and .ics files. Meetings open as an unsent meeting window with the attendees filled in, ready to review and send.")
+                            case "thunderbird":
+                                return qsTr("Emails open in a Thunderbird compose window with any attachments. Meetings are passed to Thunderbird as a calendar file to import, then you send the invitations from the event.")
+                            case "mac-mail":
+                                return qsTr("Emails open a native Mail compose window with your message rendered as real HTML, ready to review and send. Meetings create an event directly in your default calendar; for your safety, invitees are never added automatically, since Calendar would send the invitations the moment you did that. Use Copy Attendees in the Schedule meeting window, then paste them into the event and send it yourself. Bcc recipients and attachments are not supported in this mode; choose Default Application if you need either. Contact synchronization reads and writes your Contacts app address books directly; macOS asks for access the first time.")
+                            default:
+                                return qsTr("Emails open in your default mail application as a draft message (.eml) with any attachments. Meetings open in your default calendar application as a calendar (.ics) file.")
+                            }
+                        }
+                    }
+                    Text {
+                        Layout.fillWidth: true
+                        wrapMode: Text.WordWrap
+                        color: Theme.text3
+                        font.pixelSize: Theme.fontSm
+                        text: qsTr("Temporary email messages, attachments and calendar files are kept in the application cache and removed when Project Notes closes.")
+                    }
+                    Text {
+                        text: qsTr("Contact Synchronization")
+                        visible: DesktopAppController.preferredEmailBackend !== "default-app"
+                        color: Theme.text
+                        font.bold: true
+                        Layout.fillWidth: true
+                    }
+                    ContactSyncSettingsPane {
+                        visible: DesktopAppController.preferredEmailBackend !== "default-app"
+                        Layout.fillWidth: true
+                        syncModel: DesktopAppController.contactSyncSettingsModel
+                    }
                 }
-            }
 
-            SettingsTab {
-                // Meeting Templates
-                MeetingTemplateSettingsPane {
-                    id: meetingTemplates
-                    Layout.fillWidth: true
-                    templateModel: DesktopAppController.meetingTemplateEditorModel
-                }
             }
 
             SettingsTab {
@@ -948,323 +1250,21 @@ Item {
             }
 
             SettingsTab {
-                // Project Folder
-                SettingsSection {
-                title: "Project Folders"
-                subtitle: "Group projects into folders (e.g. Favorites). A project can belong to several folders. Drag projects onto a folder in the sidebar to add them."
-
-                // New-folder row
-                RowLayout {
+                // Email Templates
+                TemplateSettingsPane {
+                    id: emailTemplates
                     Layout.fillWidth: true
-                    spacing: 8
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        implicitHeight: 30
-                        radius: Theme.radiusSm
-                        color: Theme.surface
-                        border.color: Theme.border
-                        TextField {
-                            id: newFolderField
-                            anchors.fill: parent
-                            anchors.leftMargin: 9
-                            anchors.rightMargin: 9
-                            placeholderText: "New folder name…"
-                            color: Theme.text
-                            placeholderTextColor: Theme.text3
-                            background: null
-                            font.pixelSize: Theme.fontBody
-                            verticalAlignment: Text.AlignVCenter
-                            onAccepted: page._createFolder()
-                            SpellCheckField { spellCheckEnabled: false }
-                        }
-                    }
-
-                    Button {
-                        primary: true
-                        implicitHeight: 30
-                        leftPadding: 12; rightPadding: 12; topPadding: 0; bottomPadding: 0
-                        enabled: newFolderField.text.trim().length > 0
-                        contentItem: RowLayout {
-                            spacing: 5
-                            MaterialIcon { name: "add"; size: 16; color: "#ffffff"; Layout.alignment: Qt.AlignVCenter }
-                            Text { text: "Add Folder"; color: "#ffffff"; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
-                                   verticalAlignment: Text.AlignVCenter; Layout.alignment: Qt.AlignVCenter }
-                        }
-                        onClicked: page._createFolder()
-                    }
+                    templateModel: DesktopAppController.templateEditorModel
                 }
-
-                // Existing folders
-                Repeater {
-                    model: FolderManager.folders
-                    delegate: Rectangle {
-                        id: folderRow
-                        required property var modelData
-                        readonly property var folder: modelData
-                        Layout.fillWidth: true
-                        implicitHeight: 40
-                        radius: Theme.radiusSm
-                        color: Theme.surface
-                        border.color: Theme.border
-
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: 9
-                            anchors.rightMargin: 7
-                            spacing: 8
-
-                            // Icon picker: click to open a grid of all available icons,
-                            // highlighting the one currently selected.
-                            Rectangle {
-                                id: iconSwatch
-                                width: 26; height: 26; radius: Theme.radiusSm
-                                color: "transparent"
-                                border.color: Theme.border
-                                MaterialIcon {
-                                    anchors.centerIn: parent
-                                    name: folderRow.folder.icon
-                                    size: 15
-                                    color: folderRow.folder.color
-                                }
-                                TapHandler {
-                                    onTapped: {
-                                        var p = iconSwatch.mapToItem(null, 0, iconSwatch.height)
-                                        iconPickerMenu.openFor(folderRow.folder, p.x, p.y)
-                                    }
-                                }
-                            }
-
-                            Text {
-                                text: folderRow.folder.name
-                                color: Theme.text
-                                font.pixelSize: Theme.fontLg
-                                font.weight: Font.DemiBold
-                                Layout.fillWidth: true
-                                elide: Text.ElideRight
-                            }
-
-                            Text {
-                                text: folderRow.folder.count
-                                      + (folderRow.folder.count === 1 ? " project" : " projects")
-                                color: Theme.text3
-                                font.pixelSize: Theme.fontXs
-                            }
-
-                            // Color swatches
-                            Row {
-                                spacing: 3
-                                Repeater {
-                                    model: Theme.folderColors
-                                    delegate: Rectangle {
-                                        required property var modelData
-                                        width: 14; height: 14; radius: 7
-                                        color: modelData
-                                        border.width: 2
-                                        border.color: folderRow.folder.color === modelData
-                                                      ? Theme.text : "transparent"
-                                        TapHandler {
-                                            onTapped: FolderManager.setFolderColor(
-                                                          folderRow.folder.id, modelData)
-                                        }
-                                    }
-                                }
-                            }
-
-                            // Delete
-                            Rectangle {
-                                width: 26; height: 26; radius: Theme.radiusSm
-                                color: delHover.hovered ? Theme.redSoft : "transparent"
-                                MaterialIcon { anchors.centerIn: parent; name: "delete"; size: 15; color: Theme.red }
-                                HoverHandler { id: delHover }
-                                TapHandler { onTapped: FolderManager.removeFolder(folderRow.folder.id) }
-                            }
-                        }
-                    }
-                }
-
-                Text {
-                    visible: FolderManager.folders.length === 0
-                    text: "No folders yet. Add one above — it will appear in the project sidebar."
-                    color: Theme.text3
-                    font.pixelSize: Theme.fontSm
-                }
-            }
-
             }
 
             SettingsTab {
-                // Preferences
-                SettingsSection {
-                title: "Preferences"
-                subtitle: "Defaults applied to new projects and reports."
-                SettingsCheck {
-                    label: qsTr("View report after save")
-                    checked: DesktopAppController.viewReportAfterSave
-                    onToggledValue: (v) => DesktopAppController.viewReportAfterSave = v
-                }
-                GridLayout {
+                // Meeting Templates
+                MeetingTemplateSettingsPane {
+                    id: meetingTemplates
                     Layout.fillWidth: true
-                    Layout.minimumWidth: 0
-                    columns: width < 760 ? 1 : 2
-                    columnSpacing: 10
-                    rowSpacing: 9
-                    ComboField {
-                        id: mgmtCombo
-                        label: qsTr("Managing Company")
-                        options: page._clientNames()
-                        searchable: true
-                        onActivated: (v) => DesktopAppController.setManagingCompanyId(page._idForName(page._clients, v))
-                    }
-                    ComboField {
-                        id: pmCombo
-                        label: qsTr("Project Manager")
-                        options: page._peopleNames()
-                        searchable: true
-                        onActivated: (v) => DesktopAppController.setProjectManagerId(page._idForName(page._people, v))
-                    }
+                    templateModel: DesktopAppController.meetingTemplateEditorModel
                 }
-            }
-
-                SettingsSection {
-                    id: integrationSection
-                    title: qsTr("Email, Contact and Calendar Integration")
-                    subtitle: qsTr("Choose the service or application for email, contact synchronization, and calendar invitations. Emails and invitations are prepared for your review before you send them.")
-                    readonly property var backends: {
-                        var list = [
-                            { value: "default-app", label: qsTr("Default Application") },
-                            { value: "icloud", label: qsTr("iCloud") },
-                            { value: "thunderbird", label: qsTr("Thunderbird") },
-                            { value: "graph", label: qsTr("Microsoft Office 365") }
-                        ]
-                        if (Qt.platform.os === "osx")
-                            list.splice(1, 0, { value: "mac-mail", label: qsTr("MacOS Email and Calendar") })
-                        if (Qt.platform.os === "windows")
-                            list.splice(1, 0, { value: "outlook", label: qsTr("Outlook") },
-                                              { value: "outlook-classic", label: qsTr("Outlook (Classic)") })
-                        return list
-                    }
-                    function labelFor(value) {
-                        for (var i = 0; i < backends.length; ++i)
-                            if (backends[i].value === value) return backends[i].label
-                        return backends[0].label
-                    }
-                    function valueFor(label) {
-                        for (var i = 0; i < backends.length; ++i)
-                            if (backends[i].label === label) return backends[i].value
-                        return backends[0].value
-                    }
-                    ComboField {
-                        Layout.minimumWidth: 0
-                        Layout.fillWidth: true
-                        label: qsTr("Integration")
-                        options: integrationSection.backends.map(function(backend) { return backend.label })
-                        value: integrationSection.labelFor(DesktopAppController.preferredEmailBackend)
-                        onActivated: (v) => DesktopAppController.preferredEmailBackend = integrationSection.valueFor(v)
-                    }
-                    FormField {
-                        visible: DesktopAppController.preferredEmailBackend === "thunderbird"
-                        Layout.fillWidth: true
-                        label: qsTr("Thunderbird executable")
-                        placeholder: qsTr("Path or command, such as flatpak run org.mozilla.Thunderbird")
-                        text: DesktopAppController.thunderbirdExecutable
-                        onEditingFinished: DesktopAppController.thunderbirdExecutable = text
-                    }
-                    Text {
-                        Layout.fillWidth: true
-                        wrapMode: Text.WordWrap
-                        color: Theme.text3
-                        font.pixelSize: Theme.fontSm
-                        text: {
-                            switch (DesktopAppController.preferredEmailBackend) {
-                            case "graph":
-                                return qsTr("Emails become drafts in your Microsoft 365 mailbox, and meetings become draft events in your Microsoft 365 calendar. Both open in Outlook for review. Sign in under Office 365 Integration first.")
-                            case "icloud":
-                                return qsTr("Emails become drafts in iCloud Mail, and meetings become events in iCloud Calendar without attendees. Copy the meeting attendees and paste them into the event before sending invitations. iCloud does not provide a link to a newly created draft or event, so open iCloud Mail or iCloud Calendar to review it. Enter your Apple Account and app-specific password below.")
-                            case "outlook":
-                                return qsTr("Emails and meetings open in the new Outlook, even when another app handles .eml and .ics files. The new Outlook drops the attendees when it opens a meeting, so use Copy Attendees in the Schedule meeting window and paste them into the event before you send it.")
-                            case "outlook-classic":
-                                return qsTr("Emails and meetings open in Outlook (classic), even when another app handles .eml and .ics files. Meetings open as an unsent meeting window with the attendees filled in, ready to review and send.")
-                            case "thunderbird":
-                                return qsTr("Emails open in a Thunderbird compose window with any attachments. Meetings are passed to Thunderbird as a calendar file to import, then you send the invitations from the event.")
-                            case "mac-mail":
-                                return qsTr("Emails open a native Mail compose window with your message rendered as real HTML, ready to review and send. Meetings create an event directly in your default calendar; for your safety, invitees are never added automatically, since Calendar would send the invitations the moment you did that. Use Copy Attendees in the Schedule meeting window, then paste them into the event and send it yourself. Bcc recipients and attachments are not supported in this mode; choose Default Application if you need either. Contact synchronization reads and writes your Contacts app address books directly; macOS asks for access the first time.")
-                            default:
-                                return qsTr("Emails open in your default mail application as a draft message (.eml) with any attachments. Meetings open in your default calendar application as a calendar (.ics) file.")
-                            }
-                        }
-                    }
-                    Text {
-                        Layout.fillWidth: true
-                        wrapMode: Text.WordWrap
-                        color: Theme.text3
-                        font.pixelSize: Theme.fontSm
-                        text: qsTr("Temporary email messages, attachments and calendar files are kept in the application cache and removed when Project Notes closes.")
-                    }
-                    Text {
-                        text: qsTr("Contact Synchronization")
-                        visible: DesktopAppController.preferredEmailBackend !== "default-app"
-                        color: Theme.text
-                        font.bold: true
-                        Layout.fillWidth: true
-                    }
-                    ContactSyncSettingsPane {
-                        visible: DesktopAppController.preferredEmailBackend !== "default-app"
-                        Layout.fillWidth: true
-                        syncModel: DesktopAppController.contactSyncSettingsModel
-                    }
-                }
-
-            }
-
-            SettingsTab {
-                // View Options
-                SettingsSection {
-                title: "View Options"
-                subtitle: "Control what the lists show. Changes apply immediately."
-                SettingsCheck {
-                    objectName: "viewOptionShowClosed"
-                    label: qsTr("Show closed projects")
-                    checked: DesktopAppController.showClosedProjects
-                    onToggledValue: (v) => DesktopAppController.showClosedProjects = v
-                }
-                SettingsCheck {
-                    objectName: "viewOptionShowInternal"
-                    label: qsTr("Show internal items")
-                    checked: DesktopAppController.showInternalItems
-                    onToggledValue: (v) => DesktopAppController.showInternalItems = v
-                }
-                SettingsCheck {
-                    // Same name and same sense as the View menu's own row —
-                    // the controller property is the inverse of both, so this
-                    // is the one view option that binds through a negation.
-                    objectName: "viewOptionShowResolved"
-                    label: qsTr("Show resolved items")
-                    checked: !DesktopAppController.newAndAssignedOnly
-                    onToggledValue: (v) => DesktopAppController.newAndAssignedOnly = !v
-                }
-            }
-
-            }
-
-            SettingsTab {
-                // Data
-                SettingsSection {
-                title: "Data"
-                subtitle: "Import records from a Project Notes XML file. Export is available from any record's detail page."
-                Button {
-                    implicitHeight: 30
-                    leftPadding: 12; rightPadding: 12; topPadding: 0; bottomPadding: 0
-                    contentItem: RowLayout {
-                        spacing: 5
-                        MaterialIcon { name: "upload"; size: 16; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
-                        Text { text: qsTr("Import from XML…"); color: Theme.text; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
-                               verticalAlignment: Text.AlignVCenter; Layout.alignment: Qt.AlignVCenter }
-                    }
-                    onClicked: importDialog.open()
-                }
-            }
-
             }
         }
     }

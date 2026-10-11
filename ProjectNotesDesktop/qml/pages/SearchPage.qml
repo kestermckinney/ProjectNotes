@@ -25,8 +25,8 @@ Item {
     function _icon(t) {
         switch (t) {
         case "Project": return "description"
-        case "People": return "person"
-        case "Client": return "apartment"
+        case "Contact": return "person"
+        case "Company": return "apartment"
         case "Item Tracker": return "task_alt"
         case "Tracker Update": return "forum"
         case "Project Notes": return "edit_note"
@@ -43,8 +43,8 @@ Item {
     function _table(t) {
         switch (t) {
         case "Project": return "projects"
-        case "People": return "people"
-        case "Client": return "clients"
+        case "Contact": return "people"
+        case "Company": return "clients"
         case "Item Tracker": return "item_tracker"
         case "Tracker Update": return "item_tracker_updates"
         case "Project Notes": return "project_notes"

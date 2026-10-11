@@ -45,10 +45,10 @@ static AppController* s_instance = nullptr;
 
 static void appendEmailRecipient(QStringList& emails,
                                  const QString& email,
-                                 const QString& personId,
-                                 const QString& excludedPersonId)
+                                 const QString& contactId,
+                                 const QString& excludedContactId)
 {
-    if (!excludedPersonId.isEmpty() && personId == excludedPersonId)
+    if (!excludedContactId.isEmpty() && contactId == excludedContactId)
         return;
 
     const QString trimmedEmail = email.trimmed();
@@ -156,8 +156,8 @@ bool AppController::openOrCreateDatabase()
 
     // Initial load for the models QML needs populated as soon as the
     // database is ready.
-    global_DBObjects.clientsmodel()->refresh();
-    global_DBObjects.peoplemodel()->refresh();
+    global_DBObjects.companiesmodel()->refresh();
+    global_DBObjects.contactsmodel()->refresh();
     global_DBObjects.projectinformationmodel()->refresh();
     global_DBObjects.projectteammembersmodel()->refresh();
 
@@ -166,8 +166,8 @@ bool AppController::openOrCreateDatabase()
     // for models with nothing persisted; allitemsmodel is otherwise loaded
     // lazily, so this forces it early only when a filter needs restoring.
     restoreColumnFilters(global_DBObjects.projectinformationmodel());
-    restoreColumnFilters(global_DBObjects.clientsmodel());
-    restoreColumnFilters(global_DBObjects.peoplemodel());
+    restoreColumnFilters(global_DBObjects.companiesmodel());
+    restoreColumnFilters(global_DBObjects.contactsmodel());
     restoreColumnFilters(global_DBObjects.allitemsmodel());
     ++m_filterRev;
     emit filterRevChanged();
@@ -200,7 +200,7 @@ bool AppController::openOrCreateDatabase()
 void AppController::restoreAllSorts()
 {
     for (const QString& section : { QStringLiteral("projects"), QStringLiteral("items"),
-                                     QStringLiteral("people"), QStringLiteral("clients"),
+                                     QStringLiteral("contacts"), QStringLiteral("companies"),
                                      QStringLiteral("statusreport"), QStringLiteral("trackeritems"),
                                      QStringLiteral("team"), QStringLiteral("locations"),
                                      QStringLiteral("notes") })
@@ -717,12 +717,12 @@ void AppController::syncAll()
 
 // ── Record editing ────────────────────────────────────────────────────────────
 
-bool AppController::savePerson(int row, const QString& name, const QString& email,
+bool AppController::saveContact(int row, const QString& name, const QString& email,
                                 const QString& officePhone, const QString& cellPhone,
-                                const QString& clientId, const QString& role)
+                                const QString& companyId, const QString& role)
 {
     global_DBObjects.setLastSaveError("");
-    QAbstractItemModel* model = global_DBObjects.peoplemodelproxy();
+    QAbstractItemModel* model = global_DBObjects.contactsmodelproxy();
     if (row < 0 || row >= model->rowCount())
         return false;
 
@@ -734,7 +734,7 @@ bool AppController::savePerson(int row, const QString& name, const QString& emai
     ok &= model->setData(model->index(pIdx.row(), 2), email);
     ok &= model->setData(model->index(pIdx.row(), 3), officePhone);
     ok &= model->setData(model->index(pIdx.row(), 4), cellPhone);
-    ok &= model->setData(model->index(pIdx.row(), 5), clientId);
+    ok &= model->setData(model->index(pIdx.row(), 5), companyId);
     ok &= model->setData(model->index(pIdx.row(), 6), role);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
@@ -745,7 +745,7 @@ bool AppController::savePerson(int row, const QString& name, const QString& emai
 
 bool AppController::saveProject(int row, const QString& projectNumber,
                                  const QString& projectName, const QString& projectStatus,
-                                 const QString& primaryContactId, const QString& clientId,
+                                 const QString& primaryContactId, const QString& companyId,
                                  const QString& lastStatusDate, const QString& lastInvoiceDate,
                                  const QString& invoicingPeriod, const QString& statusReportPeriod)
 {
@@ -767,7 +767,7 @@ bool AppController::saveProject(int row, const QString& projectNumber,
         return insertStagedProject(srcIdx.row(),
                 { { 1, projectNumber},   { 2, projectName},      { 3, lastStatusDate},
                   { 4, lastInvoiceDate}, { 5, primaryContactId}, {11, invoicingPeriod},
-                  {12, statusReportPeriod}, {13, clientId},      {14, projectStatus} });
+                  {12, statusReportPeriod}, {13, companyId},     {14, projectStatus} });
 
     bool ok = true;
     ok &= model->setData(model->index(pIdx.row(),  1), projectNumber);
@@ -777,7 +777,7 @@ bool AppController::saveProject(int row, const QString& projectNumber,
     ok &= model->setData(model->index(pIdx.row(),  5), primaryContactId);
     ok &= model->setData(model->index(pIdx.row(), 11), invoicingPeriod);
     ok &= model->setData(model->index(pIdx.row(), 12), statusReportPeriod);
-    ok &= model->setData(model->index(pIdx.row(), 13), clientId);
+    ok &= model->setData(model->index(pIdx.row(), 13), companyId);
     ok &= model->setData(model->index(pIdx.row(), 14), projectStatus);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
@@ -832,7 +832,7 @@ bool AppController::saveStatusItem(int row, const QString& category, const QStri
     return ok;
 }
 
-bool AppController::saveTeamMember(int row, const QString& peopleId, const QString& role, bool receiveStatusReport)
+bool AppController::saveTeamMember(int row, const QString& contactId, const QString& role, bool receiveStatusReport)
 {
     global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.projectteammembersmodelproxy();
@@ -842,7 +842,7 @@ bool AppController::saveTeamMember(int row, const QString& peopleId, const QStri
     if (!pIdx.isValid()) return false;
 
     bool ok = true;
-    ok &= model->setData(model->index(pIdx.row(), 2), peopleId);
+    ok &= model->setData(model->index(pIdx.row(), 2), contactId);
     ok &= model->setData(model->index(pIdx.row(), 4), receiveStatusReport ? "1" : "0");
     ok &= model->setData(model->index(pIdx.row(), 5), role);
     if (!ok) {
@@ -898,13 +898,13 @@ bool AppController::saveProjectNote(int row, const QString& title, const QString
     return ok;
 }
 
-bool AppController::saveClient(int row, const QString& clientName)
+bool AppController::saveCompany(int row, const QString& companyName)
 {
     global_DBObjects.setLastSaveError("");
-    QAbstractItemModel* model = global_DBObjects.clientsmodelproxy();
+    QAbstractItemModel* model = global_DBObjects.companiesmodelproxy();
     if (row < 0 || row >= model->rowCount())
         return false;
-    bool ok = model->setData(model->index(row, 1), clientName);
+    bool ok = model->setData(model->index(row, 1), companyName);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
         emit errorOccurred(tr("Could Not Save"), err);
@@ -912,27 +912,27 @@ bool AppController::saveClient(int row, const QString& clientName)
     return ok;
 }
 
-QString AppController::peopleNameForId(const QString& personId) const
+QString AppController::contactNameForId(const QString& contactId) const
 {
-    auto* src = global_DBObjects.peoplemodel();
-    if (!src || personId.isEmpty()) return {};
-    QVariant key(personId);
+    auto* src = global_DBObjects.contactsmodel();
+    if (!src || contactId.isEmpty()) return {};
+    QVariant key(contactId);
     return src->findValue(key, 0, 1).toString();  // col 1 = name
 }
 
-QString AppController::peopleEmailForId(const QString& personId) const
+QString AppController::contactEmailForId(const QString& contactId) const
 {
-    auto* src = global_DBObjects.peoplemodel();
-    if (!src || personId.isEmpty()) return {};
-    QVariant key(personId);
+    auto* src = global_DBObjects.contactsmodel();
+    if (!src || contactId.isEmpty()) return {};
+    QVariant key(contactId);
     return src->findValue(key, 0, 2).toString();  // col 2 = email
 }
 
-QString AppController::clientNameForId(const QString& clientId) const
+QString AppController::companyNameForId(const QString& companyId) const
 {
-    auto* src = global_DBObjects.clientsmodel();
-    if (!src || clientId.isEmpty()) return {};
-    QVariant key(clientId);
+    auto* src = global_DBObjects.companiesmodel();
+    if (!src || companyId.isEmpty()) return {};
+    QVariant key(companyId);
     return src->findValue(key, 0, 1).toString();  // col 1 = client_name
 }
 
@@ -1004,10 +1004,10 @@ QVariantList AppController::teamMemberList(const QString& projectId, const QStri
     return out;
 }
 
-QVariantList AppController::clientList() const
+QVariantList AppController::companyList() const
 {
     QVariantList out;
-    auto* proxy = global_DBObjects.clientsmodelproxy();
+    auto* proxy = global_DBObjects.companiesmodelproxy();
     if (!proxy) return out;
     for (int row = 0; row < proxy->rowCount(); ++row) {
         QVariantMap m;
@@ -1018,10 +1018,10 @@ QVariantList AppController::clientList() const
     return out;
 }
 
-QVariantList AppController::peopleList() const
+QVariantList AppController::contactList() const
 {
     QVariantList out;
-    auto* proxy = global_DBObjects.peoplemodelproxy();
+    auto* proxy = global_DBObjects.contactsmodelproxy();
     if (!proxy) return out;
     for (int row = 0; row < proxy->rowCount(); ++row) {
         QVariantMap m;
@@ -1038,9 +1038,9 @@ QString AppController::teamMemberEmailList() const
     QStringList emails;
     const QString projectManagerId = global_DBObjects.getProjectManager();
     for (int row = 0; row < model->rowCount(); ++row) {
-        const QString personId = model->data(model->index(row, 2)).toString(); // col 2 = people_id
+        const QString contactId = model->data(model->index(row, 2)).toString(); // col 2 = people_id
         const QString email = model->data(model->index(row, 6)).toString();  // col 6 = email
-        appendEmailRecipient(emails, email, personId, projectManagerId);
+        appendEmailRecipient(emails, email, contactId, projectManagerId);
     }
     return emails.join(",");
 }
@@ -1051,9 +1051,9 @@ QString AppController::attendeeEmailList() const
     QStringList emails;
     const QString projectManagerId = global_DBObjects.getProjectManager();
     for (int row = 0; row < model->rowCount(); ++row) {
-        const QString personId = model->data(model->index(row, 2)).toString(); // col 2 = person_id
+        const QString contactId = model->data(model->index(row, 2)).toString(); // col 2 = person_id
         const QString email = model->data(model->index(row, 5)).toString();  // col 5 = email
-        appendEmailRecipient(emails, email, personId, projectManagerId);
+        appendEmailRecipient(emails, email, contactId, projectManagerId);
     }
     return emails.join(",");
 }
@@ -1090,7 +1090,7 @@ QString AppController::noteActionItemsSummary() const
         const QString item       = model->data(model->index(row,  3)).toString(); // col 3 = item_name
         const QString assignedId = model->data(model->index(row,  7)).toString(); // col 7 = assigned_to (person_id)
         const QString due        = model->data(model->index(row, 10)).toString(); // col 10 = date_due
-        const QString assigned   = assignedId.isEmpty() ? QString() : peopleNameForId(assignedId);
+        const QString assigned   = assignedId.isEmpty() ? QString() : contactNameForId(assignedId);
 
         QString entry = item;
         if (!assigned.isEmpty())
@@ -1211,54 +1211,54 @@ QVariantMap AppController::getProjectData(int row) const
     return proxyRowToMap(global_DBObjects.projectinformationmodelproxy(), row);
 }
 
-// ── People ────────────────────────────────────────────────────────────────────
+// ── Contacts ──────────────────────────────────────────────────────────────────
 
-int AppController::addPerson()
+int AppController::addContact()
 {
-    return proxyRowFromSource(global_DBObjects.peoplemodelproxy(),
-                              global_DBObjects.peoplemodel()->newRecord());
+    return proxyRowFromSource(global_DBObjects.contactsmodelproxy(),
+                              global_DBObjects.contactsmodel()->newRecord());
 }
 
-bool AppController::deletePerson(int row)
+bool AppController::deleteContact(int row)
 {
-    return deleteAndReport(global_DBObjects.peoplemodelproxy(),
-                           global_DBObjects.peoplemodel(), row);
+    return deleteAndReport(global_DBObjects.contactsmodelproxy(),
+                           global_DBObjects.contactsmodel(), row);
 }
 
-int AppController::copyPerson(int row)
+int AppController::copyContact(int row)
 {
-    return copyProxyRow(global_DBObjects.peoplemodelproxy(),
-                        global_DBObjects.peoplemodel(), row);
+    return copyProxyRow(global_DBObjects.contactsmodelproxy(),
+                        global_DBObjects.contactsmodel(), row);
 }
 
-QVariantMap AppController::getPersonData(int row) const
+QVariantMap AppController::getContactData(int row) const
 {
-    return proxyRowToMap(global_DBObjects.peoplemodelproxy(), row);
+    return proxyRowToMap(global_DBObjects.contactsmodelproxy(), row);
 }
 
-// ── Clients ───────────────────────────────────────────────────────────────────
+// ── Companies ─────────────────────────────────────────────────────────────────
 
-int AppController::addClient()
+int AppController::addCompany()
 {
-    return proxyRowFromSource(global_DBObjects.clientsmodelproxy(),
-                              global_DBObjects.clientsmodel()->newRecord());
+    return proxyRowFromSource(global_DBObjects.companiesmodelproxy(),
+                              global_DBObjects.companiesmodel()->newRecord());
 }
 
-bool AppController::deleteClient(int row)
+bool AppController::deleteCompany(int row)
 {
-    return deleteAndReport(global_DBObjects.clientsmodelproxy(),
-                           global_DBObjects.clientsmodel(), row);
+    return deleteAndReport(global_DBObjects.companiesmodelproxy(),
+                           global_DBObjects.companiesmodel(), row);
 }
 
-int AppController::copyClient(int row)
+int AppController::copyCompany(int row)
 {
-    return copyProxyRow(global_DBObjects.clientsmodelproxy(),
-                        global_DBObjects.clientsmodel(), row);
+    return copyProxyRow(global_DBObjects.companiesmodelproxy(),
+                        global_DBObjects.companiesmodel(), row);
 }
 
-QVariantMap AppController::getClientData(int row) const
+QVariantMap AppController::getCompanyData(int row) const
 {
-    return proxyRowToMap(global_DBObjects.clientsmodelproxy(), row);
+    return proxyRowToMap(global_DBObjects.companiesmodelproxy(), row);
 }
 
 // ── Status Report Items ───────────────────────────────────────────────────────
@@ -1736,7 +1736,7 @@ QVariantMap AppController::getAttendeeData(int row) const
     return proxyRowToMap(global_DBObjects.meetingattendeesmodelproxy(), row);
 }
 
-bool AppController::saveAttendee(int row, const QString& personId)
+bool AppController::saveAttendee(int row, const QString& contactId)
 {
     global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.meetingattendeesmodelproxy();
@@ -1744,11 +1744,11 @@ bool AppController::saveAttendee(int row, const QString& personId)
 
     QString safeNote   = model->data(model->index(row, 1)).toString().replace("'", "''");
     QString safeId     = model->data(model->index(row, 0)).toString().replace("'", "''");
-    QString safePerson = QString(personId).replace("'", "''");
+    QString safeContact = QString(contactId).replace("'", "''");
     QString sql = QString(
         "SELECT COUNT(*) FROM meeting_attendees "
         "WHERE note_id = '%1' AND person_id = '%2' AND id != '%3' AND deleted = 0"
-    ).arg(safeNote, safePerson, safeId);
+    ).arg(safeNote, safeContact, safeId);
     if (global_DBObjects.execute(sql).toInt() > 0) {
         const QString msg = tr("Attendee already exists.");
         global_DBObjects.setLastSaveError(msg);
@@ -1756,7 +1756,7 @@ bool AppController::saveAttendee(int row, const QString& personId)
         return false;
     }
 
-    bool ok = model->setData(model->index(row, 2), personId);
+    bool ok = model->setData(model->index(row, 2), contactId);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
         emit errorOccurred(tr("Could Not Save"), err);
@@ -1840,14 +1840,14 @@ void AppController::refreshProjectsList()
     global_DBObjects.projectinformationmodel()->refreshIfDirty();
 }
 
-void AppController::refreshPeople()
+void AppController::refreshContacts()
 {
-    global_DBObjects.peoplemodel()->refreshIfDirty();
+    global_DBObjects.contactsmodel()->refreshIfDirty();
 }
 
-void AppController::refreshClients()
+void AppController::refreshCompanies()
 {
-    global_DBObjects.clientsmodel()->refreshIfDirty();
+    global_DBObjects.companiesmodel()->refreshIfDirty();
 }
 
 void AppController::setQuickSearch(QAbstractItemModel* model, const QString& text)
@@ -1908,8 +1908,8 @@ QAbstractItemModel* AppController::modelForSection(const QString& section) const
 {
     if (section == "projects")     return projectsListModel();
     if (section == "items")        return allItemsModel();
-    if (section == "people")       return peopleModel();
-    if (section == "clients")      return clientsModel();
+    if (section == "contacts")     return contactsModel();
+    if (section == "companies")    return companiesModel();
     if (section == "statusreport") return statusReportItemsModel();
     if (section == "trackeritems") return trackerItemsModel();
     if (section == "team")         return projectTeamMembersModel();
@@ -1985,14 +1985,14 @@ QAbstractItemModel* AppController::projectsModel() const
     return global_DBObjects.projectinformationmodelproxy();
 }
 
-QAbstractItemModel* AppController::clientsModel() const
+QAbstractItemModel* AppController::companiesModel() const
 {
-    return global_DBObjects.clientsmodelproxy();
+    return global_DBObjects.companiesmodelproxy();
 }
 
-QAbstractItemModel* AppController::peopleModel() const
+QAbstractItemModel* AppController::contactsModel() const
 {
-    return global_DBObjects.peoplemodelproxy();
+    return global_DBObjects.contactsmodelproxy();
 }
 
 QAbstractItemModel* AppController::trackerItemsModel() const

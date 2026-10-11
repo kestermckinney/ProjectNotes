@@ -22,7 +22,7 @@ The fields below are shown on each item's card when viewing internal items. Fiel
 | Updated | The last time any changes were made to the record. This value is updated automatically each time the item is edited. |
 | Date Resolved | The date the item was resolved. The value is set automatically when the **Status** is changed to **Resolved**, but can be edited manually from the [Action Item Detail Page](<ActionItemDetailPage.md>). |
 | Project | The project number and name for the project. Be careful changing this on the [Action Item Detail Page](<ActionItemDetailPage.md>) — in most cases [plugins](<../PluginsOverview/AddingFunctionality.md>) use this number to identify and relate project information from outside systems. |
-| Internal | Indicates if the item should not be viewable by clients. When **Show Internal / Budget Items** is turned off, internal items do not appear in the list at all. |
+| Internal | Indicates if the item should not be viewable by companies. When **Show Internal / Budget Items** is turned off, internal items do not appear in the list at all. |
 
 Comments/updates entered on the [Action Item Detail Page](<ActionItemDetailPage.md>) aren't shown as a field on the card — open the item to read or add them.
 
@@ -30,16 +30,16 @@ Comments/updates entered on the [Action Item Detail Page](<ActionItemDetailPage.
 
 ### Filtering Items
 
-The [Filter Tool](<FilterTool.md>) narrows the **Items** (all-projects) list to a specific project, person, priority, status, or any other field. To see items for just one project without filtering, open that project and use its **Tracker** tab instead — it already shows only that project's items.
+The [Filter Tool](<FilterTool.md>) narrows the **Items** (all-projects) list to a specific project, contact, priority, status, or any other field. To see items for just one project without filtering, open that project and use its **Tracker** tab instead — it already shows only that project's items.
 
 ### Adding New Items
 
-New items can only be created from within a project — open the project's [Project Page](<ProjectPage.md>), click the **Tracker** tab, and click **+ Add Item**. A new item defaults to a **Tracker Item** type. It is set to **Identified By** the **Project Manager** specified in [Preferences](<Preferences.md>) using the current date as the identified date. All new items have their **Status** set to **New** with a priority of **High**. The **Identified By** and **Assigned To** people on an item must be on the project team.
+New items can only be created from within a project — open the project's [Project Page](<ProjectPage.md>), click the **Tracker** tab, and click **+ Add Item**. A new item defaults to a **Tracker Item** type. It is set to **Identified By** the **Project Manager** specified in [Preferences](<Preferences.md>) using the current date as the identified date. All new items have their **Status** set to **New** with a priority of **High**. The **Identified By** and **Assigned To** contacts on an item must be on the project team.
 
 **To add a new item:**
 
 1. From the project's **Tracker** tab, click **+ Add Item**. The item opens immediately in the [Action Item Detail Page](<ActionItemDetailPage.md>).
-2. Type in the **Item Name** and **Description**, and select the **Assigned To** person.
+2. Type in the **Item Name** and **Description**, and select the **Assigned To** contact.
 3. Select the **Due Date**, if required.
 
 

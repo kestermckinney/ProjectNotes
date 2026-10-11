@@ -60,9 +60,9 @@ QString meetingBlock(const CommunicationSnapshot &snapshot, const SnapshotNote &
 {
     const auto markup = [inlineEmail](QString text) { return inlineEmail ? emailMarkup(text) : text; };
     QStringList attendees;
-    for (const SnapshotPerson &person : snapshot.people)
-        if (note.attendeeIds.contains(person.id) && !person.name.trimmed().isEmpty())
-            attendees.append(person.name);
+    for (const SnapshotContact &contact : snapshot.contacts)
+        if (note.attendeeIds.contains(contact.id) && !contact.name.trimmed().isEmpty())
+            attendees.append(contact.name);
 
     QString actions;
     for (const SnapshotActionItem &item : snapshot.actionItems) {

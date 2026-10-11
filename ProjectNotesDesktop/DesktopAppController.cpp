@@ -13,8 +13,8 @@
 #include "projectnotesmodel.h"
 #include "meetingattendeesmodel.h"
 #include "notesactionitemsmodel.h"
-#include "peoplemodel.h"
-#include "clientsmodel.h"
+#include "contactsmodel.h"
+#include "companiesmodel.h"
 #include "trackeritemsmodel.h"
 #include "trackeritemcommentsmodel.h"
 #include "projectteammembersmodel.h"
@@ -76,9 +76,7 @@ namespace {
 PN::Comm::AudienceRule projectTeamAudienceRule()
 {
     PN::Comm::AudienceRule rule;
-    rule.source = PN::Comm::PeopleSource::ProjectTeam;
-    rule.companyFilter = PN::Comm::CompanyFilter::All;
-    rule.includeUnknownCompany = true;
+    rule.source = PN::Comm::ContactSource::ProjectTeam;
     rule.excludeProjectManager = true;
     return rule;
 }
@@ -92,15 +90,15 @@ PN::Comm::AudienceRule reviewPresetRule(PN::Comm::Workflow workflow,
     // Saved report audiences default to team members excluding the manager.
     // Project emails can explicitly select a manager or meeting guest too;
     // retain those IDs and their overrides without changing report behavior.
-    rule.source = PN::Comm::PeopleSource::ChosenPeople;
+    rule.source = PN::Comm::ContactSource::ChosenContacts;
     rule.excludeProjectManager = false;
-    for (const auto &person : snapshot.people) {
-        bool available = person.projectTeamMember && person.id != snapshot.projectManagerId;
+    for (const auto &contact : snapshot.contacts) {
+        bool available = contact.projectTeamMember && contact.id != snapshot.projectManagerId;
         for (const auto &overrideValue : preset.overrides)
-            available |= overrideValue.personId == person.id;
-        if (available) rule.chosenPersonIds.append(person.id);
+            available |= overrideValue.contactId == contact.id;
+        if (available) rule.chosenContactIds.append(contact.id);
     }
-    rule.chosenPersonIds.removeDuplicates();
+    rule.chosenContactIds.removeDuplicates();
     return rule;
 }
 
@@ -495,16 +493,16 @@ bool DesktopAppController::openOrCreateDatabase()
 
     global_DBObjects.setGlobalSearches(false);
     global_DBObjects.projectinformationmodel()->refresh();
-    global_DBObjects.clientsmodel()->refresh();
-    global_DBObjects.peoplemodel()->refresh();
+    global_DBObjects.companiesmodel()->refresh();
+    global_DBObjects.contactsmodel()->refresh();
 
     // Restore any column filters left active in the Filter Editor before the
     // last restart (persisted to application_settings, keyed per table). No-op
     // (and no extra refresh) for models with nothing persisted; allitemsmodel
     // is otherwise loaded lazily, so this only forces it early when needed.
     restoreColumnFilters(global_DBObjects.projectinformationmodel());
-    restoreColumnFilters(global_DBObjects.clientsmodel());
-    restoreColumnFilters(global_DBObjects.peoplemodel());
+    restoreColumnFilters(global_DBObjects.companiesmodel());
+    restoreColumnFilters(global_DBObjects.contactsmodel());
     restoreColumnFilters(global_DBObjects.allitemsmodel());
 
     // restoreColumnFilters() mutates the models directly (it isn't routed
@@ -528,7 +526,7 @@ bool DesktopAppController::openOrCreateDatabase()
     // is cheap (it only sets the pending column/order; the proxy applies it
     // when it next builds its row mapping), so there's no reason to limit it.
     for (const QString& section : { QStringLiteral("projects"), QStringLiteral("items"),
-                                     QStringLiteral("people"), QStringLiteral("clients"),
+                                     QStringLiteral("contacts"), QStringLiteral("companies"),
                                      QStringLiteral("statusreport"), QStringLiteral("trackeritems"),
                                      QStringLiteral("team"), QStringLiteral("locations"),
                                      QStringLiteral("notes") })
@@ -788,16 +786,16 @@ void DesktopAppController::stageRequestedGeneratedAttachmentAsync(
     });
 }
 
-bool DesktopAppController::prepareProjectEmailReview(const QString &projectId, const QString &personId)
+bool DesktopAppController::prepareProjectEmailReview(const QString &projectId, const QString &contactId)
 {
     if (projectId.trimmed().isEmpty()) return false;
-    return prepareProjectEmail(projectId, personId, {}, false);
+    return prepareProjectEmail(projectId, contactId, {}, false);
 }
 
-bool DesktopAppController::preparePersonEmailReview(const QString &personId)
+bool DesktopAppController::prepareContactEmailReview(const QString &contactId)
 {
-    if (personId.trimmed().isEmpty()) return false;
-    return prepareProjectEmail({}, personId, {}, false);
+    if (contactId.trimmed().isEmpty()) return false;
+    return prepareProjectEmail({}, contactId, {}, false);
 }
 
 bool DesktopAppController::prepareLocationEmailReview(const QString &projectId, const QString &locationId, bool attachment)
@@ -815,7 +813,7 @@ void DesktopAppController::cancelProjectEmailReview()
     if (m_locationAttachmentDownloader) m_locationAttachmentDownloader->cancel();
 }
 
-bool DesktopAppController::prepareProjectEmail(const QString &projectId, const QString &personId,
+bool DesktopAppController::prepareProjectEmail(const QString &projectId, const QString &contactId,
                                              const QString &locationId, bool attachment)
 {
     if (!m_databaseOpen || !m_communicationRepository
@@ -841,9 +839,9 @@ bool DesktopAppController::prepareProjectEmail(const QString &projectId, const Q
     PN::Comm::SnapshotRequest request;
     request.operationId = QUuid::createUuid();
     request.source = {global_DBObjects.getDatabaseFile(), m_communicationDatabaseGeneration, projectId, {},
-                      projectId.isEmpty() ? PN::Comm::Workflow::PersonEmail
+                      projectId.isEmpty() ? PN::Comm::Workflow::ContactEmail
                           : locationId.isEmpty() ? PN::Comm::Workflow::ProjectEmail : PN::Comm::Workflow::ShareLocation,
-                      personId, locationId};
+                      contactId, locationId};
     request.managingCompanyId = managingCompanyId();
     request.projectManagerId = projectManagerId();
     request.capturedAt = QDateTime::currentDateTimeUtc();
@@ -858,7 +856,7 @@ bool DesktopAppController::prepareProjectEmail(const QString &projectId, const Q
             self->m_communicationsController->setReviewValidation(std::move(validation));
         };
         if (!result.error.code.isEmpty()) { fail(result.error.code, result.error.displayText); return; }
-        const auto contentTemplate = request.source.workflow == PN::Comm::Workflow::PersonEmail
+        const auto contentTemplate = request.source.workflow == PN::Comm::Workflow::ContactEmail
             ? std::optional<PN::Comm::CommunicationTemplate>(PN::Comm::CommunicationTemplate{})
             : self->resolveWorkflowTemplate(request.source.workflow);
         if (!contentTemplate) { fail(QStringLiteral("template-required"), self->tr("Configure this email type in Settings.")); return; }
@@ -899,9 +897,9 @@ bool DesktopAppController::prepareProjectEmail(const QString &projectId, const Q
                     self->m_recipientSelectionModel->setAudience(review.audience);
                     self->m_communicationsController->setPreparation(std::move(prepared));
                     self->m_recipientSelectionModel->setInternalReportContext(false, {});
-                    // A clicked person is an explicit recipient choice, so
+                    // A clicked contact is an explicit recipient choice, so
                     // never replace it automatically with the project default.
-                    if (request.source.personId.isEmpty())
+                    if (request.source.contactId.isEmpty())
                         self->applyDefaultReviewAudiencePreset();
                 };
                 const QString cache = PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile);
@@ -1243,9 +1241,9 @@ bool DesktopAppController::restoreProjectReportDefaultAudience()
         return false;
     const PN::Comm::AudienceRule rule = projectTeamAudienceRule();
     PN::Comm::AudienceResolution audience = PN::Comm::resolveAudience(*m_projectReportSnapshot, rule);
-    for (const PN::Comm::SnapshotPerson &person : audience.people)
-        if (!person.receivesStatus)
-            audience.initialOverrides.append({person.id, false, PN::Comm::RecipientRole::To});
+    for (const PN::Comm::SnapshotContact &contact : audience.contacts)
+        if (!contact.receivesStatus)
+            audience.initialOverrides.append({contact.id, false, PN::Comm::RecipientRole::To});
     m_recipientSelectionModel->setAudience(std::move(audience));
     updateRecipientInternalReportContext();
     m_reviewAudienceRule = rule;
@@ -1378,7 +1376,7 @@ void DesktopAppController::updateRecipientInternalReportContext()
         case PN::Comm::Workflow::ScheduleMeeting:
         case PN::Comm::Workflow::ProjectEmail:
         case PN::Comm::Workflow::ShareLocation:
-        case PN::Comm::Workflow::PersonEmail:
+        case PN::Comm::Workflow::ContactEmail:
             break;
         }
     }
@@ -1399,7 +1397,7 @@ bool DesktopAppController::handoffPreparedReview()
     case PN::Comm::Workflow::StatusReport:
     case PN::Comm::Workflow::TrackerItemsReport: review = &m_projectReportReview; break;
     case PN::Comm::Workflow::ProjectEmail:
-    case PN::Comm::Workflow::PersonEmail:
+    case PN::Comm::Workflow::ContactEmail:
     case PN::Comm::Workflow::ShareLocation: review = &m_projectEmailReview; break;
     default: break;
     }
@@ -1451,9 +1449,9 @@ bool DesktopAppController::handoffPreparedReview()
             return;
         }
         PN::Comm::RecipientResolution recipients = self->m_recipientSelectionModel->resolve();
-        // Plain people emails are fixed to the person clicked; project emails
-        // use the review's editable audience, even when opened from a person.
-        if (request.source.workflow == PN::Comm::Workflow::PersonEmail) {
+        // Plain contact emails are fixed to the contact clicked; project emails
+        // use the review's editable audience, even when opened from a contact.
+        if (request.source.workflow == PN::Comm::Workflow::ContactEmail) {
             recipients = {};
             recipients.recipients = (*review)->recipients;
         }
@@ -1548,7 +1546,7 @@ bool DesktopAppController::prepareMeetingReview(const QString &projectId, const 
                                      result.error.displayText.isEmpty() ? result.error.code : result.error.displayText);
             return;
         }
-        // Meetings follow the Email, Contact and Calendar Integration preference.
+        // Meetings follow the Email, Contacts, and Calendar integration preference.
         QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
         const PN::Comm::BackendId backend = PN::Comm::EmailSettingsStore(settings).preferredBackend();
         PN::Comm::ValidationResult validation;
@@ -1815,24 +1813,23 @@ QString DesktopAppController::meetingErrorText(const QString &code, const QStrin
         {QStringLiteral("meeting-location-invalid"), QT_TR_NOOP("The location cannot contain line breaks.")},
         {QStringLiteral("meeting-time-required"), QT_TR_NOOP("Choose a valid start time and duration.")},
         {QStringLiteral("meeting-end-before-start"), QT_TR_NOOP("Choose a valid start time and duration.")},
-        {QStringLiteral("recipient-address-invalid"), QT_TR_NOOP("One of the selected attendees has an invalid email address. Correct it on the People page or clear that attendee.")},
+        {QStringLiteral("recipient-address-invalid"), QT_TR_NOOP("One of the selected attendees has an invalid email address. Correct it on the Contacts page or clear that attendee.")},
         {QStringLiteral("recipient-role-conflict"), QT_TR_NOOP("The same email address is selected more than once with different roles.")},
-        {QStringLiteral("company-setup-required"), QT_TR_NOOP("Set the managing company in Settings > Preferences before using this audience.")},
-        {QStringLiteral("organizer-address-invalid"), QT_TR_NOOP("The project manager's email address is not valid. Correct it on the People page.")},
+        {QStringLiteral("organizer-address-invalid"), QT_TR_NOOP("The project manager's email address is not valid. Correct it on the Contacts page.")},
         {QStringLiteral("review-source-changed"), QT_TR_NOOP("The project data changed. Close this review and schedule the meeting again.")},
         {QStringLiteral("meeting-operation-busy"), QT_TR_NOOP("Another meeting is still being scheduled.")},
-        {QStringLiteral("meeting-backend-unavailable"), QT_TR_NOOP("The selected Email, Contact and Calendar Integration cannot schedule meetings. Choose another in Settings > Preferences.")},
-        {QStringLiteral("thunderbird-unavailable"), QT_TR_NOOP("Thunderbird was not found. Check its path in Settings > Preferences > Email, Contact and Calendar Integration.")},
+        {QStringLiteral("meeting-backend-unavailable"), QT_TR_NOOP("The selected integration cannot schedule meetings. Choose another in Settings > Email, Contacts, and Calendar.")},
+        {QStringLiteral("thunderbird-unavailable"), QT_TR_NOOP("Thunderbird was not found. Check its path in Settings > Email, Contacts, and Calendar.")},
         {QStringLiteral("thunderbird-launch-failed"), QT_TR_NOOP("Thunderbird could not be started.")},
-        {QStringLiteral("outlook-open-failed"), QT_TR_NOOP("The meeting file was created, but the new Outlook did not open it. Check that the new Outlook is installed, or choose another Email, Contact and Calendar Integration.")},
-        {QStringLiteral("outlook-classic-unavailable"), QT_TR_NOOP("Outlook (classic) was not found. Check that it is installed, or choose another Email, Contact and Calendar Integration.")},
+        {QStringLiteral("outlook-open-failed"), QT_TR_NOOP("The meeting file was created, but the new Outlook did not open it. Check that the new Outlook is installed, or choose another integration in Settings > Email, Contacts, and Calendar.")},
+        {QStringLiteral("outlook-classic-unavailable"), QT_TR_NOOP("Outlook (classic) was not found. Check that it is installed, or choose another integration in Settings > Email, Contacts, and Calendar.")},
         {QStringLiteral("outlook-classic-failed"), QT_TR_NOOP("Outlook (classic) could not create the meeting. Close any Outlook dialog that is waiting for an answer, then try again.")},
-        {QStringLiteral("calendar-open-failed"), QT_TR_NOOP("The meeting file was created, but no calendar app opened it. Set a default app for .ics files, or choose another Email, Contact and Calendar Integration.")},
+        {QStringLiteral("calendar-open-failed"), QT_TR_NOOP("The meeting file was created, but no calendar app opened it. Set a default app for .ics files, or choose another integration in Settings > Email, Contacts, and Calendar.")},
         {QStringLiteral("office365-not-authenticated"), QT_TR_NOOP("Sign in to Microsoft 365 in Settings > Office 365 Integration, then try again.")},
         {QStringLiteral("account-generation-changed"), QT_TR_NOOP("The Microsoft 365 account changed. Try again.")},
         {QStringLiteral("graph-calendar-consent-required"), QT_TR_NOOP("Microsoft 365 did not allow calendar access. Sign out and sign in again in Settings > Office 365 Integration to grant calendar permission.")},
-        {QStringLiteral("icloud-credentials-required"), QT_TR_NOOP("Enter your Apple Account and save an app-specific password in Settings > Preferences, then try again.")},
-        {QStringLiteral("icloud-calendar-authentication-failed"), QT_TR_NOOP("iCloud rejected the Apple Account or app-specific password. Check both in Settings > Preferences.")},
+        {QStringLiteral("icloud-credentials-required"), QT_TR_NOOP("Enter your Apple Account and save an app-specific password in Settings > Email, Contacts, and Calendar, then try again.")},
+        {QStringLiteral("icloud-calendar-authentication-failed"), QT_TR_NOOP("iCloud rejected the Apple Account or app-specific password. Check both in Settings > Email, Contacts, and Calendar.")},
         {QStringLiteral("icloud-calendar-not-found"), QT_TR_NOOP("No writable iCloud calendar was found for this account.")},
         {QStringLiteral("icloud-calendar-discovery-failed"), QT_TR_NOOP("Project Notes could not find your iCloud calendars. Check your connection and try again.")},
         {QStringLiteral("icloud-calendar-event-create-failed"), QT_TR_NOOP("iCloud could not create the event. Check your connection and try again.")},
@@ -1907,10 +1904,10 @@ QAbstractItemModel* DesktopAppController::meetingAttendeesModel() const
 { return global_DBObjects.meetingattendeesmodelproxy(); }
 QAbstractItemModel* DesktopAppController::notesActionItemsModel() const
 { return global_DBObjects.notesactionitemsmodelproxy(); }
-QAbstractItemModel* DesktopAppController::peopleModel() const
-{ return global_DBObjects.peoplemodelproxy(); }
-QAbstractItemModel* DesktopAppController::clientsModel() const
-{ return global_DBObjects.clientsmodelproxy(); }
+QAbstractItemModel* DesktopAppController::contactsModel() const
+{ return global_DBObjects.contactsmodelproxy(); }
+QAbstractItemModel* DesktopAppController::companiesModel() const
+{ return global_DBObjects.companiesmodelproxy(); }
 QAbstractItemModel* DesktopAppController::allItemsModel() const
 { return global_DBObjects.allitemsmodelproxy(); }
 QAbstractItemModel* DesktopAppController::trackerItemDetailModel() const
@@ -1985,8 +1982,8 @@ bool DesktopAppController::importXmlFile(const QString& fileUrlOrPath)
 
     // Refresh the top-level lists the UI shows.
     global_DBObjects.projectinformationmodel()->refresh();
-    global_DBObjects.peoplemodel()->refresh();
-    global_DBObjects.clientsmodel()->refresh();
+    global_DBObjects.contactsmodel()->refresh();
+    global_DBObjects.companiesmodel()->refresh();
     global_DBObjects.allitemsmodel()->refresh();
     if (FolderManager* fm = FolderManager::instance())
         fm->reload();   // an import may carry updated folder defs/memberships
@@ -2043,13 +2040,13 @@ void DesktopAppController::setViewReportAfterSave(bool enabled)
 
 QString DesktopAppController::managingCompanyId() const
 { return global_DBObjects.getManagingCompany(); }
-void DesktopAppController::setManagingCompanyId(const QString& clientId)
-{ global_DBObjects.setManagingCompany(clientId); }
+void DesktopAppController::setManagingCompanyId(const QString& companyId)
+{ global_DBObjects.setManagingCompany(companyId); }
 QString DesktopAppController::projectManagerId() const
 { return global_DBObjects.getProjectManager(); }
-void DesktopAppController::setProjectManagerId(const QString& personId)
+void DesktopAppController::setProjectManagerId(const QString& contactId)
 {
-    global_DBObjects.setProjectManager(personId);
+    global_DBObjects.setProjectManager(contactId);
     emit projectManagerChanged();
 }
 
@@ -2064,15 +2061,15 @@ QString DesktopAppController::projectManagerInitials() const
     if (!m_databaseOpen)
         return QString();
 
-    const QString personId = global_DBObjects.getProjectManager();
-    if (personId.isEmpty())
+    const QString contactId = global_DBObjects.getProjectManager();
+    if (contactId.isEmpty())
         return QString();
 
     QString name;
-    auto* proxy = global_DBObjects.peoplemodelproxy();
+    auto* proxy = global_DBObjects.contactsmodelproxy();
     if (proxy) {
         for (int row = 0; row < proxy->rowCount(); ++row) {
-            if (proxy->data(proxy->index(row, 0)).toString() == personId) {
+            if (proxy->data(proxy->index(row, 0)).toString() == contactId) {
                 name = proxy->data(proxy->index(row, 1)).toString();
                 break;
             }
@@ -2341,8 +2338,8 @@ QAbstractItemModel* DesktopAppController::modelForSection(const QString& section
 {
     if (section == "projects")     return projectsListModel();
     if (section == "items")        return allItemsModel();
-    if (section == "people")       return peopleModel();
-    if (section == "clients")      return clientsModel();
+    if (section == "contacts")     return contactsModel();
+    if (section == "companies")    return companiesModel();
     if (section == "statusreport") return statusReportItemsModel();
     if (section == "trackeritems") return projectTrackerItemsModel();
     if (section == "team")         return projectTeamMembersModel();
@@ -2716,65 +2713,58 @@ QString DesktopAppController::projectNameForId(const QString& projectId) const
     return src->findValue(key, 0, 2).toString();  // col 2 = project_name
 }
 
-QString DesktopAppController::clientNameForId(const QString& clientId) const
+QString DesktopAppController::companyNameForId(const QString& companyId) const
 {
-    auto* src = global_DBObjects.clientsmodel();
-    if (!src || clientId.isEmpty()) return {};
-    QVariant key(clientId);
+    auto* src = global_DBObjects.companiesmodel();
+    if (!src || companyId.isEmpty()) return {};
+    QVariant key(companyId);
     return src->findValue(key, 0, 1).toString();  // col 1 = client_name
 }
 
-int DesktopAppController::clientRowForId(const QString& clientId) const
+int DesktopAppController::companyRowForId(const QString& companyId) const
 {
-    auto* proxy = global_DBObjects.clientsmodelproxy();
-    auto* src   = global_DBObjects.clientsmodel();
-    if (!proxy || !src || clientId.isEmpty()) return -1;
-    QVariant key(clientId);
+    auto* proxy = global_DBObjects.companiesmodelproxy();
+    auto* src   = global_DBObjects.companiesmodel();
+    if (!proxy || !src || companyId.isEmpty()) return -1;
+    QVariant key(companyId);
     const QModelIndex srcIdx = src->findIndex(key, 0);
     if (!srcIdx.isValid()) return -1;
     const QModelIndex proxyIdx = proxy->mapFromSource(srcIdx);
     return proxyIdx.isValid() ? proxyIdx.row() : -1;
 }
 
-QString DesktopAppController::clientIdAtRow(int row) const
+QString DesktopAppController::companyIdAtRow(int row) const
 {
-    auto* proxy = global_DBObjects.clientsmodelproxy();
+    auto* proxy = global_DBObjects.companiesmodelproxy();
     if (!proxy || row < 0 || row >= proxy->rowCount()) return {};
     return proxy->data(proxy->index(row, 0)).toString();
 }
 
-int DesktopAppController::peopleRowForId(const QString& peopleId) const
+int DesktopAppController::contactsRowForId(const QString& contactId) const
 {
-    auto* proxy = global_DBObjects.peoplemodelproxy();
-    auto* src   = global_DBObjects.peoplemodel();
-    if (!proxy || !src || peopleId.isEmpty()) return -1;
-    QVariant key(peopleId);
+    auto* proxy = global_DBObjects.contactsmodelproxy();
+    auto* src   = global_DBObjects.contactsmodel();
+    if (!proxy || !src || contactId.isEmpty()) return -1;
+    QVariant key(contactId);
     const QModelIndex srcIdx = src->findIndex(key, 0);
     if (!srcIdx.isValid()) return -1;
     const QModelIndex proxyIdx = proxy->mapFromSource(srcIdx);
     return proxyIdx.isValid() ? proxyIdx.row() : -1;
 }
 
-QString DesktopAppController::peopleIdAtRow(int row) const
+QString DesktopAppController::contactNameForId(const QString& contactId) const
 {
-    auto* proxy = global_DBObjects.peoplemodelproxy();
-    if (!proxy || row < 0 || row >= proxy->rowCount()) return {};
-    return proxy->data(proxy->index(row, 0)).toString();
-}
-
-QString DesktopAppController::peopleNameForId(const QString& personId) const
-{
-    auto* src = global_DBObjects.peoplemodel();
-    if (!src || personId.isEmpty()) return {};
-    QVariant key(personId);
+    auto* src = global_DBObjects.contactsmodel();
+    if (!src || contactId.isEmpty()) return {};
+    QVariant key(contactId);
     return src->findValue(key, 0, 1).toString();  // col 1 = name
 }
 
 // ── Picker lists ─────────────────────────────────────────────────────────────
 
 // Sort a picker list (list of {id, name} maps) alphabetically by name. The
-// source proxies carry whatever sort the user last applied on the People /
-// Clients list pages, so every combo that feeds off these lists sorts its own
+// source proxies carry whatever sort the user last applied on the Contacts /
+// Companies list pages, so every combo that feeds off these lists sorts its own
 // drop-down here rather than inheriting that order.
 static void sortByName(QVariantList& list)
 {
@@ -2784,10 +2774,10 @@ static void sortByName(QVariantList& list)
     });
 }
 
-QVariantList DesktopAppController::clientList() const
+QVariantList DesktopAppController::companyList() const
 {
     QVariantList out;
-    auto* proxy = global_DBObjects.clientsmodelproxy();
+    auto* proxy = global_DBObjects.companiesmodelproxy();
     if (!proxy) return out;
     for (int row = 0; row < proxy->rowCount(); ++row) {
         QVariantMap m;
@@ -2799,10 +2789,10 @@ QVariantList DesktopAppController::clientList() const
     return out;
 }
 
-QVariantList DesktopAppController::peopleList() const
+QVariantList DesktopAppController::contactList() const
 {
     QVariantList out;
-    auto* proxy = global_DBObjects.peoplemodelproxy();
+    auto* proxy = global_DBObjects.contactsmodelproxy();
     if (!proxy) return out;
     for (int row = 0; row < proxy->rowCount(); ++row) {
         QVariantMap m;
@@ -2935,9 +2925,9 @@ QVariantList DesktopAppController::recentCommentsForItem(const QString& itemId, 
     while (qry.next()) {
         QVariantMap m;
         m.insert("note", qry.value(0).toString());
-        // Safe to call while DB_LOCK is held: peopleNameForId() reads from the
-        // people model's in-memory cache, it doesn't run its own query.
-        m.insert("by",   peopleNameForId(qry.value(1).toString()));
+        // Safe to call while DB_LOCK is held: contactNameForId() reads from the
+        // contacts model's in-memory cache, it doesn't run its own query.
+        m.insert("by",   contactNameForId(qry.value(1).toString()));
         m.insert("date", qry.value(2).toString());
         out.append(m);
     }
@@ -2970,7 +2960,7 @@ QStringList DesktopAppController::statusItemCategoryOptions() const
 // by saveProject() once the detail page has the two fields the schema insists on
 // (project_number/project_name are NOT NULL *and* carry partial unique indexes,
 // so a blank row cannot be written and a second blank row could not be unique).
-// Same shape as addPerson()/addClient(); Main.qml discards the staged row again
+// Same shape as addContact()/addCompany(); Main.qml discards the staged row again
 // if the page is left before it becomes a real record.
 int DesktopAppController::addProject()
 {
@@ -3030,25 +3020,25 @@ bool DesktopAppController::applyRowFields(QAbstractItemModel* model, int row,
     return true;
 }
 
-bool DesktopAppController::isProjectTeamMember(const QString& projectId, const QString& peopleId) const
+bool DesktopAppController::isProjectTeamMember(const QString& projectId, const QString& contactId) const
 {
-    if (projectId.isEmpty() || peopleId.isEmpty()) return true;
+    if (projectId.isEmpty() || contactId.isEmpty()) return true;
     DB_LOCK;
     QSqlQuery q(global_DBObjects.getDb());
     q.prepare("SELECT count(*) FROM project_people "
               "WHERE project_id = ? AND people_id = ? AND deleted = 0");
     q.addBindValue(projectId);
-    q.addBindValue(peopleId);
+    q.addBindValue(contactId);
     q.exec();
     const bool exists = q.next() && q.value(0).toInt() > 0;
     DB_UNLOCK;
     return exists;
 }
 
-bool DesktopAppController::addPersonToProjectTeam(const QString& projectId, const QString& peopleId)
+bool DesktopAppController::addContactToProjectTeam(const QString& projectId, const QString& contactId)
 {
-    if (projectId.isEmpty() || peopleId.isEmpty()) return true;
-    if (isProjectTeamMember(projectId, peopleId)) return true;
+    if (projectId.isEmpty() || contactId.isEmpty()) return true;
+    if (isProjectTeamMember(projectId, contactId)) return true;
 
     // Mirrors addTeamMember()+saveTeamMember() (below), but writes straight
     // against the *source* projectteammembersmodel rather than through
@@ -3063,13 +3053,13 @@ bool DesktopAppController::addPersonToProjectTeam(const QString& projectId, cons
 
     // people_id (col 2) first: it is NOT NULL / carries the unique key, so it
     // is the write that can be rejected, mirroring saveTeamMember's ordering.
-    return applyRowFields(src, srcIdx.row(), { {2, peopleId}, {4, "0"}, {5, ""} });
+    return applyRowFields(src, srcIdx.row(), { {2, contactId}, {4, "0"}, {5, ""} });
 }
 
 bool DesktopAppController::saveProject(int row,
         const QString& projectNumber, const QString& projectName,
         const QString& projectStatus, const QString& primaryContactId,
-        const QString& clientId, const QString& lastStatusDate,
+        const QString& companyId, const QString& lastStatusDate,
         const QString& lastInvoiceDate, const QString& invoicingPeriod,
         const QString& statusReportPeriod,
         const QString& budget, const QString& actual,
@@ -3093,14 +3083,14 @@ bool DesktopAppController::saveProject(int row,
                   { 4, lastInvoiceDate}, { 5, primaryContactId},   { 6, budget},
                   { 7, actual},          { 8, bcwp},               { 9, bcws},
                   {10, bac},             {11, invoicingPeriod},    {12, statusReportPeriod},
-                  {13, clientId},        {14, projectStatus} });
+                  {13, companyId},       {14, projectStatus} });
 
     if (!applyRowFields(proxy, pIdx.row(), {
             { 1, projectNumber},   { 2, projectName},        { 3, lastStatusDate},
             { 4, lastInvoiceDate}, { 5, primaryContactId},   { 6, budget},
             { 7, actual},          { 8, bcwp},               { 9, bcws},
             {10, bac},             {11, invoicingPeriod},    {12, statusReportPeriod},
-            {13, clientId},        {14, projectStatus} }))
+            {13, companyId},       {14, projectStatus} }))
         return false;
 
     // The EVM columns (eac, cv, sv, cpi, pct_complete) are computed in the
@@ -3302,7 +3292,7 @@ QVariantMap DesktopAppController::getAttendeeData(int row) const
     return proxyRowToMap(global_DBObjects.meetingattendeesmodelproxy(), row);
 }
 
-bool DesktopAppController::saveAttendee(int row, const QString& personId)
+bool DesktopAppController::saveAttendee(int row, const QString& contactId)
 {
     global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.meetingattendeesmodelproxy();
@@ -3310,11 +3300,11 @@ bool DesktopAppController::saveAttendee(int row, const QString& personId)
 
     const QString safeNote   = model->data(model->index(row, 1)).toString().replace("'", "''");
     const QString safeId     = model->data(model->index(row, 0)).toString().replace("'", "''");
-    const QString safePerson = QString(personId).replace("'", "''");
+    const QString safeContact = QString(contactId).replace("'", "''");
     const QString sql = QString(
         "SELECT COUNT(*) FROM meeting_attendees "
         "WHERE note_id = '%1' AND person_id = '%2' AND id != '%3' AND deleted = 0"
-    ).arg(safeNote, safePerson, safeId);
+    ).arg(safeNote, safeContact, safeId);
     if (global_DBObjects.execute(sql).toInt() > 0) {
         const QString msg = tr("Attendee already exists.");
         global_DBObjects.setLastSaveError(msg);
@@ -3322,7 +3312,7 @@ bool DesktopAppController::saveAttendee(int row, const QString& personId)
         return false;
     }
 
-    const bool ok = model->setData(model->index(row, 2), personId);
+    const bool ok = model->setData(model->index(row, 2), contactId);
     if (!ok)
         emit errorOccurred(tr("Could Not Save"), global_DBObjects.lastSaveError());
     return ok;
@@ -3378,19 +3368,19 @@ bool DesktopAppController::saveNoteActionItem(int row, const QString& itemName,
         {11, lastUpdate},    {12, dateResolved} });
 }
 
-// ── People ───────────────────────────────────────────────────────────────────
+// ── Contacts ─────────────────────────────────────────────────────────────────
 
-int DesktopAppController::addPerson()
+int DesktopAppController::addContact()
 {
-    return proxyRowFromSource(global_DBObjects.peoplemodelproxy(),
-                              global_DBObjects.peoplemodel()->newRecord());
+    return proxyRowFromSource(global_DBObjects.contactsmodelproxy(),
+                              global_DBObjects.contactsmodel()->newRecord());
 }
 
-bool DesktopAppController::deletePerson(int row)
+bool DesktopAppController::deleteContact(int row)
 {
     global_DBObjects.setLastSaveError("");
-    if (deleteProxyRow(global_DBObjects.peoplemodelproxy(),
-                       global_DBObjects.peoplemodel(), row))
+    if (deleteProxyRow(global_DBObjects.contactsmodelproxy(),
+                       global_DBObjects.contactsmodel(), row))
         return true;
     const QString err = global_DBObjects.lastSaveError();
     if (!err.isEmpty())
@@ -3398,32 +3388,32 @@ bool DesktopAppController::deletePerson(int row)
     return false;
 }
 
-QVariantMap DesktopAppController::getPersonData(int row) const
-{ return proxyRowToMap(global_DBObjects.peoplemodelproxy(), row); }
+QVariantMap DesktopAppController::getContactData(int row) const
+{ return proxyRowToMap(global_DBObjects.contactsmodelproxy(), row); }
 
-QString DesktopAppController::personIdAtRow(int row) const
+QString DesktopAppController::contactIdAtRow(int row) const
 {
-    auto* proxy = global_DBObjects.peoplemodelproxy();
+    auto* proxy = global_DBObjects.contactsmodelproxy();
     if (!proxy || row < 0 || row >= proxy->rowCount()) return {};
     return proxy->data(proxy->index(row, 0)).toString();
 }
 
-bool DesktopAppController::savePerson(int row, const QString& name, const QString& email,
+bool DesktopAppController::saveContact(int row, const QString& name, const QString& email,
                                       const QString& officePhone, const QString& cellPhone,
-                                      const QString& clientId, const QString& role)
+                                      const QString& companyId, const QString& role)
 {
     global_DBObjects.setLastSaveError("");
-    QAbstractItemModel* model = global_DBObjects.peoplemodelproxy();
+    QAbstractItemModel* model = global_DBObjects.contactsmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
     const QPersistentModelIndex pIdx(model->index(row, 0));
     if (!pIdx.isValid()) return false;
 
     return applyRowFields(model, pIdx.row(), {
         {1, name},      {2, email},    {3, officePhone},
-        {4, cellPhone}, {5, clientId}, {6, role} });
+        {4, cellPhone}, {5, companyId}, {6, role} });
 }
 
-int DesktopAppController::addPeopleFromVCardDrop(const QStringList& fileUrls, const QString& text)
+int DesktopAppController::addContactsFromVCardDrop(const QStringList& fileUrls, const QString& text)
 {
     const QList<VCardContact> contacts = parseVCards(combineVCardSources(fileUrls, text));
     if (contacts.isEmpty())
@@ -3435,16 +3425,16 @@ int DesktopAppController::addPeopleFromVCardDrop(const QStringList& fileUrls, co
 
     for (const VCardContact& contact : contacts)
     {
-        const QString clientId = findOrCreateClient(&global_DBObjects, contact.company);
-        findOrCreatePerson(&global_DBObjects, contact, clientId);
+        const QString companyId = findOrCreateCompany(&global_DBObjects, contact.company);
+        findOrCreateContact(&global_DBObjects, contact, companyId);
     }
 
-    // findOrCreatePerson() writes through the unfiltered people model so the
-    // insert can't be scoped out by whatever filter the visible People list
-    // currently has active — refresh the model actually bound to peopleModel()
+    // findOrCreateContact() writes through the unfiltered contacts model so the
+    // insert can't be scoped out by whatever filter the visible Contacts list
+    // currently has active — refresh the model actually bound to contactsModel()
     // so the new rows show up immediately rather than waiting for the next
     // dirty-triggered reload.
-    global_DBObjects.peoplemodel()->refresh();
+    global_DBObjects.contactsmodel()->refresh();
 
     emit infoOccurred(tr("Contacts Added"), contacts.size() == 1
         ? tr("1 contact was added.")
@@ -3452,19 +3442,19 @@ int DesktopAppController::addPeopleFromVCardDrop(const QStringList& fileUrls, co
     return contacts.size();
 }
 
-// ── Clients ──────────────────────────────────────────────────────────────────
+// ── Companies ────────────────────────────────────────────────────────────────
 
-int DesktopAppController::addClient()
+int DesktopAppController::addCompany()
 {
-    return proxyRowFromSource(global_DBObjects.clientsmodelproxy(),
-                              global_DBObjects.clientsmodel()->newRecord());
+    return proxyRowFromSource(global_DBObjects.companiesmodelproxy(),
+                              global_DBObjects.companiesmodel()->newRecord());
 }
 
-bool DesktopAppController::deleteClient(int row)
+bool DesktopAppController::deleteCompany(int row)
 {
     global_DBObjects.setLastSaveError("");
-    if (deleteProxyRow(global_DBObjects.clientsmodelproxy(),
-                       global_DBObjects.clientsmodel(), row))
+    if (deleteProxyRow(global_DBObjects.companiesmodelproxy(),
+                       global_DBObjects.companiesmodel(), row))
         return true;
     const QString err = global_DBObjects.lastSaveError();
     if (!err.isEmpty())
@@ -3472,18 +3462,18 @@ bool DesktopAppController::deleteClient(int row)
     return false;
 }
 
-QVariantMap DesktopAppController::getClientData(int row) const
-{ return proxyRowToMap(global_DBObjects.clientsmodelproxy(), row); }
+QVariantMap DesktopAppController::getCompanyData(int row) const
+{ return proxyRowToMap(global_DBObjects.companiesmodelproxy(), row); }
 
-QString DesktopAppController::clientIdAtProxyRow(int row) const
-{ return clientIdAtRow(row); }
+QString DesktopAppController::companyIdAtProxyRow(int row) const
+{ return companyIdAtRow(row); }
 
-bool DesktopAppController::saveClient(int row, const QString& clientName)
+bool DesktopAppController::saveCompany(int row, const QString& companyName)
 {
     global_DBObjects.setLastSaveError("");
-    QAbstractItemModel* model = global_DBObjects.clientsmodelproxy();
+    QAbstractItemModel* model = global_DBObjects.companiesmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
-    const bool ok = model->setData(model->index(row, 1), clientName);
+    const bool ok = model->setData(model->index(row, 1), companyName);
     if (!ok)
         emit errorOccurred(tr("Could Not Save"), global_DBObjects.lastSaveError());
     return ok;
@@ -3670,15 +3660,15 @@ QVariantMap DesktopAppController::checkTrackerItemMove(const QString& itemId,
     result["willRenumber"] = !numberFree;
 
     QVariantList membersToAdd;
-    for (const QString& personId : { identifiedBy, assignedTo }) {
-        if (personId.isEmpty() || isProjectTeamMember(newProjectId, personId)) continue;
+    for (const QString& contactId : { identifiedBy, assignedTo }) {
+        if (contactId.isEmpty() || isProjectTeamMember(newProjectId, contactId)) continue;
         bool already = false;
         for (const QVariant& m : membersToAdd)
-            if (m.toMap().value("id").toString() == personId) { already = true; break; }
+            if (m.toMap().value("id").toString() == contactId) { already = true; break; }
         if (already) continue;
         QVariantMap m;
-        m["id"]   = personId;
-        m["name"] = peopleNameForId(personId);
+        m["id"]   = contactId;
+        m["name"] = contactNameForId(contactId);
         membersToAdd.append(m);
     }
     result["membersToAdd"] = membersToAdd;
@@ -3748,9 +3738,9 @@ bool DesktopAppController::moveTrackerItem(const QString& itemId, const QString&
         if (!applyRowFields(proxy, 0, { {1, newNumber} }))
             return false;
 
-        for (const QString& personId : { identifiedBy, assignedTo })
-            if (!personId.isEmpty())
-                addPersonToProjectTeam(newProjectId, personId);
+        for (const QString& contactId : { identifiedBy, assignedTo })
+            if (!contactId.isEmpty())
+                addContactToProjectTeam(newProjectId, contactId);
         refreshTeamMembers();
     }
 
@@ -3830,7 +3820,7 @@ bool DesktopAppController::deleteTeamMember(int row)
 QVariantMap DesktopAppController::getTeamMemberData(int row) const
 { return proxyRowToMap(global_DBObjects.projectteammembersmodelproxy(), row); }
 
-bool DesktopAppController::saveTeamMember(int row, const QString& peopleId,
+bool DesktopAppController::saveTeamMember(int row, const QString& contactId,
                                           const QString& role, bool receiveStatusReport)
 {
     global_DBObjects.setLastSaveError("");
@@ -3839,20 +3829,20 @@ bool DesktopAppController::saveTeamMember(int row, const QString& peopleId,
     const QPersistentModelIndex pIdx(model->index(row, 0));
     if (!pIdx.isValid()) return false;
 
-    // Guard against adding the same person to a project twice. There is a partial
+    // Guard against adding the same contact to a project twice. There is a partial
     // unique index on project_people(project_id, people_id) WHERE deleted = 0, so a
     // duplicate would otherwise surface as a raw SQL failure. Column 0 is the row id
     // (empty for the not-yet-saved row we are filling in), column 1 is project_id.
     const QString rowId     = model->index(pIdx.row(), 0).data().toString();
     const QString projectId = model->index(pIdx.row(), 1).data().toString();
-    if (!peopleId.isEmpty() && !projectId.isEmpty())
+    if (!contactId.isEmpty() && !projectId.isEmpty())
     {
         DB_LOCK;
         QSqlQuery dup(global_DBObjects.getDb());
         dup.prepare("SELECT count(*) FROM project_people "
                     "WHERE project_id = ? AND people_id = ? AND deleted = 0 AND id <> ?");
         dup.addBindValue(projectId);
-        dup.addBindValue(peopleId);
+        dup.addBindValue(contactId);
         dup.addBindValue(rowId);
         dup.exec();
         const bool exists = dup.next() && dup.value(0).toInt() > 0;
@@ -3861,7 +3851,7 @@ bool DesktopAppController::saveTeamMember(int row, const QString& peopleId,
         if (exists)
         {
             emit errorOccurred(tr("Duplicate Team Member"),
-                               tr("That person is already a team member on this project."));
+                               tr("That contact is already a team member on this project."));
             return false;
         }
     }
@@ -3871,7 +3861,7 @@ bool DesktopAppController::saveTeamMember(int row, const QString& peopleId,
     // the first failure, so a rejected people_id never lets the later writes insert
     // a row with a null people_id (which would raise a raw SQL constraint error).
     return applyRowFields(model, pIdx.row(), {
-        {2, peopleId}, {4, receiveStatusReport ? "1" : "0"}, {5, role} });
+        {2, contactId}, {4, receiveStatusReport ? "1" : "0"}, {5, role} });
 }
 
 int DesktopAppController::addTeamMembersFromVCardDrop(const QString& projectId,
@@ -3889,18 +3879,18 @@ int DesktopAppController::addTeamMembersFromVCardDrop(const QString& projectId,
 
     for (const VCardContact& contact : contacts)
     {
-        const QString clientId = findOrCreateClient(&global_DBObjects, contact.company);
-        const QString personId = findOrCreatePerson(&global_DBObjects, contact, clientId);
-        if (!personId.isEmpty())
-            addPersonToProjectTeam(projectId, personId);
+        const QString companyId = findOrCreateCompany(&global_DBObjects, contact.company);
+        const QString contactId = findOrCreateContact(&global_DBObjects, contact, companyId);
+        if (!contactId.isEmpty())
+            addContactToProjectTeam(projectId, contactId);
     }
 
-    // Mirrors moveTrackerItem()'s membersToAdd handling: findOrCreatePerson()
-    // writes through the unfiltered people model, and addPersonToProjectTeam()
+    // Mirrors moveTrackerItem()'s membersToAdd handling: findOrCreateContact()
+    // writes through the unfiltered contacts model, and addContactToProjectTeam()
     // writes straight against the source team-members model rather than
     // whatever project the visible proxy is currently filtered to — refresh
     // both so the drop's results show up immediately on screen.
-    global_DBObjects.peoplemodel()->refresh();
+    global_DBObjects.contactsmodel()->refresh();
     refreshTeamMembers();
 
     emit infoOccurred(tr("Contacts Added"), contacts.size() == 1
@@ -4165,9 +4155,9 @@ static void refreshModelsForTable(const QString& table)
     if (t == QLatin1String("projects")) {
         if (auto* m = global_DBObjects.projectinformationmodel()) m->refresh();
     } else if (t == QLatin1String("people")) {
-        if (auto* m = global_DBObjects.peoplemodel()) m->refresh();
+        if (auto* m = global_DBObjects.contactsmodel()) m->refresh();
     } else if (t == QLatin1String("clients")) {
-        if (auto* m = global_DBObjects.clientsmodel()) m->refresh();
+        if (auto* m = global_DBObjects.companiesmodel()) m->refresh();
     } else if (t == QLatin1String("item_tracker")) {
         // Three models show tracker items: the project tab, the all-items master
         // list, and the notes-page action items.

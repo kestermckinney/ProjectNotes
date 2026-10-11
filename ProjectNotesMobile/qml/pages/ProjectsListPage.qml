@@ -18,14 +18,14 @@ Page {
     property StackView stackView: null
 
     // Quick Filter entries for a long-pressed project row: pre-filled from
-    // that row's own client/contact (omitted when the row has none set),
+    // that row's own company/contact (omitted when the row has none set),
     // plus the two always-available overdue toggles — status_overdue/
     // invoicing_overdue are computed "Yes"/"No" columns (see projectsmodel.cpp).
     function _quickFiltersForRow(m) {
         var qf = []
-        var clientId = (m.client_id || "").toString()
-        if (clientId !== "")
-            qf.push({ label: qsTr("This Client"), field: "client_id", values: [clientId] })
+        var companyId = (m.client_id || "").toString()
+        if (companyId !== "")
+            qf.push({ label: qsTr("This Company"), field: "client_id", values: [companyId] })
         var contactId = (m.primary_contact || "").toString()
         if (contactId !== "")
             qf.push({ label: qsTr("This Contact"), field: "primary_contact", values: [contactId] })
@@ -107,7 +107,7 @@ Page {
                         initialProjectName:       (d.project_name         || "").toString(),
                         initialProjectStatus:     (d.project_status       || "").toString(),
                         initialPrimaryContact:    (d.primary_contact      || "").toString(),
-                        initialClientId:          (d.client_id            || "").toString(),
+                        initialCompanyId:         (d.client_id            || "").toString(),
                         initialLastStatusDate:    (d.last_status_date     || "").toString(),
                         initialLastInvoiceDate:   (d.last_invoice_date    || "").toString(),
                         initialInvoicingPeriod:   (d.invoicing_period     || "").toString(),
@@ -146,8 +146,8 @@ Page {
 
             // Resolve once per delegate; the binding re-evaluates only when the
             // row's client_id changes. Avoids a second linear-scan per row.
-            readonly property string _clientName:
-                AppController.clientNameForId(delegateRoot.model.client_id || "") || ""
+            readonly property string _companyName:
+                AppController.companyNameForId(delegateRoot.model.client_id || "") || ""
 
             // Long press → Quick Filter. The delegate's own pressAndHold, not a
             // TapHandler: only the button's hold timer (armed solely by
@@ -174,8 +174,8 @@ Page {
                     spacing: 6
 
                     Label {
-                        visible: delegateRoot._clientName !== ""
-                        text: delegateRoot._clientName
+                        visible: delegateRoot._companyName !== ""
+                        text: delegateRoot._companyName
                         font.pixelSize: 12
                         color: Theme.mutedText
                         elide: Text.ElideRight
@@ -219,7 +219,7 @@ Page {
                     initialProjectName:       delegateRoot.model.project_name          || "",
                     initialProjectStatus:     delegateRoot.model.project_status        || "",
                     initialPrimaryContact:    delegateRoot.model.primary_contact       || "",
-                    initialClientId:          delegateRoot.model.client_id             || "",
+                    initialCompanyId:         delegateRoot.model.client_id             || "",
                     initialLastStatusDate:    delegateRoot.model.last_status_date      || "",
                     initialLastInvoiceDate:   delegateRoot.model.last_invoice_date     || "",
                     initialInvoicingPeriod:   delegateRoot.model.invoicing_period      || "",

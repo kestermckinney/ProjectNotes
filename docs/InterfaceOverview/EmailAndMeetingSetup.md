@@ -11,15 +11,15 @@ Four things must be in place before any email or invitation is worth sending.
 | Requirement | Where to set it | Why it matters |
 | :--- | :--- | :--- |
 | **Project Manager** | **Settings > Preferences** | Identifies you. You are kept off recipient lists and become the organizer on meeting invitations. |
-| **Managing Company** | **Settings > Preferences** | Separates your own people from client people, which drives internal reports and the client audience filters. |
-| People with email addresses | **People** page | Recipients come only from people records. A person with a blank **Email** cannot be selected. |
-| A project team | project's **Team** tab | Audiences are built from the team. Mark the people who should get status reports with **Receive Status**. |
+| **Managing Company** | **Settings > Preferences** | Separates your own contacts from company contacts, which drives internal reports and the company audience filters. |
+| Contacts with email addresses | **Contacts** page | Recipients come only from contact records. A contact with a blank **Email** cannot be selected. |
+| A project team | project's **Team** tab | Audiences are built from the team. Mark the contacts who should get status reports with **Receive Status**. |
 
-You cannot type an address into a review dialog. If someone needs a copy, add them as a person and put them on the project team.
+You cannot type an address into a review dialog. If someone needs a copy, add them as a contact and put them on the project team.
 
 ## Choose how mail and meetings leave Project Notes
 
-Open **Settings > Preferences** and find **Email, Contact and Calendar Integration**. One choice covers both email and meeting invitations.
+Open **Settings > Email, Contacts, and Calendar**. One choice covers both email and meeting invitations.
 
 | Integration | Email becomes | Meeting becomes | Works on |
 | :--- | :--- | :--- | :--- |
@@ -43,7 +43,7 @@ If your settings came from another computer and name a choice this one lacks, su
 
 ## Windows with Outlook Classic
 
-1. Open **Settings > Preferences > Email, Contact and Calendar Integration** and set **Integration** to **Outlook (Classic)**.
+1. Open **Settings > Email, Contacts, and Calendar** and set **Integration** to **Outlook (Classic)**.
 2. Start Outlook and leave it running. Handoff is faster when Outlook is already open.
 
 Project Notes starts Outlook (classic) itself, so the `.eml` and `.ics` file associations don't matter.
@@ -72,6 +72,8 @@ If you want the meeting to arrive with its attendees already filled in, use **Ou
 1. Set **Integration** to **MacOS Email and Calendar**.
 2. Open Mail and Calendar at least once and add the account you send project mail from.
 3. Schedule a test meeting. macOS asks whether Project Notes may access your calendars, then whether it may control Calendar. Allow both.
+
+This mode also turns on contact synchronization against the Contacts app on this Mac directly — there is no separate account or password to enter. The first sync asks for access under **System Settings > Privacy & Security > Contacts**. See [Contact Synchronization](<Preferences.md#contact-synchronization>) for matching, export, and review details.
 
 Reports open in a Mail compose window with the recipients, formatted body, and file attachments already in place. Cc recipients appear alongside the To recipients. Bcc recipients cannot be carried; choose **Default Application** or another integration for messages that need Bcc.
 
@@ -133,7 +135,7 @@ Some organizations require administrator consent before anyone can sign in.
 
 Your refresh token goes into the operating system credential vault. Access tokens stay in memory only.
 
-7. Go back to **Settings > Preferences** and set **Integration** to **Microsoft 365 drafts**.
+7. Go back to **Settings > Email, Contacts, and Calendar** and set **Integration** to **Microsoft 365 drafts**.
 
 If you signed in before meeting scheduling existed, sign out and sign in again. The older sign-in did not ask for calendar permission, and a draft event cannot be created without it.
 
@@ -152,7 +154,7 @@ Right-click the subject or the body to insert a field instead of typing it. The 
 | :--- | :--- |
 | `project.number` | The project number |
 | `project.name` | The project name |
-| `client.name` | The client on the project |
+| `company.name` | The company on the project |
 | `preferences.managerName` | The project manager from **Settings > Preferences** |
 | `preferences.managingCompanyName` | The managing company from **Settings > Preferences** |
 | `current.date` | The date the email is prepared, as MM/DD/YYYY |
@@ -161,7 +163,7 @@ Right-click the subject or the body to insert a field instead of typing it. The 
 | `report.date` | The reporting date you choose in the review, on the three project reports |
 | `meeting.title` | The meeting note's title, on Send Meeting Notes |
 | `meeting.date` | The meeting date, on Send Meeting Notes and the Meeting Notes Report |
-| `person.name`, `person.email` | The person right-clicked for Project Email; empty when emailing the whole team |
+| `contact.name`, `contact.email` | The contact right-clicked for Project Email; empty when emailing the whole team |
 | `location.description`, `location.url`, `location.fileName` | The location being shared |
 
 A field that does not apply to the selected workflow is not offered.
@@ -180,11 +182,11 @@ Each standard type includes a purpose, an agenda and a 60-minute duration. Its s
 4. Write the **Subject**, for example `{{ project.number }} {{ project.name }} Status Meeting`.
 5. Write the **Agenda**. It becomes the body of the invitation.
 
-**Duplicate** copies a type when two of them differ only slightly. **Delete** removes one. Leaving the tab saves your changes, and a type left completely blank is discarded.
+**Duplicate** copies a type when two of them differ only slightly, naming the copy `<original name> (copy)`. **Delete** removes one. Switching to another type, clicking **New**, clicking **Duplicate**, or leaving the tab all save your current draft; a type left completely blank is discarded instead. A draft with a name but an invalid subject or agenda — for example, a field Project Notes doesn't recognize — is kept, but a dialog blocks you from switching away until you fix it or discard the draft.
 
 Startup leaves any nonempty meeting type list as you configured it. If you delete every type, the standard types return the next time you start Project Notes.
 
-Subjects and agendas accept `project.number`, `project.name`, `client.name`, `preferences.managerName`, `preferences.managingCompanyName` and `current.date`, which is the date the meeting is scheduled. Right-click to insert one. Report fields such as `report.date` are not offered, because a meeting is scheduled from a project rather than from a report.
+Subjects and agendas accept `project.number`, `project.name`, `company.name`, `preferences.managerName`, `preferences.managingCompanyName` and `current.date`, which is the date the meeting is scheduled. Right-click to insert one. Report fields such as `report.date` are not offered, because a meeting is scheduled from a project rather than from a report.
 
 Meeting types live in the open database, next to the email templates.
 
@@ -206,13 +208,15 @@ Run one of each before you rely on it.
 | The meeting opens in the new Outlook with no attendees | The new Outlook drops them when it imports a calendar file. Click **Copy Attendees** before **Open Invite** and paste them into the event, or switch to **Outlook (Classic)**. |
 | Outlook reports it is not installed | The Outlook you chose is missing. **Outlook** needs the new Outlook for Windows from the Microsoft Store; **Outlook (Classic)** needs Microsoft Office's Outlook. |
 | The wrong mail application opens | Another application holds the `.eml` association. Reassign it in your operating system's default applications settings. |
-| A person cannot be selected as a recipient | Their person record has no **Email**. Add one. |
+| A contact cannot be selected as a recipient | Their contact record has no **Email**. Add one. |
 | The audience is empty | Nobody is on the project team, or nobody is marked **Receive Status** for a status report. |
 | Microsoft 365 reports it is not signed in | Open **Settings > Office 365 Integration** and sign in again. A refresh token expires if it goes unused for a long time. |
 | A meeting draft is created but has no attendees | The sign-in predates calendar permission. Sign out, then sign in again to grant `Calendars.ReadWrite`. |
 | Calendar reports it is not allowed, or no event appears | Open **System Settings > Privacy & Security**. Under **Calendars**, give Project Notes full access. Under **Automation**, turn on **Calendar** for Project Notes. |
+| No contacts sync under MacOS Email and Calendar | Open **System Settings > Privacy & Security > Contacts** and give Project Notes access, then try **Test Connection** again. |
 | Mail opens without the attachment | Keep Project Notes open until the draft has saved its attachments. If your mail client cannot import the native sharing items, try **Default Application**. |
 | Thunderbird does not start | The **Thunderbird executable** value is wrong. Try the bare command `thunderbird`, a full path, or `flatpak run org.mozilla.Thunderbird`. |
+| Thunderbird reports a missing draft or attachment path | Project Notes closed before Thunderbird finished reading the staged files. Start the draft again and leave Project Notes open until Thunderbird has them. |
 | An attachment is missing after you reopen a draft | Staged files are removed when Project Notes closes. Send or save the draft before you quit. |
 
 ## Where the temporary files go

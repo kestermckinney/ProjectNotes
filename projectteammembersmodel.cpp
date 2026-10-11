@@ -32,7 +32,7 @@ ProjectTeamMembersModel::ProjectTeamMembersModel(DatabaseObjects* dbo): SqlQuery
     addColumn("email", tr("Email"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
     addColumn("project_number", tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
     addColumn("project_name", tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
-    addColumn("client_name", tr("Client Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
+    addColumn("client_name", tr("Company Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
     addColumn("office_phone", tr("Office Phone"), DBPhoneNumber, DBNotSearchable, DBNotRequired, DBReadOnly);
     addColumn("cell_phone", tr("Cell Phone"), DBPhoneNumber, DBNotSearchable, DBNotRequired, DBReadOnly);
 

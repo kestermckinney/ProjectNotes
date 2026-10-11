@@ -125,7 +125,7 @@ Page {
 
                     Label {
                         visible: (model.assigned_to || "") !== ""
-                        text: AppController.peopleNameForId(model.assigned_to || "")
+                        text: AppController.contactNameForId(model.assigned_to || "")
                         font.pixelSize: 12
                         color: Theme.mutedText
                         elide: Text.ElideRight

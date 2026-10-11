@@ -224,7 +224,7 @@ void MeetingsTest::preparesFromMeetingType()
     snapshot.projectName = QStringLiteral("Plant & Tower");
     snapshot.projectManagerId = QStringLiteral("pm");
     snapshot.loadedAt = QDateTime(QDate(2026, 5, 4), QTime(9, 0));
-    snapshot.people = {{QStringLiteral("pm"), QStringLiteral("Pat Manager"), QStringLiteral("pm@example.com")}};
+    snapshot.contacts = {{QStringLiteral("pm"), QStringLiteral("Pat Manager"), QStringLiteral("pm@example.com")}};
 
     MeetingTemplate meetingType;
     meetingType.id = QStringLiteral("kickoff");

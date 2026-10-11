@@ -1,19 +1,20 @@
 # Preferences
 
-The Project Notes Settings page allows you to configure application-wide settings that affect how Project Notes operates and communicates with team members and clients.
+The Project Notes Settings page allows you to configure application-wide settings that affect how Project Notes operates and communicates with team members and companies.
 
 ## Accessing Preferences
 
 **To open the Settings page:**
 
 1. Click the **Settings** icon in the icon rail, or choose **Preferences** from the app menu (the menu icon at the top of the icon rail).
-2. The Settings page opens with sections for Appearance, Cloud Sync, Office 365 Integration, Email Templates, Meeting Templates, File Finder, Project Folders, Preferences, View Options, and Data.
+2. The Settings page opens with a tab list, in order: Preferences, Cloud Sync, Data, View Options, Project Folders, Office 365 Integration, Email, Contacts, and Calendar, File Finder, Email Templates, and Meeting Templates.
 
 ## Related Settings Pages
 
-This page covers Appearance, Project Manager/Managing Company, View Options,
-Data, and About. A few other Settings-page sections are substantial enough to
-have their own documentation:
+This page covers Preferences (Appearance, Project Manager/Managing Company,
+and View Report After Save), the Email, Contacts, and Calendar tab, View
+Options, Data, and About. A few other Settings-page tabs are substantial
+enough to have their own documentation:
 
 - [Cloud Sync](<RemoteHost.md>) — Sync your database with Project Notes Pro
 - [Project Folders](<ProjectFolders.md>) — Configure per-project folder locations
@@ -22,39 +23,38 @@ have their own documentation:
 
 ## Appearance
 
-The **Appearance** section at the top of Settings controls the app's theme: **System**, **Light**, or **Dark**. **System** follows your operating system's current theme and switches automatically if it changes. Click a button to switch immediately — there is nothing to save. The same choice, as a quick two-way toggle, is also available as **Dark Mode** in the [Application Menu](<ApplicationMenu.md>)'s **View** group.
+**Appearance**, near the bottom of the **Preferences** tab, controls the app's theme: **System**, **Light**, or **Dark**. **System** follows your operating system's current theme and switches automatically if it changes. Click a button to switch immediately — there is nothing to save. The same choice, as a quick two-way toggle, is also available as **Dark Mode** in the [Application Menu](<ApplicationMenu.md>)'s **View** group.
 
 ## Project Manager
 
 The **Project Manager** setting, under the **Preferences** section of Settings, identifies you as the primary project manager for your organization. This setting is used to:
 
-- **Exclude you from communications** — When sending emails or generating reports, Project Notes may exclude the project manager from recipient lists to avoid sending information to yourself
-- **Track meeting attendance** — Some meeting scheduling features use this setting to determine if you should be included in meeting invitations
+- **Exclude you from communications** — When sending emails, generating reports, or scheduling meetings, Project Notes excludes the project manager from recipient/attendee lists and names them as the organizer instead, so you're never sent information addressed to yourself
 - **Filter report recipients** — Ensures that internal communications don't accidentally include the wrong people
 
 **To set the Project Manager:**
 
 1. Open **Settings** and find the **Preferences** section.
 2. Click the **Project Manager** drop down.
-3. Select your name from the list of people in your database — the setting saves immediately.
+3. Select your name from the list of contacts in your database — the setting saves immediately.
 
-**Note:** The project manager list is populated from the **People** data in your database. If you don't see your name in the list, add yourself as a person first (see [People List Page](PeopleListPage.md)).
+**Note:** The project manager list is populated from the **Contacts** data in your database. If you don't see your name in the list, add yourself as a contact first (see [Contacts List Page](ContactsListPage.md)).
 
 ## Managing Company
 
 The **Managing Company** setting, also under the **Preferences** section of Settings, specifies your organization or company. This setting is used to:
 
-- **Identify internal communications** — Project Notes distinguishes between internal-only communications and communications that include clients
-- **Exclude your company from client communications** — When generating client-facing documents, your company information may be filtered differently than client information
-- **Organize team members** — Helps Project Notes understand the structure of your organization vs. client organizations
+- **Identify internal communications** — Project Notes distinguishes between internal-only communications and communications that include companies
+- **Exclude your company from company communications** — When generating company-facing documents, your company information may be filtered differently than company information
+- **Organize team members** — Helps Project Notes understand the structure of your organization vs. company organizations
 
 **To set the Managing Company:**
 
 1. Open **Settings** and find the **Preferences** section.
 2. Click the **Managing Company** drop down.
-3. Select your company name from the list of clients in your database — the setting saves immediately.
+3. Select your company name from the list of companies in your database — the setting saves immediately.
 
-**Note:** The managing company list is populated from the **Clients** data in your database. If you don't see your company in the list, add it as a client first (see [Client List Page](ClientListPage.md)).
+**Note:** The managing company list is populated from the **Companies** data in your database. If you don't see your company in the list, add it as a company first (see [Companies List Page](CompaniesListPage.md)).
 
 ## View Report After Save
 
@@ -62,7 +62,7 @@ The **Managing Company** setting, also under the **Preferences** section of Sett
 
 ## Contact Synchronization
 
-Contact synchronization is part of **Preferences → Email, Contact and Calendar Integration** and follows its **Integration** selection. Thunderbird uses Thunderbird contacts; Outlook (Classic) uses classic Outlook contacts; Outlook and Microsoft 365 drafts use the shared Office 365 account; iCloud and MacOS Email and Calendar use iCloud contacts. Default Application does not provide contact synchronization. There is no separate contact-source selector.
+Contact synchronization is part of the **Email, Contacts, and Calendar** tab and follows its **Integration** selection. Thunderbird uses Thunderbird contacts; Outlook (Classic) uses classic Outlook contacts; Outlook and Microsoft 365 drafts use the shared Office 365 account; iCloud uses iCloud contacts; MacOS Email and Calendar uses the Contacts app on this Mac directly. Default Application does not provide contact synchronization. There is no separate contact-source selector.
 
 - **Outlook** is offered only on Windows and reads classic Outlook's active profile. New Outlook and other platforms use Office 365 for Microsoft cloud contacts.
 - **Office 365** uses the shared account configured under **Office 365 Integration**. Sign in from that tab to grant contact access for synchronization and full export. Preferences has no separate Microsoft sign-in.
@@ -70,22 +70,27 @@ Contact synchronization is part of **Preferences → Email, Contact and Calendar
 
   On Linux, setup detects Thunderbird Flatpak data folders, maps its `.mozilla` registration folder into the sandbox, installs a native-messaging launcher in each, and copies the add-on into Thunderbird's own data folder. Before applying the change, the dialog explains that it grants Thunderbird permission to launch host programs (`org.freedesktop.Flatpak`); that permission applies to the entire Thunderbird app. The folder mapping and permissions take effect after Thunderbird is fully restarted. The helper and Project Notes use a shared runtime socket location despite their different temporary directories. If permission setup fails (including when Project Notes itself is sandboxed), the result dialog supplies the terminal commands to run before following the add-on installation steps. A packaged Project Notes helper is launched through its own Flatpak runtime.
 - **iCloud** uses your Apple Account and an app-specific password saved in your operating system credential store. A blank password leaves the stored password unchanged.
+- **MacOS Email and Calendar** reads and writes the Contacts app on this Mac directly through Apple's Contacts framework — there is no separate account or password to enter. The first sync asks for access under **System Settings > Privacy & Security > Contacts**.
 
-Use **Test Connection** to discover books without importing or exporting. Select import books, or leave all unchecked to import all books. **Full Contact Export** checks every active Project Notes contact against contacts in the selected system, whether or not synchronization is enabled. Unmatched contacts are created in the default writable address book. Possible matches pause for a side-by-side review. Choose **Use This One** under Project Notes to update the existing contact, choose **Use This One** under the external contact to keep it unchanged and skip the export, or choose **Use Both** to create a separate contact. Previously exported identities, exact email addresses, normalized phone numbers, complete profiles, and strong name/company similarity are used to find candidates. Matches in read-only address books can be skipped or duplicated but cannot be updated. Outlook and Office 365 use their default Contacts folder for new contacts. Thunderbird and iCloud use a provider-designated default writable address book when available, otherwise the first writable book ordered by stable ID (not display name). Thunderbird creates contacts only in local writable books. If no writable book is available, the export stops with an explanatory status. Synchronization imports contacts but never exports them. The interval can be changed from 1 to 1,440 minutes; startup sync is optional.
+Use **Test Connection** to discover books without importing or exporting. Select import books, or leave all unchecked to import all books. **Full Contact Export** checks every active Project Notes contact against contacts in the selected system, whether or not synchronization is enabled. Unmatched contacts are created in the default writable address book. Possible matches pause for a side-by-side review. Choose **Use This One** under Project Notes to update the existing contact, choose **Use This One** under the external contact to keep it unchanged and skip the export, or choose **Use Both** to create a separate contact. Previously exported identities, exact email addresses, normalized phone numbers, complete profiles, and strong name/company similarity are used to find candidates. Matches in read-only address books can be skipped or duplicated but cannot be updated. Outlook and Office 365 use their default Contacts folder for new contacts. Thunderbird, iCloud, and MacOS Email and Calendar use a provider-designated default writable address book when available, otherwise the first writable book ordered by stable ID (not display name). Thunderbird creates contacts only in local writable books. If no writable book is available, the export stops with an explanatory status. Synchronization imports contacts but never exports them. The interval can be changed from 1 to 1,440 minutes; startup sync is optional.
 
 Contact synchronization runs on a dedicated background thread, including matching and database writes. Settings and review actions remain in the main interface; progress and refreshed records are delivered back to it safely.
 
-The source's supplied values replace corresponding Project Notes fields, including explicit empty values. Omitted fields are retained. Remote deletions never delete local records, and deleted linked local people are never restored. Full Contact Export saves a separate link from each Project Notes person to the external contact after a successful create or update. Updates replace only the name, company, job title, primary work email, work phone, and mobile phone managed by Project Notes; unrelated external fields are retained.
+The source's supplied values replace corresponding Project Notes fields, including explicit empty values. Omitted fields are retained. Remote deletions never delete local records, and deleted linked local contacts are never restored. Full Contact Export saves a separate link from each Project Notes contact to the external contact after a successful create or update. Updates replace only the name, company, job title, primary work email, work phone, and mobile phone managed by Project Notes; unrelated external fields are retained.
 
-Names are compared using normalization, token reordering, edit distance, and company legal suffix variants. Saved source identities take precedence. Strong matches reuse existing IDs. **Review Contact Conflicts** enables when uncertain clients or contacts need attention and opens a separate review dialog. First resolve duplicate clients: choose **Use Selected Client** to associate the source company with an existing client, or **Keep as a Separate Client** to create a distinct client. Each company choice applies to all its source contacts and is saved for later synchronization. Once all client choices are resolved, contact matching resumes using those clients. Uncertain contacts then wait before people are created: choose **Use This One** under either contact, or **Use Both** to retain the existing person and import a separate person. Both sides show name, company, email, and phone details. The client association follows the saved client choice, and the display name comes from the chosen contact; when keeping both identical names, a unique display name is derived automatically from the source company. Existing duplicate records are not merged. Review includes the external fields that will be applied.
+Office 365 and iCloud synchronize incrementally after the first run, fetching only what changed since the last sync. If the service invalidates that incremental position (for example, after it has been unused for a long time), Project Notes resets it automatically and re-fetches the full address book on the next sync — you don't need to do anything.
+
+Names are compared using normalization, token reordering, edit distance, company legal suffix variants, and a branch/location suffix after a dash (for example, "Acme — Chicago" is recognized as a possible branch of "Acme"). Saved source identities take precedence. Strong matches reuse existing IDs. **Review Contact Conflicts** enables when uncertain companies or contacts need attention and opens a separate review dialog. First resolve duplicate companies: click **Use This Company** under either side to associate the source company with that existing company, or **Use Both** to keep them as distinct companies. Each company choice applies to all its source contacts and is saved for later synchronization. Once all company choices are resolved, contact matching resumes using those companies. Uncertain contacts then wait before contacts are created: choose **Use This One** under either contact, or **Use Both** to retain the existing contact and import a separate contact. Both sides show name, company, email, and phone details. The company association follows the saved company choice, and the display name comes from the chosen contact; when keeping both identical names, a unique display name is derived automatically from the source company. Existing duplicate records are not merged. Review includes the external fields that will be applied.
+
+A Full Contact Export item that is stuck in an uncertain or error state offers **Ignore** to drop it from review, or **I checked the destination; allow retry** once you have confirmed the destination record yourself. If the Office 365 account changes while a sync or export is running, Project Notes cancels the operation and reports how many contacts it completed first. If the saved contact-sync state becomes damaged or was written by an incompatible version, synchronization pauses with a message asking you to restore the state file before trying again.
 
 If a full export stops with an uncertain result, start the export again to refresh and review the destination before retrying the affected contact. Local state and credentials are scoped to this computer and developer profile; moving a database may require matching its contacts again.
 
 Legacy contact actions have moved out of Python plugins. Existing iCloud account settings and valid links are carried forward where available, but synchronization stays paused until enabled here. Other plugin functions remain available.
 
-## Email, Contact and Calendar Integration
+## Email, Contacts, and Calendar
 
-The **Email, Contact and Calendar Integration** section, below **Preferences**, decides how Project Notes hands finished emails and meeting invitations to you. One choice covers email, contacts, and calendars.
+The **Email, Contacts, and Calendar** tab decides how Project Notes hands finished emails and meeting invitations to you. One choice covers email, contacts, and calendars.
 
 The **Integration** list only offers what your operating system supports:
 
@@ -120,7 +125,7 @@ For the full walk-through, including what to set up on Windows, macOS and Linux,
 The **View Options** section holds three checkboxes that control what the Projects, Items, and Search lists show. Each takes effect immediately:
 
 - **Show closed projects** — Shows or hides projects whose **Project Status** is **Closed** on the [Project List Page](<ProjectListPage.md>).
-- **Show internal items** — Shows or hides notes and tracker items marked **Internal**, and the earned value/budget figures on the Project List and Project Page. See [Presenting to Clients](<PresentingToClients.md>).
+- **Show internal items** — Shows or hides notes and tracker items marked **Internal**, and the earned value/budget figures on the Project List and Project Page. See [Presenting to Companies](<PresentingToCompanies.md>).
 - **Show resolved items** — When cleared, hides tracker items whose **Status** is **Resolved**, **Deferred**, or **Canceled**, on the [Item Tracker Page](<ItemTrackerPage.md>), leaving only **New** and **Assigned** items.
 
 These same three toggles are also reachable from the [Application Menu](<ApplicationMenu.md>)'s **View** group as **Show Closed Projects**, **Show Internal / Budget Items**, and **Show Resolved Items** — the two locations stay in sync.
@@ -135,7 +140,7 @@ The **Data** section imports records from a [Project Notes XML](<../PluginsOverv
 2. Click **Import from XML…**.
 3. Choose the `.xml` file and click **Open**.
 
-Export is handled separately, per record — open any project, note, item, person, or client and use its **Export** button (or **Export XML…** in the [Application Menu](<ApplicationMenu.md>)) to export just that record.
+Export is handled separately, per record — open any project, note, item, contact, or company and use its **Export** button (or **Export XML…** in the [Application Menu](<ApplicationMenu.md>)) to export just that record.
 
 ## About
 
@@ -161,7 +166,7 @@ When you send a report or schedule a meeting, Project Notes uses your preference
 
 - **Determine recipients** — The project manager is kept off recipient lists to avoid sending information to yourself
 - **Name the organizer** — Meeting invitations list the project manager as the organizer, never as an attendee
-- **Filter content** — Items and notes marked **Internal** are excluded from client-facing reports
+- **Filter content** — Items and notes marked **Internal** are excluded from company-facing reports
 - **Fill in templates** — `preferences.managerName` and `preferences.managingCompanyName` resolve from these two settings
 
 ### In Reports
@@ -169,25 +174,25 @@ When you send a report or schedule a meeting, Project Notes uses your preference
 When generating reports (such as meeting minutes or tracker item reports), Project Notes:
 
 - **Filters recipients** — Excludes the project manager from the "Send to" list by default
-- **Marks internal items** — Uses the managing company setting to identify which notes and items are internal vs. client-facing
+- **Marks internal items** — Uses the managing company setting to identify which notes and items are internal vs. company-facing
 
 ### In Filtering
 
 When you use the [Filter Tool](FilterTool.md) or the **Show Internal / Budget Items** toggle:
 
-- **Client filtering** — You can filter data by the managing company to see only your organization's data
-- **Internal item visibility** — The "Show Internal / Budget Items" option works in conjunction with your project manager setting to determine what should be hidden when presenting to clients
+- **Company filtering** — You can filter data by the managing company to see only your organization's data
+- **Internal item visibility** — The "Show Internal / Budget Items" option works in conjunction with your project manager setting to determine what should be hidden when presenting to companies
 
 ## Where Preferences Are Saved
 
 The **Project Manager** and **Managing Company** settings are saved in the `application_settings` table inside the Project Notes database (`ProjectNotes.db`). This means they travel with the database — if you share a database or copy it to another machine, your preferences move with it. They are also included in cloud sync when synchronization is enabled.
 
-The **Email, Contact and Calendar Integration** choice and the Thunderbird path are stored in your local OS profile instead, so each machine can use a different mail application. See [Plugin Settings — Where Settings Are Stored](<../StandardPlugins/PluginSettings.md>) for the full breakdown.
+The **Email, Contacts, and Calendar** choice and the Thunderbird path are stored in your local OS profile instead, so each machine can use a different mail application. See [Plugin Settings — Where Settings Are Stored](<../StandardPlugins/PluginSettings.md>) for the full breakdown.
 
 ## Related Documentation
 
-- [People List Page](PeopleListPage.md) — Manage people in your database
-- [Client List Page](ClientListPage.md) — Manage clients/companies in your database
-- [Presenting to Clients](PresentingToClients.md) — How to use preferences when presenting to clients
+- [Contacts List Page](ContactsListPage.md) — Manage contacts in your database
+- [Companies List Page](CompaniesListPage.md) — Manage companies in your database
+- [Presenting to Companies](PresentingToCompanies.md) — How to use preferences when presenting to companies
 - [Email and Meeting Setup](<EmailAndMeetingSetup.md>) — Setting up mail and calendar handoff
 - [Reports and Email](<ReportsAndEmail.md>) — Generating and sending project reports

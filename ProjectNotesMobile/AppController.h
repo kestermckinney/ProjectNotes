@@ -38,8 +38,8 @@ class AppController : public QObject
     // ── Model properties ────────────────────────────────────────────────────
     Q_PROPERTY(QAbstractItemModel* projectsListModel     READ projectsListModel     NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* projectsModel         READ projectsModel         NOTIFY databaseReady)
-    Q_PROPERTY(QAbstractItemModel* clientsModel          READ clientsModel          NOTIFY databaseReady)
-    Q_PROPERTY(QAbstractItemModel* peopleModel           READ peopleModel           NOTIFY databaseReady)
+    Q_PROPERTY(QAbstractItemModel* companiesModel        READ companiesModel        NOTIFY databaseReady)
+    Q_PROPERTY(QAbstractItemModel* contactsModel         READ contactsModel         NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* trackerItemsModel       READ trackerItemsModel       NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* allItemsModel           READ allItemsModel           NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* projectNotesModel       READ projectNotesModel       NOTIFY databaseReady)
@@ -103,36 +103,36 @@ public:
     Q_INVOKABLE void setProjectFilter(const QString& projectId);
 
     // ── Preferences helpers — id-based, NOT row-based ────────────────────────
-    // Row-based equivalents used to live here (index into clientsModel/
-    // peopleModel directly) — replaced because those models are now
+    // Row-based equivalents used to live here (index into companiesModel/
+    // contactsModel directly) — replaced because those models are now
     // Sort-able, and PreferencesPage.qml's combos stay alive on the shared
     // StackView same as every other page (see teamMemberList() doc comment).
-    // The combos now bind to clientList()/peopleList() snapshots and save by id.
+    // The combos now bind to companyList()/contactList() snapshots and save by id.
     Q_INVOKABLE QString managingCompanyId() const { return global_DBObjects.getManagingCompany(); }
     Q_INVOKABLE void    setManagingCompanyId(const QString& id) { global_DBObjects.setManagingCompany(id); }
     Q_INVOKABLE QString projectManagerId() const { return global_DBObjects.getProjectManager(); }
     Q_INVOKABLE void    setProjectManagerId(const QString& id) { global_DBObjects.setProjectManager(id); }
 
     // ── Record editing helpers ───────────────────────────────────────────────
-    Q_INVOKABLE bool    savePerson(int row, const QString& name, const QString& email,
+    Q_INVOKABLE bool    saveContact(int row, const QString& name, const QString& email,
                                    const QString& officePhone, const QString& cellPhone,
-                                   const QString& clientId, const QString& role);
-    Q_INVOKABLE bool    saveClient(int row, const QString& clientName);
+                                   const QString& companyId, const QString& role);
+    Q_INVOKABLE bool    saveCompany(int row, const QString& companyName);
     Q_INVOKABLE bool    saveProject(int row, const QString& projectNumber,
                                     const QString& projectName, const QString& projectStatus,
-                                    const QString& primaryContactId, const QString& clientId,
+                                    const QString& primaryContactId, const QString& companyId,
                                     const QString& lastStatusDate, const QString& lastInvoiceDate,
                                     const QString& invoicingPeriod,
                                     const QString& statusReportPeriod);
     Q_INVOKABLE bool    saveStatusItem(int row, const QString& category, const QString& description);
-    Q_INVOKABLE bool    saveTeamMember(int row, const QString& peopleId, const QString& role, bool receiveStatusReport);
+    Q_INVOKABLE bool    saveTeamMember(int row, const QString& contactId, const QString& role, bool receiveStatusReport);
     Q_INVOKABLE bool    saveProjectLocation(int row, const QString& locationType,
                                             const QString& description, const QString& path);
     Q_INVOKABLE bool    saveProjectNote(int row, const QString& title, const QString& date,
                                         const QString& note, bool internalItem);
-    Q_INVOKABLE QString clientNameForId(const QString& clientId) const;
-    Q_INVOKABLE QString peopleNameForId(const QString& personId) const;
-    Q_INVOKABLE QString peopleEmailForId(const QString& personId) const;
+    Q_INVOKABLE QString companyNameForId(const QString& companyId) const;
+    Q_INVOKABLE QString contactNameForId(const QString& contactId) const;
+    Q_INVOKABLE QString contactEmailForId(const QString& contactId) const;
     Q_INVOKABLE QString teamMemberEmailList() const;
     Q_INVOKABLE QString attendeeEmailList() const;
     Q_INVOKABLE QString attendeeNameList() const;
@@ -151,11 +151,11 @@ public:
     // the team, so an existing assignment still displays (matches desktop).
     Q_INVOKABLE QVariantList teamMemberList(const QString& projectId, const QStringList& includeIds) const;
     // Same rationale as teamMemberList() above, for combos that pick a client
-    // or a person (clientsModel/peopleModel are both Sort-able) — a one-time
+    // or a person (companiesModel/contactsModel are both Sort-able) — a one-time
     // {id,name} read of the live proxy into a plain array the ComboBox binds
     // to instead, so a later sort() elsewhere can't invalidate it.
-    Q_INVOKABLE QVariantList clientList() const;
-    Q_INVOKABLE QVariantList peopleList() const;
+    Q_INVOKABLE QVariantList companyList() const;
+    Q_INVOKABLE QVariantList contactList() const;
     Q_INVOKABLE QString htmlToPlainText(const QString& html) const;
     Q_INVOKABLE QString lastSaveError() const;
 
@@ -175,15 +175,15 @@ public:
     Q_INVOKABLE int          copyProject(int row);
     Q_INVOKABLE QVariantMap  getProjectData(int row) const;
 
-    Q_INVOKABLE int          addPerson();
-    Q_INVOKABLE bool         deletePerson(int row);
-    Q_INVOKABLE int          copyPerson(int row);
-    Q_INVOKABLE QVariantMap  getPersonData(int row) const;
+    Q_INVOKABLE int          addContact();
+    Q_INVOKABLE bool         deleteContact(int row);
+    Q_INVOKABLE int          copyContact(int row);
+    Q_INVOKABLE QVariantMap  getContactData(int row) const;
 
-    Q_INVOKABLE int          addClient();
-    Q_INVOKABLE bool         deleteClient(int row);
-    Q_INVOKABLE int          copyClient(int row);
-    Q_INVOKABLE QVariantMap  getClientData(int row) const;
+    Q_INVOKABLE int          addCompany();
+    Q_INVOKABLE bool         deleteCompany(int row);
+    Q_INVOKABLE int          copyCompany(int row);
+    Q_INVOKABLE QVariantMap  getCompanyData(int row) const;
 
     Q_INVOKABLE int          addStatusItem(const QString& projectId);
     Q_INVOKABLE bool         deleteStatusItem(int row);
@@ -240,7 +240,7 @@ public:
     Q_INVOKABLE int         meetingRowForNoteId(const QString& noteId) const;
     Q_INVOKABLE QString     meetingNoteIdAtRow(int row) const;
     // Stable {id,name} snapshot backing the tracker item's Meeting combo —
-    // same rationale as teamMemberList()/clientList()/peopleList() above: the
+    // same rationale as teamMemberList()/companyList()/contactList() above: the
     // meetings proxy is live/sortable, and QQuickComboBox isn't safe to keep
     // bound to a model across its sort(). id = note id, name = meeting label.
     Q_INVOKABLE QVariantList meetingList() const;
@@ -260,7 +260,7 @@ public:
     Q_INVOKABLE int         addAttendee(const QString& noteId);
     Q_INVOKABLE bool        deleteAttendee(int row);
     Q_INVOKABLE QVariantMap getAttendeeData(int row) const;
-    Q_INVOKABLE bool        saveAttendee(int row, const QString& personId);
+    Q_INVOKABLE bool        saveAttendee(int row, const QString& contactId);
 
     // ── Note action items CRUD ────────────────────────────────────────────────
     Q_INVOKABLE int         addNoteActionItem(const QString& noteId, const QString& projectId);
@@ -276,8 +276,8 @@ public:
     Q_INVOKABLE void        refreshProjectNotes();
     Q_INVOKABLE void        refreshNoteActionItems();
     Q_INVOKABLE void        refreshProjectsList();
-    Q_INVOKABLE void        refreshPeople();
-    Q_INVOKABLE void        refreshClients();
+    Q_INVOKABLE void        refreshContacts();
+    Q_INVOKABLE void        refreshCompanies();
 
     // ── Quick search ─────────────────────────────────────────────────────────
     // Sets a client-side text filter on any proxy model.  Any row where at
@@ -331,7 +331,7 @@ public:
     int filterRev() const { return m_filterRev; }
     // The Q_PROPERTY model behind a section key — the one canonical mapping
     // FilterSheet/SortSheet/Quick Filter all share. Covers all 9 filterable
-    // sections: projects/items/people/clients plus the 5 project sub-tab
+    // sections: projects/items/contacts/companies plus the 5 project sub-tab
     // sections (statusreport/trackeritems/team/locations/notes). Returns
     // nullptr for an unrecognized section.
     Q_INVOKABLE QAbstractItemModel* modelForSection(const QString& section) const;
@@ -360,7 +360,7 @@ public:
     int sortRev() const { return m_sortRev; }
     // Re-resolve a stable record id back to its current row in |model|'s
     // proxy. Mirrors DesktopAppController::projectRowForId()/
-    // clientRowForId(). Detail pages call this immediately before every
+    // companyRowForId(). Detail pages call this immediately before every
     // save/delete/copy so a row captured at list-tap time that went stale
     // (a sort()/refresh() while the page was open) can't silently write to
     // the wrong record. Returns -1 if the id no longer exists.
@@ -369,8 +369,8 @@ public:
     // ── Model accessors ──────────────────────────────────────────────────────
     QAbstractItemModel* projectsListModel()       const;
     QAbstractItemModel* projectsModel()           const;
-    QAbstractItemModel* clientsModel()            const;
-    QAbstractItemModel* peopleModel()             const;
+    QAbstractItemModel* companiesModel()          const;
+    QAbstractItemModel* contactsModel()           const;
     QAbstractItemModel* trackerItemsModel()       const;
     QAbstractItemModel* allItemsModel()           const;
     QAbstractItemModel* projectNotesModel()       const;

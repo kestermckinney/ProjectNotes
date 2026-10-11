@@ -25,7 +25,7 @@ struct MeetingTemplate {
 };
 
 // Fields a meeting subject or agenda may insert.  A meeting is scheduled from
-// a project, not from a single note or report, so only the project, client,
+// a project, not from a single note or report, so only the project, company,
 // preference and current-date fields apply.
 QStringList meetingTemplateFieldPaths();
 

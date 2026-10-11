@@ -55,7 +55,7 @@ ColumnLayout {
     }
 
     Label {
-        text: qsTr("Meeting templates")
+        text: qsTr("Meeting Templates")
         color: Theme.text
         font.pixelSize: Theme.fontXl
         font.weight: Font.DemiBold

@@ -6,55 +6,55 @@ import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import ProjectNotesDesktop
 
-// People master list (cards). Click a row to open PersonDetailPage.
+// Contacts master list (cards). Click a row to open ContactDetailPage.
 Item {
     id: page
-    signal personActivated(int row, string personId)
+    signal contactActivated(int row, string contactId)
     signal exportRequested(string table, string id)
     signal filterRequested()
     signal sortRequested(real sx, real sy)
-    signal goToClientRequested(string clientId)
+    signal goToCompanyRequested(string companyId)
 
     property int    _ctxRow: -1
     property string _ctxId: ""
 
-    // Quick Filter entry for a right-clicked person row: pre-filled from that
-    // row's own client — client_id is a genuine direct column on the people
-    // table (peoplemodel.cpp), not derived, so no lookup fix was needed here.
+    // Quick Filter entry for a right-clicked contact row: pre-filled from that
+    // row's own company — client_id is a genuine direct column on the people
+    // table (contactsmodel.cpp), not derived, so no lookup fix was needed here.
     function _quickFiltersForRow(m) {
         var qf = []
-        var clientId = (m.client_id || "").toString()
-        if (clientId !== "")
-            qf.push({ icon: "apartment", label: qsTr("This Client"), field: "client_id", values: [clientId] })
+        var companyId = (m.client_id || "").toString()
+        if (companyId !== "")
+            qf.push({ icon: "apartment", label: qsTr("This Company"), field: "client_id", values: [companyId] })
         return qf
     }
 
     RecordContextMenu {
         id: ctxMenu
-        recordType: qsTr("Person")
-        model: DesktopAppController.peopleModel
+        recordType: qsTr("Contact")
+        model: DesktopAppController.contactsModel
         recordId: page._ctxId
-        onOpenRequested:   page.personActivated(page._ctxRow, page._ctxId)
+        onOpenRequested:   page.contactActivated(page._ctxRow, page._ctxId)
         onNewRequested: {
-            var pr = DesktopAppController.addPerson()
-            if (pr >= 0) page.personActivated(pr, DesktopAppController.personIdAtRow(pr))
+            var pr = DesktopAppController.addContact()
+            if (pr >= 0) page.contactActivated(pr, DesktopAppController.contactIdAtRow(pr))
         }
-        onDeleteRequested: DesktopAppController.deletePerson(page._ctxRow)
+        onDeleteRequested: DesktopAppController.deleteContact(page._ctxRow)
         onDuplicateRequested: {
-            var newId = DesktopAppController.duplicateRecord(DesktopAppController.peopleModel, page._ctxId)
-            if (newId !== "") page.personActivated(DesktopAppController.peopleRowForId(newId), newId)
+            var newId = DesktopAppController.duplicateRecord(DesktopAppController.contactsModel, page._ctxId)
+            if (newId !== "") page.contactActivated(DesktopAppController.contactsRowForId(newId), newId)
         }
         onExportRequested: page.exportRequested("people", page._ctxId)
         onFilterRequested: page.filterRequested()
         onSortRequested: (sx, sy) => page.sortRequested(sx, sy)
-        onRefreshRequested: DesktopAppController.refreshModel(DesktopAppController.peopleModel)
-        onGoToClientRequested: page.goToClientRequested(clientId)
+        onRefreshRequested: DesktopAppController.refreshModel(DesktopAppController.contactsModel)
+        onGoToCompanyRequested: page.goToCompanyRequested(companyId)
     }
 
     // Drop a vCard (a .vcf file, or a contact dragged straight from Outlook /
     // Contacts) anywhere on the list to add it: the contact's company is
-    // associated with a matching client (or a new one is created), and the
-    // person is added. See DesktopAppController::addPeopleFromVCardDrop().
+    // associated with a matching company (or a new one is created), and the
+    // contact is added. See DesktopAppController::addContactsFromVCardDrop().
     DropArea {
         anchors.fill: parent
         onDropped: (drop) => {
@@ -72,7 +72,7 @@ Item {
             if (text === "" && drop.hasText && drop.text.indexOf("BEGIN:VCARD") !== -1)
                 text = drop.text
             if (urls.length === 0 && text === "") { drop.accepted = false; return }
-            DesktopAppController.addPeopleFromVCardDrop(urls, text)
+            DesktopAppController.addContactsFromVCardDrop(urls, text)
             drop.accept()
         }
     }
@@ -85,7 +85,7 @@ Item {
         anchors.margins: 12
         clip: true
         spacing: 7
-        model: DesktopAppController.peopleModel
+        model: DesktopAppController.contactsModel
         reuseItems: true
         cacheBuffer: 800
         boundsBehavior: Flickable.StopAtBounds
@@ -152,13 +152,13 @@ Item {
                         page._ctxRow = card.index
                         page._ctxId = card.pid
                         ctxMenu.recordLabel = (card.model.name || "").toString()
-                        ctxMenu.clientId = (card.model.client_id || "").toString()
+                        ctxMenu.companyId = (card.model.client_id || "").toString()
                         ctxMenu.quickFilters = page._quickFiltersForRow(card.model)
                         ctxMenu.openAt(sx, sy)
                     }
 
                     HoverHandler { id: hover }
-                    function openRecord() { page.personActivated(card.index, card.pid) }
+                    function openRecord() { page.contactActivated(card.index, card.pid) }
                     TapHandler { onTapped: card.openRecord() }
                     TapHandler {
                         acceptedButtons: Qt.RightButton

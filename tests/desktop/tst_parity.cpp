@@ -61,7 +61,7 @@ int rowForId(QAbstractItemModel* model, const QString& id)
 }
 
 // Id (column 0) of the first row whose column `col` equals `value`.
-// addClient()/addPerson() only assign the record id when it is first *saved*, so
+// addCompany()/addContact() only assign the record id when it is first *saved*, so
 // the id is looked up by a unique field after the save (the QML app resolves it
 // the same way once the row is committed).
 QString idForColumnValue(QAbstractItemModel* model, int col, const QString& value)
@@ -247,36 +247,36 @@ private slots:
 
     void test_01_clientCrud()
     {
-        const int before = c->clientsModel()->rowCount();
-        const int row = c->addClient();
+        const int before = c->companiesModel()->rowCount();
+        const int row = c->addCompany();
         QVERIFY(row >= 0);
 
         const QString name = uniq("Client_");
-        QVERIFY2(c->saveClient(row, name), qPrintable(c->lastSaveError()));
-        QCOMPARE(c->clientsModel()->rowCount(), before + 1);
+        QVERIFY2(c->saveCompany(row, name), qPrintable(c->lastSaveError()));
+        QCOMPARE(c->companiesModel()->rowCount(), before + 1);
 
-        const QString id = idForColumnValue(c->clientsModel(), 1, name);  // col 1 = client_name
+        const QString id = idForColumnValue(c->companiesModel(), 1, name);  // col 1 = client_name
         QVERIFY(!id.isEmpty());
-        QCOMPARE(c->clientNameForId(id), name);
+        QCOMPARE(c->companyNameForId(id), name);
 
         m_clientId = id;
     }
 
     void test_02_personCrud()
     {
-        const int before = c->peopleModel()->rowCount();
-        const int row = c->addPerson();
+        const int before = c->contactsModel()->rowCount();
+        const int row = c->addContact();
         QVERIFY(row >= 0);
 
         const QString name = uniq("Person_");
-        QVERIFY2(c->savePerson(row, name, "p@example.com", "555-1000", "555-2000",
+        QVERIFY2(c->saveContact(row, name, "p@example.com", "555-1000", "555-2000",
                                m_clientId, "Engineer"),
                  qPrintable(c->lastSaveError()));
-        QCOMPARE(c->peopleModel()->rowCount(), before + 1);
+        QCOMPARE(c->contactsModel()->rowCount(), before + 1);
 
-        const QString id = idForColumnValue(c->peopleModel(), 1, name);  // col 1 = name
+        const QString id = idForColumnValue(c->contactsModel(), 1, name);  // col 1 = name
         QVERIFY(!id.isEmpty());
-        QCOMPARE(c->peopleNameForId(id), name);
+        QCOMPARE(c->contactNameForId(id), name);
 
         m_personId = id;
     }
@@ -288,7 +288,7 @@ private slots:
         QVERIFY(row >= 0);
         // addProject() only stages the row in the model cache; the record — and
         // with it the id — is written by the first save, once the NOT NULL
-        // number/name are filled in. Same contract as addClient()/addPerson().
+        // number/name are filled in. Same contract as addCompany()/addContact().
         QVERIFY2(c->projectIdAtRow(row).isEmpty(), "a staged project must not have an id yet");
 
         const QString num  = uniq("PN");
@@ -320,8 +320,8 @@ private slots:
     void test_04_pickerLists()
     {
         // Client / person pickers used by the project + person forms.
-        QVERIFY(c->clientList().size()  >= 1);
-        QVERIFY(c->peopleList().size()  >= 1);
+        QVERIFY(c->companyList().size()  >= 1);
+        QVERIFY(c->contactList().size()  >= 1);
         // Team-member picker must include an explicitly-included id even before
         // anyone is added to the team.
         const QVariantList tm = c->teamMemberList(m_projectId, { m_personId });
@@ -434,13 +434,13 @@ private slots:
     {
         // A fresh person, so the duplicate-team-member guard doesn't trip on the
         // project's default PM.
-        const int prow = c->addPerson();
+        const int prow = c->addContact();
         QVERIFY(prow >= 0);
         const QString memberName = uniq("Member_");
-        QVERIFY2(c->savePerson(prow, memberName, "m@example.com", "", "",
+        QVERIFY2(c->saveContact(prow, memberName, "m@example.com", "", "",
                                m_clientId, "Analyst"),
                  qPrintable(c->lastSaveError()));
-        const QString memberId = idForColumnValue(c->peopleModel(), 1, memberName);
+        const QString memberId = idForColumnValue(c->contactsModel(), 1, memberName);
         QVERIFY(!memberId.isEmpty());
 
         c->setProjectFilter(m_projectId);
@@ -489,8 +489,8 @@ private slots:
         auto *templates = qobject_cast<PN::Comm::TemplateEditorModel *>(c->templateEditorModel());
         QVERIFY(review); QVERIFY(recipients); QVERIFY(templates);
         templates->setWorkflow("project-email");
-        templates->setDraftSubject("Hello {{ person.name }} - {{ project.number }}");
-        templates->setDraftRichBody("<p>To {{ person.email }} about {{ project.name }}</p>");
+        templates->setDraftSubject("Hello {{ contact.name }} - {{ project.number }}");
+        templates->setDraftRichBody("<p>To {{ contact.email }} about {{ project.name }}</p>");
         QVERIFY(templates->save());
         QVERIFY(c->prepareProjectEmailReview(m_projectId, m_personId));
         QTRY_COMPARE_WITH_TIMEOUT(review->stageName(), "reviewing", 5000);
@@ -513,7 +513,7 @@ private slots:
         QCOMPARE(recipients->resolve().recipients.first().address, "p@example.com");
         // A same-workflow template edit must be used on the next person draft.
         templates->setDraftSubject("Follow up {{ project.number }}");
-        templates->setDraftRichBody("<p>Configured body for {{ person.email }}</p>");
+        templates->setDraftRichBody("<p>Configured body for {{ contact.email }}</p>");
         QVERIFY(templates->save());
         QVERIFY(c->prepareProjectEmailReview(m_projectId, m_personId));
         QTRY_COMPARE_WITH_TIMEOUT(review->stageName(), "reviewing", 5000);
@@ -566,16 +566,16 @@ private slots:
 
     void test_11c_standalonePersonEmailHasNoProjectTemplate()
     {
-        const int row = c->addPerson();
+        const int row = c->addContact();
         QVERIFY(row >= 0);
-        QVERIFY(c->savePerson(row, "Standalone email person", "standalone@example.test", "", "", m_clientId, ""));
-        const QString personId = idForColumnValue(c->peopleModel(), 1, "Standalone email person");
-        QVERIFY(!personId.isEmpty());
-        QVERIFY(c->preparePersonEmailReview(personId));
+        QVERIFY(c->saveContact(row, "Standalone email person", "standalone@example.test", "", "", m_clientId, ""));
+        const QString contactId = idForColumnValue(c->contactsModel(), 1, "Standalone email person");
+        QVERIFY(!contactId.isEmpty());
+        QVERIFY(c->prepareContactEmailReview(contactId));
         auto *review = qobject_cast<PN::Comm::CommunicationsController *>(c->communicationsController());
         auto *recipients = qobject_cast<PN::Comm::RecipientSelectionModel *>(c->recipientSelectionModel());
         QTRY_COMPARE_WITH_TIMEOUT(review->stageName(), "reviewing", 5000);
-        QCOMPARE(review->preparation().source.workflow, PN::Comm::Workflow::PersonEmail);
+        QCOMPARE(review->preparation().source.workflow, PN::Comm::Workflow::ContactEmail);
         QVERIFY(review->preparation().source.projectId.isEmpty());
         QVERIFY(review->subject().isEmpty());
         QVERIFY(review->htmlBody().isEmpty());
@@ -588,7 +588,7 @@ private slots:
         QVERIFY(PN::Comm::EmailContentBuilder::prepare(review->preparation()).request.has_value());
         QVERIFY(!c->saveReviewAudiencePreset("Not a project audience"));
         QVERIFY(!c->prepareProjectEmailReview({}));
-        QVERIFY(!c->preparePersonEmailReview({}));
+        QVERIFY(!c->prepareContactEmailReview({}));
     }
 
     void test_12_statusItems()
@@ -932,13 +932,13 @@ private slots:
 
         // A person who is not (yet) a member of destProjectId, to exercise the
         // auto-add path.
-        const int prow = c->addPerson();
+        const int prow = c->addContact();
         QVERIFY(prow >= 0);
         const QString moverName = uniq("Mover_");
-        QVERIFY2(c->savePerson(prow, moverName, "mv@example.com", "", "",
+        QVERIFY2(c->saveContact(prow, moverName, "mv@example.com", "", "",
                                m_clientId, "Analyst"),
                  qPrintable(c->lastSaveError()));
-        const QString moverId = idForColumnValue(c->peopleModel(), 1, moverName);
+        const QString moverId = idForColumnValue(c->contactsModel(), 1, moverName);
         QVERIFY(!moverId.isEmpty());
 
         // ── No-op: "moving" to the item's own project is not a valid move ──────

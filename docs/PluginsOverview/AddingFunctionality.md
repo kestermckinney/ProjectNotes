@@ -248,7 +248,7 @@ Inserts, updates, or deletes records in the database by processing XML. This is 
 ```python
 import projectnotes
 
-# Update or insert a person
+# Update or insert a contact
 contact_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <projectnotes>
 <table name="people">
@@ -284,7 +284,7 @@ Retrieves records from the database as XML. Used to fetch data for processing.
 ```python
 import projectnotes
 
-# Fetch all people whose names start with "A"
+# Fetch all contacts whose names start with "A"
 query_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <projectnotes>
 <table name="people" filter_field_1="name" filter_value_1="A%"/>
@@ -293,7 +293,7 @@ query_xml = """<?xml version="1.0" encoding="UTF-8"?>
 result_xml = projectnotes.get_data(query_xml)
 print(result_xml)
 
-# Fetch specific clients with pagination
+# Fetch specific companies with pagination
 query_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <projectnotes>
 <table name="clients" filter_field_1="name" filter_value_1="%" skip="5" top="10"/>
@@ -310,7 +310,7 @@ The `delete="true"` attribute in XML allows plugins to delete records from the d
 
 Every record in the database may have related records in other tables. For example:
 
-- **A Person** may have related records in `meeting_attendees` table (meetings they attended)
+- **A Contact** may have related records in `meeting_attendees` table (meetings they attended)
 - **A Project** may have related records in `project_notes`, `item_tracker`, `meeting_attendees`, `project_locations`, `project_people`, etc.
 - **A Meeting Note** may have related `item_tracker` (action items) and `meeting_attendees` records
 
@@ -332,7 +332,7 @@ When deleting a record, you must either:
 ```python
 import projectnotes
 
-# SAFE: Delete a person AND all their related meeting attendee records
+# SAFE: Delete a contact AND all their related meeting attendee records
 delete_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <projectnotes>
 <table name="meeting_attendees">
@@ -353,8 +353,8 @@ projectnotes.update_data(delete_xml)
 **Example of unsafe deletion:**
 
 ```python
-# UNSAFE: Deleting a person without deleting their meeting attendee records
-# This leaves orphaned records in meeting_attendees pointing to a non-existent person!
+# UNSAFE: Deleting a contact without deleting their meeting attendee records
+# This leaves orphaned records in meeting_attendees pointing to a non-existent contact!
 delete_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <projectnotes>
 <table name="people">
@@ -429,10 +429,10 @@ Each exported `<row>` contains the record's primary key as its first `<column>` 
 
 | **Data View** | **Description** |
 | :--- | :--- |
-| clients | The exported XML contains the client names and associated people. |
-| people | The exported XML contains the people and the associated clients. |
-| projects | The exported XML is all inclusive of all project elements including people, meetings notes, meeting action items, meeting attendees, tracker items, locations, notes, project team members, and project locations. |
-| project_people | The exported XML contains all the people associated with a project and their related companies. |
+| clients | The exported XML contains the company names and associated contacts. |
+| people | The exported XML contains the contacts and the associated companies. |
+| projects | The exported XML is all inclusive of all project elements including contacts, meetings notes, meeting action items, meeting attendees, tracker items, locations, notes, project team members, and project locations. |
+| project_people | The exported XML contains all the contacts associated with a project and their related companies. |
 | status_report_items | The exported XML contains the status report items associated with a project. |
 | project_locations | The exported XML contains the project locations associated with a project. |
 | project_notes | The exported XML contains the project notes associated with a project. |
@@ -444,7 +444,7 @@ Each exported `<row>` contains the record's primary key as its first `<column>` 
 
 ### Basic XML formats
 
-The example below show an XML export of a person. Notice child tables contain the **"*filter\_field"*** and **"*filter\_value"*** attributes to define the parent child relationship of the data. Many attributes such as file names and column numbers are provided to give the export further context, but are not used in the import. A more detailed description can be found in [Project Notes XML](ProjectNotesXML.md). 
+The example below show an XML export of a contact. Notice child tables contain the **"*filter\_field"*** and **"*filter\_value"*** attributes to define the parent child relationship of the data. Many attributes such as file names and column numbers are provided to give the export further context, but are not used in the import. A more detailed description can be found in [Project Notes XML](ProjectNotesXML.md). 
 
 ```xml
 <xml version="1.0" encoding="UTF-8">

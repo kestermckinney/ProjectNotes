@@ -47,11 +47,11 @@ QList<MeetingTemplate> standardTemplates()
         standardTemplate(
             QStringLiteral("standard-project-kickoff-internal"),
             QStringLiteral("Project Kickoff (Internal)"),
-            QStringLiteral("Align the internal team on stakeholders, business drivers, scope, risks, client context, "
+            QStringLiteral("Align the internal team on stakeholders, business drivers, scope, risks, company context, "
                            "and next steps before engaging the customer."),
             QStringLiteral(R"(<ul>
 <li>Review Team Roles &amp; Introductions</li>
-<li>Sales Overview of Client &amp; Estimate<ul>
+<li>Sales Overview of Company &amp; Estimate<ul>
 <li>Project business purpose</li>
 <li>Key business drivers</li>
 <li>Stakeholders (people, partners, vendors)</li>
@@ -65,7 +65,7 @@ QList<MeetingTemplate> standardTemplates()
 </ul></li>
 <li>Review Lessons Learned from Prior Similar Projects</li>
 <li>Identify Risks</li>
-<li>Review Client Standards<ul>
+<li>Review Company Standards<ul>
 <li>Drafting</li>
 <li>Programming</li>
 <li>Testing</li>
@@ -98,7 +98,7 @@ QList<MeetingTemplate> standardTemplates()
 <li>DeltaV waterfall approach</li>
 <li>Syncade workshops &amp; workstreams</li>
 </ul></li>
-<li>Review Company / Client Standards<ul>
+<li>Review Company Standards<ul>
 <li>Drafting</li>
 <li>Programming</li>
 <li>Testing</li>
@@ -259,7 +259,7 @@ QList<MeetingTemplate> standardTemplates()
 
 QStringList meetingTemplateFieldPaths()
 {
-    return {QStringLiteral("project.number"), QStringLiteral("project.name"), QStringLiteral("client.name"),
+    return {QStringLiteral("project.number"), QStringLiteral("project.name"), QStringLiteral("company.name"),
             QStringLiteral("preferences.managerName"), QStringLiteral("preferences.managingCompanyName"),
             QStringLiteral("current.date")};
 }

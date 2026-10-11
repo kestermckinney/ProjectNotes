@@ -76,7 +76,7 @@ TrackerItemsModel::TrackerItemsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
     addColumn("internal_item", tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn("comments", tr("Comments"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("project_status", tr("Project Status"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
-    addColumn("client_id", tr("Client"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique,
+    addColumn("client_id", tr("Company"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique,
               "clients", "id", "client_name");
     addColumn("project_name", tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("project_number", tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);

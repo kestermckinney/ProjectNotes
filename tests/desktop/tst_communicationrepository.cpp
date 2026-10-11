@@ -77,12 +77,12 @@ void CommunicationRepositoryTest::loadsTypedSnapshotWithoutUiFilters()
     request.managingCompanyId = QStringLiteral("ours");
     request.projectManagerId = QStringLiteral("a");
     const auto result=loader.load(request);
-    QVERIFY(result.error.code.isEmpty()); QCOMPARE(result.previewRevision,quint64(3)); QCOMPARE(result.snapshot.people.size(),2);
-    QCOMPARE(result.snapshot.people.at(1).companyName,QString()); QVERIFY(!result.snapshot.fingerprint.isEmpty());
+    QVERIFY(result.error.code.isEmpty()); QCOMPARE(result.previewRevision,quint64(3)); QCOMPARE(result.snapshot.contacts.size(),2);
+    QCOMPARE(result.snapshot.contacts.at(1).companyName,QString()); QVERIFY(!result.snapshot.fingerprint.isEmpty());
     QCOMPARE(result.snapshot.managingCompanyId, QStringLiteral("ours"));
     QCOMPARE(result.snapshot.projectManagerId, QStringLiteral("a"));
     // Template fields need names, resolved once at snapshot time.
-    QCOMPARE(result.snapshot.clientName, QStringLiteral("Client"));
+    QCOMPARE(result.snapshot.companyName, QStringLiteral("Client"));
     QCOMPARE(result.snapshot.managingCompanyName, QStringLiteral("Our Company"));
     QCOMPARE(result.snapshot.projectManagerName, QStringLiteral("Alice"));
     // An unknown ID leaves the name empty instead of failing the snapshot.
@@ -104,7 +104,7 @@ void CommunicationRepositoryTest::loadsTypedSnapshotWithoutUiFilters()
     request.source.workflow = Workflow::StatusReport;
     const auto statusResult = loader.load(request);
     QVERIFY(statusResult.error.code.isEmpty());
-    QCOMPARE(statusResult.snapshot.currentSelectionPersonIds, QStringList({QStringLiteral("a")}));
+    QCOMPARE(statusResult.snapshot.currentSelectionContactIds, QStringList({QStringLiteral("a")}));
 }
 
 void CommunicationRepositoryTest::preservesInvalidNoteDateAsInvalid()
@@ -139,12 +139,12 @@ void CommunicationRepositoryTest::loadsStandalonePersonAndTracksChanges()
     createDatabase();
     SqliteSnapshotLoader loader(databasePath(), &m_lock);
     SnapshotRequest request; request.operationId = QUuid::createUuid();
-    request.source = {databasePath(), 7, {}, {}, Workflow::PersonEmail, "a"};
+    request.source = {databasePath(), 7, {}, {}, Workflow::ContactEmail, "a"};
     const auto first = loader.load(request);
     QVERIFY(first.error.code.isEmpty());
     QVERIFY(first.snapshot.projectId.isEmpty());
-    QCOMPARE(first.snapshot.people.size(), 1);
-    QCOMPARE(first.snapshot.people.first().email, "a@example.test");
+    QCOMPARE(first.snapshot.contacts.size(), 1);
+    QCOMPARE(first.snapshot.contacts.first().email, "a@example.test");
     QCOMPARE(first.snapshot.databaseGeneration, quint64(7));
     {
         auto db = QSqlDatabase::addDatabase("QSQLITE", "plain-person-fixture");
@@ -157,8 +157,8 @@ void CommunicationRepositoryTest::loadsStandalonePersonAndTracksChanges()
     const auto changed = loader.load(request);
     QVERIFY(changed.error.code.isEmpty());
     QVERIFY(changed.snapshot.fingerprint != first.snapshot.fingerprint);
-    request.source.personId = "missing";
-    QCOMPARE(loader.load(request).error.code, "person-not-found");
+    request.source.contactId = "missing";
+    QCOMPARE(loader.load(request).error.code, "contact-not-found");
 }
 
 void CommunicationRepositoryTest::validatesLocationAndPersonContextAndFingerprintsChanges()
@@ -187,10 +187,10 @@ void CommunicationRepositoryTest::validatesLocationAndPersonContextAndFingerprin
     request.source = {databasePath(), 1, "p", {}, Workflow::ProjectEmail, "guest"};
     const auto guest = loader.load(request);
     QVERIFY(guest.error.code.isEmpty());
-    QVERIFY(std::any_of(guest.snapshot.people.cbegin(), guest.snapshot.people.cend(),
-                       [](const SnapshotPerson &person) { return person.id == "guest"; }));
-    request.source.personId = "missing";
-    QCOMPARE(loader.load(request).error.code, "person-not-in-project");
+    QVERIFY(std::any_of(guest.snapshot.contacts.cbegin(), guest.snapshot.contacts.cend(),
+                       [](const SnapshotContact &person) { return person.id == "guest"; }));
+    request.source.contactId = "missing";
+    QCOMPARE(loader.load(request).error.code, "contact-not-in-project");
 }
 
 void CommunicationRepositoryTest::validatesSelectedNotesAndAttendeeProvenance()
@@ -201,8 +201,8 @@ void CommunicationRepositoryTest::validatesSelectedNotesAndAttendeeProvenance()
     const auto selected = loader.load(request);
     QVERIFY(selected.error.code.isEmpty());
     QCOMPARE(selected.snapshot.currentSelectionIds, QStringList({"n"}));
-    QCOMPARE(selected.snapshot.currentSelectionPersonIds, QStringList({"a", "b"}));
-    QVERIFY(selected.snapshot.people.at(0).meetingAttendee);
+    QCOMPARE(selected.snapshot.currentSelectionContactIds, QStringList({"a", "b"}));
+    QVERIFY(selected.snapshot.contacts.at(0).meetingAttendee);
     QCOMPARE(selected.snapshot.notes.constFirst().attendeeIds, QStringList({"a"}));
     QCOMPARE(selected.snapshot.actionItems.constFirst().name, QStringLiteral("Follow up"));
     request.source.noteIds={"not-p"};
@@ -233,14 +233,14 @@ void CommunicationRepositoryTest::scopesMeetingAttendeesToRequestedNotesAndExclu
 
     QVERIFY(result.error.code.isEmpty());
     QCOMPARE(result.snapshot.currentSelectionIds, QStringList({QStringLiteral("n")}));
-    QCOMPARE(result.snapshot.currentSelectionPersonIds, QStringList({QStringLiteral("a"), QStringLiteral("b")}));
+    QCOMPARE(result.snapshot.currentSelectionContactIds, QStringList({QStringLiteral("a"), QStringLiteral("b")}));
     const auto selectedNote = std::find_if(result.snapshot.notes.cbegin(), result.snapshot.notes.cend(),
                                            [](const SnapshotNote &note) { return note.id == QStringLiteral("n"); });
     QVERIFY(selectedNote != result.snapshot.notes.cend());
     QCOMPARE(selectedNote->attendeeIds, QStringList({QStringLiteral("a")}));
-    QCOMPARE(result.snapshot.people.size(), 2);
-    QVERIFY(std::none_of(result.snapshot.people.cbegin(), result.snapshot.people.cend(),
-                         [](const SnapshotPerson &person) { return person.id == QStringLiteral("c") || person.id == QStringLiteral("d"); }));
+    QCOMPARE(result.snapshot.contacts.size(), 2);
+    QVERIFY(std::none_of(result.snapshot.contacts.cbegin(), result.snapshot.contacts.cend(),
+                         [](const SnapshotContact &person) { return person.id == QStringLiteral("c") || person.id == QStringLiteral("d"); }));
 }
 
 void CommunicationRepositoryTest::loadsProjectWideMeetingAttendeesAndActions()
@@ -276,14 +276,14 @@ void CommunicationRepositoryTest::loadsProjectWideMeetingAttendeesAndActions()
     QVERIFY(secondNote != result.snapshot.notes.cend());
     QCOMPARE(firstNote->attendeeIds, QStringList({QStringLiteral("a")}));
     QCOMPARE(secondNote->attendeeIds, QStringList({QStringLiteral("b"), QStringLiteral("c")}));
-    QCOMPARE(result.snapshot.people.size(), 3);
-    QVERIFY(result.snapshot.people.at(0).meetingAttendee);
-    QVERIFY(result.snapshot.people.at(1).meetingAttendee);
-    QCOMPARE(result.snapshot.people.at(2).name, QStringLiteral("Casey"));
-    QVERIFY(result.snapshot.people.at(2).meetingAttendee);
-    QVERIFY(!result.snapshot.people.at(2).receivesStatus);
-    QVERIFY(!result.snapshot.people.at(2).projectTeamMember);
-    QCOMPARE(result.snapshot.currentSelectionPersonIds, QStringList({QStringLiteral("a"), QStringLiteral("b")}));
+    QCOMPARE(result.snapshot.contacts.size(), 3);
+    QVERIFY(result.snapshot.contacts.at(0).meetingAttendee);
+    QVERIFY(result.snapshot.contacts.at(1).meetingAttendee);
+    QCOMPARE(result.snapshot.contacts.at(2).name, QStringLiteral("Casey"));
+    QVERIFY(result.snapshot.contacts.at(2).meetingAttendee);
+    QVERIFY(!result.snapshot.contacts.at(2).receivesStatus);
+    QVERIFY(!result.snapshot.contacts.at(2).projectTeamMember);
+    QCOMPARE(result.snapshot.currentSelectionContactIds, QStringList({QStringLiteral("a"), QStringLiteral("b")}));
 }
 
 void CommunicationRepositoryTest::fingerprintTracksContentAndGeneration()

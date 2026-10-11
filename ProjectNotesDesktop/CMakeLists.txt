@@ -115,7 +115,7 @@ set(DESKTOP_QML_FILES
     qml/FormField.qml
     qml/ComboField.qml
     qml/DateField.qml
-    qml/PeoplePickerDialog.qml
+    qml/ContactPickerDialog.qml
     qml/NoteFormatToolbar.qml
     qml/RichTextEditor.qml
     qml/SpellCheckField.qml
@@ -136,10 +136,10 @@ set(DESKTOP_QML_FILES
     qml/pages/ProjectsListPage.qml
     qml/pages/ProjectDetailPage.qml
     qml/pages/ProjectNoteDetailPage.qml
-    qml/pages/PeoplePage.qml
-    qml/pages/PersonDetailPage.qml
-    qml/pages/ClientsPage.qml
-    qml/pages/ClientDetailPage.qml
+    qml/pages/ContactsPage.qml
+    qml/pages/ContactDetailPage.qml
+    qml/pages/CompaniesPage.qml
+    qml/pages/CompanyDetailPage.qml
     qml/pages/ItemsPage.qml
     qml/pages/ItemDetailPage.qml
     qml/pages/SearchPage.qml

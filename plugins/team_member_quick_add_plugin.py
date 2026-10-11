@@ -16,7 +16,7 @@ from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QWidget, QCo
 
 # Project Notes Plugin Parameters
 pluginname = "Team Member Quick Add" # name used in the menu
-plugindescription = "This plugin allows you to quickly add a new team member that isn't already in the list of people. Supported platforms: Windows, Linux, MacOS"
+plugindescription = "This plugin allows you to quickly add a new team member that isn't already in the list of contacts. Supported platforms: Windows, Linux, MacOS"
 
 # define menus to be added to ProjectNotes Plugins menu and data export/import right click.
 # the menutitle is the menu name
@@ -83,8 +83,8 @@ class TeamMemberQuickAdd(PluginSettingsDialog):
         xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table name="clients" />\n</projectnotes>\n'
         xmlresult = projectnotes.get_data(xmldoc)
 
-        self.ui.comboBoxClientName.clear()
-        self.ui.comboBoxClientName.addItem("")
+        self.ui.comboBoxCompanyName.clear()
+        self.ui.comboBoxCompanyName.addItem("")
 
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlresult) == False):
@@ -101,9 +101,9 @@ class TeamMemberQuickAdd(PluginSettingsDialog):
 
                 while not rownode.isNull():
 
-                    client_name = self.pnc.get_column_value(rownode, "client_name")
+                    company_name = self.pnc.get_column_value(rownode, "client_name")
 
-                    self.ui.comboBoxClientName.addItem(client_name)
+                    self.ui.comboBoxCompanyName.addItem(company_name)
 
                     rownode = rownode.nextSibling()
 
@@ -114,24 +114,24 @@ class TeamMemberQuickAdd(PluginSettingsDialog):
         self.ui.lineEditOfficePhone.setText("")
         self.ui.lineEditMobilePhone.setText("")
         self.ui.lineEditRole.setText("")
-        self.ui.comboBoxClientName.setCurrentText("")
+        self.ui.comboBoxCompanyName.setCurrentText("")
 
         return True
 
     def add_contact(self):
 
-        cn = self.ui.comboBoxClientName.currentText()
+        company_name = self.ui.comboBoxCompanyName.currentText()
 
         cxml = ''
 
-        if cn is not None and cn != '':
+        if company_name is not None and company_name != '':
             cxml = f"""
             <table name="clients">
                     <row>
-                        <column name="client_name">{cn}</column>
+                        <column name="client_name">{company_name}</column>
                     </row>
             </table>
-            """            
+            """
 
         xmlstr = f"""<?xml version="1.0" encoding="UTF-8"?>
         <projectnotes>
@@ -142,7 +142,7 @@ class TeamMemberQuickAdd(PluginSettingsDialog):
                     <column name="email">{self.ui.lineEditEmail.text()}</column>
                     <column name="office_phone">{self.ui.lineEditOfficePhone.text()}</column>
                     <column name="cell_phone">{self.ui.lineEditMobilePhone.text()}</column>
-                    <column name="client_id" lookupvalue="{self.ui.comboBoxClientName.currentText()}"></column>
+                    <column name="client_id" lookupvalue="{self.ui.comboBoxCompanyName.currentText()}"></column>
                     <column name="role">{self.ui.lineEditRole.text()}</column>
                 </row>
         </table>

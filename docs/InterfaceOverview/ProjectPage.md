@@ -24,8 +24,8 @@ All of the fields below sit above the tabs and are editable inline — changes s
 | :--- | :--- |
 | Number | The project number is often a unique identifier used across multiple systems. In many cases Python scripts will use this number to find and relate project information. |
 | Project Name | The project name should remain consistent across multiple systems. It should be a concise description of the project. |
-| Client | The client the project work applies. |
-| Primary Contact | The primary contact at the client. |
+| Company | The company the project work applies. |
+| Primary Contact | The primary contact at the company. |
 | Last Status | The last time the status report was ran. |
 | Last Invoice | The last date an invoice was sent. |
 | Budget | The overall budgeted cost of the project. |
@@ -74,15 +74,15 @@ Team members are set up under the **Team** tab of the Project Page. Team members
 
 | **Column** | **Description** |
 | :--- | :--- |
-| Team Member | The person selected from values found in the [People List Page](<PeopleListPage.md>). |
-| Role | The role is an open text field. If a Role has been specified in the [People List Page](<PeopleListPage.md>), it will auto populate with a value you can change. |
+| Team Member | The contact selected from values found in the [Contacts List Page](<ContactsListPage.md>). |
+| Role | The role is an open text field. If a Role has been specified in the [Contacts List Page](<ContactsListPage.md>), it will auto populate with a value you can change. |
 | Receive Status | When checked, the [Status Report](<ReportsAndEmail.md>) includes this team member as a stakeholder, and they are selected by default when the report is emailed. |
 
 
 **To add a team member:**
 
 1. From the **Team** tab, click **+ Add Member**.
-2. Search for and click the person you want to add — they only need to already exist in the [People List Page](<PeopleListPage.md>).
+2. Search for and click the contact you want to add — they only need to already exist in the [Contacts List Page](<ContactsListPage.md>).
 3. Type a **Role**, if the auto-filled value isn't the one you want.
 4. Check **Receive Status** if the team member will receive a status report.
 
@@ -100,11 +100,11 @@ Team members are set up under the **Team** tab of the Project Page. Team members
 2. Type in or select the new value.
 3. Click out of the field — the change saves automatically.
 
-**To navigate to a team member's person record:**
+**To navigate to a team member's contact record:**
 
 1. Right-click on a team member's row (or click its **⋮** button) to open its menu.
-2. Choose **Go To Person** from the menu.
-3. The application will automatically switch to the People page and open that person's full record.
+2. Choose **Go To Contact** from the menu.
+3. The application will automatically switch to the Contacts page and open that contact's full record.
 
 
 

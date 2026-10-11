@@ -22,7 +22,7 @@ Priority: subsequent user decisions > product requirements > this architecture >
 
 ### Desktop project email and location sharing (2026-10-06)
 
-`Workflow::ProjectEmail`, `Workflow::ShareLocation`, and the untemplated `Workflow::PersonEmail` reuse the repository, communication controller, email backends, and operation-owned artifact cache. `SourceContext::personId` preselects a project team member or meeting attendee for project email, or fixes a standalone people email to that person; `SourceContext::locationId` selects a persisted location. The repository validates project membership for project actions and includes the selected location in its fingerprint so a changed path or description blocks handoff. Standalone person snapshots need no project and fingerprint the person's persisted details for revalidation.
+`Workflow::ProjectEmail`, `Workflow::ShareLocation`, and the untemplated `Workflow::ContactEmail` reuse the repository, communication controller, email backends, and operation-owned artifact cache. `SourceContext::contactId` preselects a project team member or meeting attendee for project email, or fixes a standalone contact email to that contact; `SourceContext::locationId` selects a persisted location. The repository validates project membership for project actions and includes the selected location in its fingerprint so a changed path or description blocks handoff. Standalone contact snapshots need no project and fingerprint the contact's persisted details for revalidation.
 
 `ProjectEmailPreparationFactory` expands the configured templates and resolves the initial recipients. Project email initially selects the project team or only the clicked person and exposes report-style recipient editing and saved audiences. Project-team messages can load a separate project-email default; person actions retain their explicit selection until the user edits it or applies a preset. Project-email preset resolution preserves explicitly saved managers and meeting guests without changing report audience behavior. Its prose template does not require a protected content block. Standalone people email bypasses templates and permits a blank subject/body for composition in the mail client. Location sharing preserves the existing report audience behavior, including exclusion of the configured project manager and reuse of project audience presets, with a separate sharing default. The Share Location template retains one protected block for its encoded link or attachment description.
 
@@ -248,7 +248,7 @@ Open a named QSQLITE connection on the repository worker with read-only connect 
 
 Every relation excludes soft-deleted records. Preserve optional missing companies as Unknown instead of dropping people through an inner join. Check requested notes actually belong to the requested project. Distinguish no notes/no matching items from a missing/deleted project. Do not infer date storage: `ProjectNotesModel::newRecord` uses epoch seconds, while legacy export presents formatted dates. Keep raw typed dates, display text and parse status separate. Record collection ordering explicitly from legacy fixtures and add stable tie breakers only after identifying the old order.
 
-`CommunicationSnapshot` contains value structs for project, people, memberships, notes, items, comments, activities and locations; stable source-order fields; a load timestamp; and a canonical content/audience fingerprint. It contains no QObject pointers. It can contain internal records for the native report filter, but `TemplateContextBuilder` receives only the filtered view applicable to the chosen report. Audience resolution uses the appropriate candidate pool separately from content filtering.
+`CommunicationSnapshot` contains value structs for project, contacts, memberships, notes, items, comments, activities and locations; stable source-order fields; a load timestamp; and a canonical content/audience fingerprint. It contains no QObject pointers. It can contain internal records for the native report filter, but `TemplateContextBuilder` receives only the filtered view applicable to the chosen report. Audience resolution uses the appropriate candidate pool separately from content filtering.
 
 Before final handoff reload relevant source data and compare canonical fingerprints. If changed, return `SourceChanged`, update the visible review and require another deliberate handoff click. Preserve marked manual edits or offer explicit reload. Freeze the accepted snapshot/revision; do not hold a DB lock across external work or repeatedly rerender inside an adapter. A database switch invalidates old preparations even when project IDs happen to match.
 
@@ -257,15 +257,15 @@ Before final handoff reload relevant source data and compare canonical fingerpri
 Keep pure resolution and mutable UI selection separate:
 
 ```cpp
-enum class PeopleSource { ProjectTeam, MeetingAttendees, StatusRecipients,
-                          CurrentSelection, ChosenPeople };
-enum class CompanyFilter { All, ManagingCompany, ProjectClient,
+enum class ContactSource { ProjectTeam, MeetingAttendees, StatusRecipients,
+                          CurrentSelection, ChosenContacts };
+enum class CompanyFilter { All, ManagingCompany, ProjectCompany,
                            ExceptProjectClient, SelectedCompanies };
 struct AudienceRule {
-    PeopleSource source;
+    ContactSource source;
     CompanyFilter companyFilter;
     QStringList companyIds;
-    QStringList chosenPersonIds;
+    QStringList chosenContactIds;
     bool includeUnknownCompany = false;
     bool excludeProjectManager = true;
 };

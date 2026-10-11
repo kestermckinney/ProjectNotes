@@ -23,7 +23,7 @@ Page {
     property string initialProjectName:       ""
     property string initialProjectStatus:     ""
     property string initialPrimaryContact:    ""
-    property string initialClientId:          ""
+    property string initialCompanyId:         ""
     property string initialLastStatusDate:    ""
     property string initialLastInvoiceDate:   ""
     property string initialInvoicingPeriod:   ""
@@ -46,19 +46,19 @@ Page {
     // AppController.projectTeamMembersModel proxy, which the Team tab's Sort
     // feature can reorder/reset out from under a ComboBox bound directly to
     // it (see AppController::teamMemberList doc comment).
-    property var _people: []
-    function _peopleNames() { return root._people.map(function(p){ return p.name }) }
-    function _personIndexForId(id) {
-        for (var i = 0; i < root._people.length; i++)
-            if (root._people[i].id === id) return i
+    property var _contacts: []
+    function _contactNames() { return root._contacts.map(function(p){ return p.name }) }
+    function _contactIndexForId(id) {
+        for (var i = 0; i < root._contacts.length; i++)
+            if (root._contacts[i].id === id) return i
         return -1
     }
-    // Same rationale, backing clientCombo — clientsModel is also Sort-able.
-    property var _clients: []
-    function _clientNames() { return root._clients.map(function(c){ return c.name }) }
-    function _clientIndexForId(id) {
-        for (var i = 0; i < root._clients.length; i++)
-            if (root._clients[i].id === id) return i
+    // Same rationale, backing companyCombo — companiesModel is also Sort-able.
+    property var _companies: []
+    function _companyNames() { return root._companies.map(function(c){ return c.name }) }
+    function _companyIndexForId(id) {
+        for (var i = 0; i < root._companies.length; i++)
+            if (root._companies[i].id === id) return i
         return -1
     }
 
@@ -92,15 +92,15 @@ Page {
         statusDateField.commitPending()
         invoiceDateField.commitPending()
         var pi = primaryContactCombo.optionIndex
-        var primaryContactId = (pi >= 0 && pi < root._people.length) ? root._people[pi].id : ""
-        var ci = clientCombo.optionIndex
-        var clientId = (ci >= 0 && ci < root._clients.length) ? root._clients[ci].id : ""
+        var primaryContactId = (pi >= 0 && pi < root._contacts.length) ? root._contacts[pi].id : ""
+        var ci = companyCombo.optionIndex
+        var companyId = (ci >= 0 && ci < root._companies.length) ? root._companies[ci].id : ""
         var status    = statusCombo.selection
         var invPeriod = invoicingCombo.selection
         var srPeriod  = statusReportCombo.selection
         var wasStaged = root.projectId === ""
         var ok = AppController.saveProject(root.projectRow, numberField.text, nameField.text,
-                                          status, primaryContactId, clientId, statusDateField.text,
+                                          status, primaryContactId, companyId, statusDateField.text,
                                           invoiceDateField.text, invPeriod, srPeriod)
         if (ok && wasStaged) root._adoptSavedRecord()
         return ok
@@ -125,11 +125,11 @@ Page {
         numberField.text = (d.project_number || "").toString()
         nameField.text   = (d.project_name   || "").toString()
         statusCombo.selectText((d.project_status || "").toString(), 0)
-        root._clients = AppController.clientList()
-        clientCombo.selectOption(root._clientIndexForId((d.client_id || "").toString()))
+        root._companies = AppController.companyList()
+        companyCombo.selectOption(root._companyIndexForId((d.client_id || "").toString()))
         var contactId = (d.primary_contact || "").toString()
-        root._people = AppController.teamMemberList(root.projectId, [contactId])
-        primaryContactCombo.selectOption(root._personIndexForId(contactId))
+        root._contacts = AppController.teamMemberList(root.projectId, [contactId])
+        primaryContactCombo.selectOption(root._contactIndexForId(contactId))
         statusDateField.text  = (d.last_status_date     || "").toString()
         invoiceDateField.text = (d.last_invoice_date    || "").toString()
         invoicingCombo.selectText((d.invoicing_period || "").toString())
@@ -187,7 +187,7 @@ Page {
                         initialProjectName:       (d.project_name         || "").toString(),
                         initialProjectStatus:     (d.project_status       || "").toString(),
                         initialPrimaryContact:    (d.primary_contact      || "").toString(),
-                        initialClientId:          (d.client_id            || "").toString(),
+                        initialCompanyId:         (d.client_id            || "").toString(),
                         initialLastStatusDate:    (d.last_status_date     || "").toString(),
                         initialLastInvoiceDate:   (d.last_invoice_date    || "").toString(),
                         initialInvoicingPeriod:   (d.invoicing_period     || "").toString(),
@@ -274,15 +274,15 @@ Page {
                 }
             }
 
-            SectionHeader { text: qsTr("Client") }
+            SectionHeader { text: qsTr("Company") }
             FieldRow {
                 FormCombo {
-                    id: clientCombo
-                    options: root._clientNames()
+                    id: companyCombo
+                    options: root._companyNames()
                     includeNone: true
                     Component.onCompleted: {
-                        root._clients = AppController.clientList()
-                        selectOption(root._clientIndexForId(root.initialClientId))
+                        root._companies = AppController.companyList()
+                        selectOption(root._companyIndexForId(root.initialCompanyId))
                     }
                 }
             }
@@ -291,11 +291,11 @@ Page {
             FieldRow {
                 FormCombo {
                     id: primaryContactCombo
-                    options: root._peopleNames()
+                    options: root._contactNames()
                     includeNone: true
                     Component.onCompleted: {
-                        root._people = AppController.teamMemberList(root.projectId, [root.initialPrimaryContact])
-                        selectOption(root._personIndexForId(root.initialPrimaryContact))
+                        root._contacts = AppController.teamMemberList(root.projectId, [root.initialPrimaryContact])
+                        selectOption(root._contactIndexForId(root.initialPrimaryContact))
                     }
                 }
             }

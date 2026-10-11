@@ -2,7 +2,7 @@
 
 ## Filtering List Views
 
-The Filter Editor lets you narrow the Projects, Items, People, or Clients list to matching records. Unlike the earlier desktop application, filters set here apply immediately for the current session only — they are **not** saved to the database and do not persist between application restarts.
+The Filter Editor lets you narrow the Projects, Items, Contacts, or Companies list to matching records. Unlike the earlier desktop application, filters set here apply immediately for the current session only — they are **not** saved to the database and do not persist between application restarts.
 
 **To open the Filter Editor:**
 
