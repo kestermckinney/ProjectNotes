@@ -83,6 +83,10 @@ void CommunicationsController::setReviewValidation(ValidationResult validation)
 
 bool CommunicationsController::setSubject(QString subject)
 {
+    if (m_preparation.source.workflow == Workflow::ProjectEmail
+        || m_preparation.source.workflow == Workflow::ShareLocation
+        || m_preparation.source.workflow == Workflow::ContactEmail)
+        return false;
     if (m_busy || (m_stage != PreparationStage::Reviewing && m_stage != PreparationStage::Failed) ||
         subject.contains('\r') || subject.contains('\n'))
         return false;
@@ -95,8 +99,13 @@ bool CommunicationsController::setSubject(QString subject)
 
 bool CommunicationsController::setHtmlBody(QString html)
 {
+    if (m_preparation.source.workflow == Workflow::ProjectEmail
+        || m_preparation.source.workflow == Workflow::ShareLocation
+        || m_preparation.source.workflow == Workflow::ContactEmail)
+        return false;
     if (m_busy || (m_stage != PreparationStage::Reviewing && m_stage != PreparationStage::Failed)
-        || m_preparation.mode != EmailMode::InlineHtml || html.trimmed().isEmpty())
+        || m_preparation.mode != EmailMode::InlineHtml
+        || (html.trimmed().isEmpty() && m_preparation.source.workflow != Workflow::ContactEmail))
         return false;
     if (m_preparation.document.emailFragment == html)
         return true;

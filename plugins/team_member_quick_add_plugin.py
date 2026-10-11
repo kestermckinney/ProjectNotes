@@ -7,15 +7,16 @@ import time
 import json
 import projectnotes
 
+from includes.settings_dialog import PluginSettingsDialog
 from includes.common import ProjectNotesCommon
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
 from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtCore import Qt, QRect, QSettings
-from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QDialog, QWidget, QComboBox
+from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QWidget, QComboBox
 
 # Project Notes Plugin Parameters
 pluginname = "Team Member Quick Add" # name used in the menu
-plugindescription = "This plugin allows you to quickly add a new team member that isn't already in the list of people. Supported platforms: Windows, Linux, MacOS"
+plugindescription = "This plugin allows you to quickly add a new team member that isn't already in the list of contacts. Supported platforms: Windows, Linux, MacOS"
 
 # define menus to be added to ProjectNotes Plugins menu and data export/import right click.
 # the menutitle is the menu name
@@ -47,7 +48,7 @@ pluginmenus = [
 #      item_tracker
 
 # Team member quick add
-class TeamMemberQuickAdd(QDialog):
+class TeamMemberQuickAdd(PluginSettingsDialog):
     def __init__(self, parent: QMainWindow = None):
         super().__init__(parent)
 
@@ -66,12 +67,7 @@ class TeamMemberQuickAdd(QDialog):
         self.ui.buttonBox.accepted.connect(self.add_contact)
         self.ui.buttonBox.rejected.connect(self.reject_changes)
 
-        w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
-        h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
-
-        if w is not None and h is not None:
-            self.ui.resize(int(w), int(h))
-        self.center_on_main_window()
+        self.restore_window_state()
 
     def setup_window(self, xmlstr):
 
@@ -84,12 +80,11 @@ class TeamMemberQuickAdd(QDialog):
 
         self.project_number = self.pnc.scrape_project_number(xmlroot)
 
-
         xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table name="clients" />\n</projectnotes>\n'
         xmlresult = projectnotes.get_data(xmldoc)
 
-        self.ui.comboBoxClientName.clear()
-        self.ui.comboBoxClientName.addItem("")
+        self.ui.comboBoxCompanyName.clear()
+        self.ui.comboBoxCompanyName.addItem("")
 
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlresult) == False):
@@ -106,9 +101,9 @@ class TeamMemberQuickAdd(QDialog):
 
                 while not rownode.isNull():
 
-                    client_name = self.pnc.get_column_value(rownode, "client_name")
+                    company_name = self.pnc.get_column_value(rownode, "client_name")
 
-                    self.ui.comboBoxClientName.addItem(client_name)
+                    self.ui.comboBoxCompanyName.addItem(company_name)
 
                     rownode = rownode.nextSibling()
 
@@ -119,36 +114,24 @@ class TeamMemberQuickAdd(QDialog):
         self.ui.lineEditOfficePhone.setText("")
         self.ui.lineEditMobilePhone.setText("")
         self.ui.lineEditRole.setText("")
-        self.ui.comboBoxClientName.setCurrentText("")
+        self.ui.comboBoxCompanyName.setCurrentText("")
 
         return True
 
-    def center_on_main_window(self):
-        main_window = QApplication.activeWindow()
-        if main_window:
-            main_geometry = main_window.geometry()
-            x = main_geometry.x() + (main_geometry.width() - self.width()) // 2
-            y = main_geometry.y() + (main_geometry.height() - self.height()) // 2
-            self.move(max(0, x), max(0, y))
-
-    def save_window_state(self):
-        self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
-        self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
-
     def add_contact(self):
 
-        cn = self.ui.comboBoxClientName.currentText()
+        company_name = self.ui.comboBoxCompanyName.currentText()
 
         cxml = ''
 
-        if cn is not None and cn != '':
+        if company_name is not None and company_name != '':
             cxml = f"""
             <table name="clients">
                     <row>
-                        <column name="client_name">{cn}</column>
+                        <column name="client_name">{company_name}</column>
                     </row>
             </table>
-            """            
+            """
 
         xmlstr = f"""<?xml version="1.0" encoding="UTF-8"?>
         <projectnotes>
@@ -159,7 +142,7 @@ class TeamMemberQuickAdd(QDialog):
                     <column name="email">{self.ui.lineEditEmail.text()}</column>
                     <column name="office_phone">{self.ui.lineEditOfficePhone.text()}</column>
                     <column name="cell_phone">{self.ui.lineEditMobilePhone.text()}</column>
-                    <column name="client_id" lookupvalue="{self.ui.comboBoxClientName.currentText()}"></column>
+                    <column name="client_id" lookupvalue="{self.ui.comboBoxCompanyName.currentText()}"></column>
                     <column name="role">{self.ui.lineEditRole.text()}</column>
                 </row>
         </table>
@@ -179,22 +162,10 @@ class TeamMemberQuickAdd(QDialog):
         self.save_window_state()
         self.accept()
 
-    def reject_changes(self):
-        self.save_window_state()
-        
-        # Call the base class implementation
-        self.reject()
-
-    def closeEvent(self, event):
-        self.save_window_state()
-        # Call the base class implementation
-        super().closeEvent(event)
-
 def menu_quick_add(xmlstr, parameter):
     tmqa.setup_window(xmlstr)
     tmqa.show()
     return ""
-
 
 # Use code below for testing
 if __name__ == '__main__':
@@ -209,6 +180,4 @@ if __name__ == '__main__':
 else:
     pnc = ProjectNotesCommon()
     tmqa = TeamMemberQuickAdd(pnc.get_main_window())
-
-
 

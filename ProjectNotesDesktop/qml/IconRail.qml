@@ -11,6 +11,12 @@ Rectangle {
     id: rail
     color: Theme.rail
 
+    readonly property var contactSyncModel: DesktopAppController.contactSyncSettingsModel
+    readonly property bool contactsNeedReview: contactSyncModel && contactSyncModel.reviews.length > 0
+
+    readonly property alias applicationMenu: appMenu
+    function closeMenu() { appMenu.close() }
+
     property string currentSection: "projects"
     // Forwarded to AppMenu so it can add the current record's table-scoped
     // plugin menus (e.g. Export / Templates) alongside the global ones.
@@ -65,8 +71,8 @@ Rectangle {
 
         RailButton { icon: "description"; section: "projects" }
         RailButton { icon: "task_alt";    section: "items" }
-        RailButton { icon: "group";       section: "people" }
-        RailButton { icon: "apartment";   section: "clients" }
+        RailButton { icon: "group";       section: "contacts" }
+        RailButton { icon: "apartment";   section: "companies" }
         RailButton { icon: "search";      section: "search" }
 
         Item { Layout.fillHeight: true }
@@ -119,7 +125,11 @@ Rectangle {
         property string icon: ""
         property string section: ""
         property bool selectable: true
-        property string tooltip: ""
+        readonly property var destination: AppShortcuts.destination(section)
+        property string tooltip: destination
+                                 ? destination.label + " (" + AppShortcuts.text(destination.action) + ")"
+                                 : ""
+        objectName: section !== "" ? "rail_" + section : ""
         signal clicked()
 
         readonly property bool active: selectable && rail.currentSection === section
@@ -142,6 +152,15 @@ Rectangle {
                 weight: Font.Light
                 color: btn.active ? Theme.accent : Theme.text2
             }
+        }
+
+        Rectangle {
+            objectName: "railContactReviewDot"
+            width: 8; height: 8; radius: 4
+            color: Theme.red
+            visible: btn.section === "settings" && rail.contactsNeedReview
+            x: (btn.width + Theme.railIconSize) / 2 - 3
+            y: (btn.height - Theme.railIconSize) / 2 - 3
         }
 
         HoverHandler { id: hover }

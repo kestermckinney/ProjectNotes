@@ -2,13 +2,13 @@
 
 The **Office 365 Integration** settings page connects Project Notes to Microsoft 365 through Microsoft Graph. It is separate from File Finder so the same authenticated connection can support additional Project Notes features in the future.
 
-Two features use this connection. The **Microsoft 365 drafts** integration creates email drafts and draft calendar events in your mailbox. File Finder discovers project channels in Microsoft Teams and the documents in their SharePoint-backed folders.
+The **Microsoft 365 drafts** integration creates email drafts and draft calendar events in your mailbox. File Finder discovers project channels in Microsoft Teams and the documents in their SharePoint-backed folders.
 
-Contact synchronization is not part of this connection. It uses the separately configured [Outlook Integration](<../StandardPlugins/OutlookIntegration.md>) plugin.
+Native [Contact Synchronization](Preferences.md#contact-synchronization) and **Full Contact Export** also use this account. Use this tab's single sign-in action to grant `Contacts.ReadWrite` alongside email and calendar access. Contact export remains available when scheduled and manual synchronization are disabled.
 
 ## Before You Sign In
 
-Your organization must provide a **dedicated** Microsoft Entra app registration for Office 365 Integration. Do not reuse the app registration configured for [Outlook Integration](<OutlookIntegration.md>) — its consent only covers Mail, Calendar, Contacts, and Tasks scopes. Office 365 Integration requests different, higher-privilege delegated Microsoft Graph scopes:
+Your organization must provide a **dedicated** Microsoft Entra app registration for Office 365 Integration. Do not reuse the app registration configured for [Outlook Integration](<../StandardPlugins/OutlookIntegration.md>) — its consent only covers Mail, Calendar, Contacts, and Tasks scopes. Office 365 Integration requests different, higher-privilege delegated Microsoft Graph scopes:
 
 For email drafts and meeting invitations:
 
@@ -35,14 +35,14 @@ Open the app menu, choose **Settings**, and select **Office 365 Integration**.
 | :--- | :--- |
 | **Microsoft Entra tenant ID** | The directory (tenant) ID for the organization that owns the app registration. The default `organizations` allows sign-in with a work or school account from any Microsoft Entra organization. Use a specific tenant ID when access should be restricted to one organization. |
 | **Application (client) ID** | The application ID assigned to the Microsoft Entra app registration. |
-| **Sign in to Microsoft 365** | Begins device-code sign-in and requests the email and calendar draft permissions. Project Notes displays a code and a button that opens Microsoft's sign-in page. Copy the code, open the page, and complete sign-in in your browser. |
+| **Sign in to Microsoft 365** | Begins device-code sign-in and requests email, calendar, and contact permissions. Project Notes displays a code and a button that opens Microsoft's sign-in page. Copy the code, open the page, and complete sign-in in your browser. |
 | **Sign out** | Removes the saved refresh token and invalidates cached Office 365 File Finder state. It does not remove local File Finder settings or existing **Files & Folders** entries. |
 
 The status panel reports whether Project Notes is signed in and shows the device code and verification-page button while authentication is in progress.
 
 ## Credential Storage
 
-Project Notes stores the Microsoft refresh token in the operating system's credential vault. Access tokens remain in memory. The tenant ID, client ID, and connection state are stored in the local Project Notes settings profile and do not sync through the project database. These settings are kept independent of [Outlook Integration](<OutlookIntegration.md>)'s tenant ID and application ID — changing one never affects the other.
+Project Notes stores the Microsoft refresh token in the operating system's credential vault. Access tokens remain in memory. The tenant ID, client ID, and connection state are stored in the local Project Notes settings profile and do not sync through the project database. These settings are kept independent of [Outlook Integration](<../StandardPlugins/OutlookIntegration.md>)'s tenant ID and application ID — changing one never affects the other.
 
 ## Use with File Finder
 
@@ -71,8 +71,8 @@ See [File Finder](<FileFinder.md>) for discovery, matching, classification setti
 
 After authentication succeeds:
 
-1. Open **Settings > Preferences**.
-2. Under **Email and Scheduling Integration**, set **Integration** to **Microsoft 365 drafts**.
+1. Open **Settings > Email, Contacts, and Calendar**.
+2. Set **Integration** to **Microsoft 365 drafts**.
 
 Reports then become drafts in your mailbox and meetings become draft events in your calendar, both opened in Outlook on the web for review. Nothing is sent by Project Notes.
 

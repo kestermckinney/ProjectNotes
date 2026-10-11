@@ -114,7 +114,7 @@ def _unfold_vcard(text):
 
 
 def parse_vcard(text, href="", etag=""):
-    """Parse the subset of vCard 3/4 represented by PN's people model."""
+    """Parse the subset of vCard 3/4 represented by PN's contacts model."""
     properties = []
     for line in _unfold_vcard(text):
         if ":" not in line:
@@ -302,10 +302,10 @@ class CardDAVClient:
     def test_connection(self):
         return len(self.discover())
 
-    def create_contact(self, book_url, person):
-        person_id = str(person.get("id") or uuid.uuid4())
-        href = urljoin(book_url.rstrip("/") + "/", f"{uuid.uuid5(UUID_NAMESPACE, person_id)}.vcf")
-        card = serialize_vcard(person, person_id)
+    def create_contact(self, book_url, contact_data):
+        contact_id = str(contact_data.get("id") or uuid.uuid4())
+        href = urljoin(book_url.rstrip("/") + "/", f"{uuid.uuid5(UUID_NAMESPACE, contact_id)}.vcf")
+        card = serialize_vcard(contact_data, contact_id)
         headers = {"Content-Type": "text/vcard; charset=utf-8", "If-None-Match": "*"}
         try:
             response = self.session.request("PUT", href, data=card.encode("utf-8"), headers=headers,
@@ -316,12 +316,12 @@ class CardDAVClient:
             raise ICloudAuthenticationError(
                 "iCloud rejected the Apple Account or app-specific password.")
         if response.status_code not in (201, 204):
-            raise ICloudError(f"iCloud rejected contact '{person.get('name', '')}' "
+            raise ICloudError(f"iCloud rejected contact '{contact_data.get('name', '')}' "
                               f"with HTTP {response.status_code}.")
-        return Contact(person_id, href, response.headers.get("ETag", ""),
-                       person.get("name", ""), person.get("client_id", ""),
-                       person.get("email", ""), person.get("office_phone", ""),
-                       person.get("cell_phone", ""), person.get("role", ""))
+        return Contact(contact_id, href, response.headers.get("ETag", ""),
+                       contact_data.get("name", ""), contact_data.get("client_id", ""),
+                       contact_data.get("email", ""), contact_data.get("office_phone", ""),
+                       contact_data.get("cell_phone", ""), contact_data.get("role", ""))
 
 
 def _xml(value):
@@ -334,14 +334,14 @@ def _vcard(value):
             .replace(";", "\\;").replace(",", "\\,"))
 
 
-def serialize_vcard(person, uid):
-    name = _vcard(person.get("name", ""))
+def serialize_vcard(contact_data, uid):
+    name = _vcard(contact_data.get("name", ""))
     lines = ["BEGIN:VCARD", "VERSION:3.0", f"UID:{_vcard(uid)}", f"FN:{name}", f"N:;{name};;;" ]
-    fields = (("ORG", person.get("client_id", "")),
-              ("TITLE", person.get("role", "")),
-              ("EMAIL;TYPE=WORK", person.get("email", "")),
-              ("TEL;TYPE=WORK", person.get("office_phone", "")),
-              ("TEL;TYPE=CELL", person.get("cell_phone", "")))
+    fields = (("ORG", contact_data.get("client_id", "")),
+              ("TITLE", contact_data.get("role", "")),
+              ("EMAIL;TYPE=WORK", contact_data.get("email", "")),
+              ("TEL;TYPE=WORK", contact_data.get("office_phone", "")),
+              ("TEL;TYPE=CELL", contact_data.get("cell_phone", "")))
     lines.extend(f"{field}:{_vcard(value)}" for field, value in fields if value)
     lines.extend(("PRODID:-//Project Notes//iCloud Contacts//EN", "END:VCARD", ""))
     return "\r\n".join(lines)

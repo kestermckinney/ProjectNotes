@@ -169,12 +169,16 @@ Dialog {
                 radius: Theme.radiusSm
                 color: Theme.surface
                 border.color: Theme.border
-                ListView {
+                KeyboardListView {
                     id: suggestList
                     anchors.fill: parent
                     anchors.margins: 3
                     clip: true
                     model: dlg._suggestions
+                    selectIndex: (row) => {
+                        suggestList.currentIndex = row
+                        changeField.text = dlg._suggestions[row]
+                    }
                     delegate: ItemDelegate {
                         required property int index
                         required property var modelData

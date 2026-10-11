@@ -8,15 +8,15 @@ TeamsModel::TeamsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
     // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
     setBaseSql("SELECT project_people.id, people.name, project_id, project_people.people_id, people.client_id FROM project_people join people on project_people.people_id=people.id ");
 
-    setTableName("project_people", "Project People");
+    setTableName("project_people", "Project Contacts");
 
     addColumn("id", tr("Team Member ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
     addColumn("name", tr("Name"), DBString, DBSearchable, DBRequired);
     addColumn("project_id", tr("Project ID"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
               "projects", "id", "project_number");
-    addColumn("people_id", tr("People ID"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
+    addColumn("people_id", tr("Contact ID"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
               "people", "id", "name");
-    addColumn("client_id", tr("Client ID"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
+    addColumn("client_id", tr("Company ID"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
               "clients", "id", "client_name");
 
     QStringList key1 = {"project_id", "people_id"};

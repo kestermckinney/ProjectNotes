@@ -185,12 +185,9 @@ public:
     void clearUserSearchRange(int columnNumber);
     bool hasUserFilters(int columnNumber) const;
     bool hasUserFilters() const;
-    void activateUserFilter(const QString& filterName);
-    void deactivateUserFilter(const QString& filterName);
-    void loadLastUserFilterState(const QString& filterName);
+    void activateUserFilter();
+    void deactivateUserFilter();
 
-    void saveUserFilter(const QString& filterName);
-    void loadUserFilter(const QString& filterName);
     bool getUserFilterState() { return m_userFilterActive; }
 
     void setOrderBy(const QString& orderBy) { m_orderBy = orderBy; }

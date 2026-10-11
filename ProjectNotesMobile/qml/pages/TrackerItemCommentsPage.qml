@@ -95,7 +95,7 @@ Page {
                     }
 
                     Label {
-                        text: AppController.peopleNameForId(delegateRoot.model.updated_by || "")
+                        text: AppController.contactNameForId(delegateRoot.model.updated_by || "")
                         font.pixelSize: 12
                         color: Theme.mutedText
                     }

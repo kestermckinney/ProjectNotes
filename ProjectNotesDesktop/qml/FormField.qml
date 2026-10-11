@@ -14,6 +14,10 @@ ColumnLayout {
     property alias inputMethodHints: field.inputMethodHints
     property string placeholder: ""
     property bool readOnly: false
+    // Optional explicit links for forms whose visual order can change with layout.
+    readonly property Item inputItem: field
+    property Item tabNext: null
+    property Item tabPrevious: null
     // Opt-in inline spell-check (off for codes/numbers/IDs). When on, pass the
     // page's shared dialog as `spellDialog` to enable "Check Spelling…".
     property bool spellCheck: false
@@ -41,6 +45,9 @@ ColumnLayout {
         border.color: field.activeFocus ? Theme.accent : Theme.border
         TextField {
             id: field
+            objectName: root.label + "Input"
+            KeyNavigation.tab: root.tabNext
+            KeyNavigation.backtab: root.tabPrevious
             anchors.fill: parent
             anchors.leftMargin: 9
             anchors.rightMargin: 9

@@ -23,6 +23,7 @@ class CommunicationsController final : public QObject {
     Q_PROPERTY(QString diagnostic READ diagnostic NOTIFY stateChanged)
     Q_PROPERTY(QString subject READ subject NOTIFY stateChanged)
     Q_PROPERTY(QString htmlBody READ htmlBody NOTIFY stateChanged)
+    Q_PROPERTY(QString recipientLabel READ recipientLabel NOTIFY stateChanged)
     Q_PROPERTY(bool inlineHtmlMode READ inlineHtmlMode NOTIFY stateChanged)
     Q_PROPERTY(QStringList attachmentNames READ attachmentNames NOTIFY stateChanged)
     Q_PROPERTY(QStringList generatedAttachmentNames READ generatedAttachmentNames NOTIFY stateChanged)
@@ -47,6 +48,8 @@ public:
     void failSourceRevalidation(ValidationResult validation);
     Q_INVOKABLE bool handoff();
     Q_INVOKABLE void cancel();
+    // Project/location templates and blank standalone contact messages are
+    // read-only until composed in the mail client; setters reject these flows.
     Q_INVOKABLE bool setSubject(QString subject);
     // Editable HTML is restricted to inline mode. Attachment modes retain the
     // manifest-owned generated file rather than presenting a divergent body.
@@ -62,6 +65,13 @@ public:
     [[nodiscard]] QString diagnostic() const;
     [[nodiscard]] QString subject() const { return m_preparation.document.defaultSubject; }
     [[nodiscard]] QString htmlBody() const { return m_preparation.document.emailFragment; }
+    [[nodiscard]] QString recipientLabel() const {
+        QStringList labels;
+        for (const EmailAddress &recipient : m_preparation.recipients)
+            labels.append(recipient.displayName.isEmpty() ? recipient.address
+                : QStringLiteral("%1 <%2>").arg(recipient.displayName, recipient.address));
+        return labels.join(QStringLiteral(", "));
+    }
     [[nodiscard]] bool inlineHtmlMode() const { return m_preparation.mode == EmailMode::InlineHtml; }
     [[nodiscard]] QStringList attachmentNames() const {
         QStringList names;

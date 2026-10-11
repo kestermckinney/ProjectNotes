@@ -13,7 +13,7 @@ Page {
     property int    memberRow:                  -1
     property string memberId:                   ""
     property string projectTitle:               ""
-    property string initialPeopleId:            ""
+    property string initialContactId:           ""
     property string initialRole:                ""
     property bool   initialReceiveStatusReport: false
     property string initialEmail:               ""
@@ -21,19 +21,19 @@ Page {
     property bool   _hasChanges:                false
     property bool   isNewRecord:                false
 
-    // Stable {id,name} snapshot backing personCombo — deliberately NOT the
-    // live AppController.peopleModel proxy, which the People tab's Sort
+    // Stable {id,name} snapshot backing contactCombo — deliberately NOT the
+    // live AppController.contactsModel proxy, which the Contacts tab's Sort
     // feature can reorder/reset out from under a ComboBox bound directly to
     // it (see AppController::teamMemberList doc comment).
-    property var _people: []
-    function _peopleNames() { return root._people.map(function(p){ return p.name }) }
-    function _personIndexForId(id) {
-        for (var i = 0; i < root._people.length; i++)
-            if (root._people[i].id === id) return i
+    property var _contacts: []
+    function _contactNames() { return root._contacts.map(function(p){ return p.name }) }
+    function _contactIndexForId(id) {
+        for (var i = 0; i < root._contacts.length; i++)
+            if (root._contacts[i].id === id) return i
         return -1
     }
 
-    function _isBlankNew() { return isNewRecord && personCombo.optionIndex < 0 }
+    function _isBlankNew() { return isNewRecord && contactCombo.optionIndex < 0 }
     function _discardNew()  {
         var row = AppController.rowForId(AppController.projectTeamMembersModel, root.memberId)
         if (row < 0) return
@@ -48,17 +48,17 @@ Page {
         var row = AppController.rowForId(AppController.projectTeamMembersModel, root.memberId)
         if (row < 0) return false   // record no longer exists
         root.memberRow = row
-        var pi = personCombo.optionIndex
-        var peopleId = (pi >= 0 && pi < root._people.length) ? root._people[pi].id : ""
-        var result = AppController.saveTeamMember(root.memberRow, peopleId, roleField.text, statusSwitch.checked)
+        var pi = contactCombo.optionIndex
+        var contactId = (pi >= 0 && pi < root._contacts.length) ? root._contacts[pi].id : ""
+        var result = AppController.saveTeamMember(root.memberRow, contactId, roleField.text, statusSwitch.checked)
         if (result) root._hasChanges = false
         return result
     }
 
     function _reloadData() {
         var d = AppController.getTeamMemberData(root.memberRow)
-        root._people = AppController.peopleList()
-        personCombo.selectOption(root._personIndexForId((d.people_id || "").toString()))
+        root._contacts = AppController.contactList()
+        contactCombo.selectOption(root._contactIndexForId((d.people_id || "").toString()))
         roleField.text = (d.role || "").toString()
         statusSwitch.checked = (d.receive_status_report || "0") !== "0"
     }
@@ -103,7 +103,7 @@ Page {
                         memberRow:                  newRow,
                         memberId:                   (d.id                     || "").toString(),
                         projectTitle:               root.projectTitle,
-                        initialPeopleId:            (d.people_id              || "").toString(),
+                        initialContactId:           (d.people_id              || "").toString(),
                         initialRole:                (d.role                   || "").toString(),
                         initialReceiveStatusReport: (d.receive_status_report  || "0") !== "0",
                         initialEmail:               (d.email                  || "").toString()
@@ -132,14 +132,14 @@ Page {
             width: parent.width
             spacing: 0
 
-            SectionHeader { text: qsTr("Person") }
+            SectionHeader { text: qsTr("Contact") }
             FieldRow {
                 FormCombo {
-                    id: personCombo
-                    options: root._peopleNames()
+                    id: contactCombo
+                    options: root._contactNames()
                     Component.onCompleted: {
-                        root._people = AppController.peopleList()
-                        selectOption(root._personIndexForId(root.initialPeopleId))
+                        root._contacts = AppController.contactList()
+                        selectOption(root._contactIndexForId(root.initialContactId))
                     }
                     onActivated: root._hasChanges = true
                 }

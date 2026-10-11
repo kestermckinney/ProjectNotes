@@ -25,7 +25,7 @@ struct MeetingTemplate {
 };
 
 // Fields a meeting subject or agenda may insert.  A meeting is scheduled from
-// a project, not from a single note or report, so only the project, client,
+// a project, not from a single note or report, so only the project, company,
 // preference and current-date fields apply.
 QStringList meetingTemplateFieldPaths();
 
@@ -34,6 +34,10 @@ public:
     // Meeting types are stored as one JSON array in the open database's
     // application_settings table, alongside the email templates.
     QList<MeetingTemplate> templates(ValidationResult *validation = nullptr) const;
+    // Called after opening a database. Seed an empty, valid store only;
+    // a nonempty list and corrupt data are preserved. Deleting every type
+    // leaves an empty list that will be seeded again at the next startup.
+    ValidationResult initializeDefaults();
     ValidationResult save(MeetingTemplate value);
     ValidationResult remove(const QString &id);
 

@@ -50,6 +50,9 @@ QString toStableString(Workflow value)
     case Workflow::StatusReport: return QStringLiteral("status-report");
     case Workflow::MeetingNotesReport: return QStringLiteral("meeting-notes-report");
     case Workflow::ScheduleMeeting: return QStringLiteral("schedule-meeting");
+    case Workflow::ProjectEmail: return QStringLiteral("project-email");
+    case Workflow::ShareLocation: return QStringLiteral("share-location");
+    case Workflow::ContactEmail: return QStringLiteral("person-email");
     }
     return {};
 }
@@ -74,6 +77,7 @@ QString toStableString(BackendId value)
     case BackendId::Thunderbird: return QStringLiteral("thunderbird");
     case BackendId::MacMail: return QStringLiteral("mac-mail");
     case BackendId::Outlook: return QStringLiteral("outlook");
+    case BackendId::ICloud: return QStringLiteral("icloud");
     }
     return {};
 }
@@ -94,7 +98,10 @@ std::optional<Workflow> workflowFromStableString(const QString &value)
                                              {"tracker-items-report", Workflow::TrackerItemsReport},
                                              {"status-report", Workflow::StatusReport},
                                              {"meeting-notes-report", Workflow::MeetingNotesReport},
-                                             {"schedule-meeting", Workflow::ScheduleMeeting}});
+                                             {"schedule-meeting", Workflow::ScheduleMeeting},
+                                             {"project-email", Workflow::ProjectEmail},
+                                             {"share-location", Workflow::ShareLocation},
+                                             {"person-email", Workflow::ContactEmail}});
 }
 
 std::optional<EmailMode> emailModeFromStableString(const QString &value)
@@ -113,7 +120,8 @@ std::optional<BackendId> backendIdFromStableString(const QString &value)
                                                {"mailto", BackendId::DefaultApp},
                                                {"outlook", BackendId::Outlook},
                                                {"outlook-classic", BackendId::OutlookClassic},
-                                               {"thunderbird", BackendId::Thunderbird}, {"mac-mail", BackendId::MacMail}});
+                                               {"thunderbird", BackendId::Thunderbird}, {"mac-mail", BackendId::MacMail},
+                                               {"icloud", BackendId::ICloud}});
 }
 
 std::optional<RecipientRole> recipientRoleFromStableString(const QString &value)

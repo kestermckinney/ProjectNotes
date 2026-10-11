@@ -29,10 +29,10 @@ The Project List Page also provides in-depth earned value metrics based on the c
 | :--- | :---- |
 | Number | The project number is often a unique identifier used across multiple systems. In many cases Python scripts will use this number to find and relate project information. |
 | Project Name | The project name should remain consistent across multiple systems. It should be a concise description of the project. |
-| Client | The client the project work applies. |
-| Status Date | The last time the status report was run. The value is shown in different colors to warn you when the next status report should be sent to the client. |
+| Company | The company the project work applies. |
+| Status Date | The last time the status report was run. The value is shown in different colors to warn you when the next status report should be sent to the company. |
 | Report Period | **Weekly:** Red indicates it has been more than 7 days since the last report. Yellow indicates it has been exactly 7 days since the last report.  **Bi-Weekly:** Red indicates it has been more than 14 days since the last report. Yellow indicates it has been more than 12 days since the last report.  **Monthly:** Red indicates it has been more than 30 days since the last report. Yellow indicates it has been more than 25 days since the last report. |
-| Invoice Date | The last date an invoice was sent. The value is shown in different colors to warn you when the next invoice should be sent to the client. |
+| Invoice Date | The last date an invoice was sent. The value is shown in different colors to warn you when the next invoice should be sent to the company. |
 | Invoice Period | **Milestone:** Yellow indicates it has been more than 25 days since the last invoice. **Monthly:** Red indicates it has been more than 1 month since the last report. **Complete:** No color indicators will show. |
 | Budget | The overall budgeted cost of the project. |
 | Actual | The actual cost of the project. |

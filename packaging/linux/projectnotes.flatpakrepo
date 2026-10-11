@@ -1,13 +1,15 @@
 [Flatpak Repo]
+# Target for the dedicated GitLab Pages project; deploy before publishing this descriptor.
 Title=Project Notes
-Url=https://kestermckinney.gitlab.io/ProjectNotes/flatpak/
+Url=https://kestermckinney.gitlab.io/projectnotes-flatpak/
 Homepage=https://www.projectnotespro.com
 Comment=Project management and meeting notes application
 Description=Official Flatpak repository for Project Notes. Add this remote to install Project Notes and receive automatic updates via `flatpak update`.
-Icon=https://kestermckinney.gitlab.io/ProjectNotes/flatpak/icon.png
+Icon=https://kestermckinney.gitlab.io/projectnotes-flatpak/icon.png
+# GitLab repository signing-key fingerprint: E0C07E21F0E41F83CBDCCB04F82B4E4D2183B011
 # Single-line, base64-encoded *public* half of the repo signing key.
 # Generate/export it with:
-#   gpg --export "ProjectNotes Flatpak Signing" | base64 --wrap=0
+#   gpg --export E0C07E21F0E41F83CBDCCB04F82B4E4D2183B011 | base64 --wrap=0
 # Paste the output as the value below (no line breaks). The matching private
-# key is held only as the FLATPAK_GPG_PRIVATE_KEY GitLab CI/CD variable.
+# key is held only as the protected FLATPAK_GPG_PRIVATE_KEY GitLab CI/CD file variable.
 GPGKey=mDMEashMYRYJKwYBBAHaRw8BAQdAK7O1H7SZHICVp6peC92dAjygoCAnu7YIC2SuezykssO0JlByb2plY3QgTm90ZXMgRmxhdHBhayBTaWduaW5nIChHaXRMYWIpiJMEExYKADsWIQTgwH4h8OQfg8vcywT4K05NIYOwEQUCashMYQIbAwULCQgHAgIiAgYVCgkICwIEFgIDAQIeBwIXgAAKCRD4K05NIYOwERLhAP9bSUZgy8ivBvi/2XxA5vlJkAedXdgYbuyAg8QVBYSVIQD/YJt+2QBtMnxJ4rp1+eiVa91D2T7W5J3KVI5JY4I5aQc=

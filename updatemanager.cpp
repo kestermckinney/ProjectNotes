@@ -27,11 +27,11 @@ using namespace QLogger;
 
 namespace
 {
-// GitLab project that publishes ProjectNotes releases.
+// GitLab repository that publishes ProjectNotes releases.
 const char *kReleaseApiUrl =
     "https://gitlab.com/api/v4/projects/kestermckinney%2FProjectNotes/releases/permalink/latest";
 
-// Identify the application to the release service.
+// Identify the updater in network requests.
 const char *kUserAgent = "ProjectNotes-Updater";
 }
 
@@ -68,30 +68,44 @@ bool UpdateManager::isNewerVersion(const QString &candidate, const QString &curr
     return false; // equal
 }
 
-QString UpdateManager::selectPlatformAsset(const QJsonArray &assets)
+QString UpdateManager::selectInstallerLink(const QJsonArray &assets,
+                                         const QString &nameFragment,
+                                         const QString &nameSuffix)
 {
     for (const QJsonValue &v : assets)
     {
         const QJsonObject asset = v.toObject();
         const QString name = asset.value("name").toString();
+        if (!name.contains(nameFragment, Qt::CaseInsensitive)
+            || !name.endsWith(nameSuffix, Qt::CaseInsensitive))
+            continue;
 
-#if defined(Q_OS_WIN)
-        if (name.endsWith("-Windows-x64-Setup.exe", Qt::CaseInsensitive))
-            return asset.value("direct_asset_url").toString().isEmpty()
-                ? asset.value("url").toString() : asset.value("direct_asset_url").toString();
-#elif defined(Q_OS_MACOS)
-        // The updater consumes a zip of the self-contained .app bundle (see
-        // launchInstaller()). The .pkg/.dmg first-install assets that may also be
-        // attached to the release are intentionally not matched here.
-        if (name.contains("macOS", Qt::CaseInsensitive) && name.endsWith(".zip", Qt::CaseInsensitive))
-            return asset.value("direct_asset_url").toString().isEmpty()
-                ? asset.value("url").toString() : asset.value("direct_asset_url").toString();
-#else
-        Q_UNUSED(name);
-#endif
+        // Direct release links retain the installer filename even when the
+        // backing storage URL has an opaque path. Plain links are valid too.
+        QString url = asset.value("direct_asset_url").toString();
+        if (url.isEmpty())
+            url = asset.value("url").toString();
+        const QUrl downloadUrl(url);
+        if (downloadUrl.isValid() && downloadUrl.scheme() == "https"
+            && !downloadUrl.host().isEmpty())
+            return url;
     }
 
     return QString();
+}
+
+QString UpdateManager::selectPlatformAsset(const QJsonArray &assets)
+{
+#if defined(Q_OS_WIN)
+    return selectInstallerLink(assets, QString(), QStringLiteral("-Windows-x64-Setup.exe"));
+#elif defined(Q_OS_MACOS)
+    // Only the self-contained .app zip supports unattended installation.
+    return selectInstallerLink(assets, QStringLiteral("macOS"), QStringLiteral(".zip"));
+#else
+    // Linux updates are delivered as Flatpak bundles or through its remote.
+    Q_UNUSED(assets);
+    return QString();
+#endif
 }
 
 void UpdateManager::checkForUpdates(bool silent)
@@ -104,7 +118,6 @@ void UpdateManager::checkForUpdates(bool silent)
     QNetworkRequest request{QUrl(QString::fromLatin1(kReleaseApiUrl))};
     request.setHeader(QNetworkRequest::UserAgentHeader, QString::fromLatin1(kUserAgent));
     request.setRawHeader("Accept", "application/json");
-    request.setTransferTimeout(30000);
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                          QNetworkRequest::NoLessSafeRedirectPolicy);
 

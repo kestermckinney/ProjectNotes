@@ -25,8 +25,8 @@ Item {
     function _icon(t) {
         switch (t) {
         case "Project": return "description"
-        case "People": return "person"
-        case "Client": return "apartment"
+        case "Contact": return "person"
+        case "Company": return "apartment"
         case "Item Tracker": return "task_alt"
         case "Tracker Update": return "forum"
         case "Project Notes": return "edit_note"
@@ -43,8 +43,8 @@ Item {
     function _table(t) {
         switch (t) {
         case "Project": return "projects"
-        case "People": return "people"
-        case "Client": return "clients"
+        case "Contact": return "people"
+        case "Company": return "clients"
         case "Item Tracker": return "item_tracker"
         case "Tracker Update": return "item_tracker_updates"
         case "Project Notes": return "project_notes"
@@ -146,7 +146,7 @@ Item {
 
         // Results — virtualized: only visible cards (plus cacheBuffer) exist,
         // and reuseItems recycles delegates while scrolling.
-        ListView {
+        KeyboardListView {
             id: list
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -225,13 +225,14 @@ Item {
                             MaterialIcon { name: "chevron_right"; size: 17; color: Theme.text3 }
                         }
                         HoverHandler { id: rh }
-                        TapHandler {
-                            onTapped: page.resultActivated(
+                        function openRecord() {
+                            page.resultActivated(
                                 (rc.model.datatype || "").toString(),
                                 (rc.model.dataid || "").toString(),
                                 (rc.model.fk_id || "").toString(),
                                 (rc.model.datakey || "").toString())
                         }
+                        TapHandler { onTapped: rc.openRecord() }
                         TapHandler {
                             acceptedButtons: Qt.RightButton
                             onTapped: (ev) => rc._menu(ev.scenePosition.x, ev.scenePosition.y)

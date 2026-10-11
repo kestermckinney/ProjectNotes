@@ -22,6 +22,8 @@ struct SourceContext {
     QString projectId;
     QStringList noteIds;
     Workflow workflow = Workflow::SendMeetingNotes;
+    QString contactId;
+    QString locationId;
 };
 
 struct TrackerFilters {

@@ -14,6 +14,7 @@ import ProjectNotesDesktop
 Dialog {
     id: dialog
     property string message: ""
+    property bool selectableMessage: false
     property string iconName: "error"
     property color iconColor: Theme.red
     property string confirmText: ""
@@ -57,11 +58,34 @@ Dialog {
             Layout.margins: 18
             spacing: 16
             Text {
+                visible: !dialog.selectableMessage
                 Layout.fillWidth: true
                 wrapMode: Text.Wrap
                 color: Theme.text
                 font.pixelSize: Theme.fontLg
                 text: dialog.message
+            }
+            ScrollView {
+                id: messageScroll
+                visible: dialog.selectableMessage
+                Layout.fillWidth: true
+                Layout.preferredHeight: Math.min(messageText.implicitHeight, 360)
+                contentWidth: availableWidth
+                clip: true
+                TextArea {
+                    id: messageText
+                    width: messageScroll.availableWidth
+                    text: dialog.message
+                    textFormat: TextEdit.PlainText
+                    readOnly: true
+                    selectByMouse: true
+                    wrapMode: TextEdit.Wrap
+                    color: Theme.text
+                    font.pixelSize: Theme.fontLg
+                    background: null
+                    padding: 0
+                    SpellCheckField { target: messageText; spellCheckEnabled: false }
+                }
             }
             RowLayout {
                 Layout.fillWidth: true

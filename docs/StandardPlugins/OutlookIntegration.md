@@ -1,80 +1,34 @@
 # Outlook Integration
 
-The **Outlook Integration** plugin keeps your Project Notes people, emails and assigned items in step with Outlook. It can work through Microsoft 365 on any platform, or drive Outlook (classic) directly on Windows. It runs on a timer in the background and also adds menu items you can trigger yourself.
+The **Outlook Integration** plugin archives project email and, with Microsoft 365, publishes assigned items as Microsoft To Do tasks. Contact synchronization and **Full Contact Export** are built into [Preferences](../InterfaceOverview/Preferences.md#contact-synchronization), not this plugin.
 
-It does **not** send project email and it does not schedule meetings. Those are built into Project Notes and are set up on the main **Settings** page. See [Email and Meeting Setup](<../InterfaceOverview/EmailAndMeetingSetup.md>).
+The plugin does not send project email or schedule meetings. Set those up through [Email and Meeting Setup](../InterfaceOverview/EmailAndMeetingSetup.md).
 
-## Two ways to connect
+## Connection choices
 
-The **Integration Type** setting picks the route.
-
-| Integration Type | Works on | What it can do |
+| Integration Type | Works on | Plugin features |
 | :--- | :--- | :--- |
-| **Office 365 Application** | Windows, macOS, Linux | Everything below, through the Microsoft Graph API. Runs on a five-minute timer as well as from the menu. |
-| **Outlook Automation** | Windows only, with Outlook (classic) installed | Import contacts, export new contacts and download project email, by controlling Outlook (classic) on your computer. Menu items only; it does not sync assigned items. |
+| **Office 365 Application** | Windows, macOS, Linux | Archive project email and sync assigned items through Microsoft Graph, on a five-minute timer or by menu action. |
+| **Outlook Automation** | Windows with Outlook (classic) | Archive project email through Outlook. Menu action only. |
 
-**Outlook Automation** is the default for a new installation. It has no effect on macOS or Linux, so choose **Office 365 Application** there.
+**Outlook Automation** is the default for a new installation. On macOS and Linux, choose **Office 365 Application** to use this plugin.
 
-## What it does
+## Configure the plugin
 
-| Capability | Description |
-| :--- | :--- |
-| Import contacts | Copies contacts from Outlook into the Project Notes people list. |
-| Export new contacts | Copies Project Notes people that do not already exist in your Outlook contacts. Existing contacts are skipped, never merged or overwritten. |
-| Download project emails | Archives project-related email from configured mailbox folders into the project folder. |
-| Sync assigned items | Publishes the project manager's active tracker and action items as Microsoft To Do tasks. **Office 365 Application** only. |
+Open **Plugins · Settings → Outlook Integration**. Choose the integration type, then set the **Application ID** and **Tenant ID** if you use Office 365 Application. The Microsoft Entra registration for that connection needs `Mail.ReadWrite` to archive email and `Tasks.ReadWrite` to publish assigned items. The plugin's account is separate from the built-in [Office 365 Integration](../InterfaceOverview/Office365Integration.md) account used for mail and calendar drafts, File Finder, and native contacts.
 
-## Requirements for Office 365 Application
+Set **Backup Emails** and its inbox and sent folder settings to choose which project messages to archive. Use **Sync ToDo Items with Due Dates** and **Sync ToDo Items without Due Dates** to control task publishing. **Send Emails using Office 365** applies only to the optional IFS Cloud report plugin; it does not change Project Notes' built-in email handoff.
 
-You need a Microsoft Entra app registration that permits these delegated permissions:
+Older plugin settings or dialogs may still show **Import Contacts** or **Export New Contacts**. Those controls no longer run contact actions. Use **Settings → Email, Contacts, and Calendar** instead. The native **Full Contact Export** checks for possible existing contacts and lets you update, skip, or deliberately create a new contact.
 
-- `Contacts.Read` and `Contacts.ReadWrite` for importing and exporting contacts
-- `Mail.ReadWrite` for archiving project email
-- `Tasks.ReadWrite` for publishing assigned items
-- `Mail.Send`, used only when the optional IFS Cloud report plugin emails a report with **Send Emails using Office 365** turned on
+## Run manually
 
-This registration is configured separately from the one used by the built-in email and meeting features. The two connections are independent, and signing in to one does not sign you in to the other.
+With **Office 365 Application**, choose **Plugins · Utilities → Sync Tracker Items** or right-click a project and choose **Download All Emails**. With **Outlook Automation**, use **Download Emails from Outlook** on a project. The Office 365 Application also runs its configured work every five minutes.
 
-## Configuring the settings
+Archived messages go into the project's configured folder. Project Notes matches them by a project number in the subject. See [Project Page](../InterfaceOverview/ProjectPage.md) to set the **Project Folder**.
 
-1. From the app menu choose **Plugins · Settings**, then **Outlook Integration**.
+## Related documentation
 
-| Setting | Description |
-| :--- | :--- |
-| **Integration Type** | **Office 365 Application** or **Outlook Automation**. See [Two ways to connect](#two-ways-to-connect). |
-| **Application ID** | The Microsoft Entra application (client) ID for your app registration. Office 365 Application only. |
-| **Tenant ID** | Your Microsoft Entra tenant ID. Office 365 Application only. |
-| **Import Contacts** | Import contacts from Outlook into the people list. |
-| **Export New Contacts** | Export people who do not already exist as Outlook contacts. |
-| **Sync ToDo Items with Due Dates** | Publish action items that have a due date as tasks. |
-| **Sync ToDo Items without Due Dates** | Also publish action items without a due date. |
-| **Backup Emails** | Archive project-related email into the project folder. |
-| **Backup Inbox Folder** | The folder name or path inside the inbox to archive from. |
-| **Backup Sent Folder** | The folder name or path inside sent items to archive from. |
-| **Send Emails using Office 365** | Used only by the IFS Cloud report plugin. When on, and **Integration Type** is **Office 365 Application**, the plugin creates its email as a Microsoft 365 draft. When off, it opens the email in Outlook (classic), which works on Windows only. Project Notes' own email ignores this setting. |
-
-With **Office 365 Application**, the first time the plugin needs to authenticate it opens a browser window for sign-in. The token is cached so you are not prompted on every action.
-
-## Running it manually
-
-With **Office 365 Application**, these entries appear under **Plugins · Utilities**:
-
-- **Import Contacts from Office 365**
-- **Export New Contacts to Office 365**
-- **Sync Tracker Items**
-- **Download All Emails**, available when you right-click a project
-
-Between manual runs the plugin performs the same work on a five-minute timer.
-
-With **Outlook Automation** on Windows, the entries are **Import Contacts from Outlook**, **Export Contacts to Outlook** and **Download Emails from Outlook**. They run only when you choose them.
-
-## Archived email
-
-Downloaded messages are written to the project's configured folder. See [Project Page](<../InterfaceOverview/ProjectPage.md>) for setting the **Project Folder** location. Messages are matched to a project by the project number appearing in the subject.
-
-## Related Documentation
-
-- [Email and Meeting Setup](<../InterfaceOverview/EmailAndMeetingSetup.md>) — Sending project email and scheduling meetings
-- [iCloud Contacts](<iCloudContacts.md>) — The Apple equivalent for contact synchronization
-- [Office 365 Integration](<../InterfaceOverview/Office365Integration.md>) — The separate native Microsoft connection
-- [Plugin Settings](<PluginSettings.md>) — Where plugin settings are stored
+- [Contact Synchronization](../InterfaceOverview/Preferences.md#contact-synchronization)
+- [Office 365 Integration](../InterfaceOverview/Office365Integration.md)
+- [Plugin Settings](PluginSettings.md)

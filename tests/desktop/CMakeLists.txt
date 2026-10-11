@@ -116,6 +116,7 @@ target_link_libraries(tst_qmldesktop PRIVATE
     ProjectNotesEmail
     ProjectNotesEmailRendering
     ProjectNotesMeetings
+    ProjectNotesContacts
 )
 
 if(UNIX AND NOT APPLE AND NOT ANDROID)
@@ -146,6 +147,18 @@ add_custom_command(TARGET tst_qmldesktop POST_BUILD
 enable_testing()
 add_test(NAME qmldesktop COMMAND tst_qmldesktop)
 set_tests_properties(qmldesktop PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# Release API and installer-link coverage uses a fake network, never the live service.
+add_executable(tst_updatemanager
+    tst_updatemanager.cpp
+    ${ROOT_DIR}/updatemanager.cpp ${ROOT_DIR}/updatemanager.h
+    ${ROOT_DIR}/QLogger.cpp ${ROOT_DIR}/QLogger.h
+    ${ROOT_DIR}/QLoggerWriter.cpp ${ROOT_DIR}/QLoggerWriter.h
+)
+target_include_directories(tst_updatemanager PRIVATE ${ROOT_DIR})
+target_link_libraries(tst_updatemanager PRIVATE Qt6::Widgets Qt6::Network Qt6::Test)
+add_test(NAME updatemanager COMMAND tst_updatemanager)
+set_tests_properties(updatemanager PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # Fast, headless coverage for the native reconciliation path. This exercises a
 # dedicated SQLite connection, the shared lock, active-project filtering,
@@ -220,6 +233,21 @@ add_test(NAME microsoftoauth COMMAND tst_microsoftoauth)
 add_executable(tst_httptransport tst_httptransport.cpp)
 target_link_libraries(tst_httptransport PRIVATE Qt6::Core Qt6::Network Qt6::Test ProjectNotesIntegrations)
 add_test(NAME httptransport COMMAND tst_httptransport)
+set_tests_properties(httptransport PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+add_executable(tst_contacts tst_contacts.cpp)
+target_link_libraries(tst_contacts PRIVATE Qt6::Core Qt6::Sql Qt6::Test ProjectNotesContacts)
+add_test(NAME contacts COMMAND tst_contacts)
+add_executable(tst_contactproviders tst_contactproviders.cpp)
+target_link_libraries(tst_contactproviders PRIVATE Qt6::Core Qt6::Test ProjectNotesContacts)
+add_test(NAME contactproviders COMMAND tst_contactproviders)
+find_program(NODE_EXECUTABLE node)
+if(NODE_EXECUTABLE AND UNIX)
+    add_test(NAME thunderbirdcontactsbridge COMMAND ${NODE_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/test_thunderbird_bridge.js
+        $<TARGET_FILE:ProjectNotesThunderbirdContacts>
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../ProjectNotesContacts/thunderbird/background.js)
+endif()
 
 add_executable(tst_reportformatters tst_reportformatters.cpp)
 target_link_libraries(tst_reportformatters PRIVATE Qt6::Core Qt6::Test ProjectNotesEmail)
@@ -231,6 +259,10 @@ add_test(NAME reportformatters COMMAND tst_reportformatters)
 add_executable(tst_reportbuilders tst_reportbuilders.cpp)
 target_link_libraries(tst_reportbuilders PRIVATE Qt6::Core Qt6::Test ProjectNotesEmail)
 add_test(NAME reportbuilders COMMAND tst_reportbuilders)
+
+qt_add_executable(tst_projectemail tst_projectemail.cpp)
+target_link_libraries(tst_projectemail PRIVATE Qt6::Core Qt6::Network Qt6::Test ProjectNotesEmail)
+add_test(NAME projectemail COMMAND tst_projectemail)
 
 # Pure audience selection/model coverage is kept runnable while email-client
 # adapter checks are intentionally held.  It has no process, browser, or
@@ -248,7 +280,7 @@ add_test(NAME richtextpolicy COMMAND tst_richtextpolicy)
 set_tests_properties(richtextpolicy PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # Native meeting scheduling: iCalendar output, preparation, the calendar file,
-# Thunderbird and Graph backends, and the temporary-cache cleaner. Every
+# Thunderbird, iCloud and Graph backends, and the temporary-cache cleaner. Every
 # launcher, opener and account is a fake; no calendar or invitation is used.
 add_executable(tst_meetings tst_meetings.cpp)
 target_link_libraries(tst_meetings PRIVATE Qt6::Core Qt6::Gui Qt6::Test ProjectNotesMeetings ProjectNotesIntegrations ProjectNotesCore)

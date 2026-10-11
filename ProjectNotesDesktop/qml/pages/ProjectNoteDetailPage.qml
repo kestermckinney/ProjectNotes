@@ -38,17 +38,17 @@ Item {
         return DesktopAppController.deleteProjectNote(page.noteRow)
     }
 
-    // People list for the action-item Assigned/Identified combos.
-    property var    _people: []
-    function _peopleNames() { return _people.map(function(p){ return p.name }) }
-    function _idForName(n){ for (var i=0;i<_people.length;i++) if (_people[i].name===n) return _people[i].id; return "" }
-    function _nameForId(id){ for (var i=0;i<_people.length;i++) if (_people[i].id===id) return _people[i].name; return "" }
+    // Contacts list for the action-item Assigned/Identified combos.
+    property var    _contacts: []
+    function _contactNames() { return _contacts.map(function(p){ return p.name }) }
+    function _idForName(n){ for (var i=0;i<_contacts.length;i++) if (_contacts[i].name===n) return _contacts[i].id; return "" }
+    function _nameForId(id){ for (var i=0;i<_contacts.length;i++) if (_contacts[i].id===id) return _contacts[i].name; return "" }
 
     Component.onCompleted: {
         // Action-item Assigned/Identified combos list only this project's team
         // members (mirrors the Widgets team combos). _edit() re-loads this with the
         // row's current values included so an existing assignment keeps displaying.
-        _people = DesktopAppController.teamMemberList(page.projectId)
+        _contacts = DesktopAppController.teamMemberList(page.projectId)
         if (page.noteId !== "")
             DesktopAppController.setNoteFilter(page.noteId)
         _reload()
@@ -214,7 +214,7 @@ Item {
                             }
                             SmallAddButton {
                                 text: qsTr("Add")
-                                onClicked: { page._saveNow(); peoplePicker.open() }
+                                onClicked: { page._saveNow(); contactPicker.open() }
                             }
                         }
                         Repeater {
@@ -349,7 +349,7 @@ Item {
                                     ai._identifiedId  = (ai.model.identified_by || "").toString()
                                     // Refresh the team list so this row's current
                                     // people are present even if they left the team.
-                                    page._people = DesktopAppController.teamMemberList(
+                                    page._contacts = DesktopAppController.teamMemberList(
                                         page.projectId, [ai._assignedId, ai._identifiedId])
                                     aiAssigned.value  = page._nameForId(ai._assignedId)
                                     aiIdentified.value= page._nameForId(ai._identifiedId)
@@ -481,7 +481,7 @@ Item {
                                             text: {
                                                 var p = (ai.model.priority || "").toString()
                                                 var a = (ai.model.assigned_to || "").toString()
-                                                var who = a !== "" ? DesktopAppController.peopleNameForId(a) : ""
+                                                var who = a !== "" ? DesktopAppController.contactNameForId(a) : ""
                                                 return [p, who].filter(function(x){ return x !== "" }).join(" · ")
                                             }
                                             visible: text !== ""
@@ -542,14 +542,14 @@ Item {
                                         }
                                         ComboField {
                                             id: aiAssigned; label: qsTr("Assigned To")
-                                            options: page._peopleNames()
+                                            options: page._contactNames()
                                             includeNone: true
                                             searchable: true
                                             onActivated: (v) => { ai._assignedId = page._idForName(v); ai._touchDates(); ai._save() }
                                         }
                                         ComboField {
                                             id: aiIdentified; label: qsTr("Identified By")
-                                            options: page._peopleNames()
+                                            options: page._contactNames()
                                             includeNone: true
                                             searchable: true
                                             onActivated: (v) => { ai._identifiedId = page._idForName(v); ai._touchDates(); ai._save() }
@@ -570,6 +570,8 @@ Item {
                                         border.color: aiDesc.activeFocus ? Theme.accent : Theme.border
                                         TextArea {
                                             id: aiDesc
+                                            Keys.onTabPressed: nextItemInFocusChain().forceActiveFocus(Qt.TabFocusReason)
+                                            Keys.onBacktabPressed: nextItemInFocusChain(false).forceActiveFocus(Qt.BacktabFocusReason)
                                             anchors.fill: parent
                                             anchors.margins: 7
                                             color: Theme.text
@@ -608,8 +610,8 @@ Item {
     // ItemsPage / ItemDetailPage.
     signal moveToRequested(string itemId)
     // Attendee row menus use the attendee's person_id to open the corresponding
-    // People detail page, matching ProjectDetailPage's Team member menu.
-    signal goToPersonRequested(string personId)
+    // Contact detail page, matching ProjectDetailPage's Team member menu.
+    signal goToContactRequested(string contactId)
     // The project badge at the top of the page was clicked — routed through
     // Main.openProject so the project opens with its own breadcrumb.
     signal projectActivated(string projectId)
@@ -622,12 +624,14 @@ Item {
     // makes a copy a guaranteed clash.
     RecordRowMenu {
         id: rowMenu
+        emailProjectId: page.projectId
+        saveEmailSource: function() { return page._saveNow() }
         onExportRecord: (table, id) => page.exportRequested(table, id)
         // Copied action items keep this note, so the copy just turns up in the
         // list — copyTrackerItem() renumbers it and refreshes the models.
         onDuplicateRecord: (table, id) => DesktopAppController.copyTrackerItem(id)
         onMoveToRecord: (id) => page.moveToRequested(id)
-        onGoToPersonRequested: (personId) => page.goToPersonRequested(personId)
+        onGoToContactRequested: (contactId) => page.goToContactRequested(contactId)
     }
 
     // The note's own record/plugin menu — opened by the title row's kebab and
@@ -672,18 +676,18 @@ Item {
     // Shared full-field spell-check dialog (opened by fields / the toolbar).
     SpellCheckDialog { id: spellDialog }
 
-    // ── People picker (for adding an attendee) ────────────────────────────────
+    // ── Contact picker (for adding an attendee) ───────────────────────────────
     // Only this project's team members may be added as attendees (matches the
     // Widgets app). The roster is reloaded on open so changes made while the
     // note is open are reflected.
-    PeoplePickerDialog {
-        id: peoplePicker
+    ContactPickerDialog {
+        id: contactPicker
         headingText: qsTr("Add Attendee")
         reload: () => DesktopAppController.teamMemberList(page.projectId)
-        onPicked: (person) => {
+        onPicked: (contact) => {
             var r = DesktopAppController.addAttendee(page.noteId)
             if (r >= 0) {
-                DesktopAppController.saveAttendee(r, person.id)
+                DesktopAppController.saveAttendee(r, contact.id)
                 DesktopAppController.refreshMeetingAttendees()
             }
         }

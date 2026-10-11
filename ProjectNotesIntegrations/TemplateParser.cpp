@@ -5,7 +5,7 @@ namespace PN::Comm {
 const QList<TemplateField> &templateFieldCatalog()
 {
     static const QList<TemplateField> fields = {
-        {"project.number"}, {"project.name"}, {"client.name"},
+        {"project.number"}, {"project.name"}, {"company.name"},
         {"preferences.managerName"}, {"preferences.managingCompanyName"},
         // The date the email or meeting is prepared, as MM/DD/YYYY.
         {"current.date", TemplateFieldType::Date},
@@ -15,7 +15,12 @@ const QList<TemplateField> &templateFieldCatalog()
          {Workflow::SendMeetingNotes, Workflow::MeetingNotesReport}, true},
         {"report.date", TemplateFieldType::Date,
          {Workflow::TrackerItemsReport, Workflow::StatusReport, Workflow::MeetingNotesReport}},
-        {"report.internal", TemplateFieldType::Boolean}, {"report.type"}
+        {"report.internal", TemplateFieldType::Boolean}, {"report.type"},
+        {"contact.name", TemplateFieldType::Text, {Workflow::ProjectEmail}},
+        {"contact.email", TemplateFieldType::Text, {Workflow::ProjectEmail}},
+        {"location.description", TemplateFieldType::Text, {Workflow::ShareLocation}},
+        {"location.url", TemplateFieldType::Text, {Workflow::ShareLocation}},
+        {"location.fileName", TemplateFieldType::Text, {Workflow::ShareLocation}}
     };
     return fields;
 }

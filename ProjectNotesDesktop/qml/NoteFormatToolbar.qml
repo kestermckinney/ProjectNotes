@@ -452,7 +452,7 @@ Rectangle {
                     SpellCheckField { spellCheckEnabled: false }
                 }
             }
-            ListView {
+            KeyboardListView {
                 id: fontList
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -504,7 +504,7 @@ Rectangle {
             open()
         }
 
-        contentItem: ListView {
+        contentItem: KeyboardListView {
             clip: true
             model: bar._fontSizes
             ScrollBar.vertical: ScrollBar {}

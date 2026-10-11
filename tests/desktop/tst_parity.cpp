@@ -16,11 +16,23 @@
 #include <QFileInfo>
 #include <QMap>
 #include <QSignalSpy>
+#include <QSqlQuery>
+#include <QSqlError>
+#include <QDomDocument>
 #include <QStandardPaths>
+#include <QTemporaryDir>
 #include <QUuid>
 
 #include "DesktopAppController.h"
+#include "databaseobjects.h"
+#include "databasestructure.h"
+#include "databaseupgrade_v6_4_0.h"
+#include "legacywidgetsettings.h"
+#include <QSettings>
+#include <QScopeGuard>
 #include "ProjectNotesEmail/RecipientSelectionModel.h"
+#include "ProjectNotesEmail/CommunicationsController.h"
+#include "ProjectNotesIntegrations/TemplateEditorModel.h"
 
 namespace {
 
@@ -49,7 +61,7 @@ int rowForId(QAbstractItemModel* model, const QString& id)
 }
 
 // Id (column 0) of the first row whose column `col` equals `value`.
-// addClient()/addPerson() only assign the record id when it is first *saved*, so
+// addCompany()/addContact() only assign the record id when it is first *saved*, so
 // the id is looked up by a unique field after the save (the QML app resolves it
 // the same way once the row is committed).
 QString idForColumnValue(QAbstractItemModel* model, int col, const QString& value)
@@ -86,6 +98,138 @@ private slots:
         QVERIFY(c->databaseOpen());
     }
 
+    void test_localCleanupKeepsCurrentPreferences()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        QSettings settings(dir.filePath("settings.ini"), QSettings::IniFormat);
+        const QStringList retired{"UserFilter:ClientsModel", "UserFilter:ClientsModel:IsActive",
+                                  "MainWindow/Width", "tableViewProjectsColumns",
+                                  "tableViewColumnName_tableViewProjectsSortColumn", "ZoomFactor"};
+        const QStringList retained{"UserFilter:ShowClosedProjects", "ViewFilter:ShowResolvedTrackerItems",
+                                   "UI:QMLMainWindow:Width", "UI:ZoomPercent", "DefaultDictionary",
+                                   "Sync/Enabled", "Sync/Password", "UserFilter:CustomPlugin"};
+        for (const QString &key : retired + retained) settings.setValue(key, "saved");
+        PN::LegacyWidgetSettings::cleanupLocal(settings);
+        PN::LegacyWidgetSettings::cleanupLocal(settings);
+        for (const QString &key : retired) QVERIFY(!settings.contains(key));
+        for (const QString &key : retained) QCOMPARE(settings.value(key).toString(), QString("saved"));
+    }
+
+    void test_settingsFailuresReleaseLockAndPreserveTombstones()
+    {
+        const QString connection = uniq("settings-test-");
+        DatabaseObjects settings;
+        settings.setGuiDialogsEnabled(false);
+        settings.getDb() = QSqlDatabase::addDatabase("QSQLITE", connection);
+        settings.getDb().setDatabaseName(":memory:");
+        QVERIFY(settings.getDb().open());
+        auto cleanup = qScopeGuard([&] {
+            settings.getDb().close();
+            settings.getDb() = QSqlDatabase();
+            QSqlDatabase::removeDatabase(connection);
+        });
+        QSqlQuery q(settings.getDb());
+        QVERIFY(q.exec("PRAGMA foreign_keys = ON"));
+        QVERIFY(q.exec("CREATE TABLE allowed(id TEXT PRIMARY KEY)"));
+        QVERIFY(q.exec("INSERT INTO allowed VALUES('old'),('new')"));
+        QVERIFY(q.exec("CREATE TABLE application_settings(id TEXT PRIMARY KEY, parameter_name TEXT, "
+                       "parameter_value TEXT REFERENCES allowed(id) DEFERRABLE INITIALLY DEFERRED, "
+                       "updateddate INTEGER, deleted INTEGER DEFAULT 0)"));
+        QVERIFY(q.exec("INSERT INTO application_settings VALUES('active','key','old',2,0),"
+                       "('older','key','old',1,0),('deleted','key','old',3,1)"));
+        QVERIFY(settings.saveParameter("key", "new"));
+        QCOMPARE(settings.loadParameter("key"), QString("new"));
+        QVERIFY(q.exec("SELECT parameter_value FROM application_settings WHERE id IN ('older','deleted')"));
+        while (q.next()) QCOMPARE(q.value(0).toString(), QString("old"));
+        q.finish();
+        // The SQL statement succeeds, but a deferred constraint rejects commit.
+        QVERIFY(!settings.saveParameter("key", "missing-parent"));
+        QVERIFY(!settings.lastSaveError().isEmpty());
+        QCOMPARE(settings.loadParameter("key"), QString("new"));
+        QVERIFY(db_rwlock.tryLockForWrite());
+        db_rwlock.unlock();
+        QVERIFY(q.exec("DROP TABLE application_settings"));
+        QVERIFY(!settings.saveParameter("key", "new"));
+        QVERIFY(db_rwlock.tryLockForWrite());
+        db_rwlock.unlock();
+    }
+
+    void test_upgrade640RetiresOnlyLegacySettings()
+    {
+        QSqlQuery q(global_DBObjects.getDb());
+        QVERIFY(!global_DBObjects.getDb().tables().contains("project_risks"));
+        const QStringList retired{"PageState:ProjectsPage:project-id", "UserFilter:ClientsModel",
+                                  "UserFilter:ClientsModel:IsActive", "UserFilter:ShowClosedProjects",
+                                  "UserFilter:ShowInternalItems", "ViewFilter:ShowResolvedTrackerItems"};
+        const QStringList retained{"UI:ColumnFilters:review-test", "UI:SortOrder:review-test",
+                                   "UserFilter:CustomPlugin", "UI:LastProjectDetailTab:review-test",
+                                   "ReviewTest:CustomSetting"};
+        for (const QString &key : retired + retained)
+            QVERIFY(global_DBObjects.saveParameter(key, "review-test"));
+        // Empty legacy tables can be dropped; unrelated extension tables remain.
+        QVERIFY(q.exec("CREATE TABLE project_risks(id TEXT)"));
+        QVERIFY(q.exec("CREATE TABLE review_extension_data(id TEXT)"));
+        QVERIFY(q.exec("UPDATE application_version SET current_version='6.3.0'"));
+        DatabaseStructure structure;
+        QVERIFY(structure.UpgradeDatabase());
+        QVERIFY(!global_DBObjects.getDb().tables().contains("project_risks"));
+        QVERIFY(global_DBObjects.getDb().tables().contains("review_extension_data"));
+        for (const QString &key : retired) QVERIFY(global_DBObjects.loadParameter(key).isEmpty());
+        for (const QString &key : retained) QCOMPARE(global_DBObjects.loadParameter(key), QString("review-test"));
+        QVERIFY(q.exec("SELECT current_version FROM application_version"));
+        QVERIFY(q.next());
+        QCOMPARE(q.value(0).toString(), QString("6.4.0"));
+        q.finish();
+        QVERIFY(q.exec("SELECT deleted, syncdate, updateddate FROM application_settings "
+                       "WHERE parameter_name='PageState:ProjectsPage:project-id'"));
+        QVERIFY(q.next());
+        QCOMPARE(q.value(0).toInt(), 1);
+        QVERIFY(q.value(1).isNull());
+        QVERIFY(!q.value(2).isNull());
+        q.finish();
+        QVERIFY(structure.UpgradeDatabase());
+        // A later sync from an old client is cleaned up on the next open too.
+        QVERIFY(global_DBObjects.saveParameter(retired.first(), "old-client"));
+        QVERIFY(structure.UpgradeDatabase());
+        QVERIFY(global_DBObjects.loadParameter(retired.first()).isEmpty());
+        QVERIFY(q.exec("CREATE TABLE project_risks(id TEXT)"));
+        QVERIFY(q.exec("INSERT INTO project_risks VALUES('historical-risk')"));
+        QVERIFY(db_UpgradeStep_v6_4_0());
+        QVERIFY(!global_DBObjects.getDb().tables().contains("project_risks"));
+        QVERIFY(q.exec("DROP TABLE review_extension_data"));
+        for (const QString &key : retired + retained) {
+            q.prepare("DELETE FROM application_settings WHERE parameter_name=?");
+            q.addBindValue(key);
+            QVERIFY(q.exec());
+        }
+    }
+
+    void test_upgrade640RollsBackOnFailure()
+    {
+        QSqlQuery q(global_DBObjects.getDb());
+        QVERIFY(global_DBObjects.saveParameter("PageState:rollback-test:record", "legacy"));
+        QVERIFY(q.exec("UPDATE application_version SET current_version='6.3.0'"));
+        QVERIFY(q.exec("CREATE TRIGGER review_cleanup_failure BEFORE UPDATE ON application_settings "
+                       "WHEN OLD.parameter_name='PageState:rollback-test:record' "
+                       "BEGIN SELECT RAISE(ABORT, 'cleanup failed'); END"));
+        auto cleanup = qScopeGuard([&] {
+            QSqlQuery restore(global_DBObjects.getDb());
+            restore.exec("DROP TRIGGER IF EXISTS review_cleanup_failure");
+            restore.exec("DELETE FROM application_settings WHERE parameter_name='PageState:rollback-test:record'");
+            restore.exec("UPDATE application_version SET current_version='6.4.0'");
+        });
+        DatabaseStructure structure;
+        QVERIFY(!structure.UpgradeDatabase());
+        QCOMPARE(global_DBObjects.loadParameter("PageState:rollback-test:record"), QString("legacy"));
+        QVERIFY(q.exec("SELECT current_version FROM application_version"));
+        QVERIFY(q.next());
+        QCOMPARE(q.value(0).toString(), QString("6.3.0"));
+        q.finish();
+        QVERIFY(db_rwlock.tryLockForWrite());
+        db_rwlock.unlock();
+    }
+
     // ── Static option lists back the ComboBoxes on every form ─────────────────
     void test_00_optionLists()
     {
@@ -97,40 +241,42 @@ private slots:
         QVERIFY(!c->itemStatusOptions().isEmpty());
         QVERIFY(!c->fileTypeOptions().isEmpty());
         QVERIFY(!c->statusItemCategoryOptions().isEmpty());
+        QCOMPARE(c->meetingTemplateChoices().size(), 12);
+        QCOMPARE(c->meetingTemplateEditorModel()->property("templates").toList().size(), 12);
     }
 
     void test_01_clientCrud()
     {
-        const int before = c->clientsModel()->rowCount();
-        const int row = c->addClient();
+        const int before = c->companiesModel()->rowCount();
+        const int row = c->addCompany();
         QVERIFY(row >= 0);
 
         const QString name = uniq("Client_");
-        QVERIFY2(c->saveClient(row, name), qPrintable(c->lastSaveError()));
-        QCOMPARE(c->clientsModel()->rowCount(), before + 1);
+        QVERIFY2(c->saveCompany(row, name), qPrintable(c->lastSaveError()));
+        QCOMPARE(c->companiesModel()->rowCount(), before + 1);
 
-        const QString id = idForColumnValue(c->clientsModel(), 1, name);  // col 1 = client_name
+        const QString id = idForColumnValue(c->companiesModel(), 1, name);  // col 1 = client_name
         QVERIFY(!id.isEmpty());
-        QCOMPARE(c->clientNameForId(id), name);
+        QCOMPARE(c->companyNameForId(id), name);
 
         m_clientId = id;
     }
 
     void test_02_personCrud()
     {
-        const int before = c->peopleModel()->rowCount();
-        const int row = c->addPerson();
+        const int before = c->contactsModel()->rowCount();
+        const int row = c->addContact();
         QVERIFY(row >= 0);
 
         const QString name = uniq("Person_");
-        QVERIFY2(c->savePerson(row, name, "p@example.com", "555-1000", "555-2000",
+        QVERIFY2(c->saveContact(row, name, "p@example.com", "555-1000", "555-2000",
                                m_clientId, "Engineer"),
                  qPrintable(c->lastSaveError()));
-        QCOMPARE(c->peopleModel()->rowCount(), before + 1);
+        QCOMPARE(c->contactsModel()->rowCount(), before + 1);
 
-        const QString id = idForColumnValue(c->peopleModel(), 1, name);  // col 1 = name
+        const QString id = idForColumnValue(c->contactsModel(), 1, name);  // col 1 = name
         QVERIFY(!id.isEmpty());
-        QCOMPARE(c->peopleNameForId(id), name);
+        QCOMPARE(c->contactNameForId(id), name);
 
         m_personId = id;
     }
@@ -142,7 +288,7 @@ private slots:
         QVERIFY(row >= 0);
         // addProject() only stages the row in the model cache; the record — and
         // with it the id — is written by the first save, once the NOT NULL
-        // number/name are filled in. Same contract as addClient()/addPerson().
+        // number/name are filled in. Same contract as addCompany()/addContact().
         QVERIFY2(c->projectIdAtRow(row).isEmpty(), "a staged project must not have an id yet");
 
         const QString num  = uniq("PN");
@@ -174,8 +320,8 @@ private slots:
     void test_04_pickerLists()
     {
         // Client / person pickers used by the project + person forms.
-        QVERIFY(c->clientList().size()  >= 1);
-        QVERIFY(c->peopleList().size()  >= 1);
+        QVERIFY(c->companyList().size()  >= 1);
+        QVERIFY(c->contactList().size()  >= 1);
         // Team-member picker must include an explicitly-included id even before
         // anyone is added to the team.
         const QVariantList tm = c->teamMemberList(m_projectId, { m_personId });
@@ -288,13 +434,13 @@ private slots:
     {
         // A fresh person, so the duplicate-team-member guard doesn't trip on the
         // project's default PM.
-        const int prow = c->addPerson();
+        const int prow = c->addContact();
         QVERIFY(prow >= 0);
         const QString memberName = uniq("Member_");
-        QVERIFY2(c->savePerson(prow, memberName, "m@example.com", "", "",
+        QVERIFY2(c->saveContact(prow, memberName, "m@example.com", "", "",
                                m_clientId, "Analyst"),
                  qPrintable(c->lastSaveError()));
-        const QString memberId = idForColumnValue(c->peopleModel(), 1, memberName);
+        const QString memberId = idForColumnValue(c->contactsModel(), 1, memberName);
         QVERIFY(!memberId.isEmpty());
 
         c->setProjectFilter(m_projectId);
@@ -334,6 +480,115 @@ private slots:
                                         "Spec document", "/tmp/spec.txt"),
                  qPrintable(c->lastSaveError()));
         QCOMPARE(c->projectLocationsModel()->rowCount(), before + 1);
+    }
+
+    void test_11b_projectEmailAndLocationSharing()
+    {
+        auto *review = qobject_cast<PN::Comm::CommunicationsController *>(c->communicationsController());
+        auto *recipients = qobject_cast<PN::Comm::RecipientSelectionModel *>(c->recipientSelectionModel());
+        auto *templates = qobject_cast<PN::Comm::TemplateEditorModel *>(c->templateEditorModel());
+        QVERIFY(review); QVERIFY(recipients); QVERIFY(templates);
+        templates->setWorkflow("project-email");
+        templates->setDraftSubject("Hello {{ contact.name }} - {{ project.number }}");
+        templates->setDraftRichBody("<p>To {{ contact.email }} about {{ project.name }}</p>");
+        QVERIFY(templates->save());
+        QVERIFY(c->prepareProjectEmailReview(m_projectId, m_personId));
+        QTRY_COMPARE_WITH_TIMEOUT(review->stageName(), "reviewing", 5000);
+        QCOMPARE(recipients->selectedRecipientCount(), 1);
+        QCOMPARE(review->preparation().recipients.first().address, "p@example.com");
+        QVERIFY(review->subject().contains(m_projectNumber));
+        QVERIFY(review->htmlBody().contains("p@example.com"));
+        QVERIFY(recipients->rowCount() > 1);
+        QVERIFY(c->saveReviewAudiencePreset("Project person audience"));
+        QString projectPresetId;
+        for (const auto &preset : c->reviewAudiencePresets())
+            if (preset.toMap().value("name").toString() == "Project person audience")
+                projectPresetId = preset.toMap().value("id").toString();
+        QVERIFY(!projectPresetId.isEmpty());
+        QVERIFY(c->setReviewAudiencePresetDefault(projectPresetId));
+        recipients->selectAll();
+        QVERIFY(recipients->selectedRecipientCount() > 1);
+        QVERIFY(c->applyReviewAudiencePreset(projectPresetId));
+        QCOMPARE(recipients->selectedRecipientCount(), 1);
+        QCOMPARE(recipients->resolve().recipients.first().address, "p@example.com");
+        // A same-workflow template edit must be used on the next person draft.
+        templates->setDraftSubject("Follow up {{ project.number }}");
+        templates->setDraftRichBody("<p>Configured body for {{ contact.email }}</p>");
+        QVERIFY(templates->save());
+        QVERIFY(c->prepareProjectEmailReview(m_projectId, m_personId));
+        QTRY_COMPARE_WITH_TIMEOUT(review->stageName(), "reviewing", 5000);
+        QCOMPARE(review->subject(), "Follow up " + m_projectNumber);
+        QCOMPARE(review->htmlBody(), "<p>Configured body for p@example.com</p>");
+        QCOMPARE(recipients->selectedRecipientCount(), 1);
+        QVERIFY(templates->resetSelected());
+        QVERIFY(c->prepareProjectEmailReview(m_projectId));
+        QTRY_COMPARE_WITH_TIMEOUT(review->stageName(), "reviewing", 5000);
+        // Team drafts load their project-email default; saved meeting guests
+        // must remain recipients even without a clicked-person source.
+        QCOMPARE(recipients->selectedRecipientCount(), 1);
+        QCOMPARE(recipients->resolve().recipients.first().address, "p@example.com");
+        QVERIFY(c->applyReviewAudiencePreset(projectPresetId));
+        QVERIFY(c->prepareProjectEmailReview(m_projectId, m_personId));
+        QTRY_COMPARE_WITH_TIMEOUT(review->stageName(), "reviewing", 5000);
+        QVERIFY(review->subject().contains(m_projectNumber));
+        QVERIFY(!review->subject().contains("Follow up"));
+        QTemporaryDir directory;
+        QFile original(directory.filePath("attachment.txt"));
+        QVERIFY(original.open(QIODevice::WriteOnly)); original.write("original bytes"); original.close();
+        c->setProjectFilter(m_projectId);
+        const int row = c->addProjectLocation(m_projectId);
+        QVERIFY(c->saveProjectLocation(row, c->fileTypeOptions().first(), "Shared attachment", original.fileName()));
+        const QString locationId = idForColumnValue(c->projectLocationsModel(), 3, "Shared attachment");
+        QVERIFY(!locationId.isEmpty());
+        QVERIFY(c->prepareLocationEmailReview(m_projectId, locationId, true));
+        QTRY_COMPARE_WITH_TIMEOUT(review->stageName(), "reviewing", 5000);
+        QCOMPARE(review->preparation().attachments.size(), 1);
+        const auto artifact = review->preparation().attachments.first();
+        QVERIFY(artifact.absolutePath != original.fileName());
+        QVERIFY(original.open(QIODevice::WriteOnly)); original.write("changed bytes"); original.close();
+        QFile cached(artifact.absolutePath); QVERIFY(cached.open(QIODevice::ReadOnly));
+        QCOMPARE(cached.readAll(), QByteArray("original bytes")); cached.close();
+        QVERIFY(c->saveReviewAudiencePreset("Location audience"));
+        const auto presets = c->reviewAudiencePresets(); QVERIFY(!presets.isEmpty());
+        const QString presetId = presets.first().toMap().value("id").toString();
+        QVERIFY(c->setReviewAudiencePresetDefault(presetId));
+        QVERIFY(c->prepareLocationEmailReview(m_projectId, locationId, true));
+        QTRY_COMPARE_WITH_TIMEOUT(review->stageName(), "reviewing", 5000);
+        QVERIFY(c->applyReviewAudiencePreset(presetId));
+        // Changing the saved location after preview must block the handoff,
+        // before any mail application or provider is invoked.
+        const int savedRow = rowForId(c->projectLocationsModel(), locationId);
+        QVERIFY(c->saveProjectLocation(savedRow, c->fileTypeOptions().first(), "Changed attachment", original.fileName()));
+        QVERIFY(c->handoffPreparedReview());
+        QTRY_COMPARE_WITH_TIMEOUT(review->stageName(), "failed", 5000);
+        QVERIFY(review->diagnostic().contains("changed"));
+    }
+
+    void test_11c_standalonePersonEmailHasNoProjectTemplate()
+    {
+        const int row = c->addContact();
+        QVERIFY(row >= 0);
+        QVERIFY(c->saveContact(row, "Standalone email person", "standalone@example.test", "", "", m_clientId, ""));
+        const QString contactId = idForColumnValue(c->contactsModel(), 1, "Standalone email person");
+        QVERIFY(!contactId.isEmpty());
+        QVERIFY(c->prepareContactEmailReview(contactId));
+        auto *review = qobject_cast<PN::Comm::CommunicationsController *>(c->communicationsController());
+        auto *recipients = qobject_cast<PN::Comm::RecipientSelectionModel *>(c->recipientSelectionModel());
+        QTRY_COMPARE_WITH_TIMEOUT(review->stageName(), "reviewing", 5000);
+        QCOMPARE(review->preparation().source.workflow, PN::Comm::Workflow::ContactEmail);
+        QVERIFY(review->preparation().source.projectId.isEmpty());
+        QVERIFY(review->subject().isEmpty());
+        QVERIFY(review->htmlBody().isEmpty());
+        QCOMPARE(recipients->selectedRecipientCount(), 1);
+        QCOMPARE(review->preparation().recipients.first().address, "standalone@example.test");
+        QVERIFY(!review->setSubject("A plain email"));
+        QVERIFY(!review->setHtmlBody("<p>New message</p>"));
+        QVERIFY(review->subject().isEmpty());
+        QVERIFY(review->htmlBody().isEmpty());
+        QVERIFY(PN::Comm::EmailContentBuilder::prepare(review->preparation()).request.has_value());
+        QVERIFY(!c->saveReviewAudiencePreset("Not a project audience"));
+        QVERIFY(!c->prepareProjectEmailReview({}));
+        QVERIFY(!c->prepareContactEmailReview({}));
     }
 
     void test_12_statusItems()
@@ -525,6 +780,19 @@ private slots:
 
     void test_17_xmlExportImport()
     {
+        const QString audienceId = uniq("audience_");
+        const QString audienceName = uniq("Audience_");
+        QSqlQuery insert(global_DBObjects.getDb());
+        insert.prepare("INSERT INTO project_email_audiences "
+                       "(id, project_id, workflow, audience_name, people_source, company_filter, "
+                       "selected_person_ids_json, default_workflows_json) "
+                       "VALUES (?, ?, 'project', ?, 'chosen-people', 'all', ?, '[\"status\"]')");
+        insert.addBindValue(audienceId);
+        insert.addBindValue(m_projectId);
+        insert.addBindValue(audienceName);
+        insert.addBindValue(QString("[\"%1\"]").arg(m_personId));
+        QVERIFY2(insert.exec(), qPrintable(insert.lastError().text()));
+
         const QString table = c->tableNameForModel(c->projectsListModel());
         QVERIFY2(!table.isEmpty(), "could not resolve source table for the projects model");
 
@@ -535,8 +803,34 @@ private slots:
         QVERIFY(fi.exists());
         QVERIFY(fi.size() > 0);
 
+        QFile exported(path);
+        QVERIFY(exported.open(QFile::ReadOnly));
+        QDomDocument xml;
+        QVERIFY(xml.setContent(&exported));
+        exported.close();
+        const auto audiences = xml.elementsByTagName("table");
+        bool foundAudience = false;
+        for (int i = 0; i < audiences.count(); ++i)
+            foundAudience |= audiences.at(i).toElement().attribute("name") == "project_email_audiences";
+        QVERIFY2(foundAudience, "project XML omitted audience groups");
+
+        QSqlQuery remove(global_DBObjects.getDb());
+        remove.prepare("DELETE FROM project_email_audiences WHERE id = ?");
+        remove.addBindValue(audienceId);
+        QVERIFY2(remove.exec(), qPrintable(remove.lastError().text()));
+
         // Re-importing the exported record must succeed (round-trip).
         QVERIFY2(c->importXmlFile(path), "re-import of exported project failed");
+        QSqlQuery restored(global_DBObjects.getDb());
+        restored.prepare("SELECT project_id, audience_name, selected_person_ids_json, default_workflows_json "
+                         "FROM project_email_audiences WHERE id = ? AND deleted = 0");
+        restored.addBindValue(audienceId);
+        QVERIFY2(restored.exec(), qPrintable(restored.lastError().text()));
+        QVERIFY(restored.next());
+        QCOMPARE(restored.value(0).toString(), m_projectId);
+        QCOMPARE(restored.value(1).toString(), audienceName);
+        QCOMPARE(restored.value(2).toString(), QString("[\"%1\"]").arg(m_personId));
+        QCOMPARE(restored.value(3).toString(), QString("[\"status\"]"));
         QFile::remove(path);
     }
 
@@ -638,13 +932,13 @@ private slots:
 
         // A person who is not (yet) a member of destProjectId, to exercise the
         // auto-add path.
-        const int prow = c->addPerson();
+        const int prow = c->addContact();
         QVERIFY(prow >= 0);
         const QString moverName = uniq("Mover_");
-        QVERIFY2(c->savePerson(prow, moverName, "mv@example.com", "", "",
+        QVERIFY2(c->saveContact(prow, moverName, "mv@example.com", "", "",
                                m_clientId, "Analyst"),
                  qPrintable(c->lastSaveError()));
-        const QString moverId = idForColumnValue(c->peopleModel(), 1, moverName);
+        const QString moverId = idForColumnValue(c->contactsModel(), 1, moverName);
         QVERIFY(!moverId.isEmpty());
 
         // ── No-op: "moving" to the item's own project is not a valid move ──────

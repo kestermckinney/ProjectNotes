@@ -1,9 +1,11 @@
 # Reports and Email
 
-Project Notes builds four communications from your saved project data:
+Project Notes builds communications from your saved project data:
 
 - **Send Notes** for one saved meeting note
 - **Meeting Notes Report**, **Status Report** and **Tracker Items Report** for a whole project
+- **Project Email** for the project team or one contact attached to the project
+- **Share Location** to email a link or a file attachment
 
 Each one ends the same way. Project Notes prepares the content, you review it, and then it opens a draft in your mail application. Nothing leaves your machine until you press Send there.
 
@@ -13,6 +15,8 @@ Set the integration up once before using any of this. See [Email and Meeting Set
 
 Reports are built from what is saved, not from what is on screen. Project Notes saves the open record for you when you start a report, but if a note or a tracker item is open and unsaved somewhere else, save it first.
 
+Project Notes also checks again right before handing a draft to your mail application. If the project's data changed after the review opened — someone else's sync came in, or you edited the project in another window — it stops with "The source data changed" instead of sending stale content. Close the review and start the report again to pick up the current data.
+
 ## Sending one meeting note
 
 1. Open the project note, or right-click its row in the project's **Notes** tab.
@@ -21,6 +25,18 @@ Reports are built from what is saved, not from what is on screen. Project Notes 
 4. Adjust the list, then click **Send Email**.
 
 The notes are formatted into the body of the message. There is no attachment and no format choice.
+
+## Project email and location sharing
+
+Right-click a project in the sidebar, project list, or project page and choose **Project Email…** to start a message to its team. Right-click a team member or a meeting attendee and choose **Project Email…** to preselect that contact. Both actions use the **Project Email** subject and body configured in **Settings → Email Templates**; `contact.name` and `contact.email` refer to the contact clicked and are empty for a project-team message. The review offers the same recipient editing and saved-audience controls as report emails. Save or update an audience by name and optionally make it the project-email default. A contact action preserves the clicked recipient instead of automatically loading that default.
+
+On the **Contacts** page or a contact's own page, choose **Email…** to start a blank message to that contact, even if they are not attached to a project. This action uses your configured email integration but does not apply a project template or offer project audiences.
+
+In the project's **Locations** tab, right-click a location and choose **Share as Attachment…**. Web URLs also offer **Share Link…**. Local locations must point to an existing file to be attached. URL attachments are downloaded into the application cache before the review becomes ready; downloads have a 50 MB limit and a 60-second timeout. Download errors appear in the review and prevent creating an incomplete draft.
+
+Location sharing uses the same saved audiences as reports. Choose an existing audience, adjust recipients, or save a new audience and optionally make it the sharing default. Configure the subject and body using the **Share Location** email type. Its fields include `location.description`, `location.url`, and `location.fileName`; keep `{{ content.body }}` in the body to include the link or attachment description.
+
+Create Email Draft dialogs do not display the subject or email body. Project Email and Share Location drafts still use their configured templates; plain contact emails start blank. Adjust recipients and audiences where offered, then choose **Create Email Draft**. Review, edit, and send the message from your mail client. Cached downloads and attachment copies are deleted when Project Notes closes, so save or send the draft before quitting.
 
 ## Running a project report
 
@@ -32,7 +48,9 @@ The notes are formatted into the body of the message. There is no attachment and
 
 The **Report** dropdown lets you switch between the three reports without closing the dialog. **Reporting date** sets the date printed on the report and available to templates as `report.date`.
 
-**Generate internal report**, called **Include internal meetings** on the Meeting Notes Report, brings internal-only material into the output. Leave it off for anything a client will see. See [Presenting to Clients](<PresentingToClients.md>).
+**Generate internal report**, called **Include internal meetings** on the Meeting Notes Report, brings internal-only material into the output. Leave it off for anything a company will see. See [Presenting to Companies](<PresentingToCompanies.md>).
+
+Turning on an internal report also checks your recipients: Project Notes warns you if the managing company isn't set in **Settings > Preferences**, and again if any selected recipient falls outside that managing company. Either warning shows above the recipient list so you can catch a company contact before an internal report reaches them.
 
 The Tracker Items Report adds two filter rows:
 
@@ -63,11 +81,11 @@ Pick a **Format**:
 
 Then choose recipients under **Send to** and click **Send Email**.
 
-With **Microsoft 365 drafts** selected as your integration, the draft is created in your mailbox and opened in Outlook on the web. With the other integrations, your mail application opens with the report and recipients already filled in.
+With **Microsoft 365 drafts** selected as your integration, the draft is created in your mailbox and opened in Outlook on the web. With **iCloud**, the draft is created in iCloud Mail, but iCloud provides no link to the new item, so open Drafts to review it. With the other integrations, your mail application opens with the report and recipients already filled in.
 
 ## Choosing recipients
 
-Recipients come from people records attached to the project. A person with no email address cannot be selected, and you cannot type an address into the dialog. To include someone new, add them as a person and put them on the project team.
+Recipients come from contact records attached to the project. A contact with no email address cannot be selected, and you cannot type an address into the dialog. To include someone new, add them as a contact and put them on the project team.
 
 The recipient panel shows every candidate with the reason they qualify, such as **Receives status reports** or their team role. Above the list you get the running count and the unique **To**, **Cc** and **Bcc** totals. Each row has a checkbox and a role dropdown.
 
@@ -101,4 +119,4 @@ Rendered reports and staged attachments live in the application cache folder unt
 - [Scheduling Meetings](<ScheduleMeeting.md>) — Invitations from a project
 - [Project Page](<ProjectPage.md>) — Team members, **Receive Status**, and status report items
 - [Notes Page](<NotesPage.md>) — Writing the meeting notes these reports draw from
-- [Presenting to Clients](<PresentingToClients.md>) — Keeping internal material out of client communications
+- [Presenting to Companies](<PresentingToCompanies.md>) — Keeping internal material out of company communications

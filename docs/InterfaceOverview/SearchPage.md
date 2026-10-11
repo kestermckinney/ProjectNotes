@@ -2,7 +2,7 @@
 
 The Search Page performs a full-text search across the entire database. Results are automatically filtered by the same options available from the app menu (the menu icon at the top of the icon rail): **Show Internal / Budget Items**, **Show Resolved Items**, and **Show Closed Projects**.
 
-> **Looking for a quick per-page filter?** Use the quick-search box in the bar above the Projects, Items, People, or Clients list to instantly filter rows on the currently visible list without leaving the page.
+> **Looking for a quick per-page filter?** Use the quick-search box in the bar above the Projects, Items, Contacts, or Companies list to instantly filter rows on the currently visible list without leaving the page.
 
 **To access the Search Page:**
 

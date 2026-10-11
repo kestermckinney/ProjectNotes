@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(ProjectNotesMobile VERSION 6.3.0 LANGUAGES CXX)
+project(ProjectNotesMobile VERSION 6.4.0 LANGUAGES CXX)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../version.h.in
+               ${CMAKE_CURRENT_BINARY_DIR}/version.h @ONLY)
+include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -107,14 +110,14 @@ qt_add_qml_module(ProjectNotesMobile
         qml/ActiveIndicator.qml
         qml/Main.qml
         qml/pages/ProjectsListPage.qml
-        qml/pages/PeoplePage.qml
-        qml/pages/ClientsPage.qml
+        qml/pages/ContactsPage.qml
+        qml/pages/CompaniesPage.qml
         qml/pages/SyncSettingsPage.qml
         qml/pages/ViewOptionsPage.qml
         qml/pages/PreferencesPage.qml
         qml/pages/AboutPage.qml
-        qml/pages/PersonDetailPage.qml
-        qml/pages/ClientDetailPage.qml
+        qml/pages/ContactDetailPage.qml
+        qml/pages/CompanyDetailPage.qml
         qml/pages/AllItemsPage.qml
         qml/pages/ProjectDetailsPage.qml
         qml/pages/DateFieldRow.qml

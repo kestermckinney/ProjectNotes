@@ -18,12 +18,11 @@ class RecipientSelectionModel final : public QAbstractListModel {
     Q_PROPERTY(int toRecipientCount READ toRecipientCount NOTIFY selectionStateChanged)
     Q_PROPERTY(int ccRecipientCount READ ccRecipientCount NOTIFY selectionStateChanged)
     Q_PROPERTY(int bccRecipientCount READ bccRecipientCount NOTIFY selectionStateChanged)
-    Q_PROPERTY(QVariantList excludedRecipients READ excludedRecipients NOTIFY selectionStateChanged)
     Q_PROPERTY(QString internalAudienceWarning READ internalAudienceWarning NOTIFY selectionStateChanged)
     Q_PROPERTY(QString audienceDiagnostic READ audienceDiagnostic NOTIFY selectionStateChanged)
 public:
     enum Role {
-        PersonIdRole = Qt::UserRole + 1,
+        ContactIdRole = Qt::UserRole + 1,
         NameRole,
         AddressRole,
         CompanyNameRole,
@@ -43,13 +42,13 @@ public:
     // managing-company ID. The model derives the warning from its selected
     // entries; QML never receives or compares company IDs.
     void setInternalReportContext(bool internalReport, QString managingCompanyId);
-    Q_INVOKABLE bool setSelected(const QString &personId, bool selected);
+    Q_INVOKABLE bool setSelected(const QString &contactId, bool selected);
     // Bulk selection is kept in the model so QML never has to infer or walk
     // the current (possibly filtered/grouped) list of recipients.
     Q_INVOKABLE void selectAll();
     Q_INVOKABLE void clearSelection();
-    Q_INVOKABLE bool setRecipientRole(const QString &personId, RecipientRole role);
-    Q_INVOKABLE bool setRecipientRoleValue(const QString &personId, int role);
+    Q_INVOKABLE bool setRecipientRole(const QString &contactId, RecipientRole role);
+    Q_INVOKABLE bool setRecipientRoleValue(const QString &contactId, int role);
     Q_INVOKABLE void setAddressLaterExplicitlyChosen(bool chosen);
     [[nodiscard]] bool addressLaterExplicitlyChosen() const;
     Q_INVOKABLE void reset();
@@ -58,10 +57,9 @@ public:
     [[nodiscard]] int toRecipientCount() const;
     [[nodiscard]] int ccRecipientCount() const;
     [[nodiscard]] int bccRecipientCount() const;
-    [[nodiscard]] QVariantList excludedRecipients() const;
     [[nodiscard]] QString internalAudienceWarning() const;
     [[nodiscard]] QString audienceDiagnostic() const;
-    // Presets contain only persisted snapshot-person choices. The
+    // Presets contain only persisted snapshot-contact choices. The
     // address-later escape hatch deliberately remains review-local.
     [[nodiscard]] QList<RecipientOverride> overrides() const;
     void applyOverrides(const QList<RecipientOverride> &overrides);
@@ -73,16 +71,15 @@ signals:
 
 private:
     struct Entry {
-        SnapshotPerson person;
+        SnapshotContact contact;
         bool selected = true;
         RecipientRole role = RecipientRole::To;
         int sourceOrder = 0;
     };
-    int indexOf(const QString &personId) const;
+    int indexOf(const QString &contactId) const;
     int recipientRoleCount(RecipientRole role) const;
-    QString sourceReason(const SnapshotPerson &person) const;
+    QString sourceReason(const SnapshotContact &contact) const;
     QList<Entry> m_entries;
-    QList<AudienceExclusion> m_exclusions;
     ValidationResult m_audienceValidation;
     bool m_addressLaterExplicitlyChosen = false;
     bool m_internalReport = false;

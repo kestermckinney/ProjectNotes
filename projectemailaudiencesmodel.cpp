@@ -11,10 +11,10 @@ ProjectEmailAudiencesModel::ProjectEmailAudiencesModel(DatabaseObjects *dbo) : S
     addColumn("project_id", tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique, "projects", "id", "project_number");
     addColumn("workflow", tr("Workflow"), DBString, DBNotSearchable, DBRequired, DBEditable);
     addColumn("audience_name", tr("Audience Name"), DBString, DBSearchable, DBRequired, DBEditable);
-    addColumn("people_source", tr("People Source"), DBString, DBNotSearchable, DBRequired, DBEditable);
+    addColumn("people_source", tr("Contact Source"), DBString, DBNotSearchable, DBRequired, DBEditable);
     addColumn("company_filter", tr("Company Filter"), DBString, DBNotSearchable, DBRequired, DBEditable);
     addColumn("selected_company_ids_json", tr("Selected Companies"), DBString, DBNotSearchable, DBRequired, DBEditable);
-    addColumn("selected_person_ids_json", tr("Selected People"), DBString, DBNotSearchable, DBRequired, DBEditable);
+    addColumn("selected_person_ids_json", tr("Selected Contacts"), DBString, DBNotSearchable, DBRequired, DBEditable);
     addColumn("recipient_distribution_json", tr("Recipient Distribution"), DBString, DBNotSearchable, DBRequired, DBEditable);
     addColumn("is_default", tr("Default"), DBBool, DBNotSearchable, DBRequired, DBEditable);
     addColumn("default_workflows_json", tr("Default For Reports"), DBString, DBNotSearchable, DBNotRequired, DBEditable);

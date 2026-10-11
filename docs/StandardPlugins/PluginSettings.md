@@ -2,7 +2,7 @@
 
 ## Built-In Standard Plugins
 
-Project Notes ships with a small set of Python plugins, installed and enabled out of the box. They extend the application with contact synchronization, document templates and enterprise connections.
+Project Notes ships with a small set of Python plugins for document templates and enterprise connections. Contact synchronization is a native application service configured under [Preferences](../InterfaceOverview/Preferences.md#contact-synchronization).
 
 Email, meeting invitations and the four project reports are **not** plugins. They are built into Project Notes and are configured on the main **Settings** page. See [Email and Meeting Setup](<../InterfaceOverview/EmailAndMeetingSetup.md>), [Reports and Email](<../InterfaceOverview/ReportsAndEmail.md>) and [Scheduling Meetings](<../InterfaceOverview/ScheduleMeeting.md>).
 
@@ -13,8 +13,7 @@ File Finder and the native Office 365 connection are application services rather
 ### Standard Plugins Overview
 
 **Contacts and enterprise connections:**
-- Outlook Integration — Import and export contacts, download project-related email, and sync assigned items, through Microsoft 365 on any platform or Outlook (classic) on Windows. See [Outlook Integration](<OutlookIntegration.md>).
-- iCloud Contacts — Import iCloud contacts and optionally export new Project Notes contacts
+- Outlook Integration — Download project-related email and sync assigned items. See [Outlook Integration](<OutlookIntegration.md>).
 - IFS Cloud — Connect to a customized IFS Cloud ERP instance
 
 **Documents and team:**
@@ -107,7 +106,7 @@ Variable replacement bridges Project Notes data with plugin configurations:
 
 ### Relationship to XML
 
-Project Notes internally represents all data as XML. When you invoke a plugin, the application exports the relevant data (project, person, meeting, etc.) as XML and passes it to the plugin. The plugin uses this XML to:
+Project Notes internally represents all data as XML. When you invoke a plugin, the application exports the relevant data (project, contact, meeting, etc.) as XML and passes it to the plugin. The plugin uses this XML to:
 
 - Extract field values for variable substitution
 - Determine which variables are available in the current context
@@ -129,8 +128,8 @@ The variable name must follow the XML tree path from the exported data. For exam
 
 - `[$projects.project_number.1]` — The first project's project number
 - `[$projects.project_name.1]` — The first project's name
-- `[$people.email.1]` — The first person's email address
-- `[$people.name.1]` — The first person's name
+- `[$people.email.1]` — The first contact's email address
+- `[$people.name.1]` — The first contact's name
 
 ### Understanding XML Tree Paths
 
@@ -165,9 +164,9 @@ Common patterns include:
 - `[$projects.project_name.1]` — Project name
 - `[$projects.project_status.1]` — Project status
 
-**When right-clicking a Person:**
-- `[$people.name.1]` — Person's name
-- `[$people.email.1]` — Person's email address
+**When right-clicking a Contact:**
+- `[$people.name.1]` — Contact's name
+- `[$people.email.1]` — Contact's email address
 - `[$people.office_phone.1]` — Office phone number
 
 **When right-clicking a Meeting/Note:**
@@ -232,7 +231,7 @@ Created: 03/23/2026
 | Setting | Example Value | Purpose |
 | :--- | :--- | :--- |
 | **Integration Type** | Office 365 Application | Work through Microsoft 365. **Outlook Automation** drives Outlook (classic) instead, on Windows only |
-| **Application ID** | a1b2c3d4-e5f6-47a8-b9c0-d1e2f3a4b5c6 | Microsoft Entra app ID used for contact synchronization |
+| **Application ID** | a1b2c3d4-e5f6-47a8-b9c0-d1e2f3a4b5c6 | Microsoft Entra app ID used for the plugin’s email archive and task sync |
 | **Tenant ID** | f1e2d3c4-b5a6-4978-c9d0-e1f2a3b4c5d6 | Microsoft Entra tenant for your organization |
 
 File Finder's settings (search locations, folder exclusions, classification rules) are on the main **Settings > File Finder** page, not in a plugin dialog, so they aren't repeated here. See [File Finder](<../InterfaceOverview/FileFinder.md>) for the full settings reference.
@@ -265,10 +264,9 @@ The variable `[$projects.project_number.1]` in the URL is replaced with the actu
 | Settings Entry | Plugin | Description |
 | :--- | :--- | :--- |
 | **Editor** | Base Plugins Settings | Set the path to the Python script editor used by the Script Editor utility. |
-| **Outlook Integration** | Base Plugins Settings | Choose Microsoft 365 or Outlook (classic), and set the credentials and options used for contact, email and item synchronization. See [Outlook Integration](<OutlookIntegration.md>). |
+| **Outlook Integration** | Base Plugins Settings | Configure the remaining email and item synchronization functions. Contacts use native Preferences. See [Outlook Integration](<OutlookIntegration.md>). |
 | **My Shortcuts** | Base Plugins Settings | Configure custom URL shortcuts that appear in the Plugins or right-click menus. See [My Shortcuts](<MyShortcuts.md>). |
 | **Settings Migrator** | Base Plugins Settings | Migrate plugin settings between machines or installations. |
-| **iCloud Contacts** | Base Plugins Settings | Configure the Apple Account email and app-specific password used for scheduled iCloud contact sync. See [iCloud Contacts](<iCloudContacts.md>). |
 | **IFS Cloud Settings** | IFS Cloud Plugins Settings | Configure IFS Cloud ERP integration credentials and options. See [IFS Cloud](<IFSCloud.md>). |
 | **New Change Order** | New Change Order | Configure the sub-folder for new change order documents. |
 | **New MS Project** | New MS Project | Configure the sub-folder for new MS Project files. |
@@ -276,3 +274,5 @@ The variable `[$projects.project_number.1]` in the URL is replaced with the actu
 | **New PowerPoint** | New PowerPoint | Configure the sub-folder for new PowerPoint presentations. |
 | **New Risk Register** | New Risk Register | Configure the sub-folder for new Risk Register files. |
 
+
+Starting with 6.4.0, opening a database retires the old Widgets page-state and XML filter settings. Retired database settings are marked deleted so the cleanup syncs. Current QML filters, sort orders, project folders, templates, and shared preferences are preserved. The obsolete `project_risks` table, including any historical rows, is removed; current risks are stored in `item_tracker`. Desktop startup also removes the old Widgets window geometry, table layouts, and local XML filter settings while preserving current view options and plugin settings.

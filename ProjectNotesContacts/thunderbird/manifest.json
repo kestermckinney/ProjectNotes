@@ -1,0 +1,9 @@
+{
+  "manifest_version": 2,
+  "name": "Project Notes Contacts",
+  "version": "1.0.0",
+  "description": "Connect Thunderbird address books to Project Notes native contact synchronization.",
+  "browser_specific_settings": {"gecko": {"id": "contacts@projectnotes.org", "strict_min_version": "128.0"}},
+  "permissions": ["addressBooks", "nativeMessaging", "storage"],
+  "background": {"scripts": ["background.js"]}
+}

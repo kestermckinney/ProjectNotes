@@ -50,7 +50,7 @@ ApplicationWindow {
     // (inside the StackView initialItem component) can both bind to it.
     property int currentTabIndex: 0
     readonly property var tabTitles: [
-        qsTr("Projects"), qsTr("People"), qsTr("Clients"), qsTr("Items")
+        qsTr("Projects"), qsTr("Contacts"), qsTr("Companies"), qsTr("Items")
     ]
 
     // ── Leaving Cloud Sync Settings: check the fields first ───────────────────
@@ -352,7 +352,7 @@ ApplicationWindow {
                         text: qsTr("What's New")
                         onClicked: {
                             hamburgerDrawer.close()
-                            Qt.openUrlExternally("https://github.com/kestermckinney/ProjectNotes/releases")
+                            Qt.openUrlExternally("https://gitlab.com/kestermckinney/ProjectNotes/-/releases")
                         }
                     }
 
@@ -450,8 +450,8 @@ ApplicationWindow {
                 root.currentTabIndex = currentIndex
                 switch (currentIndex) {
                     case 0: AppController.refreshProjectsList(); break
-                    case 1: AppController.refreshPeople();       break
-                    case 2: AppController.refreshClients();      break
+                    case 1: AppController.refreshContacts();     break
+                    case 2: AppController.refreshCompanies();    break
                     case 3: AppController.refreshAllItems();     break
                 }
             }
@@ -462,16 +462,16 @@ ApplicationWindow {
                     if (pageStack.depth > 1) return   // a detail page is stacked on top
                     switch (swipeView.currentIndex) {
                         case 0: AppController.refreshProjectsList(); break
-                        case 1: AppController.refreshPeople();       break
-                        case 2: AppController.refreshClients();      break
+                        case 1: AppController.refreshContacts();     break
+                        case 2: AppController.refreshCompanies();    break
                         case 3: AppController.refreshAllItems();     break
                     }
                 }
             }
 
             ProjectsListPage { stackView: pageStack }
-            PeoplePage        { stackView: pageStack }
-            ClientsPage       { stackView: pageStack }
+            ContactsPage      { stackView: pageStack }
+            CompaniesPage     { stackView: pageStack }
             AllItemsPage      { stackView: pageStack }
         }
     }
@@ -486,8 +486,8 @@ ApplicationWindow {
         onCurrentIndexChanged: root.currentTabIndex = currentIndex
 
         TabButton { text: qsTr("Projects"); icon.name: "folder"    }
-        TabButton { text: qsTr("People");   icon.name: "person"    }
-        TabButton { text: qsTr("Clients");  icon.name: "building"  }
+        TabButton { text: qsTr("Contacts"); icon.name: "person"    }
+        TabButton { text: qsTr("Companies"); icon.name: "building"  }
         TabButton { text: qsTr("Items");    icon.name: "list.bullet" }
     }
 

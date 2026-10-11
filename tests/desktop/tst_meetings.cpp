@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 // Native meeting scheduling: the iCalendar writer, preparation, the file and
-// Thunderbird backends, the Graph event body and the cache cleaner.  Fakes
+// Thunderbird and iCloud backends, the Graph event body and the cache cleaner.  Fakes
 // only: no calendar app, mail client, network or real account is used.
 
 #include "ProjectNotesEmail/TransientCacheCleaner.h"
@@ -12,6 +12,7 @@
 #include "ProjectNotesMeetings/MeetingService.h"
 #include "ProjectNotesMeetings/backends/GraphMeetingBackend.h"
 #include "ProjectNotesMeetings/backends/IcsFileMeetingBackend.h"
+#include "ProjectNotesMeetings/backends/ICloudMeetingBackend.h"
 #include "ProjectNotesMeetings/backends/ThunderbirdMeetingBackend.h"
 
 #include <QDir>
@@ -41,6 +42,7 @@ private slots:
     void thunderbirdBackendPassesInviteFile();
     void thunderbirdLauncherGrantsFlatpakAccess();
     void graphEventBodyIsDraftWithCalendarRoles();
+    void iCloudCreatesEventWithoutAttendeesOrPresentationUrl();
     void serviceValidatesAndDispatches();
     void cacheCleanerKeepsPluginState();
 };
@@ -80,6 +82,30 @@ QString makeExecutable(const QTemporaryDir &directory, const QString &name)
     file.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner);
     return path;
 }
+
+class ICloudTransport final : public HttpTransport {
+public:
+    QList<HttpRequest> requests;
+    void send(HttpRequest request, Completion completion) override
+    {
+        requests.append(request);
+        HttpResponse response;
+        response.operationId = request.operationId;
+        if (request.method == "PUT") {
+            response.statusCode = 201;
+        } else {
+            response.statusCode = 207;
+            if (requests.size() == 1)
+                response.body = "<d:multistatus xmlns:d=\"DAV:\"><d:response><d:propstat><d:prop><d:current-user-principal><d:href>/123/principal/</d:href></d:current-user-principal></d:prop></d:propstat></d:response></d:multistatus>";
+            else if (requests.size() == 2)
+                response.body = "<d:multistatus xmlns:d=\"DAV:\" xmlns:c=\"urn:ietf:params:xml:ns:caldav\"><d:response><d:propstat><d:prop><c:calendar-home-set><d:href>/123/calendars/</d:href></c:calendar-home-set></d:prop></d:propstat></d:response></d:multistatus>";
+            else
+                response.body = "<d:multistatus xmlns:d=\"DAV:\" xmlns:c=\"urn:ietf:params:xml:ns:caldav\"><d:response><d:href>/123/calendars/home/</d:href><d:propstat><d:prop><d:displayname>Home</d:displayname><d:resourcetype><d:collection/><c:calendar/></d:resourcetype></d:prop></d:propstat></d:response></d:multistatus>";
+        }
+        completion(response);
+    }
+    void cancel(const QUuid &) override {}
+};
 
 } // namespace
 
@@ -198,7 +224,7 @@ void MeetingsTest::preparesFromMeetingType()
     snapshot.projectName = QStringLiteral("Plant & Tower");
     snapshot.projectManagerId = QStringLiteral("pm");
     snapshot.loadedAt = QDateTime(QDate(2026, 5, 4), QTime(9, 0));
-    snapshot.people = {{QStringLiteral("pm"), QStringLiteral("Pat Manager"), QStringLiteral("pm@example.com")}};
+    snapshot.contacts = {{QStringLiteral("pm"), QStringLiteral("Pat Manager"), QStringLiteral("pm@example.com")}};
 
     MeetingTemplate meetingType;
     meetingType.id = QStringLiteral("kickoff");
@@ -363,6 +389,30 @@ void MeetingsTest::graphEventBodyIsDraftWithCalendarRoles()
                  .value(QStringLiteral("address")).toString(), QStringLiteral("bob@example.com"));
 }
 
+void MeetingsTest::iCloudCreatesEventWithoutAttendeesOrPresentationUrl()
+{
+    ICloudTransport transport;
+    ICloudMeetingBackend backend([] {
+        return ICloudCredentials{QStringLiteral("person@icloud.com"), QStringLiteral("app-password")};
+    }, nullptr, &transport);
+    MeetingHandoffResult result;
+    backend.handoff(sampleRequest(), [&result](MeetingHandoffResult value) { result = std::move(value); });
+    QVERIFY2(result.error.code.isEmpty(), qPrintable(result.error.code));
+    QCOMPARE(result.certainty, OutcomeCertainty::Certain);
+    QCOMPARE(result.eventIdentity, QStringLiteral("Home"));
+    QVERIFY(result.presentationUrl.isEmpty());
+    QVERIFY(result.providerWebLink.isEmpty());
+    QCOMPARE(transport.requests.size(), 4);
+    const HttpRequest put = transport.requests.constLast();
+    QCOMPARE(put.method, QByteArray("PUT"));
+    QVERIFY(put.url.host().endsWith(QStringLiteral("icloud.com")));
+    QVERIFY(put.body.contains("BEGIN:VEVENT"));
+    QVERIFY(!put.body.contains("METHOD:"));
+    QVERIFY(!put.body.contains("ORGANIZER"));
+    QVERIFY(!put.body.contains("ATTENDEE"));
+    QCOMPARE(put.headers.value("If-None-Match"), QByteArray("*"));
+}
+
 void MeetingsTest::serviceValidatesAndDispatches()
 {
     QTemporaryDir cache;
@@ -409,7 +459,7 @@ void MeetingsTest::cacheCleanerKeepsPluginState()
     QVERIFY(TransientCacheCleaner(cache.path()).clean().isEmpty());
     QVERIFY(!root.exists(QStringLiteral("communications/staging")));
     QVERIFY(!root.exists(QStringLiteral("20260915P100statusreport.html")));
-    QVERIFY(!root.exists(QStringLiteral("icloud_contacts_abc.json")));
+    QVERIFY(root.exists(QStringLiteral("icloud_contacts_abc.json")));
     QVERIFY(root.exists(QStringLiteral("token_cache.json")));
     QVERIFY(root.exists(QStringLiteral("ifs_sso_token_cache.json")));
     QVERIFY(root.exists(QStringLiteral("projectnotes_saved_state.json")));

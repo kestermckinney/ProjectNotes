@@ -45,9 +45,9 @@ Item {
         return DesktopAppController.deleteProject(r)
     }
 
-    // Client / contact id<->name mapping tables (built once).
-    property var _clients: []
-    property var _people: []
+    // Company / contact id<->name mapping tables (built once).
+    property var _companies: []
+    property var _contacts: []
 
     // Financial fields. Budget/Actual/BCWP/BCWS/BAC are stored and editable;
     // EAC (and the other EVM ratios) are calculated read-only in the model.
@@ -88,8 +88,8 @@ Item {
     // rather than an Item reference (see SortMenu.qml's doc comment).
     signal subSortRequested(string section, real sx, real sy)
     // Navigation signals from sub-table row menus
-    signal goToPersonRequested(string personId)
-    signal goToClientRequested(string clientId)
+    signal goToContactRequested(string contactId)
+    signal goToCompanyRequested(string companyId)
     // A new project that was staged by the New Project button has just been
     // written and now has an id (see _adoptSavedRecord).
     signal recordPersisted(string projectId)
@@ -110,8 +110,8 @@ Item {
         return m ? (DesktopAppController.activeSort(m).field || "") !== "" : false
     }
 
-    function _clientNames() { return _clients.map(function(c){ return c.name }) }
-    function _peopleNames() { return _people.map(function(p){ return p.name }) }
+    function _companyNames() { return _companies.map(function(c){ return c.name }) }
+    function _contactNames() { return _contacts.map(function(p){ return p.name }) }
     function _idForName(list, name) {
         for (var i = 0; i < list.length; i++) if (list[i].name === name) return list[i].id
         return ""
@@ -122,8 +122,8 @@ Item {
     }
     // Reload the team-member list backing the Primary Contact combo (keeping the
     // current contact) after the team roster changes.
-    function _refreshTeamPeople() {
-        page._people = DesktopAppController.teamMemberList(page.projectId, [page._contactId])
+    function _refreshTeamContacts() {
+        page._contacts = DesktopAppController.teamMemberList(page.projectId, [page._contactId])
     }
     function _money(v) { var s = (v || "").toString().trim(); return s === "" ? "—" : s }
     // The data layer already formats percent columns with a trailing "%", so we
@@ -147,7 +147,7 @@ Item {
     }
 
     Component.onCompleted: {
-        _clients = DesktopAppController.clientList()
+        _companies = DesktopAppController.companyList()
         _reload()
         // For a staged project this filters every child list to an id no row has,
         // i.e. leaves them empty — which is what a project that doesn't exist yet
@@ -168,7 +168,7 @@ Item {
         if (savedHeaderHeight > 0) page._headerHeight = savedHeaderHeight
     }
 
-    property string _clientId: ""
+    property string _companyId: ""
     property string _contactId: ""
 
     function _reload() {
@@ -180,14 +180,14 @@ Item {
         invoiceDate.text  = (d.last_invoice_date || "").toString()
         invoicingCombo.value = (d.invoicing_period || "").toString()
         reportCombo.value = (d.status_report_period || "").toString()
-        page._clientId  = (d.client_id || "").toString()
+        page._companyId = (d.client_id || "").toString()
         page._contactId = (d.primary_contact || "").toString()
         // Primary Contact lists only this project's team members (plus the current
         // contact, so an existing value keeps displaying) — as in the Widgets app.
-        page._people = DesktopAppController.teamMemberList(page.projectId,
+        page._contacts = DesktopAppController.teamMemberList(page.projectId,
                             [page._contactId])
-        clientCombo.value  = _nameForId(page._clients, page._clientId)
-        contactCombo.value = _nameForId(page._people, page._contactId)
+        companyCombo.value = _nameForId(page._companies, page._companyId)
+        contactCombo.value = _nameForId(page._contacts, page._contactId)
         page._budget = (d.budget || "").toString()
         page._actual = (d.actual || "").toString()
         page._bcwp   = (d.bcwp || "").toString()
@@ -230,7 +230,7 @@ Item {
 
         var ok = DesktopAppController.saveProject(
             page.projectRow, numberField.text, nameField.text, statusCombo.value,
-            page._contactId, page._clientId, statusDate.text, invoiceDate.text,
+            page._contactId, page._companyId, statusDate.text, invoiceDate.text,
             invoicingCombo.value, reportCombo.value,
             budgetField.text, actualField.text, bcwpField.text, bcwsField.text, bacField.text)
         // A rejected create (a number or name already in use) leaves the typed
@@ -258,7 +258,7 @@ Item {
         var r = DesktopAppController.projectRowForId(id)
         if (r >= 0) page.projectRow = r
         DesktopAppController.setProjectFilter(id)
-        page._refreshTeamPeople()   // the default project manager was just added
+        page._refreshTeamContacts()   // the default project manager was just added
         page.recordPersisted(id)
     }
 
@@ -279,7 +279,7 @@ Item {
         DesktopAppController.refreshStatusItems()
         DesktopAppController.refreshModel(DesktopAppController.projectTrackerItemsModel)
         DesktopAppController.refreshTeamMembers()
-        page._refreshTeamPeople()
+        page._refreshTeamContacts()
         DesktopAppController.refreshProjectLocations()
         DesktopAppController.refreshProjectNotes()
     }
@@ -327,6 +327,7 @@ Item {
                     spacing: 9
                     FormField {
                         id: numberField
+                        tabNext: nameField.inputItem
                         label: qsTr("Project Number")
                         Layout.preferredWidth: 110
                         Layout.fillWidth: false
@@ -344,6 +345,8 @@ Item {
                     }
                     FormField {
                         id: nameField
+                        tabPrevious: numberField.inputItem
+                        tabNext: statusCombo.inputItem
                         label: qsTr("Project Name")
                         Layout.fillWidth: true
                         spellCheck: true
@@ -353,6 +356,8 @@ Item {
                     }
                     ComboField {
                         id: statusCombo
+                        tabPrevious: nameField.inputItem
+                        tabNext: companyCombo.inputItem
                         label: qsTr("Status")
                         Layout.preferredWidth: 150
                         Layout.fillWidth: false
@@ -393,31 +398,39 @@ Item {
                     columnSpacing: 10
                     rowSpacing: 9
                     ComboField {
-                        id: clientCombo
-                        label: qsTr("Client")
-                        options: page._clientNames()
+                        id: companyCombo
+                        tabPrevious: statusCombo.inputItem
+                        tabNext: contactCombo.inputItem
+                        label: qsTr("Company")
+                        options: page._companyNames()
                         includeNone: true
                         searchable: true
-                        onActivated: (v) => { page._clientId = page._idForName(page._clients, v); page._changed = true }
+                        onActivated: (v) => { page._companyId = page._idForName(page._companies, v); page._changed = true }
                     }
                     ComboField {
                         id: contactCombo
+                        tabPrevious: companyCombo.inputItem
+                        tabNext: statusDate.inputItem
                         label: qsTr("Primary Contact")
-                        options: page._peopleNames()
+                        options: page._contactNames()
                         includeNone: true
                         searchable: true
-                        onActivated: (v) => { page._contactId = page._idForName(page._people, v); page._changed = true }
+                        onActivated: (v) => { page._contactId = page._idForName(page._contacts, v); page._changed = true }
                     }
-                    DateField { id: statusDate;  label: qsTr("Status Date");  onEdited: page._changed = true }
-                    DateField { id: invoiceDate; label: qsTr("Invoice Date"); onEdited: page._changed = true }
+                    DateField { id: statusDate;  label: qsTr("Status Date"); tabPrevious: contactCombo.inputItem; tabNext: invoiceDate.inputItem; onEdited: page._changed = true }
+                    DateField { id: invoiceDate; label: qsTr("Invoice Date"); tabPrevious: statusDate.inputItem; tabNext: invoicingCombo.inputItem; onEdited: page._changed = true }
                     ComboField {
                         id: invoicingCombo
+                        tabPrevious: invoiceDate.inputItem
+                        tabNext: reportCombo.inputItem
                         label: qsTr("Invoicing Period")
                         options: DesktopAppController.invoicingPeriodOptions()
                         onActivated: page._changed = true
                     }
                     ComboField {
                         id: reportCombo
+                        tabPrevious: invoicingCombo.inputItem
+                        tabNext: budgetField.visible ? budgetField.inputItem : null
                         label: qsTr("Status Report Period")
                         options: DesktopAppController.statusReportPeriodOptions()
                         onActivated: page._changed = true
@@ -437,11 +450,11 @@ Item {
                     // Commit on editingFinished (focus leaves the field) so the
                     // calculated EVM tiles below refresh as each value is entered,
                     // rather than only when navigating away.
-                    FormField { id: budgetField; label: qsTr("Budget");        onEdited: page._changed = true; onEditingFinished: page._saveNow() }
-                    FormField { id: actualField; label: qsTr("Actual (ACWP)"); onEdited: page._changed = true; onEditingFinished: page._saveNow() }
-                    FormField { id: bcwpField;   label: qsTr("BCWP");          onEdited: page._changed = true; onEditingFinished: page._saveNow() }
-                    FormField { id: bcwsField;   label: qsTr("BCWS");          onEdited: page._changed = true; onEditingFinished: page._saveNow() }
-                    FormField { id: bacField;    label: qsTr("BAC");           onEdited: page._changed = true; onEditingFinished: page._saveNow() }
+                    FormField { id: budgetField; label: qsTr("Budget"); tabPrevious: reportCombo.inputItem; tabNext: actualField.inputItem; onEdited: page._changed = true; onEditingFinished: page._saveNow() }
+                    FormField { id: actualField; label: qsTr("Actual (ACWP)"); tabPrevious: budgetField.inputItem; tabNext: bcwpField.inputItem; onEdited: page._changed = true; onEditingFinished: page._saveNow() }
+                    FormField { id: bcwpField;   label: qsTr("BCWP"); tabPrevious: actualField.inputItem; tabNext: bcwsField.inputItem; onEdited: page._changed = true; onEditingFinished: page._saveNow() }
+                    FormField { id: bcwsField;   label: qsTr("BCWS"); tabPrevious: bcwpField.inputItem; tabNext: bacField.inputItem; onEdited: page._changed = true; onEditingFinished: page._saveNow() }
+                    FormField { id: bacField;    label: qsTr("BAC"); tabPrevious: bcwsField.inputItem; onEdited: page._changed = true; onEditingFinished: page._saveNow() }
                 }
 
                 // Calculated (read-only) tiles shown below the entered values.
@@ -532,7 +545,7 @@ Item {
             // statusRep.count, which is the model's row count either way.
             // No reuseItems on these tabs — delegates hold edit-field state.
             Item {
-                ListView {
+                KeyboardListView {
                     id: statusRep
                     anchors.fill: parent
                     anchors.margins: 13
@@ -617,7 +630,7 @@ Item {
 
             // â”€â”€ 1: TRACKER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Item {
-                ListView {
+                KeyboardListView {
                     id: trackerRep
                     anchors.fill: parent
                     anchors.margins: 13
@@ -656,6 +669,10 @@ Item {
                     // FolderGroup's row/content split).
                     delegate: Item {
                             id: trackerSlot
+                            function openRecord() {
+                                page._saveNow()
+                                page.itemActivated(trackerSlot.iid)
+                            }
                             required property int index
                             required property var model
                             readonly property string iid: model.id !== undefined ? model.id : ""
@@ -727,7 +744,7 @@ Item {
                                         spacing: 13
                                         MetaPair {
                                             label: qsTr("Assigned")
-                                            value: page._nameForId(page._people, (trackerSlot.model.assigned_to || "").toString())
+                                            value: page._nameForId(page._contacts, (trackerSlot.model.assigned_to || "").toString())
                                         }
                                         MetaPair {
                                             label: qsTr("Priority")
@@ -771,8 +788,7 @@ Item {
                                             var p = dragArea.mapToItem(null, mouse.x, mouse.y)
                                             trackerSlot._menu(p.x, p.y)
                                         } else {
-                                            page._saveNow()
-                                            page.itemActivated(trackerSlot.iid)
+                                            trackerSlot.openRecord()
                                         }
                                     }
                                     onReleased: if (drag.active) trackerCard.Drag.drop()
@@ -794,8 +810,8 @@ Item {
             Item {
                 // Drop a vCard (a .vcf file, or a contact dragged straight from
                 // Outlook / Contacts) anywhere on the team list to add it: the
-                // contact's company is associated with a matching client (or a
-                // new one is created), the person is added/looked up, and they
+                // contact's company is associated with a matching company (or a
+                // new one is created), the contact is added/looked up, and they
                 // are added to this project's team. See
                 // DesktopAppController::addTeamMembersFromVCardDrop().
                 DropArea {
@@ -816,12 +832,12 @@ Item {
                             text = drop.text
                         if (urls.length === 0 && text === "") { drop.accepted = false; return }
                         DesktopAppController.addTeamMembersFromVCardDrop(page.projectId, urls, text)
-                        page._refreshTeamPeople()
+                        page._refreshTeamContacts()
                         drop.accept()
                     }
                 }
 
-                ListView {
+                KeyboardListView {
                     id: teamRep
                     anchors.fill: parent
                     anchors.margins: 13
@@ -911,7 +927,7 @@ Item {
                                     Layout.alignment: Qt.AlignVCenter
                                     onClicked: (sx, sy) => teamCard._menu(sx, sy)
                                 }
-                                RowDelete { onDel: { DesktopAppController.deleteTeamMember(teamCard.index); DesktopAppController.refreshTeamMembers(); page._refreshTeamPeople() } }
+                                RowDelete { onDel: { DesktopAppController.deleteTeamMember(teamCard.index); DesktopAppController.refreshTeamMembers(); page._refreshTeamContacts() } }
                             }
                             TapHandler {
                                 acceptedButtons: Qt.RightButton
@@ -961,7 +977,7 @@ Item {
                     }
                 }
 
-                ListView {
+                KeyboardListView {
                     id: locRep
                     anchors.fill: parent
                     anchors.margins: 13
@@ -1038,7 +1054,7 @@ Item {
                                     rowMenu.openFor(DesktopAppController.projectLocationsModel,
                                         (locCard.model.id || "").toString(), qsTr("Location"),
                                         (locCard.model.location_description || locCard.model.full_path || "").toString(),
-                                        sx, sy)
+                                        sx, sy, false, "", "", (locCard.model.full_path || "").toString())
                                 }
                                 // Icon that reflects the location's file type.
                                 readonly property var _typeIcons: ({
@@ -1154,7 +1170,7 @@ Item {
 
             // â”€â”€ 4: NOTES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Item {
-                ListView {
+                KeyboardListView {
                     id: notesRep
                     anchors.fill: parent
                     anchors.margins: 13
@@ -1225,12 +1241,11 @@ Item {
                                 MaterialIcon { name: "chevron_right"; size: 17; color: Theme.text3 }
                             }
                             HoverHandler { id: nHover }
-                            TapHandler {
-                                onTapped: {
-                                    page._saveNow()
-                                    page.noteActivated(noteCard.index, (noteCard.model.id || "").toString())
-                                }
+                            function openRecord() {
+                                page._saveNow()
+                                page.noteActivated(noteCard.index, (noteCard.model.id || "").toString())
                             }
+                            TapHandler { onTapped: noteCard.openRecord() }
                             TapHandler {
                                 acceptedButtons: Qt.RightButton
                                 onTapped: (ev) => noteCard._menu(ev.scenePosition.x, ev.scenePosition.y)
@@ -1241,17 +1256,17 @@ Item {
         }
     }
 
-    // â”€â”€ Team member people picker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    PeoplePickerDialog {
+    // â”€â”€ Team member contact picker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    ContactPickerDialog {
         id: teamPicker
         headingText: qsTr("Add Team Member")
-        model: DesktopAppController.peopleList()
-        onPicked: (person) => {
+        model: DesktopAppController.contactList()
+        onPicked: (contact) => {
             var r = DesktopAppController.addTeamMember(page.projectId)
             if (r >= 0) {
-                DesktopAppController.saveTeamMember(r, person.id, "", false)
+                DesktopAppController.saveTeamMember(r, contact.id, "", false)
                 DesktopAppController.refreshTeamMembers()
-                page._refreshTeamPeople()
+                page._refreshTeamContacts()
             }
         }
     }
@@ -1513,6 +1528,8 @@ Item {
     // notes, team, locations, status). Rows call rowMenu.openFor(model, id, …).
     RecordRowMenu {
         id: rowMenu
+        emailProjectId: page.projectId
+        saveEmailSource: function() { return page._saveNow() }
         onExportRecord: (table, id) => page.exportRequested(table, id)
         // Notes and tracker items get their own page, so a copy of one is worth
         // opening; locations and status items live in a list on this page, where
@@ -1533,8 +1550,8 @@ Item {
             if (DesktopAppController.prepareMeetingNotesReview(page.projectId, id))
                 notesEmailReview.open()
         }
-        onGoToPersonRequested: (personId) => page.goToPersonRequested(personId)
-        onGoToClientRequested: (clientId) => page.goToClientRequested(clientId)
+        onGoToContactRequested: (contactId) => page.goToContactRequested(contactId)
+        onGoToCompanyRequested: (companyId) => page.goToCompanyRequested(companyId)
     }
 
     MeetingNotesReviewDialog {
@@ -1548,6 +1565,7 @@ Item {
     // per-row Project menu (RecordContextMenu there too).
     RecordContextMenu {
         id: selfMenu
+        saveEmailSource: function() { return page._saveNow() }
         recordType: qsTr("Project")
         model: DesktopAppController.projectsListModel
         recordId: page.projectId

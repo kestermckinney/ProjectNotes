@@ -16,75 +16,6 @@ ColumnLayout {
     // The settings page uses the same surface, border, indicator, and popup
     // treatment as the application's standard dropdowns rather than the stock
     // Controls appearance.
-    component TemplateComboBox: ComboBox {
-        id: control
-        implicitHeight: 32
-        font.pixelSize: Theme.fontBody
-        contentItem: Text {
-            text: control.displayText
-            color: Theme.text
-            font: control.font
-            verticalAlignment: Text.AlignVCenter
-            elide: Text.ElideRight
-            anchors.fill: parent
-            anchors.leftMargin: 9
-            anchors.rightMargin: 28
-        }
-        background: Rectangle {
-            radius: Theme.radiusSm
-            color: Theme.surface
-            border.color: control.activeFocus ? Theme.accent : Theme.border
-        }
-        indicator: MaterialIcon {
-            name: "expand_more"
-            size: 16
-            color: Theme.text3
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.right: parent.right
-            anchors.rightMargin: 7
-        }
-        popup: Popup {
-            y: control.height + 2
-            width: control.width
-            implicitHeight: Math.min(contentItem.implicitHeight + 2, 280)
-            padding: 1
-            background: Rectangle {
-                radius: Theme.radiusSm
-                color: Theme.raise
-                border.color: Theme.border
-            }
-            contentItem: ListView {
-                clip: true
-                implicitHeight: contentHeight
-                model: control.popup.visible ? control.delegateModel : null
-                ScrollIndicator.vertical: ScrollIndicator {}
-            }
-        }
-        delegate: ItemDelegate {
-            id: itemDelegate
-            // `index` is a delegate context property, not an ItemDelegate
-            // property.  Declare it so every popup row receives its own model
-            // index; accessing `itemDelegate.index` instead resolved to an
-            // undefined value and made every row display the first option.
-            required property int index
-            width: control.width
-            contentItem: Text {
-                text: control.textAt(itemDelegate.index)
-                color: Theme.text
-                font.pixelSize: Theme.fontBody
-                verticalAlignment: Text.AlignVCenter
-            }
-            background: Rectangle {
-                color: itemDelegate.highlighted ? Theme.accentSoft : "transparent"
-            }
-            highlighted: control.highlightedIndex === itemDelegate.index
-            onClicked: {
-                control.currentIndex = itemDelegate.index
-                control.activated(itemDelegate.index)
-                control.popup.close()
-            }
-        }
-    }
 
     // Match FormField's application-wide text-input treatment while keeping
     // direct access to the editor for template-token insertion.
@@ -147,7 +78,7 @@ ColumnLayout {
     }
 
     Label {
-        text: qsTr("Email templates")
+        text: qsTr("Email Templates")
         color: Theme.text
         font.pixelSize: Theme.fontXl
         font.weight: Font.DemiBold
@@ -162,14 +93,16 @@ ColumnLayout {
     RowLayout {
         Layout.fillWidth: true
         Label { text: qsTr("Workflow"); color: Theme.text2 }
-        TemplateComboBox {
+        StyledComboBox {
             id: workflow
             Layout.preferredWidth: 220
             model: [
                 { value: "send-meeting-notes", label: qsTr("Send Meeting Notes") },
                 { value: "tracker-items-report", label: qsTr("Tracker Items Report") },
                 { value: "status-report", label: qsTr("Status Report") },
-                { value: "meeting-notes-report", label: qsTr("Meeting Notes Report") }
+                { value: "meeting-notes-report", label: qsTr("Meeting Notes Report") },
+                { value: "project-email", label: qsTr("Project Email") },
+                { value: "share-location", label: qsTr("Share Location") }
             ]
             textRole: "label"
             valueRole: "value"
@@ -224,7 +157,9 @@ ColumnLayout {
     }
 
     Label { text: qsTr("Rich body"); color: Theme.text2 }
-    Label { text: qsTr("Include exactly one {{ content.body }} protected content block. It preserves native report content while you add prose around it."); color: Theme.text3; font.pixelSize: Theme.fontSm; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+    Label { text: pane.templateModel && pane.templateModel.workflow === "project-email"
+                  ? qsTr("Configure the project email subject and body. Contact fields refer to the contact right-clicked; they are empty for a project-team email.")
+                  : qsTr("Include exactly one {{ content.body }} protected content block. It preserves the shared content while you add prose around it."); color: Theme.text3; font.pixelSize: Theme.fontSm; wrapMode: Text.WordWrap; Layout.fillWidth: true }
     RichTextEditor {
         id: richBody
         minimumHeight: 120

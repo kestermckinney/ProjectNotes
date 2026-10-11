@@ -12,6 +12,8 @@
 #include "databaseupgrade_v5_0_0.h"
 #include "databaseupgrade_v6_1_0.h"
 #include "databaseupgrade_v6_2_0.h"
+#include "databaseupgrade_v6_4_0.h"
+#include <QVersionNumber>
 
 bool DatabaseStructure::CreateDatabase()
 {
@@ -43,6 +45,13 @@ bool DatabaseStructure::UpgradeDatabase()
     QString targetversion = QString("%1.%2.%3")
         .arg(APP_VERSION_MAJOR).arg(APP_VERSION_MINOR).arg(APP_VERSION_PATCH);
 
+    // Do not downgrade a database opened by a newer application.
+    if (QVersionNumber::fromString(currentversion) > QVersionNumber::fromString(targetversion)) {
+        global_DBObjects.setLastSaveError(QString("Database version %1 is newer than this application (%2).")
+                                             .arg(currentversion, targetversion));
+        return false;
+    }
+
     // Always drop and recreate views, even when the schema version is unchanged.
     // Views are derived objects with no data, so rebuilding them on every launch
     // is cheap and guarantees they match the current code. Without this a view
@@ -64,16 +73,29 @@ bool DatabaseStructure::UpgradeDatabase()
         if (currentversion == "6.0.0" || currentversion == "5.0.0" || currentversion == "4.1.0"
             || currentversion == "1.2.0" || currentversion == "1.0.0")
             db_UpgradeStep_v6_1_0();
-
-        // Update version to target (only update current_version, never modify id)
-        global_DBObjects.execute(QString("update application_version set current_version = '%1';")
-            .arg(targetversion));
     }
 
     // Runs on every launch, outside the version check: every statement is
     // guarded, so pre-6.2 databases receive the audience table and databases
     // created by early 6.2.0 builds pick up the shared-audience columns.
     db_UpgradeStep_v6_2_0();
+
+    // Run cleanup even at the target version: an older synced client can
+    // reintroduce retired settings. On failure, leave the version unchanged.
+    if (!db_UpgradeStep_v6_4_0()) {
+        db_CreateAllViews();
+        return false;
+    }
+    if (currentversion != targetversion) {
+        QSqlQuery version(global_DBObjects.getDb());
+        version.prepare("UPDATE application_version SET current_version = ?");
+        version.addBindValue(targetversion);
+        if (!version.exec()) {
+            global_DBObjects.setLastSaveError(version.lastError().text());
+            db_CreateAllViews();
+            return false;
+        }
+    }
 
     // Recreate all views as final step (always uses current column names)
     db_CreateAllViews();

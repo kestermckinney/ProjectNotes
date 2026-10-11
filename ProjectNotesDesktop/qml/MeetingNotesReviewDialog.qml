@@ -30,6 +30,7 @@ Dialog {
     property var recipientModel: null
     readonly property var office365: DesktopAppController.office365SettingsModel
     readonly property bool graphDraftReady: DesktopAppController.preferredEmailBackend === "graph"
+    readonly property bool iCloudDraftReady: DesktopAppController.preferredEmailBackend === "icloud"
     readonly property bool reviewing: controller && controller.stageName === "reviewing" && !controller.busy
 
     component SectionCard: Rectangle {
@@ -99,6 +100,7 @@ Dialog {
                         Layout.fillWidth: true
                         text: dialog.graphDraftReady ? qsTr("A draft will be created in Microsoft 365%1. It will not be sent.")
                             .arg(dialog.office365 && dialog.office365.accountLabel !== "" ? " (" + dialog.office365.accountLabel + ")" : "")
+                            : dialog.iCloudDraftReady ? qsTr("A draft will be created in iCloud Mail. It will not be sent, and iCloud cannot link directly to it.")
                             : qsTr("Your configured email client will open with the meeting notes and selected recipients.")
                         color: Theme.text3; wrapMode: Text.Wrap
                     }
@@ -116,7 +118,7 @@ Dialog {
             Label {
                 Layout.fillWidth: true; color: Theme.text2; wrapMode: Text.Wrap
                 text: dialog.controller && dialog.controller.stageName === "completed" && dialog.controller.draftIdentity !== ""
-                    ? qsTr("Microsoft 365 draft created.") : ""
+                    ? (dialog.iCloudDraftReady ? qsTr("iCloud Mail draft created.") : qsTr("Microsoft 365 draft created.")) : ""
             }
             Button { text: qsTr("Cancel"); onClicked: dialog._dismiss() }
             Button {

@@ -81,7 +81,7 @@ SearchResultsModel::SearchResultsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
     addColumn("dataname", tr("Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("datadescription", tr("Content"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("internal_item", tr("Internal"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
-    addColumn("client_id", tr("Client ID"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn("client_id", tr("Company ID"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("project_status", tr("Project Status"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("project_number", tr("Project"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("project_name", tr("Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
@@ -140,12 +140,12 @@ void SearchResultsModel::PerformSearch(const QString& searchValue)
     if ( searchValue.isEmpty())
     {
         setUserSearchString(0, "FIND NOTHING");
-        activateUserFilter(QString());
+        activateUserFilter();
     }
     else
     {
         setUserSearchString(3, searchValue);
-        activateUserFilter(QString());
+        activateUserFilter();
     }
 }
 
@@ -160,7 +160,7 @@ void SearchResultsModel::PerformKeySearch(const QStringList& searchFields, const
     if ( searchValues.isEmpty())
     {
         setUserSearchString(0, "FIND NOTHING");
-        activateUserFilter(QString());
+        activateUserFilter();
     }
     else
     {
@@ -178,7 +178,7 @@ void SearchResultsModel::PerformKeySearch(const QStringList& searchFields, const
                 setFilter(col_num, col_val, DBCompareType::Equals);
         }
 
-        activateUserFilter(QString());
+        activateUserFilter();
     }
 }
 

@@ -15,6 +15,7 @@ class QtNetworkHttpTransportTest final : public QObject
 private slots:
     void sendsExactRequestAndResponse();
     void cancellationSuppressesStaleCompletion();
+    void manualRedirectKeepsAuthorizationAtOriginalHost();
 };
 
 void QtNetworkHttpTransportTest::sendsExactRequestAndResponse()
@@ -51,11 +52,15 @@ void QtNetworkHttpTransportTest::sendsExactRequestAndResponse()
     QTRY_VERIFY(completed);
     QCOMPARE(response.operationId, request.operationId);
     QCOMPARE(response.statusCode, 201);
-    QCOMPARE(response.headers.value("X-Synthetic"), QByteArray("yes"));
+    QByteArray synthetic;
+    for (auto it = response.headers.cbegin(); it != response.headers.cend(); ++it)
+        if (it.key().compare("X-Synthetic", Qt::CaseInsensitive) == 0)
+            synthetic = it.value();
+    QCOMPARE(synthetic, QByteArray("yes"));
     QCOMPARE(response.body, QByteArray("ok"));
     QVERIFY(response.error.code.isEmpty());
     QVERIFY(received.startsWith("PATCH /v1/draft HTTP/1.1\r\n"));
-    QVERIFY(received.contains("X-Request: synthetic\r\n"));
+    QVERIFY(received.toLower().contains("x-request: synthetic\r\n"));
     QVERIFY(received.endsWith("payload"));
 }
 
@@ -79,6 +84,36 @@ void QtNetworkHttpTransportTest::cancellationSuppressesStaleCompletion()
     transport.cancel(request.operationId);
     QTest::qWait(50);
     QVERIFY(!completed);
+}
+
+void QtNetworkHttpTransportTest::manualRedirectKeepsAuthorizationAtOriginalHost()
+{
+    QTcpServer origin, destination;
+    if (!origin.listen(QHostAddress::LocalHost) || !destination.listen(QHostAddress::LocalHost))
+        QSKIP("Loopback listeners are unavailable in this sandbox.");
+    const QByteArray location = "http://127.0.0.1:" + QByteArray::number(destination.serverPort()) + "/redirected";
+    QSignalSpy redirected(&destination, &QTcpServer::newConnection);
+    connect(&origin, &QTcpServer::newConnection, this, [&] {
+        auto *socket = origin.nextPendingConnection();
+        connect(socket, &QTcpSocket::readyRead, socket, [socket, location] {
+            socket->readAll();
+            socket->write("HTTP/1.1 302 Found\r\nLocation: " + location + "\r\nContent-Length: 0\r\n\r\n");
+            socket->disconnectFromHost();
+        });
+    });
+    QtNetworkHttpTransport transport;
+    HttpRequest request;
+    request.operationId = QUuid::createUuid();
+    request.method = "GET";
+    request.url = QUrl(QStringLiteral("http://127.0.0.1:%1/").arg(origin.serverPort()));
+    request.headers.insert("Authorization", "Basic synthetic");
+    request.manualRedirects = true;
+    bool completed = false;
+    HttpResponse response;
+    transport.send(request, [&](HttpResponse result) { response = std::move(result); completed = true; });
+    QTRY_VERIFY(completed);
+    QCOMPARE(response.statusCode, 302);
+    QCOMPARE(redirected.count(), 0);
 }
 
 QTEST_MAIN(QtNetworkHttpTransportTest)

@@ -21,16 +21,16 @@ Item {
     property string _ctxId: ""
 
     // Quick Filter entries for a right-clicked project row: pre-filled from
-    // that row's own client/contact (omitted when the row has none set),
+    // that row's own company/contact (omitted when the row has none set),
     // plus the two always-available overdue toggles — status_overdue/
     // invoicing_overdue are computed "Yes"/"No" columns mirroring the same
     // red-highlight logic the Status/Invoice Date chips already show (see
     // projectsmodel.cpp).
     function _quickFiltersForRow(m) {
         var qf = []
-        var clientId = (m.client_id || "").toString()
-        if (clientId !== "")
-            qf.push({ icon: "apartment", label: qsTr("This Client"), field: "client_id", values: [clientId] })
+        var companyId = (m.client_id || "").toString()
+        if (companyId !== "")
+            qf.push({ icon: "apartment", label: qsTr("This Company"), field: "client_id", values: [companyId] })
         var contactId = (m.primary_contact || "").toString()
         if (contactId !== "")
             qf.push({ icon: "person", label: qsTr("This Contact"), field: "primary_contact", values: [contactId] })
@@ -91,7 +91,7 @@ Item {
 
     // Virtualized list — only visible cards (plus cacheBuffer) are instantiated,
     // and reuseItems recycles delegates while scrolling.
-    ListView {
+    KeyboardListView {
         id: list
         anchors.fill: parent
         anchors.margins: 12
@@ -241,7 +241,7 @@ Item {
                             }
                         }
 
-                        // Name + client
+                        // Name + company
                         ColumnLayout {
                             Layout.fillWidth: true
                             Layout.alignment: Qt.AlignTop
@@ -256,11 +256,11 @@ Item {
                             }
                             RowLayout {
                                 spacing: 5
-                                visible: clientText.text !== ""
+                                visible: companyText.text !== ""
                                 MaterialIcon { name: "apartment"; size: 12; color: Theme.text3 }
                                 Text {
-                                    id: clientText
-                                    text: DesktopAppController.clientNameForId(
+                                    id: companyText
+                                    text: DesktopAppController.companyNameForId(
                                               (card.model.client_id || "").toString())
                                     color: Theme.text2
                                     font.pixelSize: Theme.listFont
@@ -274,7 +274,7 @@ Item {
                                 MaterialIcon { name: "person"; size: 12; color: Theme.text3 }
                                 Text {
                                     id: contactText
-                                    text: DesktopAppController.peopleNameForId(
+                                    text: DesktopAppController.contactNameForId(
                                               (card.model.primary_contact || "").toString())
                                     color: Theme.text2
                                     font.pixelSize: Theme.listFont
@@ -377,7 +377,8 @@ Item {
                     }
 
                     HoverHandler { id: hover }
-                    TapHandler { onTapped: page.projectActivated(card.projId) }
+                    function openRecord() { page.projectActivated(card.projId) }
+                    TapHandler { onTapped: card.openRecord() }
                     TapHandler {
                         acceptedButtons: Qt.RightButton
                         onTapped: (ev) => card._openMenu(ev.scenePosition.x, ev.scenePosition.y)

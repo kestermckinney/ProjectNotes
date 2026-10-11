@@ -25,9 +25,8 @@ set(CORE_SOURCES
     # Query / filter infrastructure
     ../sqlquerymodel.cpp    ../sqlquerymodel.h
     ../sortfilterproxymodel.cpp ../sortfilterproxymodel.h
-    ../columnmodel.cpp      ../columnmodel.h
-    ../valueselectmodel.cpp ../valueselectmodel.h
-    ../filtersavestructure.h
+    ../modelviewstate.cpp   ../modelviewstate.h
+    ../legacywidgetsettings.cpp ../legacywidgetsettings.h
 
     # Database layer
     ../databaseobjects.cpp  ../databaseobjects.h
@@ -39,16 +38,17 @@ set(CORE_SOURCES
     ../databaseupgrade_v5_0_0.cpp ../databaseupgrade_v5_0_0.h
     ../databaseupgrade_v6_1_0.cpp ../databaseupgrade_v6_1_0.h
     ../databaseupgrade_v6_2_0.cpp ../databaseupgrade_v6_2_0.h
+    ../databaseupgrade_v6_4_0.cpp ../databaseupgrade_v6_4_0.h
     ../officedeeplink.cpp   ../officedeeplink.h
 
     # Data models
     ../actionitemprojectnotesmodel.cpp  ../actionitemprojectnotesmodel.h
     ../actionitemsdetailsmeetingsmodel.cpp ../actionitemsdetailsmeetingsmodel.h
-    ../clientsmodel.cpp     ../clientsmodel.h
+    ../companiesmodel.cpp   ../companiesmodel.h
     ../itemdetailteamlistmodel.cpp ../itemdetailteamlistmodel.h
     ../meetingattendeesmodel.cpp ../meetingattendeesmodel.h
     ../notesactionitemsmodel.cpp ../notesactionitemsmodel.h
-    ../peoplemodel.cpp      ../peoplemodel.h
+    ../contactsmodel.cpp    ../contactsmodel.h
     ../projectlocationsmodel.cpp ../projectlocationsmodel.h
     ../projectnotesmodel.cpp ../projectnotesmodel.h
     ../projectslistmodel.cpp ../projectslistmodel.h

@@ -16,12 +16,13 @@ RUNTIME_VERSION="6.9"
 # GPG_KEY_ID       If set, `repo` and `bundle` are signed with this key.
 # GPG_HOMEDIR      Optional GnuPG home holding that key (used by CI's ephemeral
 #                  keyring); passed through to flatpak as --gpg-homedir.
-# APP_REPO_URL     Application update repository embedded via --repo-url.
-# RUNTIME_REPO_URL Runtime dependency remote (.flatpakrepo), normally Flathub.
+# APP_REPO_URL     If set, embedded via --repo-url as the application update remote.
+# RUNTIME_REPO_URL If set, embedded via --runtime-repo for runtime dependencies
+#                  (normally the Flathub .flatpakrepo, not the application repo).
 GPG_KEY_ID="${GPG_KEY_ID:-}"
 GPG_HOMEDIR="${GPG_HOMEDIR:-}"
 APP_REPO_URL="${APP_REPO_URL:-}"
-RUNTIME_REPO_URL="${RUNTIME_REPO_URL:-https://flathub.org/repo/flathub.flatpakrepo}"
+RUNTIME_REPO_URL="${RUNTIME_REPO_URL:-}"
 
 # DISABLE_ROFILES_FUSE  Set to 1 in containerized CI where rofiles-fuse can't
 #                       spawn (FUSE unavailable). Harmless to leave unset locally.
@@ -308,14 +309,8 @@ cmd_bundle() {
     fi
     # OSTree commits are signed at export; build-bundle --gpg-sign is for OCI.
     local extra=()
-    # Embed the update remote so installing the bundle also wires up `flatpak update`.
+    # Keep the application update remote separate from the runtime provider.
     [ -n "$APP_REPO_URL" ] && extra+=("--repo-url=$APP_REPO_URL")
-    [ -n "$GPG_KEY_ID" ] && {
-        local key_file
-        key_file="$(mktemp)"
-        gpg ${GPG_HOMEDIR:+--homedir "$GPG_HOMEDIR"} --export "$GPG_KEY_ID" > "$key_file"
-        extra+=("--gpg-keys=$key_file")
-    }
     [ -n "$RUNTIME_REPO_URL" ] && extra+=("--runtime-repo=$RUNTIME_REPO_URL")
     echo "==> Creating bundle at $BUNDLE_FILE..."
     flatpak build-bundle "${extra[@]}" "$REPO_DIR" "$BUNDLE_FILE" "$APP_ID"

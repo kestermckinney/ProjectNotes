@@ -75,6 +75,10 @@ Popup {
             { icon: "filter_list",  label: qsTr("Filter Data…"),key: AppShortcuts.text("filter"), action: "filter" },
             { icon: "swap_vert",    label: qsTr("Sort…"),       key: AppShortcuts.text("sort"),   action: "sort" },
         ]},
+        { name: qsTr("Navigate"), items: AppShortcuts.navigation.map(function(destination) {
+            return { icon: destination.icon, label: destination.label,
+                     key: AppShortcuts.text(destination.action), action: destination.action }
+        }) },
         { name: qsTr("View"), items: [
             { icon: Theme.dark ? "light_mode" : "dark_mode", label: qsTr("Dark Mode"),
               key: "", action: "toggle_theme", toggle: true, on: Theme.dark },
@@ -197,8 +201,17 @@ Popup {
         openGroupIndex = -1; pluginSubIndex = -1
     }
 
+    RailNavigationShortcuts {
+        shortcutsEnabled: menu.visible && !flyout.visible
+        onTriggered: (action) => menu._act(action)
+    }
+
     MenuFlyout {
         id: flyout
+        RailNavigationShortcuts {
+            shortcutsEnabled: menu.visible && flyout.visible && !pluginSubFlyout.visible
+            onTriggered: (action) => menu._act(action)
+        }
         // A declarative binding (not an imperative copy) so it stays live —
         // see _openRawItems. Group rows (the Plugins entry's per-submenu rows)
         // pass their raw `group` straight through — MenuFlyout doesn't need to
@@ -240,6 +253,10 @@ Popup {
     }
     MenuFlyout {
         id: pluginSubFlyout
+        RailNavigationShortcuts {
+            shortcutsEnabled: menu.visible && pluginSubFlyout.visible
+            onTriggered: (action) => menu._act(action)
+        }
         items: {
             var raw = menu._openRawItems[menu.pluginSubIndex]
             return (raw && raw.group) ? raw.group.items.map(menu._mapLeaf) : []

@@ -33,8 +33,8 @@ ApplicationWindow {
     readonly property var sectionMeta: ({
         "projects": { icon: "description", title: "Projects", newLabel: "New Project", search: true,  add: true  },
         "items":    { icon: "task_alt",    title: "Items",    newLabel: "",            search: true,  add: false },
-        "people":   { icon: "group",       title: "People",   newLabel: "New Person",  search: true,  add: true  },
-        "clients":  { icon: "apartment",   title: "Clients",  newLabel: "New Client",  search: true,  add: true  },
+        "contacts": { icon: "group",       title: "Contacts", newLabel: "New Contact", search: true,  add: true  },
+        "companies":{ icon: "apartment",   title: "Companies",newLabel: "New Company", search: true,  add: true  },
         "search":   { icon: "search",      title: "Search",   newLabel: "",            search: false, add: false },
         "settings": { icon: "settings",    title: "Settings", newLabel: "",            search: false, add: false },
         "help":     { icon: "menu_book",   title: "User Guide", newLabel: "",           search: false, add: false }
@@ -245,7 +245,7 @@ ApplicationWindow {
     // section→model map also used by Filter and Sort.
     function _quickSearchModelForSection(section) {
         switch (section) {
-        case "projects": case "people": case "clients": case "items":
+        case "projects": case "contacts": case "companies": case "items":
             return DesktopAppController.modelForSection(section)
         default:
             return null
@@ -296,6 +296,11 @@ ApplicationWindow {
             next()
     }
 
+    function navigateSection(section) {
+        iconRail.closeMenu()
+        selectSection(section)
+    }
+
     function selectSection(section) {
         if (section === root.currentSection && contentStack.depth <= 1)
             return
@@ -318,8 +323,8 @@ ApplicationWindow {
         contentStack.clear()
         switch (section) {
         case "projects": contentStack.push(_sectionPage("projects", projectsComponent)); break
-        case "people":   contentStack.push(_sectionPage("people", peopleComponent)); break
-        case "clients":  contentStack.push(_sectionPage("clients", clientsComponent)); break
+        case "contacts": contentStack.push(_sectionPage("contacts", contactsComponent)); break
+        case "companies":contentStack.push(_sectionPage("companies", companiesComponent)); break
         case "items":    contentStack.push(_sectionPage("items", itemsComponent)); break
         case "search":   contentStack.push(_sectionPage("search", searchComponent)); break
         case "settings": contentStack.push(_sectionPage("settings", settingsComponent)); break
@@ -350,10 +355,10 @@ ApplicationWindow {
         switch (dataType) {
         case "Project":
             openProject(dataId); break
-        case "People":
-            openPerson(DesktopAppController.peopleRowForId(dataId), dataId); break
-        case "Client":
-            openClient(DesktopAppController.clientRowForId(dataId), dataId); break
+        case "Contact":
+            openContact(DesktopAppController.contactsRowForId(dataId), dataId); break
+        case "Company":
+            openCompany(DesktopAppController.companyRowForId(dataId), dataId); break
         case "Item Tracker":
             openItem(dataId); break
         case "Tracker Update":
@@ -411,18 +416,18 @@ ApplicationWindow {
                           { noteRow: noteRow, noteId: noteId, projectId: projectId })
     }
 
-    function openPerson(row, personId) {
+    function openContact(row, contactId) {
         if (!_saveCurrent())
             return
-        root.crumbSub = DesktopAppController.peopleNameForId(personId)
-        contentStack.push(personDetailComponent, { personRow: row, personId: personId })
+        root.crumbSub = DesktopAppController.contactNameForId(contactId)
+        contentStack.push(contactDetailComponent, { contactRow: row, contactId: contactId })
     }
 
-    function openClient(row, clientId) {
+    function openCompany(row, companyId) {
         if (!_saveCurrent())
             return
-        root.crumbSub = DesktopAppController.clientNameForId(clientId)
-        contentStack.push(clientDetailComponent, { clientRow: row, clientId: clientId })
+        root.crumbSub = DesktopAppController.companyNameForId(companyId)
+        contentStack.push(companyDetailComponent, { companyRow: row, companyId: companyId })
     }
 
     function openItem(itemId) {
@@ -454,17 +459,19 @@ ApplicationWindow {
         if (root.currentSection === "projects") {
             var r = DesktopAppController.addProject()
             if (r >= 0) root.openNewProject(r)
-        } else if (root.currentSection === "people") {
-            var pr = DesktopAppController.addPerson()
-            if (pr >= 0) root.openPerson(pr, DesktopAppController.personIdAtRow(pr))
-        } else if (root.currentSection === "clients") {
-            var cr = DesktopAppController.addClient()
-            if (cr >= 0) root.openClient(cr, DesktopAppController.clientIdAtProxyRow(cr))
+        } else if (root.currentSection === "contacts") {
+            var pr = DesktopAppController.addContact()
+            if (pr >= 0) root.openContact(pr, DesktopAppController.contactIdAtRow(pr))
+        } else if (root.currentSection === "companies") {
+            var cr = DesktopAppController.addCompany()
+            if (cr >= 0) root.openCompany(cr, DesktopAppController.companyIdAtProxyRow(cr))
         }
     }
 
     // Dispatch a hamburger-menu action.
     function handleMenuAction(action) {
+        var section = AppShortcuts.sectionForAction(action)
+        if (section !== "") { navigateSection(section); return }
         switch (action) {
         case "new":         addForCurrentSection(); break
         case "search":
@@ -500,6 +507,12 @@ ApplicationWindow {
         // clicking its native close button.
         case "exit":        root.close(); break
         }
+    }
+
+    function _workspaceHasFocus() {
+        for (var item = root.activeFocusItem; item; item = item.parent)
+            if (item === zoomLayer) return true
+        return false
     }
 
     // ── XML export ────────────────────────────────────────────────────────────
@@ -550,6 +563,69 @@ ApplicationWindow {
         confirmDeleteDialog.open()
     }
 
+    // Route unhandled navigation keys to the open page, including plain
+    // ScrollViews and Flickables used by forms and the User Guide.
+    function _pageScrollTarget() { return _findPageScrollTarget(undefined) }
+
+    function _findPageScrollTarget(key) {
+        var page = contentStack.currentItem
+        if (!page) return null
+        for (var item = root.activeFocusItem; item && item !== page; item = item.parent) {
+            if (typeof item.contentY === "number" && typeof item.contentHeight === "number") {
+                for (var ancestor = item; ancestor; ancestor = ancestor.parent)
+                    if (ancestor === page) return item
+            }
+        }
+        if (typeof page.keyboardNavigationTarget === "function"
+                && (key === undefined || key === Qt.Key_Up || key === Qt.Key_Down
+                    || key === Qt.Key_Return || key === Qt.Key_Enter))
+            return page.keyboardNavigationTarget()
+        var best = null
+        var bestArea = -1
+        function visit(item) {
+            if (!item.visible || !item.enabled) return
+            if (typeof item.contentY === "number" && typeof item.contentHeight === "number"
+                    && item.height > 0 && item.width > 0) {
+                var area = item.width * item.height
+                if (area > bestArea) { best = item; bestArea = area }
+                // A Flickable owns its scroll content, which may contain editors
+                // or smaller nested views. The page viewport takes precedence.
+                return
+            }
+            for (var i = 0; i < item.children.length; ++i) visit(item.children[i])
+        }
+        visit(page)
+        return best
+    }
+
+    function _navigatePage(key) {
+        if (key !== Qt.Key_Up && key !== Qt.Key_Down
+                && key !== Qt.Key_PageUp && key !== Qt.Key_PageDown
+                && key !== Qt.Key_Return && key !== Qt.Key_Enter) return false
+        var focused = root.activeFocusItem
+        // Editors and dropdowns retain their own navigation behavior.
+        if (focused && (typeof focused.cursorPosition === "number"
+                        || focused.popup !== undefined)) return false
+        var target = _findPageScrollTarget(key)
+        if (!target) return false
+        if (key === Qt.Key_Return || key === Qt.Key_Enter)
+            return typeof target.activateCurrent === "function" && target.activateCurrent()
+        var direction = key === Qt.Key_Up || key === Qt.Key_PageUp ? -1 : 1
+        var paging = key === Qt.Key_PageUp || key === Qt.Key_PageDown
+        if (typeof target.moveRows === "function") {
+            target.forceActiveFocus(Qt.OtherFocusReason)
+            if (paging) target.movePage(direction)
+            else target.moveRows(direction)
+        } else {
+            var top = target.originY || 0
+            var bottom = Math.max(top, top + target.contentHeight - target.height)
+            var distance = paging ? target.height * 0.9 : 40
+            target.cancelFlick()
+            target.contentY = Math.max(top, Math.min(bottom, target.contentY + direction * distance))
+        }
+        return true
+    }
+
     // ── Layout ────────────────────────────────────────────────────────────────
     // Zoomable logical viewport. Its logical size shrinks as uiScale grows, then
     // the scale transform magnifies it back to fill the window — so the whole UI
@@ -557,6 +633,11 @@ ApplicationWindow {
     // (Qt Quick re-rasterises distance-field glyphs at the composited scale).
     Item {
         id: zoomLayer
+        Keys.priority: Keys.AfterItem
+        Keys.onPressed: (event) => {
+            if (event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier)) return
+            if (root._navigatePage(event.key)) event.accepted = true
+        }
         transformOrigin: Item.TopLeft
         scale: Theme.uiScale
         width:  (root.contentItem ? root.contentItem.width  : root.width)  / Theme.uiScale
@@ -567,6 +648,7 @@ ApplicationWindow {
         spacing: 0
 
         IconRail {
+            id: iconRail
             Layout.fillHeight: true
             currentSection: root.currentSection
             // Same "is there an open record" signal the TopBar's Export XML
@@ -579,7 +661,7 @@ ApplicationWindow {
             pluginMenuRecordId: contentStack.currentItem
                                 && contentStack.currentItem.exportId !== undefined
                                 ? contentStack.currentItem.exportId : ""
-            onSectionActivated: (s) => root.selectSection(s)
+            onSectionActivated: (s) => root.navigateSection(s)
             onMenuAction: (a) => root.handleMenuAction(a)
         }
 
@@ -652,6 +734,11 @@ ApplicationWindow {
 
             StackView {
                 id: contentStack
+                objectName: "contentStack"
+                focus: true
+                onCurrentItemChanged: {
+                    if (currentItem) currentItem.forceActiveFocus(Qt.OtherFocusReason)
+                }
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
@@ -691,6 +778,11 @@ ApplicationWindow {
     Shortcut { sequence: "Ctrl+-";              onActivated: Theme.zoomOut() }
     Shortcut { sequence: "Ctrl+0";              onActivated: Theme.zoomReset() }
 
+    RailNavigationShortcuts {
+        shortcutsEnabled: !iconRail.applicationMenu.visible
+        onTriggered: (action) => root.handleMenuAction(action)
+    }
+
     // ── App menu shortcuts ───────────────────────────────────────────────────
     // Portable sequences come from AppShortcuts.map — the same source AppMenu.qml
     // reads to display the key beside each row, so the two can't drift. "search"
@@ -713,6 +805,12 @@ ApplicationWindow {
     Shortcut { sequence: AppShortcuts.map["import"]; onActivated: importDialog.open() }
     Shortcut { sequence: AppShortcuts.map["filter"]; onActivated: filterDialog.openFor(root.currentSection) }
     Shortcut { sequence: AppShortcuts.map["sort"];   onActivated: root._openSortMenuForCurrentSection() }
+    Shortcut {
+        sequences: [AppShortcuts.map["back"], "Back"]
+        enabled: contentStack.depth > 1 && root._workspaceHasFocus()
+        autoRepeat: false
+        onActivated: root.goBack()
+    }
     // Ctrl+L (⌘L on macOS) drops the cursor into the top bar's quick search
     // field, browser address-bar style. Harmless on the sections that don't show
     // the field — focusSearch() is a no-op there.
@@ -764,18 +862,18 @@ ApplicationWindow {
             onSubFilterRequested: (section) => filterDialog.openFor(section)
             onSortRequested: (sx, sy) => sortMenu.openFor(root.currentSection, sx, sy)
             onSubSortRequested: (section, sx, sy) => sortMenu.openFor(section, sx, sy)
-            onGoToPersonRequested: (personId) => {
-                var row = DesktopAppController.peopleRowForId(personId)
+            onGoToContactRequested: (contactId) => {
+                var row = DesktopAppController.contactsRowForId(contactId)
                 if (row >= 0) {
-                    root.selectSection("people")
-                    root.openPerson(row, personId)
+                    root.selectSection("contacts")
+                    root.openContact(row, contactId)
                 }
             }
-            onGoToClientRequested: (clientId) => {
-                var row = DesktopAppController.clientRowForId(clientId)
+            onGoToCompanyRequested: (companyId) => {
+                var row = DesktopAppController.companyRowForId(companyId)
                 if (row >= 0) {
-                    root.selectSection("clients")
-                    root.openClient(row, clientId)
+                    root.selectSection("companies")
+                    root.openCompany(row, companyId)
                 }
             }
         }
@@ -785,11 +883,11 @@ ApplicationWindow {
         ProjectNoteDetailPage {
             onExportRequested: (table, id) => root.exportRecord(table, id)
             onMoveToRequested: (id) => moveToDialog.openFor(id)
-            onGoToPersonRequested: (personId) => {
-                var row = DesktopAppController.peopleRowForId(personId)
+            onGoToContactRequested: (contactId) => {
+                var row = DesktopAppController.contactsRowForId(contactId)
                 if (row >= 0) {
-                    root.selectSection("people")
-                    root.openPerson(row, personId)
+                    root.selectSection("contacts")
+                    root.openContact(row, contactId)
                 }
             }
             onDeleteRequested: root.confirmDelete()
@@ -798,46 +896,46 @@ ApplicationWindow {
         }
     }
     Component {
-        id: peopleComponent
-        PeoplePage {
-            onPersonActivated: (row, personId) => root.openPerson(row, personId)
+        id: contactsComponent
+        ContactsPage {
+            onContactActivated: (row, contactId) => root.openContact(row, contactId)
             onExportRequested: (table, id) => root.exportRecord(table, id)
             onFilterRequested: () => filterDialog.openFor(root.currentSection)
             onSortRequested: (sx, sy) => sortMenu.openFor(root.currentSection, sx, sy)
-            onGoToClientRequested: (clientId) => {
-                var row = DesktopAppController.clientRowForId(clientId)
+            onGoToCompanyRequested: (companyId) => {
+                var row = DesktopAppController.companyRowForId(companyId)
                 if (row >= 0) {
-                    root.selectSection("clients")
-                    root.openClient(row, clientId)
+                    root.selectSection("companies")
+                    root.openCompany(row, companyId)
                 }
             }
         }
     }
     Component {
-        id: personDetailComponent
-        PersonDetailPage {
-            onPersonActivated: (row, personId) => root.openPerson(row, personId)
-            onGoToClientRequested: (clientId) => {
-                var row = DesktopAppController.clientRowForId(clientId)
+        id: contactDetailComponent
+        ContactDetailPage {
+            onContactActivated: (row, contactId) => root.openContact(row, contactId)
+            onGoToCompanyRequested: (companyId) => {
+                var row = DesktopAppController.companyRowForId(companyId)
                 if (row >= 0) {
-                    root.selectSection("clients")
-                    root.openClient(row, clientId)
+                    root.selectSection("companies")
+                    root.openCompany(row, companyId)
                 }
             }
         }
     }
     Component {
-        id: clientsComponent
-        ClientsPage {
-            onClientActivated: (row, clientId) => root.openClient(row, clientId)
+        id: companiesComponent
+        CompaniesPage {
+            onCompanyActivated: (row, companyId) => root.openCompany(row, companyId)
             onExportRequested: (table, id) => root.exportRecord(table, id)
             onFilterRequested: () => filterDialog.openFor(root.currentSection)
             onSortRequested: (sx, sy) => sortMenu.openFor(root.currentSection, sx, sy)
         }
     }
     Component {
-        id: clientDetailComponent
-        ClientDetailPage {}
+        id: companyDetailComponent
+        CompanyDetailPage {}
     }
     Component {
         id: itemsComponent
@@ -1647,8 +1745,8 @@ ApplicationWindow {
     function _helpTopicForSection(section) {
         switch (section) {
         case "projects": return "InterfaceOverview/ProjectListPage.md"
-        case "people":   return "InterfaceOverview/PeopleListPage.md"
-        case "clients":  return "InterfaceOverview/ClientListPage.md"
+        case "contacts": return "InterfaceOverview/ContactsListPage.md"
+        case "companies":return "InterfaceOverview/CompaniesListPage.md"
         case "items":    return "InterfaceOverview/ItemTrackerPage.md"
         case "search":   return "InterfaceOverview/SearchPage.md"
         case "settings": return "InterfaceOverview/Preferences.md"

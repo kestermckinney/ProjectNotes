@@ -84,7 +84,7 @@ Page {
                         memberId:                   (d.id                     || "").toString(),
                         isNewRecord:                true,
                         projectTitle:               root.projectTitle,
-                        initialPeopleId:            (d.people_id              || "").toString(),
+                        initialContactId:           (d.people_id              || "").toString(),
                         initialRole:                (d.role                   || "").toString(),
                         initialReceiveStatusReport: (d.receive_status_report  || "0") !== "0",
                         initialEmail:               (d.email                  || "").toString()
@@ -174,7 +174,7 @@ Page {
                     memberRow:                  delegateRoot.index,
                     memberId:                   delegateRoot.model.id                   || "",
                     projectTitle:               root.projectTitle,
-                    initialPeopleId:            delegateRoot.model.people_id            || "",
+                    initialContactId:           delegateRoot.model.people_id            || "",
                     initialRole:                delegateRoot.model.role                 || "",
                     initialReceiveStatusReport: (delegateRoot.model.receive_status_report || "0") !== "0",
                     initialEmail:               delegateRoot.model.email                || ""

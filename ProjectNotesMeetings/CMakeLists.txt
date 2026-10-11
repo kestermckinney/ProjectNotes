@@ -21,6 +21,8 @@ add_library(ProjectNotesMeetings STATIC
     backends/ThunderbirdMeetingBackend.cpp
     backends/GraphMeetingBackend.h
     backends/GraphMeetingBackend.cpp
+    backends/ICloudMeetingBackend.h
+    backends/ICloudMeetingBackend.cpp
 )
 
 if(APPLE)

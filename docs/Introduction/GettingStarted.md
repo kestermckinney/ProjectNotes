@@ -28,38 +28,38 @@ See [Cloud Sync](<../InterfaceOverview/RemoteHost.md>) for a complete reference 
 
 ## Setting Yourself as the Project Manager
 
-You will need to setup yourself to manage all of the projects. First you need to add yourself to the [People List](<../InterfaceOverview/PeopleListPage.md>) and [Client List](<../InterfaceOverview/ClientListPage.md>). Then setup the Project Notes [Preferences](<../InterfaceOverview/Preferences.md>).
+You will need to setup yourself to manage all of the projects. First you need to add yourself to the [Contacts List](<../InterfaceOverview/ContactsListPage.md>) and [Company List](<../InterfaceOverview/CompaniesListPage.md>). Then setup the Project Notes [Preferences](<../InterfaceOverview/Preferences.md>).
 
 **To setup Project Notes:**
 
-1. Click the **Clients** icon in the icon rail.
+1. Click the **Companies** icon in the icon rail.
 2. Click **+ New** in the bar above the list.
 3. Type in ***"Your Company Name"*** in the new row.
-4. Click the **People** icon in the icon rail.
+4. Click the **Contacts** icon in the icon rail.
 5. Click **+ New** in the bar above the list.
 6. Type your **Name, Email**, and **Role** in the new row.
 7. Choose **Preferences** from the app menu (the menu icon at the top of the icon rail).
 8. Select yourself as the **Project Manager**.
 9. Select ***"Your Company Name"*** as the **Managing Company**.
-10. Still in **Settings**, open **Preferences** and choose your **Email and Scheduling Integration**.
-11. Open **Settings > Meeting Templates** and add the meeting types you run, such as a status meeting and a kickoff.
+10. Still in **Settings**, open **Email, Contacts, and Calendar** and choose your **Integration**.
+11. Open **Settings > Meeting Templates** and review the standard meeting types, such as status meetings and kickoffs. Customize their subjects, agendas and durations, or add your own types.
 12. Open **Settings > File Finder** and add the root folder where your project files are stored.
 
 Steps 10 and 11 are the start of email and meeting setup. See [Email and Meeting Setup](<../InterfaceOverview/EmailAndMeetingSetup.md>) for the rest, including what to configure on Windows, macOS and Linux.
 
 ## Populating Your Database
 
-Project Notes is capable of connecting information from various systems. In order to benefit from these capabilities, you will need to consistently name your clients, people, and project numbers. The first step in populating your database is importing clients and people.
+Project Notes is capable of connecting information from various systems. In order to benefit from these capabilities, you will need to consistently name your companies, contacts, and project numbers. The first step in populating your database is importing companies and contacts.
 
-There are three methods to import clients and people.
+There are three methods to import companies and contacts.
 
 * **Importing From Outlook** - The Outlook Integration plugin imports and exports contacts through Microsoft 365 on any platform, or directly from Outlook (classic) on Windows. See [Outlook Integration](<../StandardPlugins/OutlookIntegration.md>) for details.
 * **Importing From XML** - All database items can be imported from a [Project Notes XML](<../PluginsOverview/ProjectNotesXML.md>) file. Choose **Import XML…** from the app menu (the menu icon at the top of the icon rail) to import a file.
-* **Entering Manually** - Client information can be entered using the [Client List Page](<../InterfaceOverview/ClientListPage.md>), and contacts can be entered using the [People List Page](<../InterfaceOverview/PeopleListPage.md>).
+* **Entering Manually** - Company information can be entered using the [Companies List Page](<../InterfaceOverview/CompaniesListPage.md>), and contacts can be entered using the [Contacts List Page](<../InterfaceOverview/ContactsListPage.md>).
 
 ## Project Notes Settings
 
-Once your clients and people are setup, you will need to tell Project Notes which contact is the Project Manager coordinating all projects, and what company they work for. This information can be set up by clicking the **Settings** icon in the icon rail — see [Project Notes Preferences](<../InterfaceOverview/Preferences.md>).
+Once your companies and contacts are setup, you will need to tell Project Notes which contact is the Project Manager coordinating all projects, and what company they work for. This information can be set up by clicking the **Settings** icon in the icon rail — see [Project Notes Preferences](<../InterfaceOverview/Preferences.md>).
 
 ## Email, Meetings and Reports
 

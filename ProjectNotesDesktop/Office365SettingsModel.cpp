@@ -5,6 +5,7 @@
 
 #include "FileFinderService.h"
 #include "ProjectNotesIntegrations/Office365Service.h"
+#include "ProjectNotesContacts/ContactSyncSettingsModel.h"
 
 Office365SettingsModel::Office365SettingsModel(FileFinderService *fileFinder,
                                                 PN::Comm::Office365Service *service,
@@ -76,10 +77,8 @@ QString Office365SettingsModel::accountLabel() const
 
 void Office365SettingsModel::startSignIn()
 {
-    // Keep this identical to the formerly separate draft-consent action: it
-    // requests only the Graph capabilities needed to create email drafts and
-    // draft meetings, never Mail.Send. File Finder requests its own scopes when
-    // that feature is used.
+    // The single account sign-in also requests the enabled contact capability,
+    // never Mail.Send. File Finder requests its own scopes when used.
     requestCommunicationsConsent();
 }
 
@@ -87,7 +86,9 @@ void Office365SettingsModel::requestCommunicationsConsent()
 {
     if (!m_service)
         return;
-    m_service->requestCommunicationsConsent();
+    const auto config = m_contacts ? m_contacts->configuration() : QVariantMap{};
+    const bool contactsEnabled = config.value("provider").toString() == "office365";
+    m_service->requestCommunicationsConsent(contactsEnabled, contactsEnabled);
     m_service->startSignIn();
 }
 

@@ -14,7 +14,7 @@ ItemDetailTeamListModel::ItemDetailTeamListModel(DatabaseObjects* dbo): SqlQuery
     addColumn("name", tr("Name"), DBString, DBSearchable, DBRequired, DBReadOnly, DBNotUnique);
     addColumn("project_id", tr("Project ID"), DBString, DBSearchable, DBRequired, DBReadOnly, DBNotUnique,
               "projects", "id", "project_number");
-    addColumn("people_id", tr("People ID"), DBString, DBSearchable, DBRequired, DBReadOnly, DBNotUnique,
+    addColumn("people_id", tr("Contact ID"), DBString, DBSearchable, DBRequired, DBReadOnly, DBNotUnique,
                "people", "id", "name");
 
     setOrderBy("name");

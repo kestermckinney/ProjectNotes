@@ -18,9 +18,9 @@ TransientCacheCleaner::TransientCacheCleaner(QString cacheDirectory)
 
 QStringList TransientCacheCleaner::transientFilePatterns()
 {
-    // The export plug-ins write their report HTML straight into the cache
-    // folder, and the iCloud contacts import leaves its download there.
-    return {QStringLiteral("*.html"), QStringLiteral("*.htm"), QStringLiteral("icloud_contacts_*.json")};
+    // Legacy iCloud JSON holds identity links, not disposable downloads. Keep
+    // it available until native contacts has migrated and validated those links.
+    return {QStringLiteral("*.html"), QStringLiteral("*.htm")};
 }
 
 QStringList TransientCacheCleaner::clean() const

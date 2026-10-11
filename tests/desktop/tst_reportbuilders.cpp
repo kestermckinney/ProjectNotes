@@ -25,7 +25,7 @@ void ReportBuildersTest::buildsContextSpecificMeetingNotes()
     MeetingNotesBuildInput input;
     input.snapshot.projectNumber = QStringLiteral("P-1");
     input.snapshot.projectName = QStringLiteral("North");
-    input.snapshot.people = {{QStringLiteral("a"), QStringLiteral("Alice"), {}, {}, {}, false, true}};
+    input.snapshot.contacts = {{QStringLiteral("a"), QStringLiteral("Alice"), {}, {}, {}, false, true}};
     input.snapshot.notes = {{QStringLiteral("note"), QStringLiteral("Kickoff"),
                              QStringLiteral("<p>Discussed <b>scope</b></p>"),
                              QDateTime(QDate(2026, 9, 12), QTime(9, 0)), false,

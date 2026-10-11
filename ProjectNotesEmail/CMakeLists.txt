@@ -37,6 +37,10 @@ add_library(ProjectNotesEmail STATIC
     MeetingNotesReportPreparationFactory.cpp
     ProjectReportPreparationFactory.h
     ProjectReportPreparationFactory.cpp
+    ProjectEmailPreparationFactory.h
+    ProjectEmailPreparationFactory.cpp
+    LocationAttachmentDownloader.h
+    LocationAttachmentDownloader.cpp
     StatusReportBuilder.h
     StatusReportBuilder.cpp
     TrackerItemsReportBuilder.h
@@ -51,6 +55,8 @@ add_library(ProjectNotesEmail STATIC
     backends/EmlFileEmailBackend.cpp
     backends/GraphEmailBackend.h
     backends/GraphEmailBackend.cpp
+    backends/ICloudEmailBackend.h
+    backends/ICloudEmailBackend.cpp
     backends/ThunderbirdLauncher.h
     backends/ThunderbirdLauncher.cpp
     backends/ThunderbirdEmailBackend.h

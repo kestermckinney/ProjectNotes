@@ -49,15 +49,15 @@ Item {
         return Theme.text3
     }
 
-    // Resolve a people id to a display name (blank for empty).
+    // Resolve a contact id to a display name (blank for empty).
     function _pname(id) {
         var s = (id || "").toString()
-        return s !== "" ? DesktopAppController.peopleNameForId(s) : ""
+        return s !== "" ? DesktopAppController.contactNameForId(s) : ""
     }
 
     // Quick Filter entries for a right-clicked item row: leads with "Assigned
     // to Me" — the Project Manager configured in Preferences, omitted when
-    // none is set — then entries pre-filled from that row's own client/
+    // none is set — then entries pre-filled from that row's own company/
     // assigned-to/identified-by (omitted when unset), then the always-available
     // overdue toggle and the three priority shortcuts. "Assigned to Me" goes
     // first so the one entry that doesn't depend on the clicked row keeps a
@@ -71,9 +71,9 @@ Item {
         var pmId = DesktopAppController.projectManagerId()
         if (pmId !== "")
             qf.push({ icon: "assignment_ind", label: qsTr("Assigned to Me"), field: "assigned_to", values: [pmId] })
-        var clientId = (m.client_id || "").toString()
-        if (clientId !== "")
-            qf.push({ icon: "apartment", label: qsTr("This Client"), field: "client_id", values: [clientId] })
+        var companyId = (m.client_id || "").toString()
+        if (companyId !== "")
+            qf.push({ icon: "apartment", label: qsTr("This Company"), field: "client_id", values: [companyId] })
         var assignedId = (m.assigned_to || "").toString()
         // Identical field/values to "Assigned to Me" when the clicked row is
         // the PM's own — skip it rather than list the same shortcut twice.
@@ -102,7 +102,7 @@ Item {
 
     // Virtualized list — only visible cards (plus cacheBuffer) are instantiated,
     // and reuseItems recycles delegates while scrolling.
-    ListView {
+    KeyboardListView {
         id: list
         anchors.fill: parent
         anchors.margins: 12
@@ -261,7 +261,8 @@ Item {
                     }
 
                     HoverHandler { id: hover }
-                    TapHandler { onTapped: page.itemActivated(card.iid) }
+                    function openRecord() { page.itemActivated(card.iid) }
+                    TapHandler { onTapped: card.openRecord() }
                     TapHandler {
                         acceptedButtons: Qt.RightButton
                         onTapped: (ev) => card._openMenu(ev.scenePosition.x, ev.scenePosition.y)

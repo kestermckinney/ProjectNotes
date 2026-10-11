@@ -80,6 +80,7 @@ set(DESKTOP_QML_FILES
     qml/Main.qml
     qml/Theme.qml
     qml/AppShortcuts.qml
+    qml/RailNavigationShortcuts.qml
     qml/MaterialIcon.qml
     qml/MaterialIconCodepoints.js
     qml/IconRail.qml
@@ -107,11 +108,14 @@ set(DESKTOP_QML_FILES
     qml/FindReplaceBar.qml
     qml/KebabButton.qml
     qml/ProjectChip.qml
+    qml/KeyboardComboBox.qml
+    qml/StyledComboBox.qml
+    qml/KeyboardListView.qml
     qml/Card.qml
     qml/FormField.qml
     qml/ComboField.qml
     qml/DateField.qml
-    qml/PeoplePickerDialog.qml
+    qml/ContactPickerDialog.qml
     qml/NoteFormatToolbar.qml
     qml/RichTextEditor.qml
     qml/SpellCheckField.qml
@@ -120,18 +124,22 @@ set(DESKTOP_QML_FILES
     qml/SpellCheckDialog.qml
     qml/RecipientSelectionPane.qml
     qml/MeetingNotesReviewDialog.qml
+    qml/ProjectEmailReviewDialog.qml
     qml/MeetingNotesReportReviewDialog.qml
     qml/ScheduleMeetingDialog.qml
     qml/TemplateSettingsPane.qml
+    qml/ContactConflictReviewDialog.qml
+    qml/ContactExportReviewDialog.qml
+    qml/ContactSyncSettingsPane.qml
     qml/MeetingTemplateSettingsPane.qml
     qml/ThemedMessageDialog.qml
     qml/pages/ProjectsListPage.qml
     qml/pages/ProjectDetailPage.qml
     qml/pages/ProjectNoteDetailPage.qml
-    qml/pages/PeoplePage.qml
-    qml/pages/PersonDetailPage.qml
-    qml/pages/ClientsPage.qml
-    qml/pages/ClientDetailPage.qml
+    qml/pages/ContactsPage.qml
+    qml/pages/ContactDetailPage.qml
+    qml/pages/CompaniesPage.qml
+    qml/pages/CompanyDetailPage.qml
     qml/pages/ItemsPage.qml
     qml/pages/ItemDetailPage.qml
     qml/pages/SearchPage.qml
@@ -189,7 +197,18 @@ target_link_libraries(ProjectNotes PRIVATE
     ProjectNotesEmail
     ProjectNotesEmailRendering
     ProjectNotesMeetings
+    ProjectNotesContacts
 )
+
+add_dependencies(ProjectNotes ProjectNotesThunderbirdContacts thunderbird_contacts_addon)
+add_custom_command(TARGET ProjectNotes POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ProjectNotesThunderbirdContacts> $<TARGET_FILE_DIR:ProjectNotes>
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/ProjectNotesContacts/projectnotes-contacts.xpi $<TARGET_FILE_DIR:ProjectNotes>)
+if(WIN32)
+    add_dependencies(ProjectNotes ProjectNotesOutlookContacts)
+    add_custom_command(TARGET ProjectNotes POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ProjectNotesOutlookContacts> $<TARGET_FILE_DIR:ProjectNotes>)
+endif()
 
 # Platform credential backend used by the plugin secret API (credentialstore).
 if(UNIX AND NOT APPLE AND NOT ANDROID)
@@ -269,6 +288,7 @@ if(APPLE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
         COMMAND "${_desktop_qt_bin}/macdeployqt"
             "$<TARGET_BUNDLE_DIR:ProjectNotes>"
             "-qmldir=${CMAKE_CURRENT_SOURCE_DIR}/qml"
+            "-executable=$<TARGET_FILE_DIR:ProjectNotes>/ProjectNotesThunderbirdContacts"
             -always-overwrite
         COMMENT "Deploying Qt into app bundle (macdeployqt)"
         VERBATIM)

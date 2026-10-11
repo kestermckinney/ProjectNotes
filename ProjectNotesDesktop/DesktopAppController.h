@@ -36,23 +36,27 @@ class PluginManager;
 class Plugin;
 class FileFinderService;
 class Office365SettingsModel;
+namespace PN::Contacts { class ContactSyncSettingsModel; }
 namespace PN::Comm {
 class AsyncSqliteCommunicationRepository;
 class WebEngineReportRenderer;
 class CommunicationsController;
 class EmailService;
+class LocationAttachmentDownloader;
 class RecipientSelectionModel;
 class TemplateEditorModel;
 class MeetingTemplateEditorModel;
 class Office365Service;
 class QtNetworkHttpTransport;
 class GraphEmailBackend;
+class ICloudEmailBackend;
 class EmlFileEmailBackend;
 class ThunderbirdEmailBackend;
 class MeetingService;
 class IcsFileMeetingBackend;
 class ThunderbirdMeetingBackend;
 class GraphMeetingBackend;
+class ICloudMeetingBackend;
 #if defined(Q_OS_DARWIN)
 class MacMailBackend;
 class MacCalendarBackend;
@@ -79,8 +83,8 @@ class DesktopAppController : public QObject
     Q_PROPERTY(QAbstractItemModel* projectNotesModel     READ projectNotesModel     NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* meetingAttendeesModel READ meetingAttendeesModel NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* notesActionItemsModel READ notesActionItemsModel NOTIFY databaseReady)
-    Q_PROPERTY(QAbstractItemModel* peopleModel           READ peopleModel           NOTIFY databaseReady)
-    Q_PROPERTY(QAbstractItemModel* clientsModel          READ clientsModel          NOTIFY databaseReady)
+    Q_PROPERTY(QAbstractItemModel* contactsModel         READ contactsModel         NOTIFY databaseReady)
+    Q_PROPERTY(QAbstractItemModel* companiesModel        READ companiesModel        NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* allItemsModel         READ allItemsModel         NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* trackerItemDetailModel READ trackerItemDetailModel NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* trackerItemCommentsModel READ trackerItemCommentsModel NOTIFY databaseReady)
@@ -98,6 +102,7 @@ class DesktopAppController : public QObject
     Q_PROPERTY(QObject* templateEditorModel READ templateEditorModel CONSTANT)
     Q_PROPERTY(QObject* meetingTemplateEditorModel READ meetingTemplateEditorModel CONSTANT)
     Q_PROPERTY(QObject* office365SettingsModel READ office365SettingsModel CONSTANT)
+    Q_PROPERTY(QObject* contactSyncSettingsModel READ contactSyncSettingsModel CONSTANT)
     Q_PROPERTY(QString preferredEmailBackend READ preferredEmailBackend WRITE setPreferredEmailBackend NOTIFY emailSettingsChanged)
     Q_PROPERTY(QString thunderbirdExecutable READ thunderbirdExecutable WRITE setThunderbirdExecutable NOTIFY emailSettingsChanged)
     Q_PROPERTY(QString emailSenderAddress READ emailSenderAddress WRITE setEmailSenderAddress NOTIFY emailSettingsChanged)
@@ -180,6 +185,7 @@ public:
     QObject* templateEditorModel() const;
     QObject* meetingTemplateEditorModel() const;
     QObject* office365SettingsModel() const;
+    QObject* contactSyncSettingsModel() const;
     QString preferredEmailBackend() const;
     void setPreferredEmailBackend(const QString &backend);
     QString thunderbirdExecutable() const;
@@ -190,6 +196,10 @@ public:
     // loads/builds review state; callers must use the later handoff flow to
     // interact with a backend.
     Q_INVOKABLE bool prepareMeetingNotesReview(const QString& projectId, const QString& noteId);
+    Q_INVOKABLE bool prepareProjectEmailReview(const QString &projectId, const QString &contactId = {});
+    Q_INVOKABLE bool prepareContactEmailReview(const QString &contactId);
+    Q_INVOKABLE bool prepareLocationEmailReview(const QString &projectId, const QString &locationId, bool attachment);
+    Q_INVOKABLE void cancelProjectEmailReview();
     // Starts a read-only review of the project's meeting-notes report.  The
     // reporting date is supplied in the desktop's MM/dd/yyyy display format.
     // Like the one-note route, this never activates an email backend.
@@ -260,8 +270,8 @@ public:
     QAbstractItemModel* projectNotesModel() const;
     QAbstractItemModel* meetingAttendeesModel() const;
     QAbstractItemModel* notesActionItemsModel() const;
-    QAbstractItemModel* peopleModel() const;
-    QAbstractItemModel* clientsModel() const;
+    QAbstractItemModel* contactsModel() const;
+    QAbstractItemModel* companiesModel() const;
     QAbstractItemModel* allItemsModel() const;
     QAbstractItemModel* trackerItemDetailModel() const;
     QAbstractItemModel* trackerItemCommentsModel() const;
@@ -284,9 +294,9 @@ public:
     bool viewReportAfterSave() const;
     void setViewReportAfterSave(bool enabled);
     Q_INVOKABLE QString managingCompanyId() const;
-    Q_INVOKABLE void    setManagingCompanyId(const QString& clientId);
+    Q_INVOKABLE void    setManagingCompanyId(const QString& companyId);
     Q_INVOKABLE QString projectManagerId() const;
-    Q_INVOKABLE void    setProjectManagerId(const QString& personId);
+    Q_INVOKABLE void    setProjectManagerId(const QString& contactId);
     // Initials derived from the configured project manager's name (e.g. "Paul
     // McKinney" -> "PM"); empty when no project manager has been set.
     QString projectManagerInitials() const;
@@ -408,7 +418,7 @@ public:
     // The Q_PROPERTY model behind a rail section — the one canonical mapping
     // FilterDialog, the quick-search resync, and Quick Filter/Sort all share
     // (previously duplicated per-caller). Covers all 9 filterable sections:
-    // projects/items/people/clients plus the 5 project sub-tab sections
+    // projects/items/contacts/companies plus the 5 project sub-tab sections
     // (statusreport/trackeritems/team/locations/notes). Returns nullptr for
     // an unrecognized section.
     Q_INVOKABLE QAbstractItemModel* modelForSection(const QString& section) const;
@@ -492,12 +502,11 @@ public:
     Q_INVOKABLE int     projectRowForId(const QString& projectId) const;
     Q_INVOKABLE QString projectNumberForId(const QString& projectId) const;
     Q_INVOKABLE QString projectNameForId(const QString& projectId) const;
-    Q_INVOKABLE QString clientNameForId(const QString& clientId) const;
-    Q_INVOKABLE int     clientRowForId(const QString& clientId) const;
-    Q_INVOKABLE QString clientIdAtRow(int row) const;
-    Q_INVOKABLE int     peopleRowForId(const QString& peopleId) const;
-    Q_INVOKABLE QString peopleIdAtRow(int row) const;
-    Q_INVOKABLE QString peopleNameForId(const QString& personId) const;
+    Q_INVOKABLE QString companyNameForId(const QString& companyId) const;
+    Q_INVOKABLE int     companyRowForId(const QString& companyId) const;
+    Q_INVOKABLE QString companyIdAtRow(int row) const;
+    Q_INVOKABLE int     contactsRowForId(const QString& contactId) const;
+    Q_INVOKABLE QString contactNameForId(const QString& contactId) const;
 
     // Locate a project note for the global-search "open" action. Scopes the
     // notes model to the note's project (so ProjectNoteDetailPage can read it
@@ -507,9 +516,9 @@ public:
     Q_INVOKABLE QVariantMap noteLocationForId(const QString& noteId,
                                               const QString& projectId = QString());
 
-    // ── Picker lists ([{id,name}]) for client / person combos ────────────────
-    Q_INVOKABLE QVariantList clientList() const;
-    Q_INVOKABLE QVariantList peopleList() const;
+    // ── Picker lists ([{id,name}]) for company / contact combos ──────────────
+    Q_INVOKABLE QVariantList companyList() const;
+    Q_INVOKABLE QVariantList contactList() const;
     // All projects ([{id,name}], name = "number  project name") — backs the
     // "Move To…" project combo.
     Q_INVOKABLE QVariantList projectList() const;
@@ -557,7 +566,7 @@ public:
     Q_INVOKABLE bool        saveProject(int row,
                                         const QString& projectNumber, const QString& projectName,
                                         const QString& projectStatus, const QString& primaryContactId,
-                                        const QString& clientId, const QString& lastStatusDate,
+                                        const QString& companyId, const QString& lastStatusDate,
                                         const QString& lastInvoiceDate, const QString& invoicingPeriod,
                                         const QString& statusReportPeriod,
                                         const QString& budget, const QString& actual,
@@ -580,7 +589,7 @@ public:
     Q_INVOKABLE int         addAttendee(const QString& noteId);
     Q_INVOKABLE bool        deleteAttendee(int row);
     Q_INVOKABLE QVariantMap getAttendeeData(int row) const;
-    Q_INVOKABLE bool        saveAttendee(int row, const QString& personId);
+    Q_INVOKABLE bool        saveAttendee(int row, const QString& contactId);
 
     // ── Note action items ────────────────────────────────────────────────────
     Q_INVOKABLE int         addNoteActionItem(const QString& noteId, const QString& projectId);
@@ -595,30 +604,30 @@ public:
                                 const QString& dateDue, const QString& description,
                                 const QString& lastUpdate, const QString& dateResolved);
 
-    // ── People CRUD ──────────────────────────────────────────────────────────
-    Q_INVOKABLE int         addPerson();
-    Q_INVOKABLE bool        deletePerson(int row);
-    Q_INVOKABLE QVariantMap getPersonData(int row) const;
-    Q_INVOKABLE QString     personIdAtRow(int row) const;
-    Q_INVOKABLE bool        savePerson(int row, const QString& name, const QString& email,
+    // ── Contacts CRUD ─────────────────────────────────────────────────────────
+    Q_INVOKABLE int         addContact();
+    Q_INVOKABLE bool        deleteContact(int row);
+    Q_INVOKABLE QVariantMap getContactData(int row) const;
+    Q_INVOKABLE QString     contactIdAtRow(int row) const;
+    Q_INVOKABLE bool        saveContact(int row, const QString& name, const QString& email,
                                        const QString& officePhone, const QString& cellPhone,
-                                       const QString& clientId, const QString& role);
-    // Parses vCard(s) dropped onto the People list (see vcardparser.h). Each
-    // contact's company is resolved to a client (associated if it already
-    // exists, created otherwise) and the person is added/looked up against
+                                       const QString& companyId, const QString& role);
+    // Parses vCard(s) dropped onto the Contacts list (see vcardparser.h). Each
+    // contact's company is resolved to a company (associated if it already
+    // exists, created otherwise) and the contact is added/looked up against
     // it. fileUrls are local file:// URLs to read and scan for vCard blocks
     // (e.g. a dropped .vcf); text is raw vCard data already carried by the
     // drop itself (a direct MIME vCard drag, or plain text starting with
     // BEGIN:VCARD) — pass an empty string when there is none. Returns the
     // number of contacts found (0 if none, which also reports errorOccurred).
-    Q_INVOKABLE int         addPeopleFromVCardDrop(const QStringList& fileUrls, const QString& text);
+    Q_INVOKABLE int         addContactsFromVCardDrop(const QStringList& fileUrls, const QString& text);
 
-    // ── Clients CRUD ─────────────────────────────────────────────────────────
-    Q_INVOKABLE int         addClient();
-    Q_INVOKABLE bool        deleteClient(int row);
-    Q_INVOKABLE QVariantMap getClientData(int row) const;
-    Q_INVOKABLE QString     clientIdAtProxyRow(int row) const;
-    Q_INVOKABLE bool        saveClient(int row, const QString& clientName);
+    // ── Companies CRUD ───────────────────────────────────────────────────────
+    Q_INVOKABLE int         addCompany();
+    Q_INVOKABLE bool        deleteCompany(int row);
+    Q_INVOKABLE QVariantMap getCompanyData(int row) const;
+    Q_INVOKABLE QString     companyIdAtProxyRow(int row) const;
+    Q_INVOKABLE bool        saveCompany(int row, const QString& companyName);
 
     // ── Tracker items (risks/issues/action items) ────────────────────────────
     Q_INVOKABLE void        openTrackerItem(const QString& itemId);
@@ -669,11 +678,11 @@ public:
     Q_INVOKABLE int         addTeamMember(const QString& projectId);
     Q_INVOKABLE bool        deleteTeamMember(int row);
     Q_INVOKABLE QVariantMap getTeamMemberData(int row) const;
-    Q_INVOKABLE bool        saveTeamMember(int row, const QString& peopleId,
+    Q_INVOKABLE bool        saveTeamMember(int row, const QString& contactId,
                                            const QString& role, bool receiveStatusReport);
-    // Same vCard parsing as addPeopleFromVCardDrop() (client resolved/created,
-    // person added/looked up), plus each contact is added to projectId's team
-    // via addPersonToProjectTeam() (silently skipping anyone already on it).
+    // Same vCard parsing as addContactsFromVCardDrop() (company resolved/created,
+    // contact added/looked up), plus each contact is added to projectId's team
+    // via addContactToProjectTeam() (silently skipping anyone already on it).
     Q_INVOKABLE int         addTeamMembersFromVCardDrop(const QString& projectId,
                                 const QStringList& fileUrls, const QString& text);
 
@@ -882,8 +891,8 @@ private:
     QString m_lastCreatedProjectId;   // see lastCreatedProjectId()
 
     // Helpers for moveTrackerItem / checkTrackerItemMove.
-    bool isProjectTeamMember(const QString& projectId, const QString& peopleId) const;
-    bool addPersonToProjectTeam(const QString& projectId, const QString& peopleId);
+    bool isProjectTeamMember(const QString& projectId, const QString& contactId) const;
+    bool addContactToProjectTeam(const QString& projectId, const QString& contactId);
 
     bool m_databaseOpen = false;
     FileFinderService* m_fileFinder = nullptr;
@@ -895,12 +904,14 @@ private:
     PN::Comm::Office365Service *m_office365Service = nullptr;
     PN::Comm::QtNetworkHttpTransport *m_office365Transport = nullptr;
     std::unique_ptr<PN::Comm::GraphEmailBackend> m_graphEmailBackend;
+    std::unique_ptr<PN::Comm::ICloudEmailBackend> m_iCloudEmailBackend;
     std::unique_ptr<PN::Comm::EmlFileEmailBackend> m_emlFileEmailBackend;
     std::unique_ptr<PN::Comm::ThunderbirdEmailBackend> m_thunderbirdEmailBackend;
     std::unique_ptr<PN::Comm::MeetingService> m_meetingService;
     std::unique_ptr<PN::Comm::IcsFileMeetingBackend> m_icsMeetingBackend;
     std::unique_ptr<PN::Comm::ThunderbirdMeetingBackend> m_thunderbirdMeetingBackend;
     std::unique_ptr<PN::Comm::GraphMeetingBackend> m_graphMeetingBackend;
+    std::unique_ptr<PN::Comm::ICloudMeetingBackend> m_iCloudMeetingBackend;
 #if defined(Q_OS_DARWIN)
     std::unique_ptr<PN::Comm::MacMailBackend> m_macMailBackend;
     std::unique_ptr<PN::Comm::MacCalendarBackend> m_macCalendarBackend;
@@ -918,6 +929,7 @@ private:
     std::unique_ptr<PN::Comm::TemplateEditorModel> m_templateEditorModel;
     std::unique_ptr<PN::Comm::MeetingTemplateEditorModel> m_meetingTemplateEditorModel;
     std::unique_ptr<Office365SettingsModel> m_office365SettingsModel;
+    std::unique_ptr<PN::Contacts::ContactSyncSettingsModel> m_contactSyncSettingsModel;
     PN::Comm::WebEngineReportRenderer *m_webEngineRenderer = nullptr;
     // Bound to the currently open database only. It owns worker threads, so it
     // must be destroyed before global_DBObjects closes that database.
@@ -926,6 +938,9 @@ private:
     QUuid m_pendingMeetingNotesReview;
     QUuid m_pendingMeetingNotesReportReview;
     QUuid m_pendingProjectReportReview;
+    QUuid m_pendingProjectEmailReview;
+    std::optional<PN::Comm::EmailPreparation> m_projectEmailReview;
+    std::unique_ptr<PN::Comm::LocationAttachmentDownloader> m_locationAttachmentDownloader;
     QUuid m_pendingHandoffRevalidation;
     QUuid m_pendingPdfRender;
     std::optional<PN::Comm::EmailPreparation> m_meetingNotesReview;
@@ -955,6 +970,8 @@ private:
                                     bool retainHtml = false,
                                     bool displayPdf = false,
                                     std::optional<PN::Comm::TrackerFilters> trackerFilters = std::nullopt);
+    bool prepareProjectEmail(const QString &projectId, const QString &contactId,
+                             const QString &locationId, bool attachment);
     bool stageRequestedGeneratedAttachment(PN::Comm::EmailPreparation *preparation,
                                            PN::Comm::ValidationResult *validation);
     void stageRequestedGeneratedAttachmentAsync(PN::Comm::EmailPreparation preparation,

@@ -71,10 +71,10 @@ std::optional<MeetingPreparation> MeetingPreparationFactory::create(const Commun
     if (!preparation.htmlAgenda.isEmpty())
         preparation.plainAgenda = plainTextFromHtml(preparation.htmlAgenda);
 
-    for (const SnapshotPerson &person : snapshot.people)
-        if (!snapshot.projectManagerId.isEmpty() && person.id == snapshot.projectManagerId) {
-            preparation.organizerName = person.name;
-            preparation.organizerAddress = person.email.trimmed();
+    for (const SnapshotContact &contact : snapshot.contacts)
+        if (!snapshot.projectManagerId.isEmpty() && contact.id == snapshot.projectManagerId) {
+            preparation.organizerName = contact.name;
+            preparation.organizerAddress = contact.email.trimmed();
         }
 
     if (!issues.ok()) {

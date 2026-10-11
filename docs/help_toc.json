@@ -53,12 +53,12 @@
           "path": "InterfaceOverview/ActionItemDetailPage.md"
         },
         {
-          "title": "People List Page",
-          "path": "InterfaceOverview/PeopleListPage.md"
+          "title": "Contacts List Page",
+          "path": "InterfaceOverview/ContactsListPage.md"
         },
         {
-          "title": "Client List Page",
-          "path": "InterfaceOverview/ClientListPage.md"
+          "title": "Companies List Page",
+          "path": "InterfaceOverview/CompaniesListPage.md"
         },
         {
           "title": "Search Page",
@@ -150,8 +150,8 @@
           "path": "InterfaceOverview/EarnedValueTerms.md"
         },
         {
-          "title": "Presenting to Clients",
-          "path": "InterfaceOverview/PresentingToClients.md"
+          "title": "Presenting to Companies",
+          "path": "InterfaceOverview/PresentingToCompanies.md"
         }
       ]
     },

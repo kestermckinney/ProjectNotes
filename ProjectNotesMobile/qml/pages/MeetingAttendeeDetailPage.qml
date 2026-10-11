@@ -6,7 +6,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import ProjectNotesMobile
 
-// MeetingAttendeeDetailPage — select a person for a meeting attendee record.
+// MeetingAttendeeDetailPage — select a contact for a meeting attendee record.
 // Columns: 0=id, 1=note_id, 2=person_id (editable), 3=name, 4=project_name,
 //          5=email, 6=client_name, 7=project_id, 8=project_number
 
@@ -14,27 +14,27 @@ Page {
     id: root
     title: qsTr("Attendee")
 
-    property int    attendeeRow:   -1
-    property string attendeeId:    ""
-    property string projectId:     ""
-    property string initialPerson: ""
-    property bool   _skipSave:     false
-    property bool   _hasChanges:   false
-    property bool   isNewRecord:   false
+    property int    attendeeRow:    -1
+    property string attendeeId:     ""
+    property string projectId:      ""
+    property string initialContact: ""
+    property bool   _skipSave:      false
+    property bool   _hasChanges:    false
+    property bool   isNewRecord:    false
 
-    // Stable {id,name} snapshot backing personCombo — deliberately NOT the
+    // Stable {id,name} snapshot backing contactCombo — deliberately NOT the
     // live AppController.projectTeamMembersModel proxy, which the Team tab's
     // Sort feature can reorder/reset out from under a ComboBox bound directly
     // to it (see AppController::teamMemberList doc comment).
-    property var _people: []
-    function _peopleNames() { return root._people.map(function(p){ return p.name }) }
-    function _personIndexForId(id) {
-        for (var i = 0; i < root._people.length; i++)
-            if (root._people[i].id === id) return i
+    property var _contacts: []
+    function _contactNames() { return root._contacts.map(function(p){ return p.name }) }
+    function _contactIndexForId(id) {
+        for (var i = 0; i < root._contacts.length; i++)
+            if (root._contacts[i].id === id) return i
         return -1
     }
 
-    function _isBlankNew() { return isNewRecord && personCombo.optionIndex < 0 }
+    function _isBlankNew() { return isNewRecord && contactCombo.optionIndex < 0 }
     function _discardNew()  {
         var row = AppController.rowForId(AppController.meetingAttendeesModel, root.attendeeId)
         if (row < 0) return
@@ -49,18 +49,18 @@ Page {
         var row = AppController.rowForId(AppController.meetingAttendeesModel, root.attendeeId)
         if (row < 0) return false   // record no longer exists
         root.attendeeRow = row
-        var pi = personCombo.optionIndex
-        var personId = (pi >= 0 && pi < root._people.length) ? root._people[pi].id : ""
-        var result = AppController.saveAttendee(root.attendeeRow, personId)
+        var pi = contactCombo.optionIndex
+        var contactId = (pi >= 0 && pi < root._contacts.length) ? root._contacts[pi].id : ""
+        var result = AppController.saveAttendee(root.attendeeRow, contactId)
         if (result) root._hasChanges = false
         return result
     }
 
     function _reloadData() {
         var d = AppController.getAttendeeData(root.attendeeRow)
-        var personId = (d.person_id || "").toString()
-        root._people = AppController.teamMemberList(root.projectId, [personId])
-        personCombo.selectOption(root._personIndexForId(personId))
+        var contactId = (d.person_id || "").toString()
+        root._contacts = AppController.teamMemberList(root.projectId, [contactId])
+        contactCombo.selectOption(root._contactIndexForId(contactId))
     }
 
     StackView.onDeactivating: {
@@ -95,14 +95,14 @@ Page {
             width: parent.width
             spacing: 0
 
-            SectionHeader { text: qsTr("Person") }
+            SectionHeader { text: qsTr("Contact") }
             FieldRow {
                 FormCombo {
-                    id: personCombo
-                    options: root._peopleNames()
+                    id: contactCombo
+                    options: root._contactNames()
                     Component.onCompleted: {
-                        root._people = AppController.teamMemberList(root.projectId, [root.initialPerson])
-                        selectOption(root._personIndexForId(root.initialPerson))
+                        root._contacts = AppController.teamMemberList(root.projectId, [root.initialContact])
+                        selectOption(root._contactIndexForId(root.initialContact))
                     }
                     onActivated: root._hasChanges = true
                 }

@@ -66,6 +66,46 @@ Nearly all information found in Project Notes can be exported or imported using 
 </projectnotes>
 ```
 
+## Audience groups in a project export
+
+Exporting a project includes its saved report and meeting audience groups. Each group is a `<row>` in a `<table name="project_email_audiences">` nested inside that project's `<row>`. Importing the project XML also imports these rows. A project with no saved groups has an empty audience table.
+
+For example, this table can appear alongside the other child tables in a project row:
+
+```xml
+<table name="project_email_audiences" filter_field_1="project_id" filter_value_1="project-uuid">
+ <row>
+  <column name="id">audience-uuid</column>
+  <column name="project_id" lookupvalue="P4000">project-uuid</column>
+  <column name="workflow">project</column>
+  <column name="audience_name">Project team</column>
+  <column name="people_source">project-team</column>
+  <column name="company_filter">all</column>
+  <column name="selected_company_ids_json">[]</column>
+  <column name="selected_person_ids_json">[]</column>
+  <column name="recipient_distribution_json">[{"personId":"person-uuid","selected":true,"role":"to"}]</column>
+  <column name="is_default">0</column>
+  <column name="default_workflows_json">["status-report"]</column>
+  <column name="settings_version">1</column>
+ </row>
+</table>
+```
+
+| Column | Meaning |
+| --- | --- |
+| `id` | Unique ID of the saved audience group. |
+| `project_id` | Owning project ID. Its `lookupvalue` is the project number, which import uses to find the project in the destination database. |
+| `workflow` | `project` for current groups shared by the project's report and meeting workflows. |
+| `audience_name` | Name shown when choosing a saved group. |
+| `people_source`, `company_filter` | Saved audience rule; current groups use `project-team` and `all`. |
+| `selected_company_ids_json`, `selected_person_ids_json` | JSON arrays of IDs used by audience rules; normally `[]` for current groups. |
+| `recipient_distribution_json` | JSON array of recipient choices. Each entry has a `personId`, a Boolean `selected`, and a `role` of `to`, `cc`, or `bcc`. |
+| `is_default` | Legacy default flag; current defaults are recorded in `default_workflows_json`. |
+| `default_workflows_json` | JSON array of workflows for which this group is the default, such as `status-report`, `tracker-items-report`, `meeting-notes-report`, `send-meeting-notes`, or `schedule-meeting`. |
+| `settings_version` | Version of the saved audience settings; current groups use `1`. |
+
+The JSON fields contain database IDs. When moving a project between databases, import resolves the `project_id` by project number, but IDs inside those JSON fields are not translated. Check recipient choices after importing into a different database.
+
 The XML document follows a parent child heiarchy that corresponds to the record relationships found in your database. If a &lt;row> has several related records it will contain one or more &lt;table> nodes as children. Data in the XML export is often repeated to make plugin writing easier. Below is a table that describes the different node and attribute types.
 
 | **Element** | **Type** | **Description** | **Required For Import** |
@@ -84,5 +124,5 @@ The XML document follows a parent child heiarchy that corresponds to the record 
 | id | Attribute | Only used on **import** to target a specific existing record for update or delete. When specified, Project Notes uses the id to locate the record by its primary key. Not present in exports — the record ID is exported as the first `<column>` element instead. It is important to realize using an id from one database in another can cause errors since ids are globally unique per-database. | No |
 | &lt;column\> | Document Node | The column node to be imported. The value may be the column value, or the lookupvalue may be provided to specify the import lookup the corresponding record id. Typically corresponding record ids are not given as values. | Yes |
 | name | Attribute | The name of the column to be imported | Yes |
-| lookupvalue | Attribute | In many cases a record relates to another record. For example People and Clients, are related by their record id. To relate records on import, this value should contain the corresponding name. For example: The project\_id field should have this value set to the project\_number. The client\_id field should have this value set to the client name. The people\_id should have this field set to the people name. | Yes |
+| lookupvalue | Attribute | In many cases a record relates to another record. For example Contacts and Companies, are related by their record id. To relate records on import, this value should contain the corresponding name. For example: The project\_id field should have this value set to the project\_number. The client\_id field should have this value set to the company name. The people\_id should have this field set to the contact name. | Yes |
 

@@ -108,6 +108,9 @@ Section "MainSection" SEC01
   ; ── Executables ─────────────────────────────────────────────────────────────
   File "${DEPLOY_DIR}\LICENSE.txt"
   File "${DEPLOY_DIR}\Project Notes.exe"
+  File "${DEPLOY_DIR}\ProjectNotesThunderbirdContacts.exe"
+  File "${DEPLOY_DIR}\ProjectNotesOutlookContacts.exe"
+  File "${DEPLOY_DIR}\projectnotes-contacts.xpi"
 
   CreateDirectory "$SMPROGRAMS\Project Notes"
   CreateShortCut  "$SMPROGRAMS\Project Notes\Project Notes.lnk"             "$INSTDIR\Project Notes.exe"
@@ -319,7 +322,6 @@ Section "MainSection" SEC01
 
   ; ── Background threads ───────────────────────────────────────────────────────
   SetOutPath "$INSTDIR\threads"
-   File "${DEPLOY_DIR}\threads\icloudsync_thread.py"
    File "${DEPLOY_DIR}\threads\outlooksync_thread.py"
 
   ; ── Spell-check dictionaries ─────────────────────────────────────────────────
@@ -530,6 +532,9 @@ Section Uninstall
 
   ; ── Root files ───────────────────────────────────────────────────────────────
   Delete "$INSTDIR\Project Notes.exe"
+  Delete "$INSTDIR\ProjectNotesThunderbirdContacts.exe"
+  Delete "$INSTDIR\ProjectNotesOutlookContacts.exe"
+  Delete "$INSTDIR\projectnotes-contacts.xpi"
 
   Delete "$INSTDIR\D3Dcompiler_47.dll"
   Delete "$INSTDIR\icuuc.dll"

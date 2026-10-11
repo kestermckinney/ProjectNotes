@@ -12,7 +12,7 @@ import ProjectNotesDesktop
 Popup {
     id: menu
 
-    property string recordType: qsTr("Record")  // header title, e.g. "Person"
+    property string recordType: qsTr("Record")  // header title, e.g. "Contact"
     property string recordLabel: ""              // the row's display label
     property bool   canOpen: true
     property bool   canNew: true
@@ -26,6 +26,16 @@ Popup {
     property bool   canMoveTo: false
     // Optional page-specific action for preparing a meeting note for delivery.
     property bool   canReviewEmail: false
+    property string emailProjectId: ""
+    property var saveEmailSource: null
+    property string locationPath: ""
+    readonly property string emailTable: recordTable !== "" ? recordTable
+        : model ? DesktopAppController.tableNameForModel(model) : ""
+    readonly property string projectEmailContext: emailTable === "projects" ? recordId : emailProjectId
+    readonly property bool canProjectEmail: projectEmailContext !== "" && (emailTable === "projects" || contactId !== "")
+    readonly property bool canContactEmail: !canProjectEmail && emailTable === "people" && recordId !== ""
+    readonly property bool canShareLocation: projectEmailContext !== "" && emailTable === "project_locations"
+    readonly property bool canShareLink: canShareLocation && /^https?:\/\//i.test(locationPath.trim())
     property bool   canExport: true
     property bool   canFilter: true
     property bool   canRefresh: true
@@ -39,7 +49,7 @@ Popup {
     // was opened for — set by the page (from the clicked row's own field
     // values) just before calling openAt(). Each entry: {icon, label, field,
     // values}. Empty hides the trigger row entirely — pages that don't wire
-    // Quick Filter (or a row with nothing fillable, e.g. no client set)
+    // Quick Filter (or a row with nothing fillable, e.g. no company set)
     // don't need to opt out explicitly.
     property var    quickFilters: []
     readonly property bool canQuickFilter: quickFilters.length > 0
@@ -67,12 +77,12 @@ Popup {
         return menu.model ? DesktopAppController.canDuplicateModel(menu.model) : false
     }
     property var    _plugins: []
-    // Navigation IDs for "Go To Person" and "Go To Client" actions
+    // Navigation IDs for "Go To Contact" and "Go To Company" actions
     // Set by the page before opening the menu if the row supports these navigation actions
-    property string personId: ""
-    property string clientId: ""
-    property bool   canGoToPerson: personId !== ""
-    property bool   canGoToClient: clientId !== ""
+    property string contactId: ""
+    property string companyId: ""
+    property bool   canGoToContact: contactId !== ""
+    property bool   canGoToCompany: companyId !== ""
     // All of this record's plugin menus collapse into a single "Plugins" entry
     // (icon/label + nested items), mirroring AppMenu.qml's globalPluginGroup:
     // {name, items}, where items are either plain leaf entries (no submenu) or
@@ -86,6 +96,22 @@ Popup {
     signal duplicateRequested()
     signal moveToRequested()
     signal reviewEmailRequested()
+    signal projectEmailRequested()
+    signal contactEmailRequested()
+    signal locationEmailRequested(bool attachment)
+    onProjectEmailRequested: {
+        if (!saveEmailSource || saveEmailSource())
+            projectEmailReview.openProject(projectEmailContext, emailTable === "projects" ? "" : contactId)
+    }
+    onLocationEmailRequested: (attachment) => {
+        if (!saveEmailSource || saveEmailSource())
+            projectEmailReview.openLocation(projectEmailContext, recordId, attachment)
+    }
+    onContactEmailRequested: {
+        if (!saveEmailSource || saveEmailSource())
+            projectEmailReview.openContact(recordId)
+    }
+    ProjectEmailReviewDialog { id: projectEmailReview; parent: menu.parent }
     signal exportRequested()
     signal filterRequested()
     // Carries the menu's own scene position (Overlay.overlay space, same as
@@ -97,8 +123,8 @@ Popup {
     signal reportRequested(string value)
     signal scheduleMeetingRequested()
     // Navigation signals for jumping to related records
-    signal goToPersonRequested(string personId)
-    signal goToClientRequested(string clientId)
+    signal goToContactRequested(string contactId)
+    signal goToCompanyRequested(string companyId)
 
     modal: true
     dim: false
@@ -403,19 +429,31 @@ Popup {
                    onHoveredChanged: menu._rowHover("", hovered) }
         MenuRow { icon: "email";        label: qsTr("Send Notes"); visible: menu.canReviewEmail; onActivated: menu._fire(menu.reviewEmailRequested)
                    onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "email"; label: qsTr("Project Email…"); visible: menu.canProjectEmail
+                  onActivated: menu._fire(menu.projectEmailRequested)
+                  onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "email"; label: qsTr("Email…"); visible: menu.canContactEmail
+                  onActivated: menu._fire(menu.contactEmailRequested)
+                  onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "link"; label: qsTr("Share Link…"); visible: menu.canShareLink
+                  onActivated: { menu.close(); menu.locationEmailRequested(false) }
+                  onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "attach_file"; label: qsTr("Share as Attachment…"); visible: menu.canShareLocation
+                  onActivated: { menu.close(); menu.locationEmailRequested(true) }
+                  onHoveredChanged: menu._rowHover("", hovered) }
         MenuRow { icon: "delete";       label: qsTr("Delete");      visible: menu.canDelete;    danger: true; onActivated: menu._fire(menu.deleteRequested)
                    onHoveredChanged: menu._rowHover("", hovered) }
         Rectangle {
-            visible: menu._hasTopGroup || menu.canGoToPerson || menu.canGoToClient
+            visible: menu._hasTopGroup || menu.canGoToContact || menu.canGoToCompany
             Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.borderSoft
             Layout.topMargin: 3; Layout.bottomMargin: 3
         }
-        MenuRow { icon: "person";       label: qsTr("Go To Person"); visible: menu.canGoToPerson; onActivated: { menu.close(); menu.goToPersonRequested(menu.personId) }
+        MenuRow { icon: "person";       label: qsTr("Go To Contact"); visible: menu.canGoToContact; onActivated: { menu.close(); menu.goToContactRequested(menu.contactId) }
                    onHoveredChanged: menu._rowHover("", hovered) }
-        MenuRow { icon: "apartment";    label: qsTr("Go To Client"); visible: menu.canGoToClient; onActivated: { menu.close(); menu.goToClientRequested(menu.clientId) }
+        MenuRow { icon: "apartment";    label: qsTr("Go To Company"); visible: menu.canGoToCompany; onActivated: { menu.close(); menu.goToCompanyRequested(menu.companyId) }
                    onHoveredChanged: menu._rowHover("", hovered) }
         Rectangle {
-            visible: (menu.canGoToPerson || menu.canGoToClient) && (menu.canExport || menu.canFilter)
+            visible: (menu.canGoToContact || menu.canGoToCompany) && (menu.canExport || menu.canFilter)
             Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.borderSoft
             Layout.topMargin: 3; Layout.bottomMargin: 3
         }

@@ -33,7 +33,7 @@ public:
 
     // Drop cached display values sourced from the given lookup table so the
     // next sort/filter pass re-reads them. Called for every table write (app
-    // edits, plugins, sync) — without this a renamed person/client keeps its
+    // edits, plugins, sync) — without this a renamed contact/company keeps its
     // old name in sort/quick-search for the life of the session.
     void invalidateLookupTable(const QString& table);
 
@@ -55,7 +55,7 @@ private:
                             const QString& valCol, class SqlQueryModel* srcModel) const;
     // Resolves one FK value's display text: preloads the whole table on first
     // use, then falls back to a single-row query for any value added after
-    // that (e.g. a project/person created later in the session) so results
+    // that (e.g. a project/contact created later in the session) so results
     // stay correct instead of caching a permanent blank.
     QString resolveLookupValue(const QString& lookupTable, const QString& fkCol,
                                const QString& valCol, const QString& fkVal,

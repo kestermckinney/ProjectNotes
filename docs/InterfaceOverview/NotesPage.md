@@ -25,7 +25,7 @@ When you create a new meeting, the current date is automatically populated and a
 1. From the **Notes** tab, click **+ Add Note**. The note opens immediately.
 2. Type in the **Title**.
 3. Type in the **Date**.
-4. Check **Internal item** if the meeting notes are not intended for client reports.
+4. Check **Internal item** if the meeting notes are not intended for company reports.
 5. Type meeting minutes in the note body — use the formatting toolbar above it for bold, lists, and other rich text.
 
 
@@ -68,7 +68,7 @@ It is important to record who attended a meeting to make sure the team is commun
 **To add a meeting attendee:**
 
 1. From the note, click **Add** in the **Attendees** panel.
-2. Search for and click the team member who attended. Only people already on the project's team (see [Project Page](<ProjectPage.md>)) appear in this list.
+2. Search for and click the team member who attended. Only contacts already on the project's team (see [Project Page](<ProjectPage.md>)) appear in this list.
 
 
 

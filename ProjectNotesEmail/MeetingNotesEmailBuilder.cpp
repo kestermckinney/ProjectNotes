@@ -45,8 +45,8 @@ std::optional<ReportDocument> MeetingNotesEmailBuilder::build(const MeetingNotes
         return std::nullopt;
     }
     QStringList attendees;
-    for (const SnapshotPerson &person : input.snapshot.people)
-        if (note->attendeeIds.contains(person.id) && !person.name.trimmed().isEmpty()) attendees.append(person.name);
+    for (const SnapshotContact &contact : input.snapshot.contacts)
+        if (note->attendeeIds.contains(contact.id) && !contact.name.trimmed().isEmpty()) attendees.append(contact.name);
     QList<MeetingActionItem> items = input.actionItems;
     if (items.isEmpty()) for (const SnapshotActionItem &item : input.snapshot.actionItems)
         if (item.noteId == note->id) items.append({item.name, item.assignedTo, item.status, item.dueDate});

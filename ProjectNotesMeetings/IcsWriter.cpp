@@ -68,7 +68,8 @@ QString IcsWriter::utcStamp(const QDateTime &value)
     return value.toUTC().toString(QStringLiteral("yyyyMMdd'T'HHmmss'Z'"));
 }
 
-QByteArray IcsWriter::write(const MeetingRequest &request, const QDateTime &stamp, ValidationResult *validation)
+QByteArray IcsWriter::write(const MeetingRequest &request, const QDateTime &stamp,
+                            ValidationResult *validation, OutputKind outputKind)
 {
     const ValidationResult checked = validate(request);
     if (!checked.ok()) {
@@ -80,7 +81,13 @@ QByteArray IcsWriter::write(const MeetingRequest &request, const QDateTime &stam
         QStringLiteral("VERSION:2.0"),
         QStringLiteral("PRODID:-//Project Notes//Project Notes//EN"),
         QStringLiteral("CALSCALE:GREGORIAN"),
-        QStringLiteral("METHOD:PUBLISH"),
+    };
+    // RFC 4791 calendar object resources stored through CalDAV must not carry
+    // an iCalendar METHOD.  Imported .ics files keep METHOD:PUBLISH so calendar
+    // applications present them as events to save rather than invitations.
+    if (outputKind == OutputKind::PublishedFile)
+        lines.append(QStringLiteral("METHOD:PUBLISH"));
+    lines += {
         QStringLiteral("BEGIN:VEVENT"),
         QStringLiteral("UID:%1@projectnotes").arg(request.operationId.toString(QUuid::WithoutBraces)),
         QStringLiteral("DTSTAMP:") + utcStamp(stamp.isValid() ? stamp : QDateTime::currentDateTimeUtc()),

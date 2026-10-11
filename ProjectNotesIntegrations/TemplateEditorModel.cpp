@@ -42,7 +42,13 @@ QList<CommunicationTemplate> bundledTemplates()
             {QStringLiteral("tracker-items-report-native-v1"),
              QObject::tr("Native tracker items report"), Workflow::TrackerItemsReport,
              QStringLiteral("{{ project.number }} {{ project.name }} - Tracker Items {{ report.date }}"),
-             QStringLiteral("{{ content.body }}")}};
+             QStringLiteral("{{ content.body }}")},
+            {QStringLiteral("project-email-native-v1"), QObject::tr("Project email"), Workflow::ProjectEmail,
+             QStringLiteral("{{ project.number }} {{ project.name }}"),
+             QStringLiteral("<p>Regarding {{ project.number }} {{ project.name }}.</p>")},
+            {QStringLiteral("share-location-native-v1"), QObject::tr("Share location"), Workflow::ShareLocation,
+             QStringLiteral("{{ project.number }} {{ project.name }} - {{ location.description }}"),
+             QStringLiteral("<p>Please see the shared location below.</p>{{ content.body }}")}};
 }
 
 QString nativeTemplateId(Workflow workflow)
@@ -53,6 +59,9 @@ QString nativeTemplateId(Workflow workflow)
     case Workflow::StatusReport: return QStringLiteral("status-report-native-v1");
     case Workflow::TrackerItemsReport: return QStringLiteral("tracker-items-report-native-v1");
     case Workflow::ScheduleMeeting: break; // Meeting types have their own store.
+    case Workflow::ContactEmail: break; // Plain contact emails have no template.
+    case Workflow::ProjectEmail: return QStringLiteral("project-email-native-v1");
+    case Workflow::ShareLocation: return QStringLiteral("share-location-native-v1");
     }
     return {};
 }
@@ -124,7 +133,7 @@ Workflow TemplateEditorModel::currentWorkflow() const { return m_workflow; }
 void TemplateEditorModel::reload(const QString &preferredId)
 {
     CommunicationTemplateStore store(*m_settings, m_databaseKey, bundledTemplates());
-    // Native workflows are the four fixed replacements for the bundled Python
+    // Native workflows have one fixed template each, replacing the bundled Python
     // plug-ins.  A workflow has one editable wrapper, identified by its native
     // id; it is not a user-extensible list of workflows/templates.  Older
     // versions allowed extra rows here, which made the settings screen show
@@ -208,7 +217,8 @@ ValidationResult TemplateEditorModel::validate() const
     result.issues += renderTemplateFields(m_draft.subject, context).validation.issues;
     result.issues += renderTemplateFields(richBody, context, TemplateRenderMode::Html).validation.issues;
     if (m_draft.name.trimmed().isEmpty()) result.addError("template-invalid", "name");
-    if (TemplateApplication::protectedContentBlockCount(m_draft.body) != 1)
+    const int blocks = TemplateApplication::protectedContentBlockCount(m_draft.body);
+    if (currentWorkflow() == Workflow::ProjectEmail ? blocks > 1 : blocks != 1)
         result.addError("template-content-block-required", "body");
     return result;
 }

@@ -122,6 +122,7 @@ if(NOT ANDROID AND NOT IOS)
     add_subdirectory(ProjectNotesEmail)
     add_subdirectory(ProjectNotesEmailRendering)
     add_subdirectory(ProjectNotesMeetings)
+    add_subdirectory(ProjectNotesContacts)
 endif()
 
 # ── QML desktop frontend ─────────────────────────────────────────────────────
@@ -334,6 +335,10 @@ if(WIN32)
     )
 
     # Copy DirectX Shader Compiler DLLs required by Qt Quick (RHI backend)
+    add_custom_command(TARGET deploy POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ProjectNotesThunderbirdContacts> "${DEPLOY_DIR}/ProjectNotesThunderbirdContacts.exe"
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ProjectNotesOutlookContacts> "${DEPLOY_DIR}/ProjectNotesOutlookContacts.exe"
+        COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/ProjectNotesContacts/projectnotes-contacts.xpi" "${DEPLOY_DIR}/projectnotes-contacts.xpi")
     if(_dxcompiler_dll AND EXISTS "${_dxcompiler_dll}")
         add_custom_command(TARGET deploy POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy "${_dxcompiler_dll}" "${DEPLOY_DIR}/dxcompiler.dll"
