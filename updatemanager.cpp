@@ -10,6 +10,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QRegularExpression>
 #include <QStandardPaths>
 #include <QProgressDialog>
 #include <QProcess>
@@ -145,14 +146,25 @@ void UpdateManager::onCheckFinished()
         return;
     }
 
-    const QJsonObject release = doc.object();
+    processRelease(doc.object());
+}
+
+void UpdateManager::processRelease(const QJsonObject &release)
+{
+    // Upcoming releases are preparation records, not installable updates.
+    if (release.value("upcoming_release").toBool())
+    {
+        emit upToDate();
+        return;
+    }
 
     // Tags are published as "vX.Y.Z"; strip the leading "v".
     QString latest = release.value("tag_name").toString();
     if (latest.startsWith('v', Qt::CaseInsensitive))
         latest.remove(0, 1);
 
-    if (latest.isEmpty())
+    static const QRegularExpression stableVersion(QStringLiteral("^[0-9]+\\.[0-9]+\\.[0-9]+$"));
+    if (!stableVersion.match(latest).hasMatch())
     {
         emit checkFailed(tr("The update server did not report a version."));
         return;
@@ -165,6 +177,13 @@ void UpdateManager::onCheckFinished()
         emit upToDate();
         return;
     }
+
+#if defined(Q_OS_LINUX)
+    // The host's Flatpak software manager owns sandboxed app updates.
+    emit checkFailed(tr("Version %1 is available. Update Project Notes through your software "
+                        "manager or run flatpak update com.projectnotespro.ProjectNotes.").arg(latest));
+    return;
+#endif
 
     const QString assetUrl = selectPlatformAsset(release.value("assets").toObject().value("links").toArray());
     if (assetUrl.isEmpty())

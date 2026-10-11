@@ -1,0 +1,65 @@
+stages: [build, prepare, publish]
+
+variables:
+  FLATPAK_REPO_URL: "https://kestermckinney.gitlab.io/ProjectNotes/flatpak/"
+  DISABLE_ROFILES_FUSE: "1"
+  USE_BUILDER_FLATPAK: "0"
+
+# Serialize export and publication jobs; publication also rejects downgrades.
+flatpak-release:
+  stage: build
+  image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.9
+  resource_group: flatpak-release
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
+  script:
+    - bash packaging/gitlab/build-release.sh
+  artifacts:
+    paths:
+      - public/
+      - packaging/linux/ProjectNotes.flatpak
+      - packaging/linux/projectnotes.flatpakrepo
+    expire_in: 1 week
+
+prepare-release:
+  stage: prepare
+  image: python:3.14-alpine
+  needs: [flatpak-release]
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
+  script:
+    - python3 packaging/gitlab/publish-release.py
+
+publish-release:
+  stage: publish
+  image: python:3.14-alpine
+  needs: [flatpak-release, prepare-release]
+  resource_group: flatpak-release
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
+      when: manual
+  script:
+    - python3 packaging/gitlab/publish-release.py --publish
+  pages:
+    publish: public
+    expire_in: never
+
+# Deploy a locally built and signed repository without publishing the release.
+# The checksum is passed by the maintainer who uploaded this immutable package.
+deploy-prepared-repository:
+  stage: publish
+  image: alpine:3.22
+  resource_group: flatpak-release
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "api" && $REPOSITORY_PACKAGE_VERSION && $REPOSITORY_PACKAGE_SHA256'
+  script:
+    - apk add --no-cache curl
+    - curl --fail --location --output repository.tar.gz "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/projectnotes/$REPOSITORY_PACKAGE_VERSION/repository.tar.gz"
+    - printf '%s  repository.tar.gz\n' "$REPOSITORY_PACKAGE_SHA256" | sha256sum -c -
+    - mkdir public
+    - tar -xzf repository.tar.gz -C public
+    - test -s public/flatpak/summary
+    - test -s public/flatpak/summary.sig
+  pages:
+    publish: public
+    expire_in: never

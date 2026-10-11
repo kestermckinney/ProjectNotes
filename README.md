@@ -29,7 +29,8 @@ ProjectNotes is a project manager's workspace for notes, action items, project m
 
 ## Install On Linux
 
-Project Notes ships as a self-hosted Flatpak with automatic updates:
+Project Notes ships as a signed Flatpak from our GitLab Pages repository. Enable
+automatic updates in your desktop software manager, or run `flatpak update`:
 
 ```bash
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo

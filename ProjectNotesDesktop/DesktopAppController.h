@@ -823,7 +823,7 @@ signals:
     // A non-error informational result (e.g. Send Logs to Support outcome).
     void infoOccurred(const QString& title, const QString& message);
     // Update-check results (see checkForUpdates). releaseNotes is the GitLab
-    // release description; installUpdate() acts on the last-offered release.
+    // release body; installUpdate() acts on the last-offered release.
     void updateAvailable(const QString& version, const QString& releaseNotes);
     void upToDate(const QString& version);
     void updateCheckFailed(const QString& error);

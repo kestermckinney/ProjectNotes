@@ -307,14 +307,14 @@ cmd_bundle() {
         echo "Error: Repository not found. Run '$0 repo' first."
         exit 1
     fi
-    local sign_args
-    gpg_sign_args sign_args
+    # OSTree commits are signed at export; build-bundle --gpg-sign is for OCI.
     local extra=()
     # Keep the application update remote separate from the runtime provider.
     [ -n "$APP_REPO_URL" ] && extra+=("--repo-url=$APP_REPO_URL")
     [ -n "$RUNTIME_REPO_URL" ] && extra+=("--runtime-repo=$RUNTIME_REPO_URL")
     echo "==> Creating bundle at $BUNDLE_FILE..."
-    flatpak build-bundle "${sign_args[@]}" "${extra[@]}" "$REPO_DIR" "$BUNDLE_FILE" "$APP_ID"
+    flatpak build-bundle "${extra[@]}" "$REPO_DIR" "$BUNDLE_FILE" "$APP_ID"
+    [ -z "${key_file:-}" ] || rm -f "$key_file"
     echo "==> Bundle created: $BUNDLE_FILE"
     echo "    Install with: flatpak install $BUNDLE_FILE"
 }
