@@ -27,11 +27,11 @@ using namespace QLogger;
 
 namespace
 {
-// GitLab repository that publishes ProjectNotes releases.
+// GitLab project that publishes ProjectNotes releases.
 const char *kReleaseApiUrl =
     "https://gitlab.com/api/v4/projects/kestermckinney%2FProjectNotes/releases/permalink/latest";
 
-// Identify the updater in network requests.
+// Identify the application to the release service.
 const char *kUserAgent = "ProjectNotes-Updater";
 }
 
@@ -118,6 +118,7 @@ void UpdateManager::checkForUpdates(bool silent)
     QNetworkRequest request{QUrl(QString::fromLatin1(kReleaseApiUrl))};
     request.setHeader(QNetworkRequest::UserAgentHeader, QString::fromLatin1(kUserAgent));
     request.setRawHeader("Accept", "application/json");
+    request.setTransferTimeout(30000);
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                          QNetworkRequest::NoLessSafeRedirectPolicy);
 

@@ -120,6 +120,10 @@ private slots:
         QTest::newRow("invalid-json") << QByteArray("not JSON") << QStringLiteral("failed") << false;
         QTest::newRow("array-response") << QByteArray("[]") << QStringLiteral("failed") << false;
         QTest::newRow("missing-version") << QByteArray("{}") << QStringLiteral("failed") << false;
+        QTest::newRow("prerelease-tag") << QByteArray(R"({"tag_name":"v999.0.0-rc1"})")
+            << QStringLiteral("failed") << false;
+        QTest::newRow("upcoming-release") << QByteArray(R"({"tag_name":"v999.0.0","upcoming_release":true})")
+            << QStringLiteral("current") << false;
         QTest::newRow("missing-installer") << QByteArray(R"({"tag_name":"v999.0.0","assets":{"links":[]}})")
             << QStringLiteral("failed") << false;
         QTest::newRow("server-error") << QByteArray() << QStringLiteral("failed") << true;
@@ -174,6 +178,11 @@ private slots:
         {
             QCOMPARE(failed.size(), 1);
             QVERIFY(!failed.at(0).at(0).toString().isEmpty());
+#if defined(Q_OS_LINUX)
+            if (QString(QTest::currentDataTag()) == "gitlab-assets"
+                || QString(QTest::currentDataTag()) == "linux-has-no-native-installer")
+                QVERIFY(failed.at(0).at(0).toString().contains("flatpak update"));
+#endif
         }
     }
 };

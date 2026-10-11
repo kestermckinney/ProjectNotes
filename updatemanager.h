@@ -74,7 +74,11 @@ private:
     friend class UpdateManagerTest;
     void processRelease(const class QJsonObject &release);
 
-    // Returns the GitLab direct_asset_url (falling back to url) of the asset matching the running platform,
+    static QString selectInstallerLink(const class QJsonArray &assets,
+                                       const QString &nameFragment,
+                                       const QString &nameSuffix);
+
+    // Returns the direct_asset_url (or url) of the GitLab release link matching the platform,
     // or an empty string when the release carries no suitable installer.
     static QString selectPlatformAsset(const class QJsonArray &assets);
 

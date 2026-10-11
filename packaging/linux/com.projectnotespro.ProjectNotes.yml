@@ -25,7 +25,7 @@ finish-args:
   # These span arbitrary user-chosen paths, so a narrower portal/xdg scope would
   # break core features. NOTE: the Flathub linter flags broad home access and a
   # maintainer would have to grant an exception. We self-host the repo
-  # (the dedicated Flatpak hosting project) instead, so there is no such
+  # (kestermckinney.gitlab.io/ProjectNotes/flatpak) instead, so there is no such
   # gate — this permission installs as-is. The justification above is kept as
   # documentation of why the scope is necessary.
   - --filesystem=home
@@ -75,7 +75,8 @@ modules:
       # fetched from the public remote. The pinned commit MUST be pushed to
       # origin or flatpak-builder cannot fetch it.
       #
-      # NOTE: release publication must overwrite the projectnotes `commit:` below with the tag's own SHA at
+      # NOTE: the release workflow (.gitlab-ci.yml)
+      # overwrites the projectnotes `commit:` below with the tag's own SHA at
       # build time, so a tagged release always builds its own commit.
       # build-flatpak.sh does the same for local runs (newest v* tag by default;
       # see PN_REF in that script). The value here is only used with
@@ -85,8 +86,8 @@ modules:
         commit: 82d522d5c9807f838b06c53aca698a83e7b143b3
       # SqliteSyncPro is co-developed on the same branch (the repo has no tags).
       # Cloned into SqliteSyncPro/ to match the cmake config-opt
-      # -DSQLITESYNCPRO_SRC_DIR=SqliteSyncPro/src. Release publication must resolve
-      # its default-branch (HEAD) tip at build time and overwrite the `commit:`
+      # -DSQLITESYNCPRO_SRC_DIR=SqliteSyncPro/src. The release workflow resolves
+      # its default-branch (HEAD) tip at build time and overwrites the `commit:`
       # below, so a release always pairs with the latest sync code. build-flatpak.sh
       # does the same unless PN_REF=pinned.
       - type: git

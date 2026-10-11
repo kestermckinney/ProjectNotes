@@ -1,111 +1,117 @@
-# Releasing the Linux Flatpak (maintainer guide)
+# Linux releases on GitLab
 
-Flatpak publishing will move to the dedicated GitLab Pages project
-`kestermckinney/projectnotes-flatpak`, with repository root [https://kestermckinney.gitlab.io/projectnotes-flatpak/](https://kestermckinney.gitlab.io/projectnotes-flatpak/).
-The checked-in `projectnotes.flatpakrepo` targets that future deployment.
+The GitLab pipeline builds a signed OSTree repository, publishes it at
+`https://kestermckinney.gitlab.io/ProjectNotes/flatpak/`, and uploads durable
+`ProjectNotes.flatpak` and `projectnotes.flatpakrepo` assets to the generic package
+registry. The release links point to those packages, rather than expiring CI artifacts.
 
-The working update server is currently [https://kestermckinney.gitlab.io/ProjectNotes/flatpak/](https://kestermckinney.gitlab.io/ProjectNotes/flatpak/).
-Keep user installation instructions pointing there until the dedicated project
-has been created, deployed, and verified. Bundles and the public descriptor are
-available on [GitLab releases](https://gitlab.com/kestermckinney/ProjectNotes/-/releases).
-Do not publish the changed descriptor before its target is available.
+## One-time setup
 
-Release automation is maintained separately from this migration. The retained
-`.github/workflows/flatpak-release.yml` is legacy configuration and cannot run
-on GitLab. Do not follow its GitHub account, token, or Pages setup instructions.
+1. Make release metadata and packages publicly readable. The updater uses the
+   public GitLab API and never embeds a private access token in the application.
+2. Enable GitLab Pages with public access. Disable **Use unique domain** in Pages
+   settings so the stable URL above serves the repository without login or redirects.
+   The `public/` output here contains only the distribution repository. If this
+   project also hosts a website, combine its output with this job before deployment.
+3. Protect `v*` tags. Add protected CI/CD variables:
 
-## Source and version preparation
+   | Variable | Type | Contents |
+   | --- | --- | --- |
+   | `FLATPAK_GPG_PRIVATE_KEY` | File | ASCII-armored existing repository signing key |
+   | `FLATPAK_GPG_KEY_ID` | Variable | Signing-key fingerprint |
+   | `FLATPAK_GPG_PASSPHRASE` | Masked variable | Passphrase, if the key uses one |
 
-1. Commit and push the application and SqliteSyncPro changes to GitLab. The
-   Flatpak builder fetches remote source, not your working tree.
-2. Add the release version and date to
-   `com.projectnotespro.ProjectNotes.metainfo.xml` and verify the CMake version.
-3. Build and verify the intended version before tagging. `PN_REF=main` builds
-   the current default branch; `PN_REF=<tag|branch|sha>` selects another ref.
-   SqliteSyncPro follows its default-branch tip unless `PN_REF=pinned` is used.
-4. Commit and push any metadata changes, then tag the intended release commit:
+   Reuse the key matching `packaging/linux/projectnotes.flatpakrepo`. Keep its
+   private half out of Git. The build checks the exported public key before signing.
+   Existing GitHub Actions secrets cannot be read back; import the original key
+   from its backup. Do not silently generate a new key for existing installations.
+4. Use a runner that supports Flatpak/bubblewrap sandbox builds with the KDE 6.9
+   container. A self-managed Docker runner may require privileged mode.
+   For private SqliteSyncPro sources, authorize this project in SqliteSyncPro’s
+   CI job-token allowlist and configure a Git credential helper using the job
+   token. This project has protected `GIT_CONFIG_COUNT`, `GIT_CONFIG_KEY_0`,
+   `GIT_CONFIG_VALUE_0`, and `GIT_TERMINAL_PROMPT` variables for that purpose.
 
-   ```bash
-   git tag vX.Y.Z
-   git push origin vX.Y.Z
-   ```
+## Prepare 6.4.0
 
-`build-flatpak.sh` resolves the selected commits into a git-ignored generated
-manifest. Direct manifest builds and `PN_REF=pinned` use the committed pins;
-ensure those commits are available from their GitLab repositories.
+Update the desktop version and installer versions, review
+`packaging/gitlab/RELEASE_NOTES.md`, commit and push, then create `v6.4.0` at the
+reviewed commit. The pipeline verifies that the tag matches the desktop version.
+The mobile application has its own release cycle and version.
 
-## Signing and local verification
+GitLab has no GitHub-style draft release flag. Keep the release notes in Git, or
+create an **upcoming release** with a future `released_at` date. The application
+ignores upcoming releases. Build artifacts are available for review from the
+`flatpak-release` job. The `prepare-release` job uploads assets and creates an upcoming release dated
+2099-01-01 to keep it pending explicit publication. The manual `publish-release`
+job turns
+an upcoming release into a current release (preserving its notes), and deploys
+Pages. Do not run it until the release is ready to become available to users.
 
-Use the currently published GitLab signing key, with primary fingerprint
-`E0C07E21F0E41F83CBDCCB04F82B4E4D2183B011`. It differs from the former GitHub repository
-key; existing clients must import the new public key during migration.
-The public half is committed as `GPGKey=` in `projectnotes.flatpakrepo`; the
-private half belongs in the maintainer's local keyring or a protected GitLab
-CI/CD file variable named `FLATPAK_GPG_PRIVATE_KEY`. Release automation also
-uses `FLATPAK_GPG_KEY_ID` and, when required, `FLATPAK_GPG_PASSPHRASE`.
-Do not commit private keys or passphrases.
+This pipeline currently builds Linux only. Attach a
+`ProjectNotes-6.4.0-Windows-x64-Setup.exe` and a macOS `.zip` asset with `macOS` in
+its link name before publishing if Windows/macOS should receive this version.
+The updater reads GitLab `assets.links` and uses `direct_asset_url` or `url`.
 
-From `packaging/linux`, build and export a signed repository and bundle:
+## Local signed build
 
 ```bash
-export PN_REF=vX.Y.Z
-export GPG_KEY_ID="E0C07E21F0E41F83CBDCCB04F82B4E4D2183B011"
-export APP_REPO_URL="https://kestermckinney.gitlab.io/projectnotes-flatpak/"
-export RUNTIME_REPO_URL="https://flathub.org/repo/flathub.flatpakrepo"
-./build-flatpak.sh build
-./build-flatpak.sh repo
-./build-flatpak.sh bundle
+export PN_REF=v6.4.0
+export GPG_KEY_ID=YOUR_EXISTING_SIGNING_KEY_FINGERPRINT
+export APP_REPO_URL=https://kestermckinney.gitlab.io/ProjectNotes/flatpak/
+export RUNTIME_REPO_URL=https://flathub.org/repo/flathub.flatpakrepo
+./packaging/linux/build-flatpak.sh repo
+./packaging/linux/build-flatpak.sh bundle
 ```
 
-Set `GPG_HOMEDIR` if the signing key is in a separate keyring. Omit the signing
-variables for unsigned local testing. Use `./build-flatpak.sh run` to launch the
-built app and `./build-flatpak.sh lint --strict` to validate its metadata.
+Run `build` first if the build directory does not exist. Source builds fetch from
+GitLab at pinned commits; unpushed edits are not included. `APP_REPO_URL` embeds
+the application's update remote. `RUNTIME_REPO_URL` refers only to dependencies.
+Signed bundles also embed the public signing key.
 
-## Publication requirements
+## Updates and migration
 
-Create `kestermckinney/projectnotes-flatpak` as a public GitLab project and
-configure GitLab Pages to serve the signed repository from its root. Disable
-**Use unique domain** to retain the planned address, or update the descriptor
-and all public installation links to the actual Pages URL. The separate
-publisher is release-pipeline work and is not implemented here.
+Users add the descriptor with `flatpak remote-add --if-not-exists projectnotes
+https://kestermckinney.gitlab.io/ProjectNotes/flatpak/projectnotes.flatpakrepo`.
+Desktop software managers can install updates automatically when enabled;
+command-line users run `flatpak update`.
 
-The publisher must preserve existing OSTree objects/update history and the
-current GitLab signing key, expose the repository at the dedicated Pages root, and copy the
-repository descriptor and icon alongside it. Its public descriptor must use:
-
-- `Url=https://kestermckinney.gitlab.io/projectnotes-flatpak/`
-- `Icon=https://kestermckinney.gitlab.io/projectnotes-flatpak/icon.png`
-
-Publish `ProjectNotes.flatpak` and `projectnotes.flatpakrepo` as durable GitLab
-release asset links. Keep any existing release description when adding Linux
-installation instructions. Release publication is not implemented by the
-static website sources in `site/`.
-
-## Verify the dedicated deployment
-
-After the dedicated project is deployed, verify it on a clean machine. Only
-then update README and Linux installation instructions to use the new address:
+For the existing GitHub remote, run:
 
 ```bash
-flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-flatpak remote-add --if-not-exists projectnotes \
-  https://kestermckinney.gitlab.io/projectnotes-flatpak/projectnotes.flatpakrepo
-flatpak install projectnotes com.projectnotespro.ProjectNotes
-```
-
-Check that installation verifies the signature and the app reports the intended
-version. Also test an existing installation after moving its remote:
-
-```bash
-curl --fail --location --output projectnotes.gpg https://kestermckinney.gitlab.io/projectnotes-flatpak/projectnotes.gpg
-# Verify the primary fingerprint above before importing the public key.
-gpg --show-keys --with-fingerprint projectnotes.gpg
-flatpak remote-modify --gpg-verify --gpg-import=projectnotes.gpg --url=https://kestermckinney.gitlab.io/projectnotes-flatpak/ projectnotes
+curl --fail --location --output projectnotes.gpg https://kestermckinney.gitlab.io/ProjectNotes/flatpak/projectnotes.gpg
+flatpak remote-modify --gpg-import=projectnotes.gpg --url=https://kestermckinney.gitlab.io/ProjectNotes/flatpak/ projectnotes
 flatpak update com.projectnotespro.ProjectNotes
 ```
 
-Retain the current `https://kestermckinney.gitlab.io/ProjectNotes/flatpak/` deployment during the move so existing clients
-can continue updating. Existing GitLab clients need only a URL change if they
-already trust the published GitLab signing key. GitHub-era clients also need
-the public-key import above. Re-export bundles with the dedicated repository
-URL before attaching them to releases; do not simply relabel old bundles.
+The GitLab repository uses a new signing key. Existing installations must import
+`projectnotes.gpg` using the migration command above.
+
+Keep the existing app ID and `master` branch to preserve installed refs. Every
+repository build includes a complete delta from an empty installation. This
+pipeline starts a fresh repository, so clients can update without old server
+objects but will download a full delta. A future incremental implementation can
+restore the previous repository before export to reduce update bandwidth.
+
+## Deploy a prepared repository while keeping the release upcoming
+
+A maintainer can upload a signed repository as `repository.tar.gz` to the same
+generic package/version as the bundle, containing `index.html` and `flatpak/`.
+Trigger an API pipeline on main with `REPOSITORY_PACKAGE_VERSION=v6.4.0` and
+`REPOSITORY_PACKAGE_SHA256` set to the archive’s SHA-256 digest. The
+`deploy-prepared-repository` job verifies the archive checksum and publishes
+Pages while leaving the release’s upcoming date unchanged. Future tag pipelines
+use the normal signed build, preparation, and manual publication workflow.
+
+## Known validation limits for 6.4.0
+
+The Flathub linter flags the existing home-folder permission, which this
+self-hosted application uses for user documents and plugin workflows. AppStream
+and desktop-file validation pass. The linter also reports KDE 6.9 as end of life;
+upgrade the runtime and rebuild its Python dependencies before the next Linux
+release. The 6.4.0 package uses the runtime verified by the current build.
+
+The new GitLab public signing key fingerprint is
+`E0C07E21F0E41F83CBDCCB04F82B4E4D2183B011`. Local private-key, passphrase, and
+revocation backups are in the ignored `.release-secrets/` directory. CI stores
+its signing material in protected variables; private keys must never enter Git.

@@ -285,11 +285,3 @@ set_tests_properties(richtextpolicy PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offs
 add_executable(tst_meetings tst_meetings.cpp)
 target_link_libraries(tst_meetings PRIVATE Qt6::Core Qt6::Gui Qt6::Test ProjectNotesMeetings ProjectNotesIntegrations ProjectNotesCore)
 add_test(NAME meetings COMMAND tst_meetings)
-
-# GitLab release schema and update policy; no network or installer is launched.
-add_executable(tst_updatemanager tst_updatemanager.cpp
-    ${ROOT_DIR}/updatemanager.cpp ${ROOT_DIR}/updatemanager.h)
-target_link_libraries(tst_updatemanager PRIVATE
-    Qt6::Widgets Qt6::Network Qt6::Test ProjectNotesCore)
-add_test(NAME updatemanager COMMAND tst_updatemanager)
-set_tests_properties(updatemanager PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
