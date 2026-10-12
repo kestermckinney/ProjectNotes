@@ -25,7 +25,9 @@ set(_VCPKG_IOS_ROOT "/Users/paulmckinney/Documents/Projects/vcpkg/installed")
 if(CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
     # x86_64 simulator — runs via Rosetta on Apple Silicon.
     # Qt's ios package only provides x86_64 for simulator (arm64 slice is device-only).
-    set(_OPENSSL_TRIPLET "${_VCPKG_IOS_ROOT}/x64-ios-simulator")
+    # vcpkg's x64-ios triplet builds against the simulator SDK:
+    #   vcpkg install openssl:x64-ios
+    set(_OPENSSL_TRIPLET "${_VCPKG_IOS_ROOT}/x64-ios")
 else()
     set(_OPENSSL_TRIPLET "${_VCPKG_IOS_ROOT}/arm64-ios")
     set(CMAKE_OSX_ARCHITECTURES            "arm64")
@@ -36,6 +38,10 @@ set(OPENSSL_ROOT_DIR      "${_OPENSSL_TRIPLET}" CACHE PATH   "OpenSSL root (vcpk
 set(OPENSSL_INCLUDE_DIR   "${_OPENSSL_TRIPLET}/include" CACHE PATH   "OpenSSL include dir" FORCE)
 set(OPENSSL_CRYPTO_LIBRARY "${_OPENSSL_TRIPLET}/lib/libcrypto.a" CACHE FILEPATH "OpenSSL crypto library" FORCE)
 set(OPENSSL_SSL_LIBRARY    "${_OPENSSL_TRIPLET}/lib/libssl.a"    CACHE FILEPATH "OpenSSL ssl library"    FORCE)
+
+if(NOT EXISTS "${OPENSSL_CRYPTO_LIBRARY}")
+    message(FATAL_ERROR "OpenSSL not found at ${_OPENSSL_TRIPLET}. Build it with vcpkg first.")
+endif()
 
 message(STATUS "OpenSSL triplet: ${_OPENSSL_TRIPLET}")
 
@@ -60,6 +66,7 @@ add_subdirectory(../ProjectNotesCore ProjectNotesCore)
 
 # ── Application target ────────────────────────────────────────────────────────
 qt_add_executable(ProjectNotesMobile
+    MANUAL_FINALIZATION
     main.cpp
 )
 target_compile_definitions(ProjectNotesMobile PRIVATE
