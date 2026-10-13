@@ -41,7 +41,11 @@
 #include "ProjectNotesEmail/EmlWriter.h"
 #include "ProjectNotesEmail/backends/EmlFileEmailBackend.h"
 #include "ProjectNotesEmail/backends/ThunderbirdEmailBackend.h"
+#ifdef PN_PDF_RENDERER_WEBENGINE
 #include "ProjectNotesEmailRendering/WebEngineReportRenderer.h"
+#else
+#include "ProjectNotesEmailRendering/TextDocumentReportRenderer.h"
+#endif
 #include "ProjectNotesMeetings/MeetingService.h"
 #include "ProjectNotesMeetings/backends/GraphMeetingBackend.h"
 #include "ProjectNotesMeetings/backends/ICloudMeetingBackend.h"
@@ -276,7 +280,11 @@ DesktopAppController::DesktopAppController(QObject* parent)
     m_meetingService->registerBackend(PN::Comm::BackendId::ICloud, m_iCloudMeetingBackend.get());
     m_office365SettingsModel->setContactSyncModel(m_contactSyncSettingsModel.get());
     m_contactSyncSettingsModel->setIntegrationBackend(preferredEmailBackend());
-    m_webEngineRenderer = new PN::Comm::WebEngineReportRenderer(this);
+#ifdef PN_PDF_RENDERER_WEBENGINE
+    m_reportRenderer = new PN::Comm::WebEngineReportRenderer(this);
+#else
+    m_reportRenderer = new PN::Comm::TextDocumentReportRenderer(this);
+#endif
     // A previous session that crashed never reached its quit-time cleanup.
     // Only one instance runs at a time (RunGuard), so nothing in the cache is
     // in use yet.
@@ -380,8 +388,8 @@ void DesktopAppController::cleanupTransientCache()
     // report output are transient cache data.  A cleanup call is idempotent,
     // which also makes the destructor safe after the aboutToQuit handler has
     // already run.
-    if (m_webEngineRenderer && !m_pendingPdfRender.isNull())
-        m_webEngineRenderer->cancel(m_pendingPdfRender);
+    if (m_reportRenderer && !m_pendingPdfRender.isNull())
+        m_reportRenderer->cancel(m_pendingPdfRender);
     const QStringList failed =
         PN::Comm::TransientCacheCleaner(PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile)).clean();
     for (const QString &path : failed)
@@ -727,7 +735,7 @@ void DesktopAppController::stageRequestedGeneratedAttachmentAsync(
         return;
     }
     if (!m_pendingPdfRender.isNull())
-        m_webEngineRenderer->cancel(m_pendingPdfRender);
+        m_reportRenderer->cancel(m_pendingPdfRender);
     m_pendingPdfRender = preparation.operationId;
     QString stem = preparation.document.fileStem.trimmed();
     if (stem.isEmpty()) stem = QStringLiteral("ProjectNotesReport");
@@ -751,7 +759,7 @@ void DesktopAppController::stageRequestedGeneratedAttachmentAsync(
     request.pageLayout = preparation.document.pdfLayout;
     request.outputPdfPath = path;
     QPointer<DesktopAppController> self(this);
-    m_webEngineRenderer->render(std::move(request), [self, operationId = preparation.operationId,
+    m_reportRenderer->render(std::move(request), [self, operationId = preparation.operationId,
                                                       preparation = std::move(preparation), displayName,
                                                       validation = std::move(validation),
                                                       completion = std::move(completion)](PN::Comm::RenderResult result) mutable {
@@ -823,7 +831,7 @@ bool DesktopAppController::prepareProjectEmail(const QString &projectId, const Q
     if (!m_pendingPdfRender.isNull()) {
         const QUuid operationId = m_pendingPdfRender;
         m_pendingPdfRender = {};
-        m_webEngineRenderer->cancel(operationId);
+        m_reportRenderer->cancel(operationId);
     }
     m_pendingMeetingNotesReview = {};
     m_pendingMeetingNotesReportReview = {};

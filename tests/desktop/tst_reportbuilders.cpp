@@ -126,7 +126,10 @@ void ReportBuildersTest::buildsStatusReportWithEscapedValuesAndLetterLayout()
     // The email body must carry the same styling as the exported report.
     QVERIFY(document->emailFragment.startsWith(QStringLiteral("<style>")));
     QVERIFY(document->emailFragment.contains(QStringLiteral("background:#DCE6F1")));
-    QVERIFY(document->emailFragment.contains(QStringLiteral(".ev-columns{display:flex")));
+    QVERIFY(document->emailFragment.contains(QStringLiteral("table.ev-columns{")));
+    // QTextDocument (the PDF renderer) has no flexbox, so layout uses tables.
+    QVERIFY(!document->htmlDocument.contains(QStringLiteral("flex")));
+    QVERIFY(document->htmlDocument.contains(QStringLiteral("<table class=\"fraction\"")));
     QVERIFY(document->htmlDocument.contains(document->emailFragment));
     QCOMPARE(document->defaultSubject, QStringLiteral("P-1 North - Status Report 09/15/2026"));
     QCOMPARE(document->pdfLayout.pageSize().id(), QPageSize::Letter);
@@ -197,12 +200,12 @@ void ReportBuildersTest::filtersAndSortsTrackerReportWithLandscapeLayout()
     const auto internal = TrackerItemsReportBuilder::build(input, &validation);
     QVERIFY(validation.ok());
     QVERIFY(internal.has_value());
-    QVERIFY(internal->htmlDocument.contains(QStringLiteral("<td>Y</td>")));
+    QVERIFY(internal->htmlDocument.contains(QStringLiteral("<td class='col-int'>Y</td>")));
 
     input.items.clear();
     const auto internalEmpty = TrackerItemsReportBuilder::build(input, &validation);
     QVERIFY(internalEmpty.has_value());
-    QVERIFY(internalEmpty->htmlDocument.contains(QStringLiteral("<th>Internal</th>")));
+    QVERIFY(internalEmpty->htmlDocument.contains(QStringLiteral("<th class='col-int'>Int</th>")));
     QVERIFY(internalEmpty->htmlDocument.contains(
         QStringLiteral("<td colspan='13'>No matching tracker items.</td>")));
 }

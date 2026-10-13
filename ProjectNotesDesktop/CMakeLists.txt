@@ -15,8 +15,8 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 REQUIRED COMPONENTS Core Gui Widgets Qml Quick QuickControls2 Sql Xml Network WebEngineCore WebEngineQuick)
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Qml Quick QuickControls2 Sql Xml Network WebEngineCore WebEngineQuick)
+find_package(QT NAMES Qt6 REQUIRED COMPONENTS Core Gui Widgets Qml Quick QuickControls2 Sql Xml Network)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Qml Quick QuickControls2 Sql Xml Network)
 # CorePrivate exposes QtCore's private QZipWriter (qzipwriter_p.h), used by
 # DesktopAppController::sendLogsToSupport to build the support-log archive.
 find_package(Qt6 REQUIRED COMPONENTS CorePrivate)
@@ -174,6 +174,10 @@ qt_add_resources(ProjectNotes "helpcontent"
     FILES  ${HELP_MD} ${HELP_IMG} ${HELP_TOC}
 )
 
+if(PN_PDF_RENDERER STREQUAL "webengine")
+    target_link_libraries(ProjectNotes PRIVATE Qt6::WebEngineCore Qt6::WebEngineQuick)
+endif()
+
 # ── Shared data layer ─────────────────────────────────────────────────────────
 # ProjectNotesCore is added once at the top level (it is a sibling target).
 target_link_libraries(ProjectNotes PRIVATE
@@ -187,8 +191,6 @@ target_link_libraries(ProjectNotes PRIVATE
     Qt6::Sql
     Qt6::Xml
     Qt6::Network
-    Qt6::WebEngineCore
-    Qt6::WebEngineQuick
     "${HUNSPELL_LIBRARIES}"
     "${Python3_LIBRARIES}"
     SqliteSyncProLib
@@ -296,13 +298,15 @@ if(APPLE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     # Verify the deployed Qt payload itself. PyQt remains bundled for legacy
     # plugins, so looking under site-packages would not prove the native C++
     # renderer has its matching Chromium helper, resources, and locales.
-    add_custom_command(TARGET ProjectNotes POST_BUILD
-        COMMAND ${CMAKE_COMMAND}
-            "-DPN_PLATFORM=macos"
-            "-DPN_PACKAGE_ROOT=$<TARGET_BUNDLE_DIR:ProjectNotes>"
-            -P "${CMAKE_CURRENT_SOURCE_DIR}/../packaging/verify_native_webengine_package.cmake"
-        COMMENT "Verifying native Qt WebEngine bundle payload"
-        VERBATIM)
+    if(PN_PDF_RENDERER STREQUAL "webengine")
+        add_custom_command(TARGET ProjectNotes POST_BUILD
+            COMMAND ${CMAKE_COMMAND}
+                "-DPN_PLATFORM=macos"
+                "-DPN_PACKAGE_ROOT=$<TARGET_BUNDLE_DIR:ProjectNotes>"
+                -P "${CMAKE_CURRENT_SOURCE_DIR}/../packaging/verify_native_webengine_package.cmake"
+            COMMENT "Verifying native Qt WebEngine bundle payload"
+            VERBATIM)
+    endif()
 
     # ── 5. Bundle Python.framework ───────────────────────────────────────────────
     # Identity used to re-sign the dev bundle. Ad-hoc ("-") works, but TCC then

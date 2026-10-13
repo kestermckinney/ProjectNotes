@@ -25,7 +25,9 @@
 #include <QStandardPaths>
 #include <QTextStream>
 #include <QWindow>
+#ifdef PN_PDF_RENDERER_WEBENGINE
 #include <QtWebEngineQuick/QtWebEngineQuick>
+#endif
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -98,10 +100,11 @@ void applyWindowsTaskbarIdentity(QWindow* window)
 
 int main(int argc, char* argv[])
 {
-    // WebEngine Quick must initialise before QApplication/QML construction so
-    // native report rendering and any future in-app HTML preview use the same
-    // deployed QtWebEngine helper rather than a Python wheel's runtime.
+#ifdef PN_PDF_RENDERER_WEBENGINE
+    // The optional WebEngine report renderer needs WebEngine Quick initialised
+    // before QApplication/QML construction.
     QtWebEngineQuick::initialize();
+#endif
     PN::Comm::registerCommunicationMetaTypes();
 #if defined(_WIN32)
     // Give the QML desktop app its own taskbar / Task Manager identity. Both this
@@ -186,10 +189,6 @@ int main(int argc, char* argv[])
     // appears. Skipping it on macOS keeps the Dock icon the bundle one throughout.
     app.setWindowIcon(QIcon(":/qt/qml/ProjectNotesDesktop/icons/projectnotes.ico"));
 #endif
-
-    // The executable links QtWebEngine directly.  Deployment must therefore
-    // provide Qt's matching helper/resources; never redirect it into a PyQt
-    // wheel, which can silently mix incompatible Qt runtimes.
 
     // Basic style is fully themeable (no platform palette overrides), which the
     // custom light/dark design system in Theme.qml relies on.

@@ -32,8 +32,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Charts is not used by this project's own code, but SqliteSyncProLib links
 # Qt::Charts. Finding it here, at top-level scope, is what makes the imported
 # target visible to the consumers that walk SqliteSyncProLib's dependencies.
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Widgets Sql Xml Network Charts WebEngineCore WebEngineQuick)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets Sql Xml Network Charts WebEngineCore WebEngineQuick)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Widgets Sql Xml Network Charts)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets Sql Xml Network Charts)
+
+# Report PDFs are printed with QTextDocument + QPdfWriter. "webengine" selects
+# the previous Qt WebEngine renderer, kept buildable for one release so output
+# can be compared; see docs/TextDocumentPdfRendererPlan.md.
+set(PN_PDF_RENDERER "textdocument" CACHE STRING "Report PDF renderer: textdocument or webengine")
+set_property(CACHE PN_PDF_RENDERER PROPERTY STRINGS textdocument webengine)
+if(PN_PDF_RENDERER STREQUAL "webengine")
+    find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS WebEngineCore WebEngineQuick)
+endif()
 # CorePrivate exposes QtCore's private QZipWriter (qzipwriter_p.h), used by the
 # "Send Logs to Support" log bundler.
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS CorePrivate)
@@ -321,14 +330,6 @@ if(WIN32)
             "${CMAKE_CURRENT_SOURCE_DIR}/threads"    "${DEPLOY_DIR}/threads"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/dictionary" "${DEPLOY_DIR}/dictionary"
-
-        # A native Qt WebEngine renderer is linked into the QML executable.
-        # Do not let a PyQt wheel under site-packages mask a missing native
-        # Chromium helper/resources/locales deployment.
-        COMMAND ${CMAKE_COMMAND}
-            "-DPN_PLATFORM=windows"
-            "-DPN_PACKAGE_ROOT=${DEPLOY_DIR}"
-            -P "${CMAKE_CURRENT_SOURCE_DIR}/packaging/verify_native_webengine_package.cmake"
 
         DEPENDS ProjectNotes
         VERBATIM

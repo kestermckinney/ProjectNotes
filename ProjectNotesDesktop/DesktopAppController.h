@@ -39,7 +39,7 @@ class Office365SettingsModel;
 namespace PN::Contacts { class ContactSyncSettingsModel; }
 namespace PN::Comm {
 class AsyncSqliteCommunicationRepository;
-class WebEngineReportRenderer;
+class ReportRenderer;
 class CommunicationsController;
 class EmailService;
 class LocationAttachmentDownloader;
@@ -930,7 +930,8 @@ private:
     std::unique_ptr<PN::Comm::MeetingTemplateEditorModel> m_meetingTemplateEditorModel;
     std::unique_ptr<Office365SettingsModel> m_office365SettingsModel;
     std::unique_ptr<PN::Contacts::ContactSyncSettingsModel> m_contactSyncSettingsModel;
-    PN::Comm::WebEngineReportRenderer *m_webEngineRenderer = nullptr;
+    // QObject-parented to the controller; see the constructor.
+    PN::Comm::ReportRenderer *m_reportRenderer = nullptr;
     // Bound to the currently open database only. It owns worker threads, so it
     // must be destroyed before global_DBObjects closes that database.
     std::unique_ptr<PN::Comm::AsyncSqliteCommunicationRepository> m_communicationRepository;

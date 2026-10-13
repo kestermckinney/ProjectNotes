@@ -222,6 +222,14 @@ if(ENABLE_WEBENGINE_RENDERER_TESTS)
         "QT_QPA_PLATFORM=offscreen;QTWEBENGINE_DISABLE_SANDBOX=1;QTWEBENGINE_CHROMIUM_FLAGS=--disable-gpu")
 endif()
 
+# QTextDocument/QPdfWriter report renderer. Headless; set PN_RENDER_OUT to keep
+# the PDFs for visual review.
+add_executable(tst_textdocumentrenderer tst_textdocumentrenderer.cpp)
+target_link_libraries(tst_textdocumentrenderer PRIVATE
+    Qt6::Core Qt6::Gui Qt6::Test ProjectNotesEmail ProjectNotesEmailRendering)
+add_test(NAME textdocumentrenderer COMMAND tst_textdocumentrenderer)
+set_tests_properties(textdocumentrenderer PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
 add_executable(tst_communicationrepository tst_communicationrepository.cpp)
 target_link_libraries(tst_communicationrepository PRIVATE Qt6::Core Qt6::Sql Qt6::Test ProjectNotesEmail)
 add_test(NAME communicationrepository COMMAND tst_communicationrepository)

@@ -76,7 +76,7 @@ QString meetingBlock(const CommunicationSnapshot &snapshot, const SnapshotNote &
         actions.prepend(markup(QStringLiteral("<tr><td colspan='4' class='cell-header'>Action Items</td></tr>"
                                        "<tr><th class='cell-header col-item'>Item</th><th class='cell-header'>Assigned To</th>"
                                        "<th class='cell-header'>Status</th><th class='cell-header'>Due Date</th></tr>")));
-    return markup(QStringLiteral("<div class='meeting'><div class='meeting-title'>%1</div><table class='meeting-table'>"
+    return markup(QStringLiteral("<div class='meeting'><div class='meeting-title'>%1</div><table class='meeting-table' width='100%'>"
                           "<tr><td class='cell-label'>Date:</td><td class='cell-value' colspan='3'>%2</td></tr>"
                           "<tr><td class='cell-label'>Attendees:</td><td class='cell-value' colspan='3'>%3</td></tr>"
                           "<tr><td colspan='4' class='cell-header'>Meeting Notes</td></tr>"
