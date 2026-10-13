@@ -230,6 +230,14 @@ target_link_libraries(tst_textdocumentrenderer PRIVATE
 add_test(NAME textdocumentrenderer COMMAND tst_textdocumentrenderer)
 set_tests_properties(textdocumentrenderer PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+# XML export/import parity across the RecordTree refactor (golden files).
+add_executable(tst_recordtree tst_recordtree.cpp)
+target_include_directories(tst_recordtree PRIVATE ${ROOT_DIR})
+target_link_libraries(tst_recordtree PRIVATE Qt6::Core Qt6::Sql Qt6::Xml Qt6::Test ProjectNotesCore)
+target_compile_definitions(tst_recordtree PRIVATE
+    PN_RECORDTREE_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/fixtures/recordtree")
+add_test(NAME recordtree COMMAND tst_recordtree)
+
 add_executable(tst_communicationrepository tst_communicationrepository.cpp)
 target_link_libraries(tst_communicationrepository PRIVATE Qt6::Core Qt6::Sql Qt6::Test ProjectNotesEmail)
 add_test(NAME communicationrepository COMMAND tst_communicationrepository)

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectnotes managing_company_id="" managing_company_name="" managing_manager_name="" project_manager_id="">
+ <table name="item_tracker">
+  <row>
+   <column name="id">item-1</column>
+   <column name="item_number">1</column>
+   <column name="item_type">Tracker</column>
+   <column name="item_name">Rack delivery</column>
+   <column lookupvalue="Jim Smith" name="identified_by">person-jim</column>
+   <column name="date_identified">09/02/2026</column>
+   <column name="description">Vendor delayed shipment.</column>
+   <column lookupvalue="Mike Smith" name="assigned_to">person-mike</column>
+   <column name="priority">High</column>
+   <column name="status">Assigned</column>
+   <column name="date_due">09/20/2026</column>
+   <column name="last_update">09/11/2026</column>
+   <column name="date_resolved"></column>
+   <column name="note_id"></column>
+   <column lookupvalue="P4000" name="project_id">project-p4000</column>
+   <column name="internal_item">0</column>
+   <column name="comments">Vendor confirmed a new date.,Shipped.</column>
+   <column name="project_status">Active</column>
+   <column lookupvalue="Acme Corp" name="client_id">client-acme</column>
+   <column name="project_name">IT New Server Install</column>
+   <column name="project_number">P4000</column>
+   <column name="item_overdue">Yes</column>
+  </row>
+ </table>
+</projectnotes>

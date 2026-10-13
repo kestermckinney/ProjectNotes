@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectnotes managing_company_id="" managing_company_name="" managing_manager_name="" project_manager_id="">
+ <table name="clients">
+  <row>
+   <column name="id">client-acme</column>
+   <column name="client_name">Acme Corp</column>
+  </row>
+  <row>
+   <column name="id">client-globex</column>
+   <column name="client_name">Globex, Inc.</column>
+  </row>
+ </table>
+</projectnotes>

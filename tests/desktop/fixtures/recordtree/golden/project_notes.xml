@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectnotes managing_company_id="" managing_company_name="" managing_manager_name="" project_manager_id="">
+ <table name="project_notes">
+  <row>
+   <column name="id">note-review</column>
+   <column lookupvalue="P4000" name="project_id">project-p4000</column>
+   <column name="note_title">Design Review</column>
+   <column name="note_date">09/08/2026</column>
+   <column name="note"><![CDATA[<p>Reviewed the rack layout.</p>]]></column>
+   <column name="internal_item">1</column>
+   <column name="project_name">IT New Server Install</column>
+   <column name="project_number">P4000</column>
+   <table filter_field_1="note_id" filter_value_1="note-review" name="item_tracker"/>
+   <table filter_field_1="note_id" filter_value_1="note-review" name="meeting_attendees"/>
+  </row>
+  <row>
+   <column name="id">note-kickoff</column>
+   <column lookupvalue="P4000" name="project_id">project-p4000</column>
+   <column name="note_title">Kickoff</column>
+   <column name="note_date">09/01/2026</column>
+   <column name="note"><![CDATA[<p>Discussed <b>scope</b> &amp; risks.</p>]]></column>
+   <column name="internal_item">0</column>
+   <column name="project_name">IT New Server Install</column>
+   <column name="project_number">P4000</column>
+   <table filter_field_1="note_id" filter_value_1="note-kickoff" name="item_tracker">
+    <row>
+     <column name="id">item-2</column>
+     <column name="item_number">2</column>
+     <column name="item_type">Action</column>
+     <column name="item_name">Order cables</column>
+     <column lookupvalue="Ann O'Neil" name="identified_by">person-ann</column>
+     <column name="date_identified">09/01/2026</column>
+     <column name="description"></column>
+     <column lookupvalue="Jim Smith" name="assigned_to">person-jim</column>
+     <column name="priority">Medium</column>
+     <column name="status">New</column>
+     <column name="date_due"></column>
+     <column name="last_update">09/01/2026</column>
+     <column name="date_resolved"></column>
+     <column lookupvalue="09/01/2026 Kickoff" name="note_id">note-kickoff</column>
+     <column lookupvalue="P4000" name="project_id">project-p4000</column>
+     <column name="internal_item">1</column>
+     <column name="comments"></column>
+     <column name="project_status">Active</column>
+     <column lookupvalue="Acme Corp" name="client_id">client-acme</column>
+     <column name="project_name">IT New Server Install</column>
+     <column name="project_number">P4000</column>
+     <column name="item_overdue">No</column>
+     <table filter_field_1="item_id" filter_value_1="item-2" name="item_tracker_updates"/>
+    </row>
+   </table>
+   <table filter_field_1="note_id" filter_value_1="note-kickoff" name="meeting_attendees">
+    <row>
+     <column name="id">att-ann</column>
+     <column lookupvalue="09/01/2026 Kickoff" name="note_id">note-kickoff</column>
+     <column lookupvalue="Ann O'Neil" name="person_id">person-ann</column>
+     <column name="name">Ann O'Neil</column>
+     <column name="project_name">IT New Server Install</column>
+     <column name="email">ann@acme.example</column>
+     <column name="client_name">Acme Corp</column>
+     <column name="project_id">project-p4000</column>
+     <column name="project_number">P4000</column>
+     <column name="office_phone"></column>
+     <column name="cell_phone">5550199</column>
+    </row>
+    <row>
+     <column name="id">att-jim</column>
+     <column lookupvalue="09/01/2026 Kickoff" name="note_id">note-kickoff</column>
+     <column lookupvalue="Jim Smith" name="person_id">person-jim</column>
+     <column name="name">Jim Smith</column>
+     <column name="project_name">IT New Server Install</column>
+     <column name="email">jim@acme.example</column>
+     <column name="client_name">Acme Corp</column>
+     <column name="project_id">project-p4000</column>
+     <column name="project_number">P4000</column>
+     <column name="office_phone">5550100</column>
+     <column name="cell_phone"></column>
+    </row>
+   </table>
+  </row>
+ </table>
+</projectnotes>

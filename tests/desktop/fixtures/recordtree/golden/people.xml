@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectnotes managing_company_id="" managing_company_name="" managing_manager_name="" project_manager_id="">
+ <table name="people">
+  <row>
+   <column name="id">person-ann</column>
+   <column name="name">Ann O'Neil</column>
+   <column name="email">ann@acme.example</column>
+   <column name="office_phone"></column>
+   <column name="cell_phone">5550199</column>
+   <column lookupvalue="Acme Corp" name="client_id">client-acme</column>
+   <column name="role"></column>
+  </row>
+  <row>
+   <column name="id">person-jim</column>
+   <column name="name">Jim Smith</column>
+   <column name="email">jim@acme.example</column>
+   <column name="office_phone">5550100</column>
+   <column name="cell_phone"></column>
+   <column lookupvalue="Acme Corp" name="client_id">client-acme</column>
+   <column name="role">Engineer</column>
+  </row>
+  <row>
+   <column name="id">person-mike</column>
+   <column name="name">Mike Smith</column>
+   <column name="email">mike@globex.example</column>
+   <column name="office_phone"></column>
+   <column name="cell_phone"></column>
+   <column lookupvalue="Globex, Inc." name="client_id">client-globex</column>
+   <column name="role"></column>
+  </row>
+ </table>
+</projectnotes>

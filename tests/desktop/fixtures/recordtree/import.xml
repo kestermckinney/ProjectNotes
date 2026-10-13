@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic data covering every exportable table, used by tst_recordtree to
+     pin XML export output before and after the RecordTree refactor. Foreign
+     keys use lookupvalue so the import path's lookup resolution is exercised. -->
+<projectnotes>
+ <table name="clients">
+  <row><column name="id">client-acme</column><column name="client_name">Acme Corp</column></row>
+  <row><column name="id">client-globex</column><column name="client_name">Globex, Inc.</column></row>
+ </table>
+ <table name="people">
+  <row><column name="id">person-jim</column><column name="name">Jim Smith</column><column name="email">jim@acme.example</column><column name="office_phone">555-0100</column><column name="client_id" lookupvalue="Acme Corp"></column><column name="role">Engineer</column></row>
+  <row><column name="id">person-mike</column><column name="name">Mike Smith</column><column name="email">mike@globex.example</column><column name="client_id" lookupvalue="Globex, Inc."></column></row>
+  <row><column name="id">person-ann</column><column name="name">Ann O'Neil</column><column name="email">ann@acme.example</column><column name="cell_phone">555-0199</column><column name="client_id" lookupvalue="Acme Corp"></column></row>
+ </table>
+ <table name="projects">
+  <row>
+   <column name="id">project-p4000</column>
+   <column name="project_number">P4000</column>
+   <column name="project_name">IT New Server Install</column>
+   <column name="last_status_date">09/02/2026</column>
+   <column name="last_invoice_date">08/31/2026</column>
+   <column name="primary_contact" lookupvalue="Jim Smith"></column>
+   <column name="budget">2090.00</column>
+   <column name="actual">649.00</column>
+   <column name="bcwp">649.00</column>
+   <column name="bcws">2090.00</column>
+   <column name="bac">2090.00</column>
+   <column name="invoicing_period">Monthly</column>
+   <column name="status_report_period">Weekly</column>
+   <column name="client_id" lookupvalue="Acme Corp"></column>
+   <column name="project_status">Active</column>
+   <table name="project_people">
+    <row><column name="id">team-jim</column><column name="project_id" lookupvalue="P4000"></column><column name="people_id" lookupvalue="Jim Smith"></column><column name="receive_status_report">1</column><column name="role">Lead</column></row>
+    <row><column name="id">team-mike</column><column name="project_id" lookupvalue="P4000"></column><column name="people_id" lookupvalue="Mike Smith"></column><column name="receive_status_report">0</column><column name="role">Support</column></row>
+   </table>
+   <table name="project_locations">
+    <row><column name="id">loc-quote</column><column name="project_id" lookupvalue="P4000"></column><column name="location_type">PDF File</column><column name="location_description">Quote : Project Quote.pdf</column><column name="full_path">/projects/P4000/Quotes/Quote.pdf</column></row>
+    <row><column name="id">loc-folder</column><column name="project_id" lookupvalue="P4000"></column><column name="location_type">File Folder</column><column name="location_description">Project Folder</column><column name="full_path">/projects/P4000</column></row>
+   </table>
+   <table name="status_report_items">
+    <row><column name="id">status-1</column><column name="project_id" lookupvalue="P4000"></column><column name="task_category">In Progress</column><column name="task_description">Install racks</column></row>
+    <row><column name="id">status-2</column><column name="project_id" lookupvalue="P4000"></column><column name="task_category">Completed</column><column name="task_description">Site survey</column></row>
+   </table>
+   <table name="project_email_audiences">
+    <row><column name="id">audience-team</column><column name="project_id" lookupvalue="P4000"></column><column name="workflow">project</column><column name="audience_name">Project team</column><column name="people_source">project-team</column><column name="company_filter">all</column><column name="selected_company_ids_json">[]</column><column name="selected_person_ids_json">[]</column><column name="recipient_distribution_json">[]</column><column name="is_default">0</column><column name="default_workflows_json">["status-report"]</column><column name="settings_version">1</column></row>
+   </table>
+   <table name="project_notes">
+    <row>
+     <column name="id">note-kickoff</column>
+     <column name="project_id" lookupvalue="P4000"></column>
+     <column name="note_title">Kickoff</column>
+     <column name="note_date">09/01/2026</column>
+     <column name="note"><![CDATA[<p>Discussed <b>scope</b> &amp; risks.</p>]]></column>
+     <column name="internal_item">0</column>
+     <table name="meeting_attendees">
+      <row><column name="id">att-jim</column><column name="note_id">note-kickoff</column><column name="person_id" lookupvalue="Jim Smith"></column></row>
+      <row><column name="id">att-ann</column><column name="note_id">note-kickoff</column><column name="person_id" lookupvalue="Ann O'Neil"></column></row>
+     </table>
+    </row>
+    <row>
+     <column name="id">note-review</column>
+     <column name="project_id" lookupvalue="P4000"></column>
+     <column name="note_title">Design Review</column>
+     <column name="note_date">09/08/2026</column>
+     <column name="note"><![CDATA[<p>Reviewed the rack layout.</p>]]></column>
+     <column name="internal_item">1</column>
+    </row>
+   </table>
+   <table name="item_tracker">
+    <row><column name="id">item-1</column><column name="item_number">1</column><column name="item_type">Tracker</column><column name="item_name">Rack delivery</column><column name="identified_by" lookupvalue="Jim Smith"></column><column name="date_identified">09/02/2026</column><column name="description">Vendor delayed shipment.</column><column name="assigned_to" lookupvalue="Mike Smith"></column><column name="priority">High</column><column name="status">Assigned</column><column name="date_due">09/20/2026</column><column name="last_update">09/11/2026</column><column name="project_id" lookupvalue="P4000"></column><column name="internal_item">0</column></row>
+    <row><column name="id">item-2</column><column name="item_number">2</column><column name="item_type">Action</column><column name="item_name">Order cables</column><column name="identified_by" lookupvalue="Ann O'Neil"></column><column name="date_identified">09/01/2026</column><column name="assigned_to" lookupvalue="Jim Smith"></column><column name="priority">Medium</column><column name="status">New</column><column name="last_update">09/01/2026</column><column name="note_id">note-kickoff</column><column name="project_id" lookupvalue="P4000"></column><column name="internal_item">1</column></row>
+   </table>
+   <table name="item_tracker_updates">
+    <row><column name="id">update-1</column><column name="item_id">item-1</column><column name="lastupdated_date">09/05/2026</column><column name="update_note">Vendor confirmed a new date.</column><column name="updated_by" lookupvalue="Mike Smith"></column></row>
+    <row><column name="id">update-2</column><column name="item_id">item-1</column><column name="lastupdated_date">09/11/2026</column><column name="update_note">Shipped.</column><column name="updated_by" lookupvalue="Jim Smith"></column></row>
+   </table>
+  </row>
+ </table>
+</projectnotes>

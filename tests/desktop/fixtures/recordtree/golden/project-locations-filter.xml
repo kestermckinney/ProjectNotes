@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectnotes managing_company_id="" managing_company_name="" managing_manager_name="" project_manager_id="">
+ <table name="projects">
+  <row>
+   <column name="id">project-p4000</column>
+   <column name="project_number">P4000</column>
+   <column name="project_name">IT New Server Install</column>
+   <column name="last_status_date">09/02/2026</column>
+   <column name="last_invoice_date">08/31/2026</column>
+   <column lookupvalue="Jim Smith" name="primary_contact">person-jim</column>
+   <column name="budget">$2,090.00</column>
+   <column name="actual">$649.00</column>
+   <column name="bcwp">$649.00</column>
+   <column name="bcws">$2,090.00</column>
+   <column name="bac">$2,090.00</column>
+   <column name="invoicing_period">Monthly</column>
+   <column name="status_report_period">Weekly</column>
+   <column lookupvalue="Acme Corp" name="client_id">client-acme</column>
+   <column name="project_status">Active</column>
+   <column name="pct_consumed">31.05%</column>
+   <column name="eac">$5,289.51</column>
+   <column name="cv">0.00%</column>
+   <column name="sv">-68.95%</column>
+   <column name="pct_complete">31.05%</column>
+   <column name="cpi">1</column>
+   <column name="status_overdue">Yes</column>
+   <column name="invoicing_overdue">Yes</column>
+   <table filter_field_1="project_id" filter_value_1="project-p4000" name="project_locations">
+    <row>
+     <column name="id">loc-folder</column>
+     <column lookupvalue="P4000" name="project_id">project-p4000</column>
+     <column name="location_type">File Folder</column>
+     <column name="location_description">Project Folder</column>
+     <column name="full_path">/projects/P4000</column>
+     <column name="project_number">P4000</column>
+     <column name="project_name">IT New Server Install</column>
+    </row>
+    <row>
+     <column name="id">loc-quote</column>
+     <column lookupvalue="P4000" name="project_id">project-p4000</column>
+     <column name="location_type">PDF File</column>
+     <column name="location_description">Quote : Project Quote.pdf</column>
+     <column name="full_path">/projects/P4000/Quotes/Quote.pdf</column>
+     <column name="project_number">P4000</column>
+     <column name="project_name">IT New Server Install</column>
+    </row>
+   </table>
+  </row>
+ </table>
+</projectnotes>

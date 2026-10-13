@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectnotes managing_company_id="" managing_company_name="" managing_manager_name="" project_manager_id="">
+ <table name="status_report_items">
+  <row>
+   <column name="id">status-1</column>
+   <column lookupvalue="P4000" name="project_id">project-p4000</column>
+   <column name="task_category">In Progress</column>
+   <column name="task_description">Install racks</column>
+  </row>
+  <row>
+   <column name="id">status-2</column>
+   <column lookupvalue="P4000" name="project_id">project-p4000</column>
+   <column name="task_category">Completed</column>
+   <column name="task_description">Site survey</column>
+  </row>
+ </table>
+</projectnotes>
