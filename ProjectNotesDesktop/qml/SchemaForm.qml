@@ -216,11 +216,17 @@ ColumnLayout {
             FileDialog {
                 id: filePicker
                 nameFilters: pathRow.field.filters && pathRow.field.filters.length ? pathRow.field.filters : [qsTr("All files (*)")]
-                onAccepted: form.setValue(pathRow.field.key, PluginUiController.urlToPath(selectedFile))
+                onAccepted: {
+                    DesktopAppController.rememberLocation(selectedFile)
+                    form.setValue(pathRow.field.key, PluginUiController.urlToPath(selectedFile))
+                }
             }
             FolderDialog {
                 id: folderPicker
-                onAccepted: form.setValue(pathRow.field.key, PluginUiController.urlToPath(selectedFolder))
+                onAccepted: {
+                    DesktopAppController.rememberLocation(selectedFolder)
+                    form.setValue(pathRow.field.key, PluginUiController.urlToPath(selectedFolder))
+                }
             }
         }
     }

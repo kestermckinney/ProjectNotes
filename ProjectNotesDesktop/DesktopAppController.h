@@ -117,6 +117,8 @@ class DesktopAppController : public QObject
     // Whether the project folder panel is shown beside the icon rail. Persisted
     // per-user like the panel's width; toggled from the View menu and the rail.
     Q_PROPERTY(bool showProjectSidebar READ showProjectSidebar WRITE setShowProjectSidebar NOTIFY viewOptionsChanged)
+    // False in builds the App Store updates (Help > Check for Updates is hidden).
+    Q_PROPERTY(bool updatesSupported READ updatesSupported CONSTANT)
 
     // Bumped (coalesced per event-loop turn) whenever the sidebar's per-folder
     // project snapshots go stale — projects proxy reset/filter/data change or a
@@ -702,6 +704,11 @@ public:
     // Set just the path on an existing location row (used by the per-row browse
     // button); the model re-derives the file type + description.
     Q_INVOKABLE bool        setProjectLocationPath(int row, const QString& fileUrlOrPath);
+    // Keeps access to a file or folder the user picked, across restarts, in
+    // the sandboxed App Store build (a no-op elsewhere). Call it from pickers
+    // whose result the app reads again later.
+    Q_INVOKABLE void        rememberLocation(const QString& fileUrlOrPath);
+    bool updatesSupported() const { return s_updateChecksEnabled; }
     // Open a location with the OS default handler (browser, Office deep link, or
     // local file), using desktop services like the Widgets app.
     Q_INVOKABLE void        openProjectLocation(int row);

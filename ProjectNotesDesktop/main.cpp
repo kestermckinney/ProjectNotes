@@ -8,6 +8,7 @@
 #include "HelpController.h"
 #include "LogViewerController.h"
 #include "runguard.h"
+#include "SecurityScopedBookmarks.h"
 #include "SpellCheck.h"
 #include "TextFormatter.h"
 #include "ProjectNotesIntegrations/CommunicationTypes.h"
@@ -153,17 +154,24 @@ int main(int argc, char* argv[])
     if (parser.isSet(testSupabaseOption))
         DesktopAppController::setTestSupabase(true);
 
-    // Single-instance guard — same RunGuard class and behavior as the Widgets
-    // app (critical dialog, then exit), but its own UUID key so the two apps'
-    // guards are independent: this only blocks a second copy of THIS app, not
-    // the Widgets build running alongside it — both still share the same WAL
-    // SQLite database, which handles that concurrent access fine.
+#ifdef PN_APP_STORE
+    // The App Store updates the app; the in-app updater must stay off.
+    DesktopAppController::setUpdateChecksEnabled(false);
+    // Reopen the folders the user granted in earlier sessions (sandbox).
+    SecurityScopedBookmarks::setSettingsOrganization(
+        QStringLiteral("ProjectNotes") + (parser.isSet(devProfileOption) ? parser.value(devProfileOption) : QString()));
+    SecurityScopedBookmarks::restoreAll();
+#else
+    // Single-instance guard (critical dialog, then exit). The App Store build
+    // relies on macOS instead, which keeps a bundle to one running instance;
+    // RunGuard's System V semaphore is not allowed in the App Sandbox.
     RunGuard guard("2863cc03-a39e-4aca-b328-de18b045d0ba");
     if (!guard.tryToRun()) {
         QMessageBox::critical(nullptr, QStringLiteral("Only One Instance"),
             QObject::tr("Only one instance of Project Notes can be running at a time."));
         return 0;
     }
+#endif
 
 #ifndef Q_OS_MACOS
     // Windows/Linux taskbar and window-manager icon hints come from the window's

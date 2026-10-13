@@ -9,6 +9,7 @@
 #include "vcardparser.h"
 #include "sortfilterproxymodel.h"
 #include "FolderManager.h"
+#include "SecurityScopedBookmarks.h"
 #include "projectsmodel.h"
 #include "projectnotesmodel.h"
 #include "meetingattendeesmodel.h"
@@ -393,6 +394,10 @@ void DesktopAppController::registerThunderbirdBackends(const QString &command)
     m_meetingService->registerBackend(PN::Comm::BackendId::Thunderbird, nullptr);
     m_thunderbirdEmailBackend.reset();
     m_thunderbirdMeetingBackend.reset();
+#ifdef PN_APP_STORE
+    // Starting Thunderbird is not possible from the App Sandbox.
+    Q_UNUSED(command);
+#else
     if (command.trimmed().isEmpty())
         return;
     m_thunderbirdEmailBackend = std::make_unique<PN::Comm::ThunderbirdEmailBackend>(command.trimmed());
@@ -400,6 +405,7 @@ void DesktopAppController::registerThunderbirdBackends(const QString &command)
     m_thunderbirdMeetingBackend = std::make_unique<PN::Comm::ThunderbirdMeetingBackend>(
         PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile), command.trimmed());
     m_meetingService->registerBackend(PN::Comm::BackendId::Thunderbird, m_thunderbirdMeetingBackend.get());
+#endif
 }
 
 // ── Small proxy helpers ──────────────────────────────────────────────────────
@@ -3898,7 +3904,13 @@ bool DesktopAppController::setProjectLocationPath(int row, const QString& fileUr
         emit errorOccurred(tr("Could Not Save"), err);
         return false;
     }
+    rememberLocation(fileUrlOrPath);
     return true;
+}
+
+void DesktopAppController::rememberLocation(const QString& fileUrlOrPath)
+{
+    SecurityScopedBookmarks::remember(fileUrlOrPath);
 }
 
 bool DesktopAppController::addProjectLocationFromUrl(const QString& projectId,

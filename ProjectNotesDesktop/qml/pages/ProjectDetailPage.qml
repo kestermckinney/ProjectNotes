@@ -976,6 +976,12 @@ Item {
                             DesktopAppController.setProjectLocationPath(targetRow, selectedFile)
                     }
                 }
+                // Folders (a project folder, a shared drive) are added the same way.
+                FolderDialog {
+                    id: locationFolderDialog
+                    title: qsTr("Select a folder")
+                    onAccepted: DesktopAppController.addProjectLocationFromUrl(page.projectId, selectedFolder)
+                }
 
                 KeyboardListView {
                     id: locRep
@@ -1026,6 +1032,26 @@ Item {
                                 }
                                 HoverHandler { id: browseHover }
                                 TapHandler { onTapped: { locationFileDialog.targetRow = -1; locationFileDialog.open() } }
+                            }
+                            // Browse for a folder and add it as a new location.
+                            Rectangle {
+                                objectName: "browseFolderButton"
+                                implicitHeight: 26; implicitWidth: browseFolderRow.implicitWidth + 14
+                                radius: Theme.radiusSm
+                                color: browseFolderHover.hovered ? Theme.surface2 : "transparent"
+                                border.color: Theme.border
+                                Layout.alignment: Qt.AlignVCenter
+                                RowLayout {
+                                    id: browseFolderRow; anchors.centerIn: parent; spacing: 4
+                                    MaterialIcon { name: "create_new_folder"; size: 13; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
+                                    Text {
+                                        text: qsTr("Browse Folder"); color: Theme.text2
+                                        font.pixelSize: Theme.fontSm; font.weight: Font.DemiBold
+                                        verticalAlignment: Text.AlignVCenter
+                                    }
+                                }
+                                HoverHandler { id: browseFolderHover }
+                                TapHandler { onTapped: locationFolderDialog.open() }
                             }
                         }
                         // Drop hint — only while a drag is hovering over the tab.

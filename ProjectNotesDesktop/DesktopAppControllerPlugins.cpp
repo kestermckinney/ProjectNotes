@@ -104,6 +104,9 @@ void DesktopAppController::ensureJsPlugins()
 #ifdef PN_APP_STORE
     m_jsPlugins->setBuildFlavor(QStringLiteral("appstore"));
 #endif
+#ifdef PN_APP_STORE_DISABLE_USER_PLUGINS
+    m_jsPlugins->setUserPluginsAllowed(false);
+#endif
     ui->setSettingsOrganization(organization);
     ui->setRegistry(m_jsPlugins);
 

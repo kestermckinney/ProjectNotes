@@ -101,10 +101,12 @@ Popup {
         ]},
         { name: qsTr("Help"), items: [
             { icon: "menu_book", label: qsTr("User Guide"), key: AppShortcuts.text("help"), action: "help" },
-            { icon: "system_update_alt", label: qsTr("Check for Updates…"), key: "", action: "check_updates" },
+        ].concat(DesktopAppController.updatesSupported   // the App Store build updates through the store
+            ? [{ icon: "system_update_alt", label: qsTr("Check for Updates…"), key: "", action: "check_updates" }] : []
+        ).concat([
             { icon: "forward_to_inbox", label: qsTr("Send Logs to Support…"), key: "", action: "support_logs" },
             { icon: "info", label: qsTr("About"), key: "", action: "about" },
-        ]},
+        ])},
     ]
 
     // All plugin menus — both the global (dataless) ones and, when a record is

@@ -1433,6 +1433,7 @@ Item {
         id: fileFinderRootDialog
         title: qsTr("Choose a File Finder search location")
         onAccepted: {
+            DesktopAppController.rememberLocation(selectedFolder)
             if (page._finder)
                 page._finder.addSearchRoot(selectedFolder)
         }

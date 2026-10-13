@@ -98,6 +98,16 @@ endif()
 # The ProjectNotesDesktop target is the desktop app; it reuses ProjectNotesCore.
 # ON by default on desktop platforms.
 option(BUILD_QML_DESKTOP "Build the new QML (Qt Quick) desktop frontend" ON)
+
+# Mac App Store flavor of the desktop app: App Sandbox (security-scoped
+# bookmarks for folders the user picks), no in-app updater, no programs
+# started by plugins, no Thunderbird. Packaged by packaging/macos/build_appstore.sh.
+option(PN_APP_STORE "Build the Mac App Store flavor of the desktop app" OFF)
+# Lets App Review's objection to user plugins be met without a code change.
+option(PN_APP_STORE_USER_PLUGINS "Let the App Store flavor load plugins from the user's plugins folder" ON)
+if(PN_APP_STORE AND NOT APPLE)
+    message(FATAL_ERROR "PN_APP_STORE is for macOS builds only.")
+endif()
 if(BUILD_QML_DESKTOP AND NOT ANDROID AND NOT IOS)
     add_subdirectory(ProjectNotesDesktop)
 endif()

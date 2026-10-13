@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Mac App Store build (cmake -DPN_APP_STORE=ON). See
+         packaging/macos/AppStoreReviewNotes.md for why each entry is needed. -->
+    <key>com.apple.security.app-sandbox</key>
+    <true/>
+
+    <!-- The QML and JavaScript (plugin) engines compile to native code -->
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+
+    <!-- Cloud sync, Office 365, iCloud contacts and plugin web requests -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+
+    <!-- Browser sign-in returns to a listener on localhost (Office-style OAuth
+         for services such as Keycloak). Loopback only. -->
+    <key>com.apple.security.network.server</key>
+    <true/>
+
+    <!-- Project folders, File Finder locations and files the user picks, kept
+         across restarts with security-scoped bookmarks -->
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+    <key>com.apple.security.files.bookmarks.app-scope</key>
+    <true/>
+
+    <!-- "MacOS Email and Calendar": draft messages in Mail and events in
+         Calendar for the user to review -->
+    <key>com.apple.security.automation.apple-events</key>
+    <true/>
+    <key>com.apple.security.temporary-exception.apple-events</key>
+    <array>
+        <string>com.apple.iCal</string>
+        <string>com.apple.mail</string>
+        <string>com.apple.systemevents</string>
+    </array>
+    <key>com.apple.security.personal-information.calendars</key>
+    <true/>
+
+    <!-- Contact synchronization with the Contacts app -->
+    <key>com.apple.security.personal-information.addressbook</key>
+    <true/>
+</dict>
+</plist>

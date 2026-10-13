@@ -58,6 +58,7 @@ qt_add_executable(ProjectNotes
     ../ProjectNotesMobile/TextFormatter.cpp ../ProjectNotesMobile/TextFormatter.h
     # Backs the plugin secret API.
     ../credentialstore.cpp ../credentialstore.h
+    SecurityScopedBookmarks.h
     # Unattended software update (GitLab releases → silent install + relaunch).
     ../updatemanager.cpp   ../updatemanager.h
     # Single-instance guard (UUID key in main.cpp).
@@ -207,10 +208,27 @@ target_link_libraries(ProjectNotes PRIVATE
     ProjectNotesPlugins
 )
 
-add_dependencies(ProjectNotes ProjectNotesThunderbirdContacts thunderbird_contacts_addon)
-add_custom_command(TARGET ProjectNotes POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ProjectNotesThunderbirdContacts> $<TARGET_FILE_DIR:ProjectNotes>
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/ProjectNotesContacts/projectnotes-contacts.xpi $<TARGET_FILE_DIR:ProjectNotes>)
+# Mac App Store flavor: sandbox bookmarks and the gates in main.cpp,
+# DesktopAppController and DesktopPluginServices.
+if(PN_APP_STORE)
+    target_sources(ProjectNotes PRIVATE SecurityScopedBookmarks.mm)
+    target_link_libraries(ProjectNotes PRIVATE "-framework Foundation")
+    target_compile_definitions(ProjectNotes PRIVATE PN_APP_STORE)
+    if(NOT PN_APP_STORE_USER_PLUGINS)
+        target_compile_definitions(ProjectNotes PRIVATE PN_APP_STORE_DISABLE_USER_PLUGINS)
+    endif()
+else()
+    target_sources(ProjectNotes PRIVATE SecurityScopedBookmarks.cpp)
+endif()
+
+# The Thunderbird contacts helper is a second executable started by the app,
+# which the App Sandbox does not allow.
+if(NOT PN_APP_STORE)
+    add_dependencies(ProjectNotes ProjectNotesThunderbirdContacts thunderbird_contacts_addon)
+    add_custom_command(TARGET ProjectNotes POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:ProjectNotesThunderbirdContacts> $<TARGET_FILE_DIR:ProjectNotes>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/ProjectNotesContacts/projectnotes-contacts.xpi $<TARGET_FILE_DIR:ProjectNotes>)
+endif()
 if(WIN32)
     add_dependencies(ProjectNotes ProjectNotesOutlookContacts)
     add_custom_command(TARGET ProjectNotes POST_BUILD
@@ -277,11 +295,16 @@ if(APPLE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     # .Dialogs, etc.) into Contents/Resources/qml — without it, only the
     # directly-linked Qt frameworks are copied and the app fails to load its UI
     # at runtime ("module ... is not installed").
+    if(PN_APP_STORE)
+        set(_desktop_helper_args "")
+    else()
+        set(_desktop_helper_args "-executable=$<TARGET_FILE_DIR:ProjectNotes>/ProjectNotesThunderbirdContacts")
+    endif()
     add_custom_command(TARGET ProjectNotes POST_BUILD
         COMMAND "${_desktop_qt_bin}/macdeployqt"
             "$<TARGET_BUNDLE_DIR:ProjectNotes>"
             "-qmldir=${CMAKE_CURRENT_SOURCE_DIR}/qml"
-            "-executable=$<TARGET_FILE_DIR:ProjectNotes>/ProjectNotesThunderbirdContacts"
+            ${_desktop_helper_args}
             -always-overwrite
         COMMENT "Deploying Qt into app bundle (macdeployqt)"
         VERBATIM)

@@ -131,7 +131,7 @@ Links to project documents and web locations are set up under the **Locations** 
 
 **To add a location:**
 
-1. From the **Locations** tab, click **+ Add Location** to add a blank row, or click **Browse File** to pick a file directly and add it as a new location.
+1. From the **Locations** tab, click **+ Add Location** to add a blank row, click **Browse File** to pick a file and add it as a new location, or click **Browse Folder** to add a folder such as the project folder.
 2. Choose the **Type** from the drop down, if the preferred value doesn't auto fill.
 3. Type the **Description** and **Location** (path or web link).
 

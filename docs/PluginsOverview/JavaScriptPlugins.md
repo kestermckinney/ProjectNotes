@@ -297,8 +297,10 @@ A call without its permission fails with a `PluginError` whose `code` is `permis
 
 Plugins included with Project Notes are on by default. Plugins you add go in your plugins folder:
 
-- **Windows and Linux:** `Project Notes/plugins` in your home folder.
-- **macOS:** use **Settings > Plugins > Install Plugin…**, which copies the plugin into the application's own plugins folder. Choose **Open Plugins Folder** to see it.
+- **Windows, Linux, and macOS (direct download):** `Project Notes/plugins` in your home folder.
+- **macOS (Mac App Store):** the app runs in a sandbox, so its plugins folder is inside the app's container rather than your home folder. Use **Settings > Plugins > Install Plugin…**, which copies the plugin there, and **Open Plugins Folder** to see it.
+
+The Mac App Store version has no `process` namespace and no Script Editor; `app.buildFlavor` is `"appstore"` there. A plugin reaches the files and folders you pick for the rest of that session.
 
 Settings > Plugins can install a plugin folder or a `.pnplugin` file, which is a zip of the folder. An installed plugin stays off until you review what it can do and turn it on, and it asks again if an update changes its permissions.
 

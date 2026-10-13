@@ -51,6 +51,7 @@ qt_add_executable(tst_qmldesktop
     ${DESKTOP_DIR}/PluginUiController.cpp   ${DESKTOP_DIR}/PluginUiController.h
     ${DESKTOP_DIR}/DesktopPluginServices.cpp ${DESKTOP_DIR}/DesktopPluginServices.h
     ${DESKTOP_DIR}/DesktopAppControllerPlugins.cpp
+    ${DESKTOP_DIR}/SecurityScopedBookmarks.cpp ${DESKTOP_DIR}/SecurityScopedBookmarks.h
     ${MOBILE_DIR}/TextFormatter.cpp         ${MOBILE_DIR}/TextFormatter.h
     ${ROOT_DIR}/credentialstore.cpp ${ROOT_DIR}/credentialstore.h
     ${ROOT_DIR}/updatemanager.cpp   ${ROOT_DIR}/updatemanager.h
