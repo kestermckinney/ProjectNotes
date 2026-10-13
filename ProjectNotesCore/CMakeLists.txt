@@ -30,6 +30,7 @@ set(CORE_SOURCES
 
     # Database layer
     ../databaseobjects.cpp  ../databaseobjects.h
+    ../recordtree.cpp       ../recordtree.h
     ../databasecreate.cpp   ../databasecreate.h
     ../databasestructure.cpp ../databasestructure.h
     ../databaseviews.cpp    ../databaseviews.h

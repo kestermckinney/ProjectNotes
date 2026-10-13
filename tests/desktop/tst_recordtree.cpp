@@ -18,6 +18,7 @@
 #include <QElapsedTimer>
 #include <QFile>
 #include <QRegularExpression>
+#include <QScopedPointer>
 #include <QTemporaryDir>
 #include <QtTest/QtTest>
 
@@ -75,6 +76,8 @@ private slots:
     void importRoundTripReproducesExport();
     void importIsIdempotent();
     void deleteRowCascadesToOwnedChildren();
+    void batchedExportQueryCount();
+    void batchCommitAndRollback();
 
 private:
     // DatabaseStructure creates the schema through global_DBObjects, so an
@@ -245,6 +248,109 @@ void RecordTreeTest::deleteRowCascadesToOwnedChildren()
     QCOMPARE(m_dbo.execute(QStringLiteral("select deleted from item_tracker where id='item-1'")), QStringLiteral("1"));
     QCOMPARE(m_dbo.execute(QStringLiteral("select count(*) from item_tracker_updates where item_id='item-1' and deleted=1")), QStringLiteral("2"));
     QCOMPARE(m_dbo.execute(QStringLiteral("select coalesce(deleted,0) from people where id='person-jim'")), QStringLiteral("0"));
+}
+
+void RecordTreeTest::batchedExportQueryCount()
+{
+    if (qEnvironmentVariableIsSet("PN_RECORDTREE_WRITE_GOLDEN"))
+        QSKIP("writing golden files");
+
+    // A large project: 300 tracker items with two comments each.
+    RecordTree tree;
+    RecordTable items{QStringLiteral("item_tracker"), {}, {}};
+    RecordTable updates{QStringLiteral("item_tracker_updates"), {}, {}};
+    for (int i = 0; i < 300; ++i) {
+        const QString id = QStringLiteral("bench-item-%1").arg(i);
+        RecordRow item;
+        item.columns = {{QStringLiteral("id"), id, {}},
+                        {QStringLiteral("item_number"), QString::number(100 + i), {}},
+                        {QStringLiteral("item_type"), QStringLiteral("Tracker"), {}},
+                        {QStringLiteral("item_name"), QStringLiteral("Bench item %1").arg(i), {}},
+                        {QStringLiteral("identified_by"), {}, QStringLiteral("Mike Smith")},
+                        {QStringLiteral("assigned_to"), {}, QStringLiteral("Ann O'Neil")},
+                        {QStringLiteral("priority"), QStringLiteral("Low"), {}},
+                        {QStringLiteral("status"), QStringLiteral("New"), {}},
+                        {QStringLiteral("last_update"), QStringLiteral("09/11/2026"), {}},
+                        {QStringLiteral("project_id"), {}, QStringLiteral("P4000")}};
+        items.rows.append(item);
+        for (int u = 0; u < 2; ++u) {
+            RecordRow update;
+            update.columns = {{QStringLiteral("id"), QStringLiteral("%1-update-%2").arg(id).arg(u), {}},
+                              {QStringLiteral("item_id"), id, {}},
+                              {QStringLiteral("lastupdated_date"), QStringLiteral("09/1%1/2026").arg(u), {}},
+                              {QStringLiteral("update_note"), QStringLiteral("Note %1").arg(u), {}},
+                              {QStringLiteral("updated_by"), {}, QStringLiteral("Mike Smith")}};
+            updates.rows.append(update);
+        }
+    }
+    tree.tables = {items, updates};
+    QList<RecordImportOutcome> outcomes;
+    QVERIFY(m_dbo.importRecordTree(tree, &outcomes));
+    QCOMPARE(outcomes.size(), 900);
+    for (const RecordImportOutcome &outcome : std::as_const(outcomes))
+        QCOMPARE(int(outcome.kind), int(RecordImportOutcome::Inserted));
+
+    QScopedPointer<SqlQueryModel> project(m_dbo.createExportObject(QStringLiteral("projects")));
+    project->setFilter(0, QStringLiteral("project-p4000"));
+    project->refresh();
+
+    RecordTreeExporter exporter(&m_dbo);
+    QElapsedTimer timer;
+    timer.start();
+    const RecordTable table = exporter.exportModel(project.data());
+    const qint64 elapsed = timer.elapsed();
+    QCOMPARE(table.rows.size(), 1);
+
+    int exportedItems = 0;
+    for (const RecordTable &child : table.rows.first().children)
+        if (child.name == QLatin1String("item_tracker"))
+            exportedItems += int(child.rows.size());
+    QVERIFY(exportedItems >= 300);
+
+    // The per-row exporter ran one lookup query per foreign-key cell and one
+    // child query per parent row: several thousand statements for this
+    // project. The batched exporter's count depends on tree depth only.
+    qInfo("batched export: %d queries, %lld ms", exporter.queryCount(), elapsed);
+    QVERIFY2(exporter.queryCount() < 60, qPrintable(QString::number(exporter.queryCount())));
+}
+
+void RecordTreeTest::batchCommitAndRollback()
+{
+    if (qEnvironmentVariableIsSet("PN_RECORDTREE_WRITE_GOLDEN"))
+        QSKIP("writing golden files");
+
+    auto company = [](const QString &id, const QString &name) {
+        RecordTree tree;
+        RecordRow row;
+        row.columns = {{QStringLiteral("id"), id, {}}, {QStringLiteral("client_name"), name, {}}};
+        tree.tables = {RecordTable{QStringLiteral("clients"), {}, {row}}};
+        return tree;
+    };
+    auto exists = [this](const QString &id) {
+        return !m_dbo.execute(QStringLiteral("select id from clients where id='%1'").arg(id)).isEmpty();
+    };
+
+    QVERIFY(m_dbo.beginBatch());
+    QVERIFY(m_dbo.importRecordTree(company(QStringLiteral("batch-a"), QStringLiteral("Batch A"))));
+    QVERIFY(m_dbo.importRecordTree(company(QStringLiteral("batch-b"), QStringLiteral("Batch B"))));
+    QVERIFY(exists(QStringLiteral("batch-a")));   // visible inside the batch
+    m_dbo.rollbackBatch();
+    QVERIFY(!exists(QStringLiteral("batch-a")));
+    QVERIFY(!exists(QStringLiteral("batch-b")));
+
+    QVERIFY(m_dbo.beginBatch());
+    QVERIFY(m_dbo.importRecordTree(company(QStringLiteral("batch-c"), QStringLiteral("Batch C"))));
+    QVERIFY(m_dbo.commitBatch());
+    QVERIFY(exists(QStringLiteral("batch-c")));
+
+    // A failing statement poisons the batch: commit rolls everything back.
+    QVERIFY(m_dbo.beginBatch());
+    QVERIFY(m_dbo.importRecordTree(company(QStringLiteral("batch-d"), QStringLiteral("Batch D"))));
+    m_dbo.execute(QStringLiteral("insert into no_such_table values (1)"));
+    QVERIFY(m_dbo.batchFailed());
+    QVERIFY(!m_dbo.commitBatch());
+    QVERIFY(!m_dbo.inBatch());
+    QVERIFY(!exists(QStringLiteral("batch-d")));
 }
 
 int main(int argc, char **argv)
