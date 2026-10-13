@@ -1064,8 +1064,9 @@ bool DesktopAppController::prepareMeetingNotesReportReviewWithOptions(const QStr
         PN::Comm::EmailPreparation prepared = *preparation;
         prepared.senderAddress = PN::Comm::EmailSettingsStore(settings).senderAddress();
         prepared.displayPdf = displayPdf;
+        // The report dialog saves a file by preparing in that format's
+        // attachment mode, so no PDF is rendered unless the mode needs one.
         prepared.createHtmlExport = true;
-        prepared.createPdfExport = true;
         const PN::Comm::RecipientResolution recipients = self->m_recipientSelectionModel->resolve();
         prepared.recipients = recipients.recipients;
         prepared.addressLater = recipients.addressLaterExplicitlyChosen;
@@ -1207,8 +1208,9 @@ bool DesktopAppController::prepareProjectReportReview(const QString &projectId, 
         }
         PN::Comm::EmailPreparation prepared = review->preparation;
         prepared.senderAddress = PN::Comm::EmailSettingsStore(settings).senderAddress();
+        // See prepareMeetingNotesReportReviewWithOptions(): no PDF unless the
+        // chosen mode needs one.
         prepared.createHtmlExport = true;
-        prepared.createPdfExport = true;
         self->stageRequestedGeneratedAttachmentAsync(std::move(prepared),
             [self, audience = review->audience, snapshot = result.snapshot, source = request.source, options,
              reviewValidation = review->validation]

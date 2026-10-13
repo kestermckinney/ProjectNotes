@@ -108,6 +108,7 @@ private slots:
     void rejectsInvalidRequests();
     void blocksNonDataResources();
     void largeTrackerReportIsFast();
+    void largeMeetingNotesReportIsFast();
 
 private:
     QString outputPath(const QString &name);
@@ -297,6 +298,38 @@ void TextDocumentRendererTest::largeTrackerReportIsFast()
     qInfo("500-item tracker report: %lld ms, %d pages", elapsed, pageCount(path));
     QVERIFY(pageCount(path) > 5);
     QVERIFY2(elapsed < 15000, "rendering a 500-item tracker report took too long");
+}
+
+void TextDocumentRendererTest::largeMeetingNotesReportIsFast()
+{
+    MeetingNotesReportInput input;
+    input.snapshot = meetingSnapshot();
+    input.snapshot.notes.clear();
+    input.snapshot.actionItems.clear();
+    for (int i = 0; i < 200; ++i) {
+        const QString id = QStringLiteral("note%1").arg(i);
+        input.snapshot.notes.append({id, QStringLiteral("Weekly meeting %1").arg(i),
+                                     QStringLiteral("<p>Reviewed the schedule and open risks with the vendor.</p>"
+                                                    "<ul><li>Racks delivered</li><li>Network cabling in progress</li>"
+                                                    "<li>File share migration planned</li></ul>"),
+                                     QDateTime(QDate(2026, 1, 1).addDays(i), QTime(9, 0)), false,
+                                     {QStringLiteral("a")}});
+        for (int j = 0; j < 4; ++j)
+            input.snapshot.actionItems.append({id, QStringLiteral("Follow up on item %1").arg(j),
+                                               QStringLiteral("Alice"), QStringLiteral("Assigned"),
+                                               QStringLiteral("09/20/2026")});
+    }
+    input.reportingDate = QDate(2026, 9, 12);
+    const auto report = MeetingNotesReportBuilder::build(input);
+    QVERIFY(report);
+    const QString path = outputPath(QStringLiteral("meeting-notes-200"));
+    QElapsedTimer timer;
+    timer.start();
+    QCOMPARE(TextDocumentReportRenderer::renderToFile(request(*report, path)), QString());
+    const qint64 elapsed = timer.elapsed();
+    qInfo("200-meeting notes report: %lld ms, %d pages", elapsed, pageCount(path));
+    QVERIFY(pageCount(path) > 5);
+    QVERIFY2(elapsed < 15000, "rendering a 200-meeting notes report took too long");
 }
 
 int main(int argc, char **argv)

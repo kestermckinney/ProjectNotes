@@ -14,8 +14,6 @@
 #include <QPageSize>
 #include <QPdfWriter>
 #include <QTextDocument>
-#include <QTextFrame>
-#include <QTextFrameFormat>
 #include <QTextOption>
 #include <QThreadPool>
 #include <QUrl>
@@ -103,6 +101,10 @@ QString TextDocumentReportRenderer::renderToFile(const RenderRequest &request)
     writer.setTitle(request.outputStem);
     writer.setCreator(QStringLiteral("Project Notes"));
 
+    const QMarginsF margins = layout.margins(QPageLayout::Inch);
+    const bool hasMargins = margins.left() > 0 || margins.right() > 0
+        || margins.top() > 0 || margins.bottom() > 0;
+
     RestrictedTextDocument document;
     // Lay out against the PDF device so CSS pixel lengths, point sizes and
     // borders scale by the device resolution, and the document is paginated
@@ -112,21 +114,17 @@ QString TextDocumentReportRenderer::renderToFile(const RenderRequest &request)
     QTextOption option = document.defaultTextOption();
     option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
     document.setDefaultTextOption(option);
-    document.setHtml(request.html);
-
-    const QMarginsF margins = layout.margins(QPageLayout::Inch);
-    const bool hasMargins = margins.left() > 0 || margins.right() > 0
-        || margins.top() > 0 || margins.bottom() > 0;
-    QTextFrameFormat root = document.rootFrame()->frameFormat();
     // Frame lengths are CSS pixels (96 per inch); the layout scales them to the
     // paint device, so the margin is given in those units, not device pixels.
-    root.setMargin(hasMargins ? 0 : kFallbackMarginInches * 96.0);
-    document.rootFrame()->setFrameFormat(root);
-
+    document.setDocumentMargin(hasMargins ? 0 : kFallbackMarginInches * 96.0);
     // Table rows may break across pages: QTextDocument has no equivalent of
     // `page-break-inside: avoid`, and repeating header rows (<thead>) keep a
     // continued table readable. See docs/TextDocumentPdfRendererPlan.md.
     document.setPageSize(QSizeF(writer.width(), writer.height()));
+    // The margin and page size survive setHtml(), and setting them first means
+    // the document is laid out once. Changing either afterwards lays out the
+    // whole document again, about a third of the time for a long report.
+    document.setHtml(request.html);
     document.print(&writer);
 
     if (QFileInfo(request.outputPdfPath).size() <= 0)
