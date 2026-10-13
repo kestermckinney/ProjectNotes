@@ -3,6 +3,7 @@
 
 #include "version.h"
 #include "DesktopAppController.h"
+#include "PluginUiController.h"
 #include "FolderManager.h"
 #include "HelpController.h"
 #include "LogViewerController.h"
@@ -209,6 +210,8 @@ int main(int argc, char* argv[])
         "ProjectNotesDesktop", 1, 0, "HelpController", &HelpController::create);
     qmlRegisterSingletonType<TextFormatter>(
         "ProjectNotesDesktop", 1, 0, "TextFormatter", &TextFormatter::create);
+    qmlRegisterSingletonType<PluginUiController>(
+        "ProjectNotesDesktop", 1, 0, "PluginUiController", &PluginUiController::create);
     // Creatable (non-singleton) inline spell-check attach type.
     qmlRegisterType<SpellCheck>("ProjectNotesDesktop", 1, 0, "SpellCheck");
 

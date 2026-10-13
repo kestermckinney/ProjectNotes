@@ -217,7 +217,11 @@
             list: function () { return Array.from(capabilitySet); },
         }),
         currentView: function () { return callSync("app.currentView", []); },
-        currentRecord: function (options) { return call("app.currentRecord", [options || {}]); },
+        currentRecord: function (options) {
+            const view = callSync("app.currentView", []) || {};
+            if (!view.entity || !view.key) return Promise.resolve(null);
+            return dataOps.get(view.entity, view.key, { include: (options && options.include) || [] });
+        },
         navigate: function (entity, key, options) { return call("app.navigate", [entity, key, options || {}]); },
         projectFolder: function (projectKey) { return call("app.projectFolder", [projectKey]); },
         refresh: function () { callSync("app.refresh", []); },

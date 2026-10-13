@@ -94,6 +94,11 @@ const scenarios = {
         return { vars: replaceVariables("x [$projects.project_number.1] [$projects.company_id.1] [$project_team.role.1] [$project_team.role.2]", rec),
                  date: formatDate("2026-09-02", "MM/dd/yyyy"), parsed: parseDate("9/2/26"), html: escapeHtml("<a&b>") };
     },
+    *arrays() {
+        const p = yield data.get("projects", "project-p4000", { include: ["project_team"] });
+        return { isArray: Array.isArray(p.project_team), apply: Math.max.apply(null, [1, 2].concat(p.project_team.map(() => 0))),
+                 vars: replaceVariables("[$project_team.role.1]", p) !== "" };
+    },
     *info() {
         return { id: plugin.id, platform: app.platform, email: app.capabilities.has("email.compose"),
                  com: app.capabilities.has("com"), secret: yield secrets.get("token") };

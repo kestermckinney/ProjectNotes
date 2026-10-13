@@ -8,6 +8,7 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Qml Network Sql Xml 
 add_library(ProjectNotesPlugins STATIC
     ComBridge.h
     DataService.cpp         DataService.h
+    JsConvert.h
     PluginHost.cpp          PluginHost.h
     PluginManifest.cpp      PluginManifest.h
     PluginRegistry.cpp      PluginRegistry.h

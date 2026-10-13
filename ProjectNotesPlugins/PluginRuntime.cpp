@@ -5,6 +5,7 @@
 
 #include "ComBridge.h"
 #include "DataService.h"
+#include "JsConvert.h"
 #include "PluginServices.h"
 
 #include "QLogger.h"
@@ -74,7 +75,7 @@ const QHash<QString, QString>& forwardedMethods()
         {QStringLiteral("ui.showForm"), QStringLiteral("ui.dialogs")},
         {QStringLiteral("ui.showDialog"), QStringLiteral("ui.dialogs")},
         {QStringLiteral("ui.clipboardText"), QStringLiteral("clipboard")},
-        {QStringLiteral("app.currentRecord"), {}}, {QStringLiteral("app.projectFolder"), {}},
+        {QStringLiteral("app.projectFolder"), {}},
         {QStringLiteral("app.navigate"), QStringLiteral("app.navigate")},
         {QStringLiteral("secrets.get"), {}}, {QStringLiteral("secrets.set"), {}}, {QStringLiteral("secrets.remove"), {}},
         {QStringLiteral("files.openWithSystem"), QStringLiteral("files")},
@@ -159,11 +160,7 @@ void PluginRuntime::interrupt()
 
 QJSValue PluginRuntime::toJs(const QVariant& value) const
 {
-    if (!value.isValid())
-        return QJSValue(QJSValue::UndefinedValue);
-    if (value.typeId() == QMetaType::Nullptr)
-        return QJSValue(QJSValue::NullValue);
-    return m_engine->toScriptValue(value);
+    return toJsValue(m_engine, value);
 }
 
 bool PluginRuntime::callHook(const char* name, const QJSValueList& args, QJSValue* result)
@@ -249,7 +246,7 @@ bool PluginRuntime::start(QString* error)
         {QStringLiteral("profile"), m_config.profile}, {QStringLiteral("locale"), QLocale().name()},
         {QStringLiteral("capabilities"), capabilities}};
 
-    m_hooks = factory.call({m_engine->newQObject(m_bridge), m_engine->toScriptValue(info)});
+    m_hooks = factory.call({m_engine->newQObject(m_bridge), toJs(info)});
     if (m_hooks.isError()) {
         *error = QStringLiteral("The plugin API failed to initialise: %1").arg(m_hooks.toString());
         return false;
@@ -611,6 +608,19 @@ void PluginRuntime::handleAsync(const QString& method, const QVariantList& args,
     if (forwardedMethods().contains(method)) {
         if ((method == QLatin1String("files.openWithSystem") || method == QLatin1String("files.reveal"))
             && !checkFilePath(arg(0).toString(), false, &error)) {
+            reply({}, error);
+            return;
+        }
+        // Paths handed to integrations follow the same rules as files.*.
+        if (method == QLatin1String("email.compose")) {
+            for (const QString& path : arg(0).toMap().value(QStringLiteral("attachments")).toStringList()) {
+                if (!checkFilePath(path, false, &error)) {
+                    reply({}, error);
+                    return;
+                }
+            }
+        }
+        if (method == QLatin1String("calendar.writeIcs") && !checkFilePath(arg(1).toString(), true, &error)) {
             reply({}, error);
             return;
         }

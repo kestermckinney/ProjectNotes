@@ -14,6 +14,7 @@
 #include <QtTest/QtTest>
 
 #include "DesktopAppController.h"
+#include "PluginUiController.h"
 #include "FolderManager.h"
 #include "HelpController.h"
 #include "LogViewerController.h"
@@ -56,6 +57,11 @@ int main(int argc, char* argv[])
     QDir(dataDir).removeRecursively();
     QDir().mkpath(dataDir);
     qInfo("Test data location: %s", qUtf8Printable(dataDir));
+    // JavaScript plugins installed by the UI smoke tests go here, never into
+    // the real ~/Project Notes/plugins folder.
+    const QString userPlugins = dataDir + QStringLiteral("/user-plugins");
+    QDir().mkpath(userPlugins);
+    qputenv("PN_PLUGIN_USER_DIR", userPlugins.toUtf8());
 
     QQuickStyle::setStyle("Basic");
 
@@ -70,6 +76,8 @@ int main(int argc, char* argv[])
         "ProjectNotesDesktop", 1, 0, "HelpController", &HelpController::create);
     qmlRegisterSingletonType<TextFormatter>(
         "ProjectNotesDesktop", 1, 0, "TextFormatter", &TextFormatter::create);
+    qmlRegisterSingletonType<PluginUiController>(
+        "ProjectNotesDesktop", 1, 0, "PluginUiController", &PluginUiController::create);
     qmlRegisterType<SpellCheck>("ProjectNotesDesktop", 1, 0, "SpellCheck");
 
     int failed = 0;

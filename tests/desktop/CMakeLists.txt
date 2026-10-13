@@ -48,6 +48,9 @@ qt_add_executable(tst_qmldesktop
     ${DESKTOP_DIR}/LogViewerController.cpp  ${DESKTOP_DIR}/LogViewerController.h
     ${DESKTOP_DIR}/HelpController.cpp       ${DESKTOP_DIR}/HelpController.h
     ${DESKTOP_DIR}/SpellCheck.cpp           ${DESKTOP_DIR}/SpellCheck.h
+    ${DESKTOP_DIR}/PluginUiController.cpp   ${DESKTOP_DIR}/PluginUiController.h
+    ${DESKTOP_DIR}/DesktopPluginServices.cpp ${DESKTOP_DIR}/DesktopPluginServices.h
+    ${DESKTOP_DIR}/DesktopAppControllerPlugins.cpp
     ${MOBILE_DIR}/TextFormatter.cpp         ${MOBILE_DIR}/TextFormatter.h
     ${ROOT_DIR}/plugin.cpp          ${ROOT_DIR}/plugin.h
     ${ROOT_DIR}/pluginmanager.cpp   ${ROOT_DIR}/pluginmanager.h
@@ -56,6 +59,7 @@ qt_add_executable(tst_qmldesktop
     ${ROOT_DIR}/updatemanager.cpp   ${ROOT_DIR}/updatemanager.h
 )
 
+target_compile_definitions(tst_qmldesktop PRIVATE PN_TEST_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/fixtures")
 target_include_directories(tst_qmldesktop PRIVATE
     ${DESKTOP_DIR}
     ${MOBILE_DIR}
@@ -105,6 +109,12 @@ qt_add_resources(tst_qmldesktop "helpcontent"
     FILES  ${HELP_MD} ${HELP_IMG} ${HELP_TOC}
 )
 
+qt_add_resources(tst_qmldesktop "plugin_ui_module"
+    PREFIX "/qt/qml/ProjectNotes/PluginUI"
+    BASE ${DESKTOP_DIR}/pluginui
+    FILES ${DESKTOP_DIR}/pluginui/qmldir
+)
+
 target_link_libraries(tst_qmldesktop PRIVATE
     Qt6::Core Qt6::CorePrivate Qt6::Gui Qt6::Widgets Qt6::Qml Qt6::Quick Qt6::QuickControls2
     Qt6::Sql Qt6::Xml Qt6::Network Qt6::Test
@@ -117,6 +127,7 @@ target_link_libraries(tst_qmldesktop PRIVATE
     ProjectNotesEmailRendering
     ProjectNotesMeetings
     ProjectNotesContacts
+    ProjectNotesPlugins
 )
 
 if(UNIX AND NOT APPLE AND NOT ANDROID)

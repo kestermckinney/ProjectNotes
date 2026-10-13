@@ -1259,6 +1259,15 @@ void DatabaseObjects::updateDisplayData()
 {
     KeyColumnChange keyColChange;
 
+    if (!m_keyColumnChanges.isEmpty()) {
+        QVariantList pending;
+        pending.reserve(m_keyColumnChanges.size());
+        for (const KeyColumnChange& change : std::as_const(m_keyColumnChanges))
+            pending.append(QVariantMap{{QStringLiteral("table"), change.table}, {QStringLiteral("key"), change.value},
+                                       {QStringLiteral("operation"), int(change.operation_type)}});
+        emit displayChangesPending(pending);
+    }
+
     while (popRowChange(keyColChange))
     {
         SqlQueryModel* recordset = nullptr;

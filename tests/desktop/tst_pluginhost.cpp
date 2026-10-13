@@ -115,6 +115,7 @@ private slots:
     void filesAndHttpPermissions();
     void timersAndCommonHelpers();
     void appInfoAndSecrets();
+    void recordsUseNativeArrays();
     void dynamicMenus();
     void watchdogStopsRunawayCode();
     void exportXml();
@@ -446,6 +447,16 @@ void PluginHostTest::appInfoAndSecrets()
     QVERIFY(!result.value(QStringLiteral("com")).toBool());
 #endif
     QCOMPARE(result.value(QStringLiteral("secret")).toString(), QStringLiteral("s3cret"));
+}
+
+void PluginHostTest::recordsUseNativeArrays()
+{
+    const QJsonObject r = run(QStringLiteral("arrays"));
+    QVERIFY2(r.value(QStringLiteral("ok")).toBool(), qPrintable(QJsonDocument(r).toJson()));
+    const QJsonObject result = r.value(QStringLiteral("result")).toObject();
+    QVERIFY(result.value(QStringLiteral("isArray")).toBool());
+    QCOMPARE(result.value(QStringLiteral("apply")).toInt(), 2);
+    QVERIFY(result.value(QStringLiteral("vars")).toBool());
 }
 
 void PluginHostTest::dynamicMenus()

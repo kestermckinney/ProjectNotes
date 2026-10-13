@@ -10,6 +10,9 @@
 
 #include <QtTest/QtTest>
 #include <QQmlApplicationEngine>
+
+#include "PluginUiController.h"
+#include "ProjectNotesPlugins/PluginRegistry.h"
 #include <QQmlError>
 #include <QQuickItem>
 #include <QQmlContext>
@@ -770,11 +773,13 @@ private slots:
         QCOMPARE(tabs->property("currentIndex").toInt(), 1);
         QTest::keyClick(window, Qt::Key_Enter);
         QCOMPARE(settings->property("currentTab").toInt(), 1);
+        // The last built-in tab is Plugins (index 10); no plugin in this test
+        // environment contributes Settings sections after it.
         for (int i = 0; i < 15; ++i) QTest::keyClick(window, Qt::Key_Down);
-        QCOMPARE(tabs->property("currentIndex").toInt(), 9);
+        QCOMPARE(tabs->property("currentIndex").toInt(), 10);
         QCOMPARE(settings->property("currentTab").toInt(), 1);
         QTest::keyClick(window, Qt::Key_Return);
-        QCOMPARE(settings->property("currentTab").toInt(), 9);
+        QCOMPARE(settings->property("currentTab").toInt(), 10);
         for (int i = 0; i < 15; ++i) QTest::keyClick(window, Qt::Key_Up);
         QCOMPARE(tabs->property("currentIndex").toInt(), 0);
         QTest::keyClick(window, Qt::Key_Return);
@@ -878,8 +883,9 @@ private slots:
         QQuickItem* pages = findVisualChild(window->contentItem(), QStringLiteral("settingsPages"));
         QVERIFY(tabList);
         QVERIFY(pages);
-        QCOMPARE(tabList->property("count").toInt(), 10);
-        QCOMPARE(pages->property("count").toInt(), 10);
+        QCOMPARE(tabList->property("count").toInt(), 11);
+        QCOMPARE(pages->property("count").toInt(), 11);
+        QVERIFY(findVisualChild(window->contentItem(), QStringLiteral("settingsTab_plugins")));
         assertClean("settings category tabs");
     }
 
@@ -1419,6 +1425,61 @@ private slots:
         engine = nullptr;
     }
 
+    // A JavaScript plugin end to end in the real UI: installing into the user
+    // plugin folder, approval, its Settings section, a schema form through
+    // PluginUiHost, and a plugin QML dialog importing ProjectNotes.PluginUI
+    // that calls back into the plugin. Fails on any QML warning.
+    void test_10_jsPluginUi()
+    {
+        clearWarnings();
+        PN::Plugins::PluginRegistry* registry = c->pluginRegistry();
+        QVERIFY(registry);
+        PluginUiController* ui = PluginUiController::instance();
+        const QString id = QStringLiteral("test.uitest");
+
+        // Install from the fixture folder, then approve its permissions.
+        QString installedId;
+        QString error;
+        QVERIFY2(registry->install(QStringLiteral(PN_TEST_FIXTURES) + QStringLiteral("/plugins/uitest"),
+                                   &installedId, &error), qPrintable(error));
+        QCOMPARE(installedId, id);
+        QVERIFY(registry->plugin(id).needsApproval);
+        QCOMPARE(ui->approve(id), QString());
+        QTRY_VERIFY_WITH_TIMEOUT(registry->isRunning(id), 10000);
+
+        // Settings: the Plugins pane and the plugin's own section tab.
+        nav("selectSection", "settings");
+        QQuickWindow* window = qobject_cast<QQuickWindow*>(root);
+        QVERIFY(window);
+        QTRY_VERIFY(findVisualChild(window->contentItem(), QStringLiteral("settingsTab_plugin_test.uitest_general")));
+        QQuickItem* tabList = findVisualChild(window->contentItem(), QStringLiteral("settingsTabList"));
+        QTRY_COMPARE(tabList->property("count").toInt(), 12);
+        ui->setSetting(id, QStringLiteral("color"), QStringLiteral("Blue"));
+        QCOMPARE(ui->settingValues(id).value(QStringLiteral("color")).toString(), QStringLiteral("Blue"));
+        nav("selectSection", "projects");
+
+        // A schema form: answer it as the OK button would.
+        registry->runMenu(id, QStringLiteral("form"), {}, {});
+        QObject* form = nullptr;
+        QTRY_VERIFY_WITH_TIMEOUT((form = root->findChild<QObject*>(QStringLiteral("pluginRequest_form"))) != nullptr, 10000);
+        QTRY_VERIFY(form->property("visible").toBool());
+        ui->respond(form->property("requestId").toInt(),
+                    QVariantMap{{QStringLiteral("name"), QStringLiteral("Zed")}, {QStringLiteral("kind"), QStringLiteral("B")}});
+        QTRY_COMPARE_WITH_TIMEOUT(ui->settingValues(id).value(QStringLiteral("formResult")).toMap()
+                                      .value(QStringLiteral("name")).toString(), QStringLiteral("Zed"), 10000);
+        QTRY_VERIFY(!root->findChild<QObject*>(QStringLiteral("pluginRequest_form")));
+
+        // A plugin QML dialog that invokes a plugin handler and accepts itself.
+        registry->runMenu(id, QStringLiteral("dialog"), {}, {});
+        QTRY_VERIFY2_WITH_TIMEOUT(ui->settingValues(id).value(QStringLiteral("dialogResult")).toString() == QLatin1String("HI back"),
+                                  qPrintable(m_warnings.join(QStringLiteral(" | ")) + QStringLiteral(" || ") + registry->plugin(id).lastError),
+                                  10000);
+        QTRY_VERIFY(!root->findChild<QObject*>(QStringLiteral("pluginRequest_dialog")));
+
+        QVERIFY2(registry->plugin(id).lastError.isEmpty(), qPrintable(registry->plugin(id).lastError));
+        QVERIFY2(registry->uninstall(id, &error), qPrintable(error));
+        assertClean("JavaScript plugin UI");
+    }
 private:
     // Controls' TextField/TextArea are QML composite types (and pages subclass
     // them further), so their class names are generated. Identify an editor by

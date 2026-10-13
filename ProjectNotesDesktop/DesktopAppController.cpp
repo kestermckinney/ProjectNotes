@@ -46,6 +46,8 @@
 #else
 #include "ProjectNotesEmailRendering/TextDocumentReportRenderer.h"
 #endif
+#include "ProjectNotesPlugins/PluginRegistry.h"
+#include "ProjectNotesPlugins/PublishedSchema.h"
 #include "ProjectNotesMeetings/MeetingService.h"
 #include "ProjectNotesMeetings/backends/GraphMeetingBackend.h"
 #include "ProjectNotesMeetings/backends/ICloudMeetingBackend.h"
@@ -2493,6 +2495,10 @@ void DesktopAppController::ensurePluginManager()
                 if (FolderManager* fm = FolderManager::instance())
                     fm->reload();
             });
+
+    // JavaScript plugins run alongside the Python ones until the Python
+    // system is removed (see docs/QJSEnginePluginsPlan.md, Phase 6).
+    ensureJsPlugins();
 }
 
 QVariantList DesktopAppController::pluginMenusForModel(QAbstractItemModel* model)
@@ -2505,8 +2511,12 @@ QVariantList DesktopAppController::pluginMenusForTable(const QString& table)
 {
     QVariantList out;
     m_pluginMenuCache.clear();
-    if (!m_pluginManager || table.isEmpty())
+    if (table.isEmpty())
         return out;
+    if (!m_pluginManager) {
+        appendJsRecordMenus(table, &out);
+        return out;
+    }
 
     // A menu appears on a table's right-click when its dataexport matches that
     // table (empty dataexport = global menu, not a record menu) — same rule as
@@ -2527,7 +2537,25 @@ QVariantList DesktopAppController::pluginMenusForTable(const QString& table)
             out.append(entry);
         }
     }
+    appendJsRecordMenus(table, &out);
     return out;
+}
+
+void DesktopAppController::appendJsRecordMenus(const QString& table, QVariantList* out)
+{
+    if (!m_jsPlugins)
+        return;
+    const QString entity = PN::Plugins::PublishedSchema::instance().publishedEntity(table);
+    for (const QVariant& m : m_jsPlugins->menusForEntity(entity)) {
+        const QVariantMap menu = m.toMap();
+        PluginMenuRef ref;
+        ref.jsPluginId = menu.value(QStringLiteral("pluginId")).toString();
+        ref.jsMenuId = menu.value(QStringLiteral("menuId")).toString();
+        m_pluginMenuCache.append(ref);
+        out->append(QVariantMap{{QStringLiteral("title"), menu.value(QStringLiteral("title"))},
+                                {QStringLiteral("submenu"), menu.value(QStringLiteral("submenu"))},
+                                {QStringLiteral("index"), m_pluginMenuCache.size() - 1}});
+    }
 }
 
 QString DesktopAppController::tableNameForModel(QAbstractItemModel* model)
@@ -2549,6 +2577,12 @@ void DesktopAppController::runPluginMenuForTable(const QString& table,
     if (index < 0 || index >= m_pluginMenuCache.size())
         return;
     const PluginMenuRef& ref = m_pluginMenuCache.at(index);
+    if (!ref.jsPluginId.isEmpty()) {
+        if (m_jsPlugins)
+            m_jsPlugins->runMenu(ref.jsPluginId, ref.jsMenuId,
+                                 PN::Plugins::PublishedSchema::instance().publishedEntity(table), recordId);
+        return;
+    }
     if (!ref.plugin || table.isEmpty())
         return;
 
@@ -2574,6 +2608,18 @@ QVariantList DesktopAppController::globalPluginMenus()
 {
     QVariantList out;
     m_globalPluginMenuCache.clear();
+    if (m_jsPlugins) {
+        for (const QVariant& m : m_jsPlugins->globalMenus()) {
+            const QVariantMap menu = m.toMap();
+            PluginMenuRef ref;
+            ref.jsPluginId = menu.value(QStringLiteral("pluginId")).toString();
+            ref.jsMenuId = menu.value(QStringLiteral("menuId")).toString();
+            m_globalPluginMenuCache.append(ref);
+            out.append(QVariantMap{{QStringLiteral("title"), menu.value(QStringLiteral("title"))},
+                                   {QStringLiteral("submenu"), menu.value(QStringLiteral("submenu"))},
+                                   {QStringLiteral("index"), m_globalPluginMenuCache.size() - 1}});
+        }
+    }
     if (!m_pluginManager)
         return out;
 
@@ -2604,6 +2650,11 @@ void DesktopAppController::runGlobalPluginMenu(int index)
     if (index < 0 || index >= m_globalPluginMenuCache.size())
         return;
     const PluginMenuRef& ref = m_globalPluginMenuCache.at(index);
+    if (!ref.jsPluginId.isEmpty()) {
+        if (m_jsPlugins)
+            m_jsPlugins->runMenu(ref.jsPluginId, ref.jsMenuId, {}, {});
+        return;
+    }
     if (!ref.plugin)
         return;
 

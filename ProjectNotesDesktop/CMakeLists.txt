@@ -50,6 +50,10 @@ qt_add_executable(ProjectNotes
     LogViewerController.cpp  LogViewerController.h
     HelpController.cpp       HelpController.h
     SpellCheck.cpp           SpellCheck.h
+    # JavaScript (QJSEngine) plugins: QML bridge and application services.
+    PluginUiController.cpp   PluginUiController.h
+    DesktopPluginServices.cpp DesktopPluginServices.h
+    DesktopAppControllerPlugins.cpp
     # Shared rich-text bridge — reused verbatim from the mobile app.
     ../ProjectNotesMobile/TextFormatter.cpp ../ProjectNotesMobile/TextFormatter.h
     # Embedded-Python plugin system. PluginManager is a self-registered
@@ -133,6 +137,10 @@ set(DESKTOP_QML_FILES
     qml/ContactSyncSettingsPane.qml
     qml/MeetingTemplateSettingsPane.qml
     qml/ThemedMessageDialog.qml
+    qml/PluginUiHost.qml
+    qml/SchemaForm.qml
+    qml/PluginsSettingsPane.qml
+    qml/PluginSettingsSection.qml
     qml/pages/ProjectsListPage.qml
     qml/pages/ProjectDetailPage.qml
     qml/pages/ProjectNoteDetailPage.qml
@@ -178,6 +186,13 @@ if(PN_PDF_RENDERER STREQUAL "webengine")
     target_link_libraries(ProjectNotes PRIVATE Qt6::WebEngineCore Qt6::WebEngineQuick)
 endif()
 
+# ProjectNotes.PluginUI: the import plugin QML uses for the app's controls.
+qt_add_resources(ProjectNotes "plugin_ui_module"
+    PREFIX "/qt/qml/ProjectNotes/PluginUI"
+    BASE pluginui
+    FILES pluginui/qmldir
+)
+
 # ── Shared data layer ─────────────────────────────────────────────────────────
 # ProjectNotesCore is added once at the top level (it is a sibling target).
 target_link_libraries(ProjectNotes PRIVATE
@@ -200,6 +215,7 @@ target_link_libraries(ProjectNotes PRIVATE
     ProjectNotesEmailRendering
     ProjectNotesMeetings
     ProjectNotesContacts
+    ProjectNotesPlugins
 )
 
 add_dependencies(ProjectNotes ProjectNotesThunderbirdContacts thunderbird_contacts_addon)

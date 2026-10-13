@@ -159,6 +159,10 @@
       "title": "Plugins Overview",
       "items": [
         {
+          "title": "JavaScript Plugins",
+          "path": "PluginsOverview/JavaScriptPlugins.md"
+        },
+        {
           "title": "Adding Functionality",
           "path": "PluginsOverview/AddingFunctionality.md"
         },

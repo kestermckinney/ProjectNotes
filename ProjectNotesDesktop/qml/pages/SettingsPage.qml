@@ -101,8 +101,12 @@ Item {
                     { key: "emailContactsCalendar", label: qsTr("Email, Contacts, and Calendar") },
                     { key: "fileFinder", label: qsTr("File Finder") },
                     { key: "emailTemplates", label: qsTr("Email Templates") },
-                    { key: "meetingTemplates", label: qsTr("Meeting Templates") }
-                ]
+                    { key: "meetingTemplates", label: qsTr("Meeting Templates") },
+                    { key: "plugins", label: qsTr("Plugins") }
+                ].concat(PluginUiController.settingsSections.map(function (s) {
+                    // Sections plugins contribute (plugin.json contributes.settings).
+                    return { key: "plugin_" + s.pluginId + "_" + s.id, label: s.title }
+                }))
 
                 delegate: Rectangle {
                     id: tabDelegate
@@ -1264,6 +1268,21 @@ Item {
                     id: meetingTemplates
                     Layout.fillWidth: true
                     templateModel: DesktopAppController.meetingTemplateEditorModel
+                }
+            }
+
+            SettingsTab {
+                // Plugins
+                PluginsSettingsPane { Layout.fillWidth: true }
+            }
+
+            // One tab per plugin-contributed Settings section, in the same
+            // order as the tab list above.
+            Repeater {
+                model: PluginUiController.settingsSections
+                SettingsTab {
+                    required property var modelData
+                    PluginSettingsSection { Layout.fillWidth: true; info: modelData }
                 }
             }
         }

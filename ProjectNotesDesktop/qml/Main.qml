@@ -133,6 +133,10 @@ ApplicationWindow {
 
     Connections {
         target: DesktopAppController
+        // A JavaScript plugin asked to open a record (app.navigate).
+        function onPluginNavigateRequested(dataType, dataId, fkId, dataKey) {
+            root.openSearchResult(dataType, dataId, fkId, dataKey)
+        }
         function onErrorOccurred(title, message) {
             errorDialog.title = title
             errorLabel.text = message
@@ -351,6 +355,23 @@ ApplicationWindow {
     // Navigate to a search result based on its datatype. dataId is the record's
     // own id, fkId its parent (usually the project), dataKey a secondary key the
     // database_search view carries for a few rows (mirrors mainwindow.cpp).
+    // Tells the plugin host which record is on screen (app.currentView()).
+    // Detail pages identify their record by these id properties; the checks
+    // run most specific first, since note and item pages also carry projectId.
+    function _reportCurrentView() {
+        var item = contentStack ? contentStack.currentItem : null
+        var entity = "", key = ""
+        if (item) {
+            if (item.noteId !== undefined && item.noteId !== "") { entity = "project_notes"; key = item.noteId }
+            else if (item.itemId !== undefined && item.itemId !== "") { entity = "item_tracker"; key = item.itemId }
+            else if (item.contactId !== undefined && item.contactId !== "") { entity = "contacts"; key = item.contactId }
+            else if (item.companyId !== undefined && item.companyId !== "") { entity = "companies"; key = item.companyId }
+            else if (item.projectId !== undefined && item.projectId !== "") { entity = "projects"; key = item.projectId }
+        }
+        DesktopAppController.setCurrentView(root.currentSection, entity, key, "")
+    }
+    onCurrentSectionChanged: _reportCurrentView()
+
     function openSearchResult(dataType, dataId, fkId, dataKey) {
         switch (dataType) {
         case "Project":
@@ -738,6 +759,7 @@ ApplicationWindow {
                 focus: true
                 onCurrentItemChanged: {
                     if (currentItem) currentItem.forceActiveFocus(Qt.OtherFocusReason)
+                    root._reportCurrentView()
                 }
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -1759,4 +1781,7 @@ ApplicationWindow {
         sequences: [ StandardKey.HelpContents ]
         onActivated: root.openHelp(root._helpTopicForSection(root.currentSection))
     }
+
+    // Dialogs, pickers, progress and notifications requested by JavaScript plugins.
+    PluginUiHost { z: 100 }
 }

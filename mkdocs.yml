@@ -46,6 +46,7 @@ nav:
     - 'Earned Value Terms': InterfaceOverview/EarnedValueTerms.md
     - 'Presenting to Companies': InterfaceOverview/PresentingToCompanies.md
   - 'Plugins Overview':
+    - 'JavaScript Plugins': PluginsOverview/JavaScriptPlugins.md
     - 'Adding Functionality': PluginsOverview/AddingFunctionality.md
     - 'Data Types': PluginsOverview/DataTypes.md
     - 'Project Notes XML': PluginsOverview/ProjectNotesXML.md

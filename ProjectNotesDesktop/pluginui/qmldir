@@ -1,0 +1,6 @@
+module ProjectNotes.PluginUI
+# Plugin QML imports this module for the application's themed controls and
+# Theme (FormField, ComboField, DateField, StyledComboBox, Button, Card,
+# MaterialIcon, ContactPickerDialog, SchemaForm, ...). It re-exports the
+# application's QML module; see docs/PluginsOverview/QmlPlugins.md.
+import ProjectNotesDesktop auto

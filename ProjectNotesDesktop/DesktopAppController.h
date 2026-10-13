@@ -34,6 +34,8 @@ class SqliteSyncPro;
 struct SyncResult;
 class PluginManager;
 class Plugin;
+class DesktopPluginServices;
+namespace PN::Plugins { class PluginRegistry; struct PluginManifest; struct PluginError; }
 class FileFinderService;
 class Office365SettingsModel;
 namespace PN::Contacts { class ContactSyncSettingsModel; }
@@ -481,6 +483,10 @@ public:
     // Run one: calls the plugin function directly with its configured
     // parameter, no record/XML involved (mirrors MainWindow::slotPluginMenu).
     Q_INVOKABLE void runGlobalPluginMenu(int index);
+    // The page the user is looking at, reported by Main.qml whenever it
+    // changes; JavaScript plugins read it through app.currentView().
+    Q_INVOKABLE void setCurrentView(const QString& section, const QString& entity,
+                                    const QString& key, const QString& tab);
 
     // ── Filters (scope child models to a project / note) ─────────────────────
     Q_INVOKABLE void setProjectFilter(const QString& projectId);
@@ -812,7 +818,29 @@ public:
     QString subscriptionStatusText() const { return m_subscriptionStatusText; }
     QString supabaseConnectionInfo() const;
 
+    // ── JavaScript plugin services (DesktopPluginServices) ─────────────────
+    PN::Plugins::PluginRegistry* pluginRegistry() const { return m_jsPlugins; }
+    void composePluginEmail(const PN::Plugins::PluginManifest& plugin, const QVariantMap& message,
+                            std::function<void(const QVariant&, const PN::Plugins::PluginError&)> reply);
+    QVariantList pluginEmailBackends() const;
+    QVariantList pluginEmailAudiences(const QString& projectId, const QString& workflow) const;
+    QVariant pluginResolveAudience(const QString& projectId, const QString& audienceId, PN::Plugins::PluginError* error) const;
+    QVariantList pluginEmailTemplates();
+    void renderPluginEmailTemplate(const QString& templateId, const QVariantMap& context,
+                                   std::function<void(const QVariant&, const PN::Plugins::PluginError&)> reply);
+    void draftPluginMeeting(const PN::Plugins::PluginManifest& plugin, const QVariantMap& meeting,
+                            std::function<void(const QVariant&, const PN::Plugins::PluginError&)> reply);
+    QString writePluginIcs(const QVariantMap& meeting, const QString& path, PN::Plugins::PluginError* error);
+    void navigateForPlugin(const QString& entity, const QString& key, const QString& tab, PN::Plugins::PluginError* error);
+    void refreshViewsForPlugin();
+    PN::Contacts::ContactSyncSettingsModel* contactSyncModel() const { return m_contactSyncSettingsModel.get(); }
+    PN::Comm::Office365Service* office365ServiceForPlugins() const { return m_office365Service; }
+
 signals:
+    // A JavaScript plugin asked to open a record (app.navigate). The arguments
+    // match Main.qml's openSearchResult().
+    void pluginNavigateRequested(const QString& dataType, const QString& dataId,
+                                 const QString& fkId, const QString& dataKey);
     void viewReportAfterSaveChanged();
     void reviewAudiencePresetChanged();
     void emailSettingsChanged();
@@ -1046,6 +1074,13 @@ private:
 
     // ── Plugins ──────────────────────────────────────────────────────────────
     PluginManager* m_pluginManager = nullptr;
+    // JavaScript (QJSEngine) plugins; see docs/QJSEnginePluginsPlan.md.
+    PN::Plugins::PluginRegistry* m_jsPlugins = nullptr;
+    DesktopPluginServices* m_pluginServices = nullptr;
+    bool m_forwardingPluginRows = false;
+    void ensureJsPlugins();
+    void appendJsRecordMenus(const QString& table, QVariantList* out);
+    PN::Comm::EmailAddress pluginRecipient(const QVariant& value, PN::Comm::RecipientRole role) const;
     void ensurePluginManager();   // create the manager once, after the DB is open
 
     // Per-call handle table for pluginMenusForModel → runPluginMenu.
@@ -1054,6 +1089,9 @@ private:
         QString functionname;
         QString tablefilter;
         QString parameter;
+        // Set for a JavaScript plugin menu instead of `plugin`.
+        QString jsPluginId;
+        QString jsMenuId;
     };
     QVector<PluginMenuRef> m_pluginMenuCache;
     QVector<PluginMenuRef> m_globalPluginMenuCache;
