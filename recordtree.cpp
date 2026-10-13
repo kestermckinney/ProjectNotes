@@ -54,7 +54,16 @@ RecordTable RecordTreeExporter::exportModel(SqlQueryModel* model, const RecordEx
         return {};
     if (spec.includeTable && !spec.includeTable(model->tablename()))
         return {};
-    return exportRows(model, model->m_cache, spec, 0);
+    return exportRowsAt(model, model->m_cache, spec, 0);
+}
+
+RecordTable RecordTreeExporter::exportRows(SqlQueryModel* model, const QList<QVector<QVariant>>& rows,
+                                           const RecordExportSpec& spec)
+{
+    m_queries = 0;
+    if (!model)
+        return {};
+    return exportRowsAt(model, rows, spec, 0);
 }
 
 QHash<QString, QString> RecordTreeExporter::resolveLookups(SqlQueryModel* model, int column,
@@ -104,8 +113,8 @@ QHash<QString, QString> RecordTreeExporter::resolveLookups(SqlQueryModel* model,
     return result;
 }
 
-RecordTable RecordTreeExporter::exportRows(SqlQueryModel* model, const QList<QVector<QVariant>>& rows,
-                                           const RecordExportSpec& spec, int depth)
+RecordTable RecordTreeExporter::exportRowsAt(SqlQueryModel* model, const QList<QVector<QVariant>>& rows,
+                                             const RecordExportSpec& spec, int depth)
 {
     RecordTable table;
     table.name = model->tablename();
@@ -193,7 +202,7 @@ RecordTable RecordTreeExporter::exportRows(SqlQueryModel* model, const QList<QVe
             childRows = child->m_cache;
         }
 
-        const RecordTable exported = exportRows(child.data(), childRows, spec, depth + 1);
+        const RecordTable exported = exportRowsAt(child.data(), childRows, spec, depth + 1);
 
         // Group child rows by the foreign key, preserving the child query order.
         // Keys compare case-insensitively, as the WHERE clause did.

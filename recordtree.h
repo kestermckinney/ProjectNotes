@@ -97,12 +97,17 @@ public:
     // filters and called refresh()).
     RecordTable exportModel(SqlQueryModel* model, const RecordExportSpec& spec = {});
 
+    // Exports caller-supplied rows of `model` (in the model's column order),
+    // e.g. rows a plugin query selected with its own WHERE clause.
+    RecordTable exportRows(SqlQueryModel* model, const QList<QVector<QVariant>>& rows,
+                           const RecordExportSpec& spec = {});
+
     // Number of SQL statements issued by the last export (for benchmarks).
     int queryCount() const { return m_queries; }
 
 private:
-    RecordTable exportRows(SqlQueryModel* model, const QList<QVector<QVariant>>& rows,
-                           const RecordExportSpec& spec, int depth);
+    RecordTable exportRowsAt(SqlQueryModel* model, const QList<QVector<QVariant>>& rows,
+                             const RecordExportSpec& spec, int depth);
     QHash<QString, QString> resolveLookups(SqlQueryModel* model, int column,
                                            const QList<QVector<QVariant>>& rows);
 

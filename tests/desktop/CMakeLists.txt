@@ -238,6 +238,14 @@ target_compile_definitions(tst_recordtree PRIVATE
     PN_RECORDTREE_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/fixtures/recordtree")
 add_test(NAME recordtree COMMAND tst_recordtree)
 
+# QJSEngine plugin host: manifest, data API, permissions, menus, watchdog,
+# install/approval and hot reload, against a throwaway database.
+add_executable(tst_pluginhost tst_pluginhost.cpp)
+target_include_directories(tst_pluginhost PRIVATE ${ROOT_DIR})
+target_link_libraries(tst_pluginhost PRIVATE Qt6::Core Qt6::Sql Qt6::Xml Qt6::Qml Qt6::Test Qt6::CorePrivate ProjectNotesPlugins ProjectNotesCore)
+target_compile_definitions(tst_pluginhost PRIVATE PN_TEST_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/fixtures")
+add_test(NAME pluginhost COMMAND tst_pluginhost)
+
 add_executable(tst_communicationrepository tst_communicationrepository.cpp)
 target_link_libraries(tst_communicationrepository PRIVATE Qt6::Core Qt6::Sql Qt6::Test ProjectNotesEmail)
 add_test(NAME communicationrepository COMMAND tst_communicationrepository)
