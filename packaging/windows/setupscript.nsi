@@ -7,7 +7,7 @@ RequestExecutionLevel user
 
 ; ── Product defines ───────────────────────────────────────────────────────────
 !define PRODUCT_NAME      "Project Notes"
-!define PRODUCT_VERSION   "6.4.0"
+!define PRODUCT_VERSION   "3.4.0"
 !define PRODUCT_PUBLISHER "Paul McKinney"
 !define PRODUCT_WEB_SITE  "https://www.projectnotespro.com"
 !define PRODUCT_DIR_REGKEY  "Software\Microsoft\Windows\CurrentVersion\App Paths\Project Notes.exe"
@@ -22,7 +22,9 @@ RequestExecutionLevel user
 
 ; Run the cmake deploy target now so the staging directory exists before NSIS
 ; tries to reference any files inside it.
-!system 'cmake --build "${BUILD_DIR}" --target deploy' = 0
+!ifndef PN_DEPLOY_STAGED
+  !system 'cmake --build "${BUILD_DIR}" --target deploy' = 0
+!endif
 
 !include MUI2.nsh
 !include FileFunc.nsh   ; GetParameters / GetOptions for unattended-update flags
@@ -166,8 +168,6 @@ Section "MainSection" SEC01
 
   ; Qt WebEngine renders the report and email previews. It needs its helper
   ; process, the Chromium resource packs and locales, and the WebChannel and
-  ; Positioning modules it links against. Without them the app will not start.
-  File "${DEPLOY_DIR}\Qt6Positioning.dll"
   File "${DEPLOY_DIR}\Qt6WebChannel.dll"
   File "${DEPLOY_DIR}\Qt6WebChannelQuick.dll"
   File "${DEPLOY_DIR}\Qt6WebEngineCore.dll"
@@ -179,9 +179,6 @@ Section "MainSection" SEC01
 
   SetOutPath "$INSTDIR\translations"
   File /r "${DEPLOY_DIR}\translations\*.*"
-
-  SetOutPath "$INSTDIR\position"
-  File /r "${DEPLOY_DIR}\position\*.*"
 
   SetOutPath "$INSTDIR"
 
@@ -579,7 +576,6 @@ Section Uninstall
   Delete "$INSTDIR\Qt6Svg.dll"
   Delete "$INSTDIR\Qt6Widgets.dll"
   Delete "$INSTDIR\Qt6Xml.dll"
-  Delete "$INSTDIR\Qt6Positioning.dll"
   Delete "$INSTDIR\Qt6WebChannel.dll"
   Delete "$INSTDIR\Qt6WebChannelQuick.dll"
   Delete "$INSTDIR\Qt6WebEngineCore.dll"
@@ -587,7 +583,6 @@ Section Uninstall
   Delete "$INSTDIR\QtWebEngineProcess.exe"
   RMDir /r "$INSTDIR\resources"
   RMDir /r "$INSTDIR\translations"
-  RMDir /r "$INSTDIR\position"
 
   RMDir /r "$INSTDIR\qml"
 

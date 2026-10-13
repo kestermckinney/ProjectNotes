@@ -7,7 +7,7 @@ RequestExecutionLevel user
 
 ; ── Product defines ───────────────────────────────────────────────────────────
 !define PRODUCT_NAME      "Project Notes Remote Host"
-!define PRODUCT_VERSION   "6.4.0"
+!define PRODUCT_VERSION   "3.4.0"
 !define PRODUCT_PUBLISHER "Paul McKinney"
 !define PRODUCT_WEB_SITE  "https://gitlab.com/kestermckinney/ProjectNotes"
 !define PRODUCT_DIR_REGKEY  "Software\Microsoft\Windows\CurrentVersion\App Paths\Project Notes Remote Host.exe"
@@ -19,7 +19,9 @@ RequestExecutionLevel user
 !define BUILD_DIR    "..\..\build\${BUILD_CONFIG}"
 !define DEPLOY_DIR   "${BUILD_DIR}\deploy"
 
-!system 'cmake --build "${BUILD_DIR}" --target deploy' = 0
+!ifndef PN_DEPLOY_STAGED
+  !system 'cmake --build "${BUILD_DIR}" --target deploy' = 0
+!endif
 
 !include MUI2.nsh
 

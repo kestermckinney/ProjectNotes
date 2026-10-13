@@ -26,7 +26,7 @@
 #include "DesktopAppController.h"
 #include "databaseobjects.h"
 #include "databasestructure.h"
-#include "databaseupgrade_v6_4_0.h"
+#include "databaseupgrade_v3_4_0.h"
 #include "legacywidgetsettings.h"
 #include <QSettings>
 #include <QScopeGuard>
@@ -155,7 +155,7 @@ private slots:
         db_rwlock.unlock();
     }
 
-    void test_upgrade640RetiresOnlyLegacySettings()
+    void test_upgrade340RetiresOnlyLegacySettings()
     {
         QSqlQuery q(global_DBObjects.getDb());
         QVERIFY(!global_DBObjects.getDb().tables().contains("project_risks"));
@@ -170,7 +170,7 @@ private slots:
         // Empty legacy tables can be dropped; unrelated extension tables remain.
         QVERIFY(q.exec("CREATE TABLE project_risks(id TEXT)"));
         QVERIFY(q.exec("CREATE TABLE review_extension_data(id TEXT)"));
-        QVERIFY(q.exec("UPDATE application_version SET current_version='6.3.0'"));
+        QVERIFY(q.exec("UPDATE application_version SET current_version='3.2.1'"));
         DatabaseStructure structure;
         QVERIFY(structure.UpgradeDatabase());
         QVERIFY(!global_DBObjects.getDb().tables().contains("project_risks"));
@@ -179,7 +179,7 @@ private slots:
         for (const QString &key : retained) QCOMPARE(global_DBObjects.loadParameter(key), QString("review-test"));
         QVERIFY(q.exec("SELECT current_version FROM application_version"));
         QVERIFY(q.next());
-        QCOMPARE(q.value(0).toString(), QString("6.4.0"));
+        QCOMPARE(q.value(0).toString(), QString("3.4.0"));
         q.finish();
         QVERIFY(q.exec("SELECT deleted, syncdate, updateddate FROM application_settings "
                        "WHERE parameter_name='PageState:ProjectsPage:project-id'"));
@@ -195,7 +195,7 @@ private slots:
         QVERIFY(global_DBObjects.loadParameter(retired.first()).isEmpty());
         QVERIFY(q.exec("CREATE TABLE project_risks(id TEXT)"));
         QVERIFY(q.exec("INSERT INTO project_risks VALUES('historical-risk')"));
-        QVERIFY(db_UpgradeStep_v6_4_0());
+        QVERIFY(db_UpgradeStep_v3_4_0());
         QVERIFY(!global_DBObjects.getDb().tables().contains("project_risks"));
         QVERIFY(q.exec("DROP TABLE review_extension_data"));
         for (const QString &key : retired + retained) {
@@ -205,11 +205,11 @@ private slots:
         }
     }
 
-    void test_upgrade640RollsBackOnFailure()
+    void test_upgrade340RollsBackOnFailure()
     {
         QSqlQuery q(global_DBObjects.getDb());
         QVERIFY(global_DBObjects.saveParameter("PageState:rollback-test:record", "legacy"));
-        QVERIFY(q.exec("UPDATE application_version SET current_version='6.3.0'"));
+        QVERIFY(q.exec("UPDATE application_version SET current_version='3.2.1'"));
         QVERIFY(q.exec("CREATE TRIGGER review_cleanup_failure BEFORE UPDATE ON application_settings "
                        "WHEN OLD.parameter_name='PageState:rollback-test:record' "
                        "BEGIN SELECT RAISE(ABORT, 'cleanup failed'); END"));
@@ -217,14 +217,14 @@ private slots:
             QSqlQuery restore(global_DBObjects.getDb());
             restore.exec("DROP TRIGGER IF EXISTS review_cleanup_failure");
             restore.exec("DELETE FROM application_settings WHERE parameter_name='PageState:rollback-test:record'");
-            restore.exec("UPDATE application_version SET current_version='6.4.0'");
+            restore.exec("UPDATE application_version SET current_version='3.4.0'");
         });
         DatabaseStructure structure;
         QVERIFY(!structure.UpgradeDatabase());
         QCOMPARE(global_DBObjects.loadParameter("PageState:rollback-test:record"), QString("legacy"));
         QVERIFY(q.exec("SELECT current_version FROM application_version"));
         QVERIFY(q.next());
-        QCOMPARE(q.value(0).toString(), QString("6.3.0"));
+        QCOMPARE(q.value(0).toString(), QString("3.2.1"));
         q.finish();
         QVERIFY(db_rwlock.tryLockForWrite());
         db_rwlock.unlock();
@@ -1045,7 +1045,7 @@ private slots:
 
     void test_21_appVersion()
     {
-        QCOMPARE(c->appVersion(), QStringLiteral("6.4.0"));
+        QCOMPARE(c->appVersion(), QStringLiteral("3.4.0"));
     }
 
     // installUpdate with no prior successful check must fail gracefully (no crash,

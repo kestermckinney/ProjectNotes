@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(ProjectNotes VERSION 6.4.0 LANGUAGES CXX)
+project(ProjectNotes VERSION 3.4.0 LANGUAGES CXX)
 
 if(APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0" CACHE STRING "Minimum macOS deployment version")
@@ -279,6 +279,12 @@ if(WIN32)
             --skip-plugin-types qmltooling
             --dir "${DEPLOY_DIR}"
             "${DEPLOY_DIR}/Project Notes.exe"
+
+        # The installer includes this Qt plugin for touch-capable Windows devices.
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${DEPLOY_DIR}/generic"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${_qt_bin}/../plugins/generic/qtuiotouchplugin.dll"
+            "${DEPLOY_DIR}/generic/qtuiotouchplugin.dll"
 
         # 4. ProjectNotes vcpkg runtime DLLs
         COMMAND ${CMAKE_COMMAND} -E copy

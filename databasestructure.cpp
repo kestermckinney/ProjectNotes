@@ -12,7 +12,7 @@
 #include "databaseupgrade_v5_0_0.h"
 #include "databaseupgrade_v6_1_0.h"
 #include "databaseupgrade_v6_2_0.h"
-#include "databaseupgrade_v6_4_0.h"
+#include "databaseupgrade_v3_4_0.h"
 #include <QVersionNumber>
 
 bool DatabaseStructure::CreateDatabase()
@@ -45,8 +45,12 @@ bool DatabaseStructure::UpgradeDatabase()
     QString targetversion = QString("%1.%2.%3")
         .arg(APP_VERSION_MAJOR).arg(APP_VERSION_MINOR).arg(APP_VERSION_PATCH);
 
-    // Do not downgrade a database opened by a newer application.
-    if (QVersionNumber::fromString(currentversion) > QVersionNumber::fromString(targetversion)) {
+    // 3.4.0 is the same code/schema line as 6.4.0 with a corrected product
+    // version. Treat databases written by that build as compatible while
+    // retaining the guard for genuinely newer schemas.
+    const bool correctedReleaseVersion = currentversion == "6.4.0" && targetversion == "3.4.0";
+    if (!correctedReleaseVersion
+        && QVersionNumber::fromString(currentversion) > QVersionNumber::fromString(targetversion)) {
         global_DBObjects.setLastSaveError(QString("Database version %1 is newer than this application (%2).")
                                              .arg(currentversion, targetversion));
         return false;
@@ -82,7 +86,7 @@ bool DatabaseStructure::UpgradeDatabase()
 
     // Run cleanup even at the target version: an older synced client can
     // reintroduce retired settings. On failure, leave the version unchanged.
-    if (!db_UpgradeStep_v6_4_0()) {
+    if (!db_UpgradeStep_v3_4_0()) {
         db_CreateAllViews();
         return false;
     }
