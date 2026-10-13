@@ -141,4 +141,24 @@ do
     rmdir "${resources_root}/threads" 2>/dev/null || true
 done
 
+# Frameworks and Python packages earlier releases bundled. They belong to the
+# app, never to the user, and a leftover copy inside the new bundle would
+# break its code signature.
+for leftover in \
+    "Contents/Frameworks/Python.framework" \
+    "Contents/Frameworks/QtWebEngineCore.framework" \
+    "Contents/Frameworks/QtWebEngineQuick.framework" \
+    "Contents/Frameworks/QtWebChannel.framework" \
+    "Contents/Frameworks/QtWebChannelQuick.framework" \
+    "Contents/Frameworks/QtPositioning.framework" \
+    "Contents/Frameworks/QtPositioningQuick.framework" \
+    "Contents/Resources/qml/QtWebEngine" \
+    "Contents/Resources/qml/QtWebChannel" \
+    "Contents/Resources/qml/QtPositioning" \
+    "Contents/Resources/site-packages" \
+    "Contents/MacOS/site-packages"
+do
+    rm -rf "${application_root}/${leftover}"
+done
+
 exit 0

@@ -46,7 +46,7 @@ QByteArray decodeDataUrl(const QUrl &url)
 }
 
 // QTextDocument would otherwise resolve image and stylesheet URLs against the
-// local file system and qrc. Apply the same policy WebEngine enforced.
+// local file system and qrc. Apply RendererResourcePolicy instead.
 //
 // Returning nothing is not enough for images: when a resource is null, Qt's
 // image handler falls back to QImage::load() on the raw name, which reads local

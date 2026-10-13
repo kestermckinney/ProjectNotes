@@ -34,14 +34,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Widgets Sql Xml Network Charts)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets Sql Xml Network Charts)
 
-# Report PDFs are printed with QTextDocument + QPdfWriter. "webengine" selects
-# the previous Qt WebEngine renderer, kept buildable for one release so output
-# can be compared; see docs/TextDocumentPdfRendererPlan.md.
-set(PN_PDF_RENDERER "textdocument" CACHE STRING "Report PDF renderer: textdocument or webengine")
-set_property(CACHE PN_PDF_RENDERER PROPERTY STRINGS textdocument webengine)
-if(PN_PDF_RENDERER STREQUAL "webengine")
-    find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS WebEngineCore WebEngineQuick)
-endif()
 # CorePrivate exposes QtCore's private QZipWriter (qzipwriter_p.h), used by the
 # "Send Logs to Support" log bundler.
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS CorePrivate)

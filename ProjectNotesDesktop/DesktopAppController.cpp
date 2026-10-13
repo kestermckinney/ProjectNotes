@@ -41,11 +41,7 @@
 #include "ProjectNotesEmail/EmlWriter.h"
 #include "ProjectNotesEmail/backends/EmlFileEmailBackend.h"
 #include "ProjectNotesEmail/backends/ThunderbirdEmailBackend.h"
-#ifdef PN_PDF_RENDERER_WEBENGINE
-#include "ProjectNotesEmailRendering/WebEngineReportRenderer.h"
-#else
 #include "ProjectNotesEmailRendering/TextDocumentReportRenderer.h"
-#endif
 #include "ProjectNotesPlugins/PluginRegistry.h"
 #include "ProjectNotesPlugins/PublishedSchema.h"
 #include "ProjectNotesMeetings/MeetingService.h"
@@ -278,11 +274,7 @@ DesktopAppController::DesktopAppController(QObject* parent)
     m_meetingService->registerBackend(PN::Comm::BackendId::ICloud, m_iCloudMeetingBackend.get());
     m_office365SettingsModel->setContactSyncModel(m_contactSyncSettingsModel.get());
     m_contactSyncSettingsModel->setIntegrationBackend(preferredEmailBackend());
-#ifdef PN_PDF_RENDERER_WEBENGINE
-    m_reportRenderer = new PN::Comm::WebEngineReportRenderer(this);
-#else
     m_reportRenderer = new PN::Comm::TextDocumentReportRenderer(this);
-#endif
     // A previous session that crashed never reached its quit-time cleanup.
     // Only one instance runs at a time (RunGuard), so nothing in the cache is
     // in use yet.

@@ -2,11 +2,6 @@ app-id: com.projectnotespro.ProjectNotes
 runtime: org.kde.Platform
 runtime-version: '6.9'
 sdk: org.kde.Sdk
-# Qt WebEngine compiled from source against this same org.kde Qt 6.9, supplied
-# as a base layer. The QML desktop executable links it directly for native PDF
-# rendering.
-base: io.qt.qtwebengine.BaseApp
-base-version: '6.9'
 command: projectnotes
 
 finish-args:
@@ -30,12 +25,6 @@ finish-args:
   # documentation of why the scope is necessary.
   - --filesystem=home
   - --device=dri
-  # Qt WebEngine (from the BaseApp) installs under /app, but the runtime Qt's
-  # baked-in prefix is /usr, so it can't find the process/resources/locales on
-  # its own. Point it at the /app locations.
-  - --env=QTWEBENGINEPROCESS_PATH=/app/lib/libexec/QtWebEngineProcess
-  - --env=QTWEBENGINE_RESOURCES_PATH=/app/resources
-  - --env=QTWEBENGINE_LOCALES_PATH=/app/translations/qtwebengine_locales
 
 modules:
   # ── Hunspell 1.7 (spell checking) ─────────────────────────────────────────

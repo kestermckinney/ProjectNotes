@@ -91,14 +91,8 @@ Build the project in Release first, or set PN_BUILD_DIR / SA_BUILD_DIR."
 sign_bundle() {
     local bundle="$1"
     local entitlements="${2:-}"
-    local webengine_entitlements=""
 
     log "Signing: ${bundle}"
-
-    # Qt WebEngine's Chromium helper requires Qt's own entitlement set. It
-    # must not inherit the application's entitlements merely because both
-    # happen to be nested .app bundles.
-    webengine_entitlements="$(find "${bundle}/Contents" -path '*/QtWebEngineProcess.app/Contents/Resources/QtWebEngineProcess.entitlements' -type f -print -quit 2>/dev/null || true)"
 
     # Strip build-system artifacts from nested frameworks.  Static archives
     # (.a), object files (.o), pkg-config files (.pc), and shell config scripts
@@ -143,8 +137,7 @@ sign_bundle() {
 
     # ── Pass 2: sign nested bundles depth-first to (re)seal their contents ─────
     # Deepest path first ensures an inner bundle is sealed before the bundle that
-    # encloses it (e.g. QtWebEngineProcess.app before QtWebEngineCore.framework).
-    # Frameworks get their
+    # encloses it. Frameworks get their
     # CodeResources re-sealed over the Developer ID binaries signed in Pass 1;
     # .app helpers also get their own Mach-O executable signed here. Entitlements
     # are applied only to .app bundles (executables); they are meaningless on a
@@ -154,13 +147,7 @@ sign_bundle() {
     while IFS= read -r item; do printf '%d\t%s\n' "${#item}" "$item"; done | \
     sort -rn | cut -f2- | \
     while IFS= read -r item; do
-        if [[ "${item}" == *QtWebEngineProcess.app && -n "${webengine_entitlements}" ]]; then
-            codesign --force --sign "${SIGN_IDENTITY}" \
-                --options runtime \
-                --timestamp \
-                --entitlements "${webengine_entitlements}" \
-                "${item}" 2>&1 | grep -v "replacing existing signature" || true
-        elif [[ "${item}" == *.app && -n "${entitlements}" ]]; then
+        if [[ "${item}" == *.app && -n "${entitlements}" ]]; then
             codesign --force --sign "${SIGN_IDENTITY}" \
                 --options runtime \
                 --timestamp \

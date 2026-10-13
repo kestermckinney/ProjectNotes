@@ -211,21 +211,6 @@ add_executable(tst_artifactstore tst_artifactstore.cpp)
 target_link_libraries(tst_artifactstore PRIVATE Qt6::Core Qt6::Test ProjectNotesEmail)
 add_test(NAME artifactstore COMMAND tst_artifactstore)
 
-# This is intentionally a real WebEngine process test, separate from the
-# headless contract suite.  Some container runtimes prohibit Chromium helper
-# shutdown even when its sandbox is disabled, so maintainers opt in only on a
-# native/package-like host where it can be valid evidence for G4.
-option(ENABLE_WEBENGINE_RENDERER_TESTS "Register native Qt WebEngine renderer tests" OFF)
-if(ENABLE_WEBENGINE_RENDERER_TESTS)
-    add_executable(tst_webenginerenderer tst_webenginerenderer.cpp)
-    target_link_libraries(tst_webenginerenderer PRIVATE
-        Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Test Qt6::WebEngineCore Qt6::WebEngineQuick
-        ProjectNotesEmail ProjectNotesEmailRendering)
-    add_test(NAME webenginerenderer COMMAND tst_webenginerenderer)
-    set_tests_properties(webenginerenderer PROPERTIES ENVIRONMENT
-        "QT_QPA_PLATFORM=offscreen;QTWEBENGINE_DISABLE_SANDBOX=1;QTWEBENGINE_CHROMIUM_FLAGS=--disable-gpu")
-endif()
-
 # QTextDocument/QPdfWriter report renderer. Headless; set PN_RENDER_OUT to keep
 # the PDFs for visual review.
 add_executable(tst_textdocumentrenderer tst_textdocumentrenderer.cpp)

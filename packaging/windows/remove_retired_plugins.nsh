@@ -1,5 +1,6 @@
-; Every bundled Python plugin, thread, form and helper, and the embedded Python
-; runtime, that earlier Project Notes releases shipped. File copies merge into $INSTDIR, so
+; Every bundled Python plugin, thread, form and helper, the embedded Python
+; runtime, and the Qt WebEngine files that earlier Project Notes releases
+; shipped. File copies merge into $INSTDIR, so
 ; without this an upgrade leaves the retired scripts in place and their menus
 ; come back. Included by the install section (before the new payload is copied)
 ; and by the uninstaller.
@@ -169,3 +170,14 @@ Delete "$INSTDIR\libcrypto-3.dll"
 Delete "$INSTDIR\libffi-8.dll"
 Delete "$INSTDIR\libssl-3.dll"
 Delete "$INSTDIR\sqlite3.dll"
+
+; ── Qt WebEngine (earlier releases printed reports with it) ────────────────────
+Delete "$INSTDIR\Qt6Positioning.dll"
+Delete "$INSTDIR\Qt6WebChannel.dll"
+Delete "$INSTDIR\Qt6WebChannelQuick.dll"
+Delete "$INSTDIR\Qt6WebEngineCore.dll"
+Delete "$INSTDIR\Qt6WebEngineQuick.dll"
+Delete "$INSTDIR\QtWebEngineProcess.exe"
+RMDir /r "$INSTDIR\resources"
+RMDir /r "$INSTDIR\translations"
+RMDir /r "$INSTDIR\position"

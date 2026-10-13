@@ -161,25 +161,6 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\Qt6Widgets.dll"
   File "${DEPLOY_DIR}\Qt6Xml.dll"
 
-  ; Qt WebEngine renders the report and email previews. It needs its helper
-  ; process, the Chromium resource packs and locales, and the WebChannel and
-  ; Positioning modules it links against. Without them the app will not start.
-  File "${DEPLOY_DIR}\Qt6Positioning.dll"
-  File "${DEPLOY_DIR}\Qt6WebChannel.dll"
-  File "${DEPLOY_DIR}\Qt6WebChannelQuick.dll"
-  File "${DEPLOY_DIR}\Qt6WebEngineCore.dll"
-  File "${DEPLOY_DIR}\Qt6WebEngineQuick.dll"
-  File "${DEPLOY_DIR}\QtWebEngineProcess.exe"
-
-  SetOutPath "$INSTDIR\resources"
-  File /r "${DEPLOY_DIR}\resources\*.*"
-
-  SetOutPath "$INSTDIR\translations"
-  File /r "${DEPLOY_DIR}\translations\*.*"
-
-  SetOutPath "$INSTDIR\position"
-  File /r "${DEPLOY_DIR}\position\*.*"
-
   SetOutPath "$INSTDIR"
 
   ; QML modules (QtQuick, QtQuick.Controls incl. all built-in styles, Layouts,
@@ -416,15 +397,6 @@ Section Uninstall
   Delete "$INSTDIR\Qt6Svg.dll"
   Delete "$INSTDIR\Qt6Widgets.dll"
   Delete "$INSTDIR\Qt6Xml.dll"
-  Delete "$INSTDIR\Qt6Positioning.dll"
-  Delete "$INSTDIR\Qt6WebChannel.dll"
-  Delete "$INSTDIR\Qt6WebChannelQuick.dll"
-  Delete "$INSTDIR\Qt6WebEngineCore.dll"
-  Delete "$INSTDIR\Qt6WebEngineQuick.dll"
-  Delete "$INSTDIR\QtWebEngineProcess.exe"
-  RMDir /r "$INSTDIR\resources"
-  RMDir /r "$INSTDIR\translations"
-  RMDir /r "$INSTDIR\position"
 
   RMDir /r "$INSTDIR\qml"
 

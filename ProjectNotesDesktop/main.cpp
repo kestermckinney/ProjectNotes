@@ -26,9 +26,6 @@
 #include <QStandardPaths>
 #include <QTextStream>
 #include <QWindow>
-#ifdef PN_PDF_RENDERER_WEBENGINE
-#include <QtWebEngineQuick/QtWebEngineQuick>
-#endif
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -101,11 +98,6 @@ void applyWindowsTaskbarIdentity(QWindow* window)
 
 int main(int argc, char* argv[])
 {
-#ifdef PN_PDF_RENDERER_WEBENGINE
-    // The optional WebEngine report renderer needs WebEngine Quick initialised
-    // before QApplication/QML construction.
-    QtWebEngineQuick::initialize();
-#endif
     PN::Comm::registerCommunicationMetaTypes();
 #if defined(_WIN32)
     // Give the QML desktop app its own taskbar / Task Manager identity. Both this

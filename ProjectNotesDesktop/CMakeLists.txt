@@ -176,10 +176,6 @@ qt_add_resources(ProjectNotes "helpcontent"
     FILES  ${HELP_MD} ${HELP_IMG} ${HELP_TOC}
 )
 
-if(PN_PDF_RENDERER STREQUAL "webengine")
-    target_link_libraries(ProjectNotes PRIVATE Qt6::WebEngineCore Qt6::WebEngineQuick)
-endif()
-
 # ProjectNotes.PluginUI: the import plugin QML uses for the app's controls.
 qt_add_resources(ProjectNotes "plugin_ui_module"
     PREFIX "/qt/qml/ProjectNotes/PluginUI"
@@ -289,18 +285,6 @@ if(APPLE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
             -always-overwrite
         COMMENT "Deploying Qt into app bundle (macdeployqt)"
         VERBATIM)
-
-    # Verify the deployed Qt payload: the native renderer needs its matching
-    # Chromium helper, resources, and locales.
-    if(PN_PDF_RENDERER STREQUAL "webengine")
-        add_custom_command(TARGET ProjectNotes POST_BUILD
-            COMMAND ${CMAKE_COMMAND}
-                "-DPN_PLATFORM=macos"
-                "-DPN_PACKAGE_ROOT=$<TARGET_BUNDLE_DIR:ProjectNotes>"
-                -P "${CMAKE_CURRENT_SOURCE_DIR}/../packaging/verify_native_webengine_package.cmake"
-            COMMENT "Verifying native Qt WebEngine bundle payload"
-            VERBATIM)
-    endif()
 
     # ── 4. Re-sign ───────────────────────────────────────────────────────────────
     # macdeployqt rewrites the executable's load commands, which invalidates its
