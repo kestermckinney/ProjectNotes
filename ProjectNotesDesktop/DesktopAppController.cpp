@@ -71,10 +71,6 @@
 
 #include <QDesktopServices>
 
-#include "pluginmanager.h"
-#include "plugin.h"
-#include "pythonworker.h"
-
 namespace {
 
 // Every generated report starts from the project team, excluding the project
@@ -571,9 +567,9 @@ bool DesktopAppController::openOrCreateDatabase()
     emit databaseReady();
     emit projectManagerChanged();   // picks up any PM configured in a prior session
 
-    // Boot the embedded-Python plugin engine now that the database is open (some
-    // plugins query it as they register their menus).
-    ensurePluginManager();
+    // Start the plugins now that the database is open (some query it as they
+    // register their menus).
+    ensureJsPlugins();
 
     // Auto-start cloud sync if the user has it enabled (same as the Widgets app).
     // Deferred so the UI is up first; the heavy bootstrap runs on the sync thread.
@@ -2471,35 +2467,7 @@ void DesktopAppController::invalidateFolderSnapshot()
     });
 }
 
-// ── Python plugins ────────────────────────────────────────────────────────────
-
-void DesktopAppController::ensurePluginManager()
-{
-    if (m_pluginManager)
-        return;
-    // The constructor initialises the embedded interpreter and loads plugins
-    // from appDir/plugins (+ ~/Project Notes/plugins). It self-registers as
-    // PluginManager::instance() for the Python callbacks.
-    PluginManager::setDeveloperProfile(s_developerProfile);
-    m_pluginManager = new PluginManager(this);
-
-    // A plugin that imports data (Python set_data) runs on a worker thread with
-    // its own non-GUI DatabaseObjects, which queues the touched rows into
-    // global_DBObjects and then emits pluginRefreshRequest. Drain that queue on
-    // the GUI thread so the displayed lists pick up the added/updated/removed
-    // rows — the same wiring MainWindow::onRefreshRequested provides in the
-    // Widgets app. Without this, background plugin imports never reach the UI.
-    connect(m_pluginManager, &PluginManager::pluginRefreshRequest,
-            this, [] {
-                global_DBObjects.updateDisplayData();
-                if (FolderManager* fm = FolderManager::instance())
-                    fm->reload();
-            });
-
-    // JavaScript plugins run alongside the Python ones until the Python
-    // system is removed (see docs/QJSEnginePluginsPlan.md, Phase 6).
-    ensureJsPlugins();
-}
+// ── Plugin menus ─────────────────────────────────────────────────────────────
 
 QVariantList DesktopAppController::pluginMenusForModel(QAbstractItemModel* model)
 {
@@ -2513,30 +2481,6 @@ QVariantList DesktopAppController::pluginMenusForTable(const QString& table)
     m_pluginMenuCache.clear();
     if (table.isEmpty())
         return out;
-    if (!m_pluginManager) {
-        appendJsRecordMenus(table, &out);
-        return out;
-    }
-
-    // A menu appears on a table's right-click when its dataexport matches that
-    // table (empty dataexport = global menu, not a record menu) — same rule as
-    // the Widgets TableView::contextMenuEvent.
-    for (Plugin* p : m_pluginManager->plugins()) {
-        if (!p || !p->loaded())
-            continue;
-        for (const PluginMenu& m : p->pythonplugin().menus()) {
-            if (m.dataexport().compare(table, Qt::CaseInsensitive) != 0)
-                continue;
-
-            m_pluginMenuCache.append({ p, m.functionname(), m.tablefilter(), m.parameter() });
-
-            QVariantMap entry;
-            entry["title"]   = m.menutitle();
-            entry["submenu"] = m.submenu();
-            entry["index"]   = m_pluginMenuCache.size() - 1;
-            out.append(entry);
-        }
-    }
     appendJsRecordMenus(table, &out);
     return out;
 }
@@ -2577,31 +2521,9 @@ void DesktopAppController::runPluginMenuForTable(const QString& table,
     if (index < 0 || index >= m_pluginMenuCache.size())
         return;
     const PluginMenuRef& ref = m_pluginMenuCache.at(index);
-    if (!ref.jsPluginId.isEmpty()) {
-        if (m_jsPlugins)
-            m_jsPlugins->runMenu(ref.jsPluginId, ref.jsMenuId,
-                                 PN::Plugins::PublishedSchema::instance().publishedEntity(table), recordId);
-        return;
-    }
-    if (!ref.plugin || table.isEmpty())
-        return;
-
-    // Export just the selected record (col 0 = id), scoped by the menu's
-    // tablefilter, then hand the XML to the plugin — mirrors slotPluginMenu.
-    SqlQueryModel* exportModel = global_DBObjects.createExportObject(table);
-    if (!exportModel) {
-        emit errorOccurred(tr("Plugin"), tr("Nothing to export for this record type."));
-        return;
-    }
-    exportModel->setFilter(0, recordId);
-    exportModel->refresh();
-
-    QDomDocument* xdoc = global_DBObjects.createXMLExportDoc(exportModel, ref.tablefilter);
-    const QString xml = xdoc->toString();
-
-    ref.plugin->callXmlMethod(ref.functionname, xml, ref.parameter);
-
-    delete xdoc;
+    if (m_jsPlugins)
+        m_jsPlugins->runMenu(ref.jsPluginId, ref.jsMenuId,
+                             PN::Plugins::PublishedSchema::instance().publishedEntity(table), recordId);
 }
 
 QVariantList DesktopAppController::globalPluginMenus()
@@ -2620,28 +2542,6 @@ QVariantList DesktopAppController::globalPluginMenus()
                                    {QStringLiteral("index"), m_globalPluginMenuCache.size() - 1}});
         }
     }
-    if (!m_pluginManager)
-        return out;
-
-    // A menu is "global" (Plugins > Settings / Utilities / etc. in the Widgets
-    // menu bar) when its dataexport is empty — same rule buildPluginMenu() uses
-    // to skip record menus, inverted.
-    for (Plugin* p : m_pluginManager->plugins()) {
-        if (!p || !p->loaded())
-            continue;
-        for (const PluginMenu& m : p->pythonplugin().menus()) {
-            if (!m.dataexport().isEmpty())
-                continue;
-
-            m_globalPluginMenuCache.append({ p, m.functionname(), QString(), m.parameter() });
-
-            QVariantMap entry;
-            entry["title"]   = m.menutitle();
-            entry["submenu"] = m.submenu();
-            entry["index"]   = m_globalPluginMenuCache.size() - 1;
-            out.append(entry);
-        }
-    }
     return out;
 }
 
@@ -2650,15 +2550,8 @@ void DesktopAppController::runGlobalPluginMenu(int index)
     if (index < 0 || index >= m_globalPluginMenuCache.size())
         return;
     const PluginMenuRef& ref = m_globalPluginMenuCache.at(index);
-    if (!ref.jsPluginId.isEmpty()) {
-        if (m_jsPlugins)
-            m_jsPlugins->runMenu(ref.jsPluginId, ref.jsMenuId, {}, {});
-        return;
-    }
-    if (!ref.plugin)
-        return;
-
-    ref.plugin->callMethod(ref.functionname, ref.parameter);
+    if (m_jsPlugins)
+        m_jsPlugins->runMenu(ref.jsPluginId, ref.jsMenuId, {}, {});
 }
 
 // ── Filters / refresh ────────────────────────────────────────────────────────

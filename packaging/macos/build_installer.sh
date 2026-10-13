@@ -96,15 +96,15 @@ sign_bundle() {
     log "Signing: ${bundle}"
 
     # Qt WebEngine's Chromium helper requires Qt's own entitlement set. It
-    # must not inherit the application's Python-oriented entitlements merely
-    # because both happen to be nested .app bundles.
+    # must not inherit the application's entitlements merely because both
+    # happen to be nested .app bundles.
     webengine_entitlements="$(find "${bundle}/Contents" -path '*/QtWebEngineProcess.app/Contents/Resources/QtWebEngineProcess.entitlements' -type f -print -quit 2>/dev/null || true)"
 
     # Strip build-system artifacts from nested frameworks.  Static archives
     # (.a), object files (.o), pkg-config files (.pc), and shell config scripts
     # (.sh) cannot be code-signed and cause notarization / codesign --strict to
-    # reject the bundle (e.g. Python's config-*/python.o).  These files are
-    # development-only and not needed at runtime.
+    # reject the bundle.  These files are development-only and not needed at
+    # runtime.
     find "${bundle}/Contents" \
         \( -name "*.a" -o -name "*.o" -o -name "*.pc" \
         -o -name "tclConfig.sh" -o -name "tkConfig.sh" \
@@ -112,18 +112,16 @@ sign_bundle() {
         -delete 2>/dev/null || true
 
     # ── Pass 1: sign every Mach-O binary directly, deepest path first ──────────
-    # We must sign the actual binaries, not just their enclosing bundles. The
-    # PyQt5 Qt5 frameworks ship from PyPI ad-hoc signed AND with a non-standard
-    # layout (no Versions/Current symlink), so signing the .framework bundle
-    # re-seals its CodeResources but leaves the inner Mach-O ad-hoc — which is
-    # exactly what notarization rejects ("not signed with a valid Developer ID
-    # certificate" / "no secure timestamp" / "hardened runtime not enabled").
-    # Signing the versioned binary directly fixes that; the bundle is re-sealed
-    # over it in Pass 2.
+    # We must sign the actual binaries, not just their enclosing bundles: a
+    # framework with a non-standard layout (no Versions/Current symlink) gets
+    # its CodeResources re-sealed while the inner Mach-O stays ad-hoc, which
+    # notarization rejects ("not signed with a valid Developer ID certificate" /
+    # "no secure timestamp" / "hardened runtime not enabled"). Signing the
+    # binary directly fixes that; the bundle is re-sealed over it in Pass 2.
     #
     # Detect Mach-O files by content (not extension) so nothing is missed:
     # loadable modules (.so/.dylib), framework main binaries (no extension), and
-    # bare executables such as Python.framework's bin/python3.13. A single
+    # bare helper executables. A single
     # batched `file` scan over the bundle is cheap. printf+cut (not awk) sorts by
     # path length without splitting on spaces, so deepest paths sign first.
     # `file` column-pads filenames with spaces before the description, so match
@@ -145,8 +143,8 @@ sign_bundle() {
 
     # ── Pass 2: sign nested bundles depth-first to (re)seal their contents ─────
     # Deepest path first ensures an inner bundle is sealed before the bundle that
-    # encloses it (e.g. QtWebEngineProcess.app before QtWebEngineCore.framework,
-    # and all nested frameworks before Python.framework). Frameworks get their
+    # encloses it (e.g. QtWebEngineProcess.app before QtWebEngineCore.framework).
+    # Frameworks get their
     # CodeResources re-sealed over the Developer ID binaries signed in Pass 1;
     # .app helpers also get their own Mach-O executable signed here. Entitlements
     # are applied only to .app bundles (executables); they are meaningless on a
@@ -202,7 +200,7 @@ require_app "${PN_APP}"
 
 log "Preparing staging area..."
 # Clear immutable flags then delete. Fall back to find -delete if rm -rf
-# is blocked by memory-mapped files (e.g. Python.framework dylibs in use).
+# is blocked by memory-mapped files (e.g. dylibs in use).
 for _dir in "${STAGING_DIR}" "${OUTPUT_DIR}"; do
     if [[ -d "${_dir}" ]]; then
         chflags -R nouchg "${_dir}" 2>/dev/null || true
@@ -230,56 +228,6 @@ PN_RESOURCES="${PN_STAGED}/Contents/Resources"
 UPDATER_APP="${STAGING_DIR}/updater/Project Notes.app"
 mkdir -p "${STAGING_DIR}/updater"
 ditto "${PN_APP}" "${UPDATER_APP}"
-
-# ── IFS plugin removal ──────────────────────────────────────────────────────────
-# The IFS Cloud plugins are excluded from the macOS distribution. Shipping them
-# as a separate optional installer component is incompatible with a notarized,
-# signed app: the component's payload is an unsigned partial .app (which fails
-# notarization) and installing it into the already-signed bundle would
-# invalidate the Developer ID signature on the user's machine. Strip the files
-# from both the installer bundle and the auto-updater bundle so neither carries
-# them.
-
-IFS_PLUGIN_FILES=(
-    "plugins/ifs_ssrs_generate_plugin.py"
-    "plugins/ifscloud_plugin_settings.py"
-    "plugins/includes/ifs_tools.py"
-    "threads/ifssync_thread.py"
-)
-
-RETIRED_PLUGIN_FILES=(
-    "threads/filefinder_thread.py"
-    "plugins/exportnotes_plugin.py"
-    "plugins/exportstatusreport_plugin.py"
-    "plugins/exporttrackeritems_plugin.py"
-    "plugins/forms/dialogExportNotesOptions.ui"
-    "plugins/forms/dialogExportStatusReportOptions.ui"
-    "plugins/forms/dialogExportTrackerOptions.ui"
-    "plugins/forms/dialogMeetingEmailTemplate.ui"
-    "plugins/forms/dialogMeetingEmailTypes.ui"
-    "plugins/forms/dialogFileFinder.ui"
-    "plugins/forms/dialogClassification.ui"
-)
-
-log "Removing retired plugin files from macOS bundles..."
-for rel in "${RETIRED_PLUGIN_FILES[@]}"; do
-    for base in "${PN_RESOURCES}" "${UPDATER_APP}/Contents/Resources"; do
-        rm -f "${base}/${rel}"
-        mod="$(basename "${rel}" .py)"
-        rm -f "$(dirname "${base}/${rel}")/__pycache__/${mod}".*.pyc
-        rm -f "$(dirname "${base}/${rel}")/__pycache__/${mod}".*.pyo
-    done
-done
-
-log "Removing IFS plugin files from macOS bundles..."
-for rel in "${IFS_PLUGIN_FILES[@]}"; do
-    for base in "${PN_RESOURCES}" "${UPDATER_APP}/Contents/Resources"; do
-        rm -f "${base}/${rel}"
-        # Also drop any compiled bytecode so the module cannot be imported.
-        mod="$(basename "${rel}" .py)"
-        rm -f "$(dirname "${base}/${rel}")/__pycache__/${mod}".*.pyc
-    done
-done
 
 # ── Step 3: Code signing ──────────────────────────────────────────────────────
 

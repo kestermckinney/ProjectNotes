@@ -74,4 +74,4 @@ When upgrading from the retired Python File Finder, Project Notes imports existi
 ## Related Documentation
 
 - [Office 365 Integration](<Office365Integration.md>) — Configure Microsoft identity and sign-in independently of File Finder.
-- [Plugin Settings](<../StandardPlugins/PluginSettings.md>) — Configure the remaining Python-based plugins.
+- [Plugin Settings](<../StandardPlugins/PluginSettings.md>) — The plugins that come with Project Notes and their settings.

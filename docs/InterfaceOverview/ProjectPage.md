@@ -22,7 +22,7 @@ All of the fields below sit above the tabs and are editable inline — changes s
 
 | **Column** | **Description** |
 | :--- | :--- |
-| Number | The project number is often a unique identifier used across multiple systems. In many cases Python scripts will use this number to find and relate project information. |
+| Number | The project number is often a unique identifier used across multiple systems. Plugins often use this number to find and relate project information in other systems. |
 | Project Name | The project name should remain consistent across multiple systems. It should be a concise description of the project. |
 | Company | The company the project work applies. |
 | Primary Contact | The primary contact at the company. |
@@ -124,8 +124,8 @@ Links to project documents and web locations are set up under the **Locations** 
 
 | **Column** | **Description** |
 | :--- | :--- |
-| Type | The type of file location determines how Project Notes handles the Location field. Using the incorrect Type can cause the Location value to get corrupted. Custom Python scripts can use the Type field for specific operations. The types available are File Folder, Web Link, Microsoft Project, Word Document, Excel Document, PDF File, and Generic File (System Identified) |
-| Description | An open description field. In some cases a Python script can look for specific values. One example is "Project Folder". Python scripts use this location to automatically generate project files and folders. |
+| Type | The type of file location determines how Project Notes handles the Location field. Using the incorrect Type can cause the Location value to get corrupted. Plugins can use the Type field for specific operations. The types available are File Folder, Web Link, Microsoft Project, Word Document, Excel Document, PDF File, and Generic File (System Identified) |
+| Description | An open description field. Plugins can look for specific values. One example is "Project Folder". Plugins use this location to automatically generate project files and folders. |
 | Location | The file path or web address referred to by the Type field. The field must be formatted correctly according to its type. For example, `C:\MyFolder` would not work properly for a Web Link, and `http://www.google.com` would not work correctly as a File Folder type. |
 
 

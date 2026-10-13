@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ProjectNotes is a Qt/C++ desktop application (v6.4.0) for project management — tracking notes, meeting minutes, risks, issues, action items, contacts, and companies. It embeds a Python plugin system for extensibility and integrates with tools like Outlook, IFS ERP, and MS Office. A companion iOS/iPadOS app, ProjectNotesMobile, shares the same data layer and syncs with the desktop app via SqliteSyncPro.
+ProjectNotes is a Qt/C++ desktop application (v6.4.0) for project management — tracking notes, meeting minutes, risks, issues, action items, contacts, and companies. It has a JavaScript (QJSEngine) plugin system for extensibility and integrates with tools like Outlook, IFS ERP, and MS Office. A companion iOS/iPadOS app, ProjectNotesMobile, shares the same data layer and syncs with the desktop app via SqliteSyncPro.
 
 ## Build Commands
 
@@ -16,11 +16,11 @@ cmake --build .
 
 - The default target is `ProjectNotes`, the **QML** desktop frontend in `ProjectNotesDesktop/`. A plain `cmake --build .` builds only that.
 - The legacy Qt Widgets frontend has been **removed**. Its target (`ProjectNotesWidgets`), the `BUILD_WIDGETS_LEGACY` option, and all of its sources, `.ui` files, and icons are gone.
-- Requires CMake 3.16+, Qt6 (Qt5 fallback supported), Python 3 dev libraries, Hunspell 1.7
+- Requires CMake 3.16+, Qt6 (Qt5 fallback supported), Hunspell 1.7
 - Qt modules used: Core, SQL, XML, Network, Qml/Quick, Widgets
-- **`Qt::Widgets` is still required.** No widget UI remains, but the app constructs a `QApplication` (not `QGuiApplication`) so that Python plugins can open `PyQt6.QtWidgets` dialogs, and so `ProjectNotesCore` can report database errors through `QMessageBox`. Do not swap it for `QGuiApplication` or drop the module.
+- **`Qt::Widgets` is still required.** No widget UI remains, but the app constructs a `QApplication` (not `QGuiApplication`) so `ProjectNotesCore` can report database errors through `QMessageBox`. Do not swap it for `QGuiApplication` or drop the module.
 - Also requires `SqliteSyncPro` checked out as a sibling directory (`../SqliteSyncPro/src`) — it's linked as `SqliteSyncProLib`
-- No automated test framework exists in this project
+- Headless Qt tests live in `tests/desktop/` (QtTest + ctest). Configure a separate build with `-DBUILD_QML_DESKTOP_TESTS=ON -DBUILD_QML_DESKTOP=OFF` and run `ctest` with `QT_QPA_PLATFORM=offscreen`.
 - No linting configuration
 - `ProjectNotesMobile/` (the iOS companion app) is **not** part of this build — it's a standalone CMake project cross-compiled for iOS via its own Xcode-generator configure, with a hardcoded vcpkg OpenSSL path for the maintainer's machine. It's built and archived separately; see `packaging/ios/build_appstore.sh`.
 
@@ -63,12 +63,14 @@ Single-instance Qt application enforced via `RunGuard` (UUID-based). Two fronten
 
 Key tables: `projects`, `project_notes`, `item_tracker`, `item_tracker_updates`, `people`, `clients`, `meeting_attendees`, `project_locations`, `project_people`, `application_settings`
 
-### Python Plugin System
+### JavaScript Plugin System
 
-- `Plugin` / `PluginManager` — Qt wrappers around Python modules; `PluginManager` watches plugin files and hot-reloads on changes
-- `PythonWorker` — Runs Python in a separate `QThread` with proper GIL management
-- Plugins live in `plugins/`; background worker threads in `threads/`
-- Plugins inject menu items via `pluginmenus`, can run on timers, and exchange data via XML
+- `ProjectNotesPlugins/` is the plugin host library (no Widgets or Quick dependency). `PluginRegistry` discovers plugin folders in the bundled `plugins/` and the user's `~/Project Notes/plugins`, keeps enabled/approved state, and hot-reloads. Each plugin runs in its own `QJSEngine` on its own thread (`PluginHost`/`PluginRuntime`), with a watchdog.
+- `js/prelude.js` builds the `projectnotes` and `projectnotes/common` modules over a private host bridge; `js/projectnotes.d.ts` documents them. QJSEngine is roughly ES2016, so plugins use generator functions (`function*` with `yield promise`) instead of async/await.
+- Data access goes through `DataService` with published names (`contacts`, `companies`, `project_team`; see `PublishedSchema`) and the `RecordTree` import/export rules shared with XML import.
+- Permissions are declared in `plugin.json`. User plugins need approval, and a change in what they ask for needs it again.
+- The application side is `DesktopPluginServices` (dialogs, email, calendar, contacts, Office 365, secrets) and `PluginUiController` + `PluginUiHost.qml` (QML dialogs, schema forms, settings tabs).
+- Bundled plugins live in `plugins/<name>/`; `extras/` holds plugins shipped separately as `.pnplugin` files (`packaging/plugins/build-pnplugin.sh`). Embedded Python has been removed.
 
 ### QML Context Menus & Navigation
 
@@ -86,7 +88,7 @@ Cell editors in table views are implemented as delegates: `CheckboxDelegate`, `C
 ### Other Key Utilities
 
 - `DesktopAppController` — QML bridge to the data layer; also owns the app's `QSettings` access ("ProjectNotes"[+profile] / "AppSettings")
-- `appResourcesPath()` (`appresourcespath.h`) — resolves the directory holding `plugins/`, `threads/`, and `dictionary/`; used by the embedded Python engine
+- `appResourcesPath()` (`appresourcespath.h`) — resolves the directory holding the bundled `plugins/` and `dictionary/`
 - `SpellCheck` — Hunspell spell-checking exposed to QML
 - `ImportExport` — XML-based data import/export
 - `QLogger` — Structured logging; log viewer available via `LogViewerController` / `LogViewerWindow.qml`
@@ -97,9 +99,9 @@ Cell editors in table views are implemented as delegates: `CheckboxDelegate`, `C
 
 ## Plugin Development
 
-Plugins are Python files in `plugins/`. See `docs/PluginsOverview/` for the plugin API and `docs/PluginsOverview/ProjectNotesXML.md` for the XML data format used to exchange data between C++ and Python.
+A plugin is a folder with `plugin.json` and an ES module (`main.mjs`). See `docs/PluginsOverview/JavaScriptPlugins.md` for the API, permissions and manifest, and `docs/QJSEnginePluginsPlan.md` for the design. Plugins build UI with QML files that import `ProjectNotes.PluginUI` (a re-export of the desktop's controls) or with schema forms.
 
-Plugins build their own UI with **PyQt6, including `PyQt6.QtWidgets`** (see `plugins/base_plugin.py` and `plugins/includes/common.py`). That is why the host app links `Qt::Widgets` and runs a `QApplication` — removing the Widgets frontend did not remove widget support for plugins. `common.py`'s `get_main_window()` returns `None` under the QML frontend (there is no `QMainWindow`); plugin dialogs are parented to `QApplication.activeWindow()` or to nothing.
+`tests/desktop/tst_pluginhost.cpp` runs every bundled plugin, and `extras/ifs-cloud`, against fake services and fake HTTP servers; add to it when you change a plugin. Plugins that replace Python ones copy the old settings once through the manifest's `legacySettings`.
 
 ## Documentation Writing
 

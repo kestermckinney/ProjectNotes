@@ -27,7 +27,7 @@ The Project List Page also provides in-depth earned value metrics based on the c
 
 | **Field** | **Description** |
 | :--- | :---- |
-| Number | The project number is often a unique identifier used across multiple systems. In many cases Python scripts will use this number to find and relate project information. |
+| Number | The project number is often a unique identifier used across multiple systems. Plugins often use this number to find and relate project information in other systems. |
 | Project Name | The project name should remain consistent across multiple systems. It should be a concise description of the project. |
 | Company | The company the project work applies. |
 | Status Date | The last time the status report was run. The value is shown in different colors to warn you when the next status report should be sent to the company. |

@@ -47,8 +47,7 @@ nav:
     - 'Presenting to Companies': InterfaceOverview/PresentingToCompanies.md
   - 'Plugins Overview':
     - 'JavaScript Plugins': PluginsOverview/JavaScriptPlugins.md
-    - 'Adding Functionality': PluginsOverview/AddingFunctionality.md
-    - 'Data Types': PluginsOverview/DataTypes.md
+    - 'Data Types and Entity Names': PluginsOverview/DataTypes.md
     - 'Project Notes XML': PluginsOverview/ProjectNotesXML.md
   - 'Standard Plugins':
     - 'Plugin Settings': StandardPlugins/PluginSettings.md
@@ -56,7 +55,7 @@ nav:
     - 'iCloud Contacts': StandardPlugins/iCloudContacts.md
     - 'My Shortcuts': StandardPlugins/MyShortcuts.md
     - 'Team Member Quick Add': StandardPlugins/TeamMemberQuickAdd.md
-    - 'New Document Templates': StandardPlugins/NewDocumentTemplates.md
+    - 'Office Document Templates': StandardPlugins/NewDocumentTemplates.md
     - 'IFS Cloud Integration': StandardPlugins/IFSCloud.md
     - 'Editor': StandardPlugins/Editor.md
   - 'Project Notes Mobile':

@@ -163,11 +163,7 @@
           "path": "PluginsOverview/JavaScriptPlugins.md"
         },
         {
-          "title": "Adding Functionality",
-          "path": "PluginsOverview/AddingFunctionality.md"
-        },
-        {
-          "title": "Data Types",
+          "title": "Data Types and Entity Names",
           "path": "PluginsOverview/DataTypes.md"
         },
         {
@@ -200,7 +196,7 @@
           "path": "StandardPlugins/TeamMemberQuickAdd.md"
         },
         {
-          "title": "New Document Templates",
+          "title": "Office Document Templates",
           "path": "StandardPlugins/NewDocumentTemplates.md"
         },
         {

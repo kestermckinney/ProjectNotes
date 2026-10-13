@@ -108,8 +108,7 @@ use the normal signed build, preparation, and manual publication workflow.
 The Flathub linter flags the existing home-folder permission, which this
 self-hosted application uses for user documents and plugin workflows. AppStream
 and desktop-file validation pass. The linter also reports KDE 6.9 as end of life;
-upgrade the runtime and rebuild its Python dependencies before the next Linux
-release. The 6.4.0 package uses the runtime verified by the current build.
+upgrade the runtime before the next Linux release. The 6.4.0 package uses the runtime verified by the current build.
 
 The new GitLab public signing key fingerprint is
 `E0C07E21F0E41F83CBDCCB04F82B4E4D2183B011`. Local private-key, passphrase, and

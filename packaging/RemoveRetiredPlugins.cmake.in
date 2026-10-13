@@ -1,8 +1,8 @@
 # CMake directory installs and the Windows deploy copy both merge into their
 # destination, so plugins removed from the source tree can otherwise survive an
-# upgrade and PluginManager loads them again. This removes every bundled plugin,
-# thread, form and helper that an earlier release shipped and a later one
-# dropped. Files are named one by one because the plugins folder can also hold
+# upgrade. This removes every bundled Python plugin, thread, form and helper an
+# earlier release shipped (Python plugins no longer run at all), then the
+# folders they lived in once they are empty. Files are named one by one because the plugins folder can also hold
 # the user's own plugins; it is never removed recursively.
 #
 # Keep this list in step with packaging/windows/remove_retired_plugins.nsh and
@@ -67,6 +67,34 @@ set(_pn_retired_scripts
     "plugins/trackkerreport_plugin"
     "threads/filefinder_thread"
     "threads/tester_thread_1"
+    # Replaced by JavaScript plugins.
+    "plugins/base_plugin"
+    "plugins/base_plugin_settings"
+    "plugins/excelkill_plugin"
+    "plugins/ifs_ssrs_generate_plugin"
+    "plugins/ifscloud_plugin_settings"
+    "plugins/myshortcuts_plugin"
+    "plugins/newchangeorder_plugin"
+    "plugins/newmsproject_plugin"
+    "plugins/newpcrregistry_plugin"
+    "plugins/newpowerpoint_plugin"
+    "plugins/newriskregister_plugin"
+    "plugins/open_msproject_plugin"
+    "plugins/projectnotes"
+    "plugins/team_member_quick_add_plugin"
+    "plugins/wordkill_plugin"
+    "plugins/includes/collaboration_tools"
+    "plugins/includes/common"
+    "plugins/includes/excel_tools"
+    "plugins/includes/graphapi_tools"
+    "plugins/includes/icloud_tools"
+    "plugins/includes/ifs_tools"
+    "plugins/includes/noteformatter"
+    "plugins/includes/outlook_tools"
+    "plugins/includes/settings_dialog"
+    "plugins/includes/word_tools"
+    "threads/ifssync_thread"
+    "threads/outlooksync_thread"
 )
 
 set(_pn_retired_files
@@ -85,6 +113,30 @@ set(_pn_retired_files
     "plugins/includes/dialogStatusRptOptions.ui"
     "plugins/includes/dialogTrackerRptOptions.ui"
     "plugins/templates/Tracker Items Template.xlsx"
+    "plugins/forms/dialogDuplicateFilesFound.ui"
+    "plugins/forms/dialogEditor.ui"
+    "plugins/forms/dialogExportLocation.ui"
+    "plugins/forms/dialogIFSCloud.ui"
+    "plugins/forms/dialogMyShortcuts.ui"
+    "plugins/forms/dialogOutlookIntegrationOptions.ui"
+    "plugins/forms/dialogSSRSOptions.ui"
+    "plugins/forms/dialogSettingsMigrator.ui"
+    "plugins/forms/dialogTeamMemberQuickAdd.ui"
+    "plugins/templates/Lessons Learned Template.xlsx"
+    "plugins/templates/Meeting Template.xlsx"
+    "plugins/templates/Risk Register Template.xlsx"
+)
+
+# Emptied folders, innermost first. A folder that still holds something (for
+# example the user's own files) is left alone.
+set(_pn_retired_dirs
+    "plugins/__pycache__"
+    "plugins/includes/__pycache__"
+    "threads/__pycache__"
+    "plugins/includes"
+    "plugins/forms"
+    "plugins/templates"
+    "threads"
 )
 
 foreach(_pn_script IN LISTS _pn_retired_scripts)
@@ -109,7 +161,21 @@ foreach(_pn_file IN LISTS _pn_retired_files)
     endif()
 endforeach()
 
+foreach(_pn_dir IN LISTS _pn_retired_dirs)
+    set(_pn_path "${_pn_runtime_root}/${_pn_dir}")
+    if(IS_DIRECTORY "${_pn_path}" AND NOT IS_SYMLINK "${_pn_path}")
+        file(GLOB _pn_left "${_pn_path}/*")
+        if(NOT _pn_left)
+            message(STATUS "Removing empty retired folder: ${_pn_path}")
+            file(REMOVE_RECURSE "${_pn_path}")
+        endif()
+    endif()
+endforeach()
+
 unset(_pn_bytecode)
+unset(_pn_dir)
+unset(_pn_left)
+unset(_pn_retired_dirs)
 unset(_pn_file)
 unset(_pn_path)
 unset(_pn_retired_files)

@@ -120,7 +120,7 @@ METAINFO_FILE="$SCRIPT_DIR/${APP_ID}.metainfo.xml"
 DESKTOP_FILE="$SCRIPT_DIR/${APP_ID}.desktop"
 
 usage() {
-    echo "Usage: $0 [setup|build|lint|verify-webengine|run|install|repo|bundle|regen-pip|clean]"
+    echo "Usage: $0 [setup|build|lint|verify-webengine|run|install|repo|bundle|clean]"
     echo ""
     echo "  NOTE: build/install/repo clone ProjectNotes + SqliteSyncPro from GitLab."
     echo "        By default they build the newest v* tag (with SqliteSyncPro HEAD)."
@@ -136,7 +136,6 @@ usage() {
     echo "  install    Install the Flatpak for the current user"
     echo "  repo       Export to a local Flatpak repository (lint runs first)"
     echo "  bundle     Create a standalone .flatpak bundle file"
-    echo "  regen-pip  Regenerate Python dependency sources"
     echo "  clean      Remove build and repo directories"
     exit 1
 }
@@ -324,18 +323,6 @@ cmd_bundle() {
     echo "    Install with: flatpak install $BUNDLE_FILE"
 }
 
-cmd_regen_pip() {
-    echo "==> Regenerating Python dependency sources..."
-    python3 -m flatpak_pip_generator requests msal requests_oauthlib urllib3 \
-        --yaml --runtime="org.kde.Sdk//${RUNTIME_VERSION}" --output "$SCRIPT_DIR/python-deps"
-    echo "    NOTE: Check python-deps.yaml for .tar.gz entries and replace with .whl URLs from PyPI"
-    echo "==> Updated $SCRIPT_DIR/python-deps.yaml"
-    echo ""
-    echo "    PyQt6 / PyQt6-WebEngine sources are hand-pinned in python-pyqt6.yaml"
-    echo "    and python-pyqt6-webengine.yaml (built from source, not generated here)."
-    echo "    Versions must track the runtime Qt (currently Qt 6.9.x -> PyQt6 6.9.x)."
-}
-
 cmd_clean() {
     echo "==> Cleaning build artifacts..."
     rm -rf "$BUILD_DIR" "$REPO_DIR"
@@ -352,7 +339,6 @@ case "${1:-}" in
     install)   cmd_install ;;
     repo)      cmd_repo ;;
     bundle)    cmd_bundle ;;
-    regen-pip) cmd_regen_pip ;;
     clean)     cmd_clean ;;
     *)         usage ;;
 esac

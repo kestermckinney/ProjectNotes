@@ -24,7 +24,7 @@ Most items also have a keyboard shortcut, shown beside the item's label. The tab
 
 ## Plugins
 
-When one or more installed plugins add global menu items (ones not tied to a specific record's table), they appear grouped under a **Plugins** entry, positioned right after **File**. Plugins that share a submenu name are nested under that name inside **Plugins**; plugins with no submenu appear as plain rows. If no plugin adds a global menu item, this group is hidden. See [Adding Functionality](<../PluginsOverview/AddingFunctionality.md>) for how plugins register menu entries.
+When one or more installed plugins add global menu items (ones not tied to a specific record's table), they appear grouped under a **Plugins** entry, positioned right after **File**. Plugins that share a submenu name are nested under that name inside **Plugins**; plugins with no submenu appear as plain rows. If no plugin adds a global menu item, this group is hidden. See [JavaScript Plugins](<../PluginsOverview/JavaScriptPlugins.md#menus>) for how plugins register menu entries.
 
 When a record with its own plugin menus is open (for example a project with an **Export** or **Templates** submenu), those table-scoped submenus appear as additional groups at the end of the menu, alongside File/Plugins/Edit/View/Help — see [Plugin Settings](<../StandardPlugins/PluginSettings.md>).
 

@@ -7,8 +7,8 @@
 # BUILD_QML_DESKTOP option.
 #
 # Qt6::Widgets is linked below even though no widget UI remains: the app runs a
-# QApplication so Python plugins can open PyQt6.QtWidgets dialogs, and
-# ProjectNotesCore reports database errors through QMessageBox.
+# QApplication because ProjectNotesCore reports database errors through
+# QMessageBox.
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -56,12 +56,7 @@ qt_add_executable(ProjectNotes
     DesktopAppControllerPlugins.cpp
     # Shared rich-text bridge — reused verbatim from the mobile app.
     ../ProjectNotesMobile/TextFormatter.cpp ../ProjectNotesMobile/TextFormatter.h
-    # Embedded-Python plugin system. PluginManager is a self-registered
-    # singleton, independent of any frontend window class. credentialstore is
-    # pulled in by the plugin secret API.
-    ../plugin.cpp          ../plugin.h
-    ../pluginmanager.cpp   ../pluginmanager.h
-    ../pythonworker.cpp    ../pythonworker.h
+    # Backs the plugin secret API.
     ../credentialstore.cpp ../credentialstore.h
     # Unattended software update (GitLab releases → silent install + relaunch).
     ../updatemanager.cpp   ../updatemanager.h
@@ -69,14 +64,13 @@ qt_add_executable(ProjectNotes
     ../runguard.cpp ../runguard.h
 )
 
-# So main.cpp can #include "TextFormatter.h"; Python headers for the plugin engine.
+# So main.cpp can #include "TextFormatter.h".
 # CMAKE_CURRENT_SOURCE_DIR is also required so the Windows resource compiler can
 # resolve the relative "icons/projectnotes.ico" path in appicon.rc — rc.exe looks
 # up resource files on its include path, and this is the dir that contains icons/.
 target_include_directories(ProjectNotes PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../ProjectNotesMobile
-    ${Python3_INCLUDE_DIRS}
 )
 
 # ── QML module ────────────────────────────────────────────────────────────────
@@ -207,7 +201,6 @@ target_link_libraries(ProjectNotes PRIVATE
     Qt6::Xml
     Qt6::Network
     "${HUNSPELL_LIBRARIES}"
-    "${Python3_LIBRARIES}"
     SqliteSyncProLib
     ProjectNotesCore
     ProjectNotesFileFinder
@@ -244,18 +237,15 @@ if(Hunspell_INCLUDE_DIRS AND NOT "${Hunspell_INCLUDE_DIRS}" MATCHES "NOTFOUND")
 endif()
 
 if(APPLE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
-    # ── macOS Release: full app bundle — real files + Qt/Python deployment ─────
+    # ── macOS Release: full app bundle — real files + Qt deployment ──────────
     # "Project Notes.app" must be self-contained and notarizable. Symlinks (used
     # below for Debug/Win/Linux dev convenience) are rejected by notarization, so
-    # plugins/threads/dictionary are real copies here.
+    # plugins/dictionary are real copies here. Windows-only plugins stay out.
     add_custom_target(sync_plugins_desktop
-        COMMAND rsync -rv --checksum --delete
+        COMMAND rsync -rv --checksum --delete --exclude office-tools
             "${CMAKE_CURRENT_SOURCE_DIR}/../plugins/"
             "$<TARGET_BUNDLE_DIR:ProjectNotes>/Contents/Resources/plugins/"
-        COMMAND rsync -rv --checksum --delete
-            "${CMAKE_CURRENT_SOURCE_DIR}/../threads/"
-            "$<TARGET_BUNDLE_DIR:ProjectNotes>/Contents/Resources/threads/"
-        COMMENT "Syncing Python plugins to Project Notes (QML) app bundle (changed files only)"
+        COMMENT "Syncing plugins to the Project Notes app bundle (changed files only)"
         VERBATIM)
 
     # "sync_plugins" is the name documented in AGENTS.md/CLAUDE.md and wired
@@ -265,30 +255,19 @@ if(APPLE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(DESKTOP_BUNDLE_RESOURCES  "$<TARGET_FILE_DIR:ProjectNotes>/../Resources")
     set(DESKTOP_BUNDLE_FRAMEWORKS "$<TARGET_FILE_DIR:ProjectNotes>/../Frameworks")
 
-    # Python3_ROOT_DIR is set (APPLE-only) at the top of the top-level
-    # CMakeLists.txt, before this subdirectory is added, so it is inherited here.
-    get_filename_component(_desktop_python_framework_root "${Python3_ROOT_DIR}/../.." REALPATH)
-
     get_target_property(_desktop_qmake_loc Qt6::qmake IMPORTED_LOCATION)
     get_filename_component(_desktop_qt_bin "${_desktop_qmake_loc}" DIRECTORY)
 
-    # ── 1. Copy plugins (real files) ────────────────────────────────────────────
+    # ── 1. Copy plugins (real files, without the Windows-only ones) ────────────
     add_custom_command(TARGET ProjectNotes POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E remove_directory "${DESKTOP_BUNDLE_RESOURCES}/plugins"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/../plugins"
             "${DESKTOP_BUNDLE_RESOURCES}/plugins"
+        COMMAND ${CMAKE_COMMAND} -E remove_directory "${DESKTOP_BUNDLE_RESOURCES}/plugins/office-tools"
         COMMENT "Copying plugins into bundle Resources")
 
-    # ── 2. Copy threads ─────────────────────────────────────────────────────────
-    add_custom_command(TARGET ProjectNotes POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E remove_directory "${DESKTOP_BUNDLE_RESOURCES}/threads"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_CURRENT_SOURCE_DIR}/../threads"
-            "${DESKTOP_BUNDLE_RESOURCES}/threads"
-        COMMENT "Copying threads into bundle Resources")
-
-    # ── 3. Copy dictionary ──────────────────────────────────────────────────────
+    # ── 2. Copy dictionary ──────────────────────────────────────────────────────
     add_custom_command(TARGET ProjectNotes POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E remove_directory "${DESKTOP_BUNDLE_RESOURCES}/dictionary"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -296,7 +275,7 @@ if(APPLE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
             "${DESKTOP_BUNDLE_RESOURCES}/dictionary"
         COMMENT "Copying dictionary into bundle Resources")
 
-    # ── 4. Deploy Qt frameworks into the bundle ─────────────────────────────────
+    # ── 3. Deploy Qt frameworks into the bundle ─────────────────────────────────
     # -qmldir points macdeployqt's qmlimportscanner at the QML sources so it also
     # deploys the QML modules this app imports (QtQuick.Controls.Basic, .Layouts,
     # .Dialogs, etc.) into Contents/Resources/qml — without it, only the
@@ -311,9 +290,8 @@ if(APPLE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
         COMMENT "Deploying Qt into app bundle (macdeployqt)"
         VERBATIM)
 
-    # Verify the deployed Qt payload itself. PyQt remains bundled for legacy
-    # plugins, so looking under site-packages would not prove the native C++
-    # renderer has its matching Chromium helper, resources, and locales.
+    # Verify the deployed Qt payload: the native renderer needs its matching
+    # Chromium helper, resources, and locales.
     if(PN_PDF_RENDERER STREQUAL "webengine")
         add_custom_command(TARGET ProjectNotes POST_BUILD
             COMMAND ${CMAKE_COMMAND}
@@ -324,23 +302,19 @@ if(APPLE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
             VERBATIM)
     endif()
 
-    # ── 5. Bundle Python.framework ───────────────────────────────────────────────
-    # Identity used to re-sign the dev bundle. Ad-hoc ("-") works, but TCC then
-    # pins every privacy grant (e.g. Automation > Calendar) to the binary's
-    # cdhash, so each rebuild silently revokes it. A real identity such as
-    # "Apple Development" makes grants survive rebuilds.
+    # ── 4. Re-sign ───────────────────────────────────────────────────────────────
+    # macdeployqt rewrites the executable's load commands, which invalidates its
+    # signature; an executable with a broken signature is killed at launch.
+    # Ad-hoc ("-") works, but TCC then pins every privacy grant (e.g.
+    # Automation > Calendar) to the binary's cdhash, so each rebuild silently
+    # revokes it. A real identity such as "Apple Development" makes grants
+    # survive rebuilds.
     set(PN_MACOS_DEV_SIGN_IDENTITY "-" CACHE STRING
         "codesign identity for the macOS dev bundle (\"-\" = ad-hoc)")
     add_custom_command(TARGET ProjectNotes POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${DESKTOP_BUNDLE_FRAMEWORKS}"
-        COMMAND ${CMAKE_COMMAND}
-            "-DPYTHON_FRAMEWORK_SRC=${_desktop_python_framework_root}"
-            "-DFRAMEWORKS=${DESKTOP_BUNDLE_FRAMEWORKS}"
-            "-DEXECUTABLE=$<TARGET_FILE:ProjectNotes>"
-            "-DPYTHON_VERSION=${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}"
-            "-DSIGN_IDENTITY=${PN_MACOS_DEV_SIGN_IDENTITY}"
-            -P "${CMAKE_CURRENT_SOURCE_DIR}/../packaging/macos/BundlePythonFramework.cmake"
-        COMMENT "Bundling Python.framework into Contents/Frameworks"
+        COMMAND codesign --force --sign "${PN_MACOS_DEV_SIGN_IDENTITY}" "$<TARGET_FILE:ProjectNotes>"
+        COMMAND codesign --force --sign "${PN_MACOS_DEV_SIGN_IDENTITY}" "$<TARGET_BUNDLE_DIR:ProjectNotes>"
+        COMMENT "Re-signing the app bundle"
         VERBATIM)
 else()
     # ── macOS Debug / Windows / Linux: no bundle deployment — symlink resources
@@ -354,18 +328,14 @@ else()
             "$<TARGET_FILE_DIR:ProjectNotes>/dictionary/"
         COMMENT "Deploying en_US spell-check dictionary")
 
-    # Deploy the Python plugins + threads next to the executable so the embedded
-    # interpreter (PluginManager, which reads appDir/plugins and appDir/threads)
-    # can load them at runtime.
-    # Use symbolic links (dev convenience) instead of copying directories.
+    # Link the bundled plugins next to the executable, where the plugin
+    # registry looks for them (appResourcesPath()/plugins). A symbolic link
+    # keeps edits live during development.
     add_custom_command(TARGET ProjectNotes POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E create_symlink
             "${CMAKE_CURRENT_SOURCE_DIR}/../plugins"
             "$<TARGET_FILE_DIR:ProjectNotes>/plugins"
-        COMMAND ${CMAKE_COMMAND} -E create_symlink
-            "${CMAKE_CURRENT_SOURCE_DIR}/../threads"
-            "$<TARGET_FILE_DIR:ProjectNotes>/threads"
-        COMMENT "Symlinking Python plugins and threads")
+        COMMENT "Symlinking bundled plugins")
 endif()
 
 # Ship as "Project Notes.exe" — the name earlier releases used — so the built

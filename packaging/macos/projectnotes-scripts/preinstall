@@ -57,6 +57,33 @@ plugins/tester_tools
 plugins/trackkerreport_plugin
 threads/filefinder_thread
 threads/tester_thread_1
+plugins/base_plugin
+plugins/base_plugin_settings
+plugins/excelkill_plugin
+plugins/ifs_ssrs_generate_plugin
+plugins/ifscloud_plugin_settings
+plugins/myshortcuts_plugin
+plugins/newchangeorder_plugin
+plugins/newmsproject_plugin
+plugins/newpcrregistry_plugin
+plugins/newpowerpoint_plugin
+plugins/newriskregister_plugin
+plugins/open_msproject_plugin
+plugins/projectnotes
+plugins/team_member_quick_add_plugin
+plugins/wordkill_plugin
+plugins/includes/collaboration_tools
+plugins/includes/common
+plugins/includes/excel_tools
+plugins/includes/graphapi_tools
+plugins/includes/icloud_tools
+plugins/includes/ifs_tools
+plugins/includes/noteformatter
+plugins/includes/outlook_tools
+plugins/includes/settings_dialog
+plugins/includes/word_tools
+threads/ifssync_thread
+threads/outlooksync_thread
 "
 
 retired_files="
@@ -74,6 +101,15 @@ plugins/includes/dialogDuplicateFilesFound.ui
 plugins/includes/dialogNotesArchiveOptions.ui
 plugins/includes/dialogStatusRptOptions.ui
 plugins/includes/dialogTrackerRptOptions.ui
+plugins/forms/dialogDuplicateFilesFound.ui
+plugins/forms/dialogEditor.ui
+plugins/forms/dialogExportLocation.ui
+plugins/forms/dialogIFSCloud.ui
+plugins/forms/dialogMyShortcuts.ui
+plugins/forms/dialogOutlookIntegrationOptions.ui
+plugins/forms/dialogSSRSOptions.ui
+plugins/forms/dialogSettingsMigrator.ui
+plugins/forms/dialogTeamMemberQuickAdd.ui
 "
 
 for resources_root in \
@@ -90,8 +126,19 @@ do
     for retired_file in ${retired_files}; do
         rm -f "${resources_root}/${retired_file}"
     done
-    # The one retired name with a space in it.
+    # Retired names with spaces in them.
     rm -f "${resources_root}/plugins/templates/Tracker Items Template.xlsx"
+    rm -f "${resources_root}/plugins/templates/Lessons Learned Template.xlsx"
+    rm -f "${resources_root}/plugins/templates/Meeting Template.xlsx"
+    rm -f "${resources_root}/plugins/templates/Risk Register Template.xlsx"
+    # Emptied folders; rmdir leaves any folder that still holds something.
+    rmdir "${resources_root}/plugins/__pycache__" 2>/dev/null || true
+    rmdir "${resources_root}/plugins/includes/__pycache__" 2>/dev/null || true
+    rmdir "${resources_root}/threads/__pycache__" 2>/dev/null || true
+    rmdir "${resources_root}/plugins/includes" 2>/dev/null || true
+    rmdir "${resources_root}/plugins/forms" 2>/dev/null || true
+    rmdir "${resources_root}/plugins/templates" 2>/dev/null || true
+    rmdir "${resources_root}/threads" 2>/dev/null || true
 done
 
 exit 0

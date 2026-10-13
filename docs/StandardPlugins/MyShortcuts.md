@@ -1,49 +1,37 @@
 # My Shortcuts
 
-The **My Shortcuts** plugin lets you define configurable URLs that appear as menu items throughout Project Notes. URLs can contain variable placeholders that are automatically filled in from the current project data when the menu item is invoked.
+**My Shortcuts** adds menus that open a web address filled in from the record you right-click: a project in your ERP system, a contact in your CRM, a search in your mail.
 
-## How It Works
+## Adding shortcuts
 
-Each shortcut defines a menu item name, a sub-menu, an optional [data context](<../PluginsOverview/DataTypes.md>), and a URL. When you click the menu item, the URL's variables are replaced with values from the current project and the link is opened in your default browser.
+Open **Settings > My Shortcuts**. Each row is one menu:
 
-Shortcuts can appear in two places:
-
-- **Plugins menu** — for shortcuts that don't depend on a specific [data type](<../PluginsOverview/DataTypes.md>)
-- **Right-click context menu** — for shortcuts tied to a specific [data type](<../PluginsOverview/DataTypes.md>) (e.g., projects, people, meeting_attendees)
-
-## Variable Substitution
-
-The URL field supports variable placeholders that Project Notes replaces at runtime. Common variables include:
-
-| Variable | Description |
+| Column | What to enter |
 | :--- | :--- |
-| `[$projects.project_number.1]` | The project number for row 1 of the XML. |
-| `[$projets.project_name.2]` | The project name for row 2 of the XML.|
-| `[$people.name.1]` | The name of the right-clicked contact or attendee |
-| `[$people.email.1]` | The email of the right-clicked contact |
+| **Menu** | The menu's title. |
+| **Submenu** | Optional. Shortcuts with the same submenu are grouped under it. |
+| **Entity** | The kind of record the menu appears on, such as `projects` or `contacts`. Leave it empty for a menu under **Plugins** in the app menu. See [Data Types](<../PluginsOverview/DataTypes.md>). |
+| **URL** | The address to open. It may contain placeholders. |
 
-See [Project Notes XML](<../PluginsOverview/ProjectNotesXML.md>) for the complete list of available XML fields that can be used as variables.
+The menus change as soon as you save.
 
-## Configuring My Shortcuts
+## Placeholders
 
-**To open the My Shortcuts settings:**
+A placeholder is replaced with a value from the record you right-clicked:
 
-1. From the **Plugins** menu choose **Settings > My Shortcuts**.
-
-Each row in the shortcuts table defines one menu item:
-
-| Column | Description |
+| Placeholder | Becomes |
 | :--- | :--- |
-| **Menu** | The label shown in the menu. |
-| **Submenu** | An optional submenu group name to organize shortcuts. |
-| **Data Type** | The table name this shortcut applies to (e.g., `projects`, `people`). Leave blank for a global shortcut with no data context. See [Data Types](<../PluginsOverview/DataTypes.md>) for a complete list and explanation of how data types relate to application views. |
-| **URL** | The URL to open. May contain variable placeholders. |
+| `[$projects.project_number.1]` | The project number |
+| `[$projects.project_name.1]` | The project name |
+| `[$contacts.name.1]` | The contact's name |
+| `[$contacts.email.1]` | The contact's email address |
+| `[$managing_company_name]` | The managing company from Preferences |
+| `[$managing_manager_name]` | The project manager from Preferences |
 
-**To add a shortcut:**
+For example, `https://jira.example.com/browse/[$projects.project_number.1]` on project P-100 opens `https://jira.example.com/browse/P-100`. See [Plugin Settings](<PluginSettings.md#placeholders>) for more.
 
-1. Open **Settings > My Shortcuts**.
-2. Add a new row to the table.
-3. Fill in the **Menu**, **Submenu**, **[Data Type](<../PluginsOverview/DataTypes.md>)**, and **URL**.
-4. Click **OK** to save.
+A URL can also use other schemes, such as `mailto:` or an application's own scheme (`msteams:`, `onenote:`).
 
-The new menu item will appear the next time Project Notes loads the plugin, or after a plugin reload.
+## Shortcuts from earlier versions
+
+Shortcuts saved by the Python version of My Shortcuts are converted the first time the plugin starts. Their data types and placeholders change to the names plugins use now: `people` becomes `contacts`, `clients` becomes `companies`, and `project_people` becomes `project_team`.

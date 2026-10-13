@@ -21,7 +21,7 @@ echo === Building Project Notes installer ===
 echo Build dir : %BUILD_DIR%
 echo.
 
-rem Stage all deploy files (windeployqt, Python env, site-packages, plugins...)
+rem Stage all deploy files (windeployqt, plugins, dictionaries...)
 cmake --build "%BUILD_DIR%" --target deploy
 if errorlevel 1 (
     echo.

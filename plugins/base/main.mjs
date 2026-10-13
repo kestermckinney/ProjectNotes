@@ -23,8 +23,15 @@ function registerEditorMenu() {
                      handler: openEditor });
 }
 
+// The editor that ships with each operating system, until the user picks one.
+const DEFAULT_EDITORS = {
+    windows: "C:/Windows/System32/notepad.exe",
+    macos: "/Applications/TextEdit.app/Contents/MacOS/TextEdit",
+    linux: "/usr/bin/vi",
+};
+
 function* openEditor() {
-    const editor = settings.get("EditorPath");
+    const editor = settings.get("EditorPath") || DEFAULT_EDITORS[app.platform];
     if (!editor) {
         yield ui.message("Choose an editor in Settings > Script Editor first.", { title: "Editor Not Specified", kind: "warning" });
         return;

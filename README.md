@@ -22,7 +22,7 @@ ProjectNotes is a project manager's workspace for notes, action items, project m
 
 - Organizes meeting notes, action items, risks, issues, and change requests in one application.
 - Helps project managers maintain project health visibility across multiple teams.
-- Supports workflow automation with Python plugins and background tasks.
+- Supports workflow automation with JavaScript plugins that add menus, dialogs, settings and background tasks.
 - Exports project information to PDF and Excel-oriented outputs.
 - Runs on Windows, macOS, and Linux, with an iPhone and iPad companion app.
 - Backs up and synchronizes your data across all your devices with a [Project Notes Pro](https://www.projectnotespro.com) subscription.

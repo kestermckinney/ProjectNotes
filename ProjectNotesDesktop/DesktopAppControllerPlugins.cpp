@@ -42,6 +42,7 @@
 #include <QSqlQuery>
 #include <QStandardPaths>
 #include <QTextDocument>
+#include <QTimer>
 
 using namespace QLogger;
 using PN::Plugins::PluginError;
@@ -90,8 +91,10 @@ void DesktopAppController::ensureJsPlugins()
         paths.user = qEnvironmentVariable("PN_PLUGIN_USER_DIR");
     if (qEnvironmentVariableIsSet("PN_PLUGIN_BUNDLED_DIR"))
         paths.bundled = qEnvironmentVariable("PN_PLUGIN_BUNDLED_DIR");
-    paths.data = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QStringLiteral("/plugin-data");
-    paths.temp = QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + QStringLiteral("/plugin-temp");
+    // A developer profile keeps its own plugin data, as it keeps its own database.
+    const QString profileDir = s_developerProfile.isEmpty() ? QString() : QLatin1Char('/') + s_developerProfile;
+    paths.data = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + profileDir + QStringLiteral("/plugin-data");
+    paths.temp = QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + profileDir + QStringLiteral("/plugin-temp");
     QDir(paths.temp).removeRecursively();   // per-run temporary files
     m_jsPlugins->setPaths(paths);
     m_jsPlugins->setDatabasePath(global_DBObjects.getDatabaseFile());
@@ -126,6 +129,17 @@ void DesktopAppController::ensureJsPlugins()
             &PN::Plugins::PluginRegistry::notifyViewChanged);
 
     m_jsPlugins->loadAll();
+
+    // Python plugins no longer run. Point out any the user added, once.
+    const QStringList leftovers = QDir(paths.user).entryList({QStringLiteral("*.py")}, QDir::Files);
+    QSettings state(organization, QStringLiteral("AppSettings"));
+    if (!leftovers.isEmpty() && !state.value(QStringLiteral("PythonPluginsNoticeShown")).toBool()) {
+        state.setValue(QStringLiteral("PythonPluginsNoticeShown"), true);
+        const QString text = tr("Project Notes no longer runs Python plugins, so %1 in your plugins folder will not load. "
+                                "See Help > User Guide > JavaScript Plugins to rewrite them.")
+                                 .arg(leftovers.size() == 1 ? leftovers.first() : tr("%n file(s)", nullptr, int(leftovers.size())));
+        QTimer::singleShot(3000, ui, [ui, text] { emit ui->notificationRequested(text, QStringLiteral("warning"), 15); });
+    }
 }
 
 void DesktopAppController::setCurrentView(const QString& section, const QString& entity,

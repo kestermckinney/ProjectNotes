@@ -56,13 +56,13 @@ This routes cloud sync to the Project Notes Pro **test** environment instead of 
 
 ## Notes for Plugin Developers
 
-The profile name is also exposed to Python plugins via the `projectnotes.developer_profile` attribute. You can use this to enable extra logging or bypass certain guards during development:
+Plugins see the profile name as `app.profile`. Use it to turn on extra logging during development:
 
-```python
-import projectnotes as pn
+```js
+import { app, log } from "projectnotes";
 
-if pn.developer_profile:
-    print(f"Running under developer profile: {pn.developer_profile}")
+if (app.profile)
+    log.info("Running under developer profile " + app.profile);
 ```
 
-The attribute is an empty string when Project Notes is running in production mode.
+It is an empty string when Project Notes runs without a developer profile. Each profile also keeps its own plugin settings.

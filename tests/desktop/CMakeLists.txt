@@ -52,9 +52,6 @@ qt_add_executable(tst_qmldesktop
     ${DESKTOP_DIR}/DesktopPluginServices.cpp ${DESKTOP_DIR}/DesktopPluginServices.h
     ${DESKTOP_DIR}/DesktopAppControllerPlugins.cpp
     ${MOBILE_DIR}/TextFormatter.cpp         ${MOBILE_DIR}/TextFormatter.h
-    ${ROOT_DIR}/plugin.cpp          ${ROOT_DIR}/plugin.h
-    ${ROOT_DIR}/pluginmanager.cpp   ${ROOT_DIR}/pluginmanager.h
-    ${ROOT_DIR}/pythonworker.cpp    ${ROOT_DIR}/pythonworker.h
     ${ROOT_DIR}/credentialstore.cpp ${ROOT_DIR}/credentialstore.h
     ${ROOT_DIR}/updatemanager.cpp   ${ROOT_DIR}/updatemanager.h
 )
@@ -63,7 +60,6 @@ target_compile_definitions(tst_qmldesktop PRIVATE PN_TEST_FIXTURES="${CMAKE_CURR
 target_include_directories(tst_qmldesktop PRIVATE
     ${DESKTOP_DIR}
     ${MOBILE_DIR}
-    ${Python3_INCLUDE_DIRS}
 )
 
 # ── Re-declare the desktop QML module ──────────────────────────────────────────
@@ -119,7 +115,6 @@ target_link_libraries(tst_qmldesktop PRIVATE
     Qt6::Core Qt6::CorePrivate Qt6::Gui Qt6::Widgets Qt6::Qml Qt6::Quick Qt6::QuickControls2
     Qt6::Sql Qt6::Xml Qt6::Network Qt6::Test
     "${HUNSPELL_LIBRARIES}"
-    "${Python3_LIBRARIES}"
     SqliteSyncProLib
     ProjectNotesCore
     ProjectNotesFileFinder
@@ -142,8 +137,8 @@ if(Hunspell_INCLUDE_DIRS AND NOT "${Hunspell_INCLUDE_DIRS}" MATCHES "NOTFOUND")
     target_include_directories(tst_qmldesktop PRIVATE ${Hunspell_INCLUDE_DIRS})
 endif()
 
-# Deploy dictionary + plugins/threads next to the test binary so the embedded
-# Python plugin engine and spell checker behave exactly as in the real app.
+# Deploy the dictionary next to the test binary so the spell checker behaves
+# as in the real app. tst_main points the plugin folders at empty directories.
 add_custom_command(TARGET tst_qmldesktop POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E remove_directory "$<TARGET_FILE_DIR:tst_qmldesktop>/plugins"
     COMMAND ${CMAKE_COMMAND} -E remove_directory "$<TARGET_FILE_DIR:tst_qmldesktop>/threads"
@@ -151,9 +146,7 @@ add_custom_command(TARGET tst_qmldesktop POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${ROOT_DIR}/dictionary/en_US.aff" "${ROOT_DIR}/dictionary/en_US.dic"
         "$<TARGET_FILE_DIR:tst_qmldesktop>/dictionary/"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${ROOT_DIR}/plugins" "$<TARGET_FILE_DIR:tst_qmldesktop>/plugins"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${ROOT_DIR}/threads" "$<TARGET_FILE_DIR:tst_qmldesktop>/threads"
-    COMMENT "Deploying dictionary + plugins/threads for tst_qmldesktop")
+    COMMENT "Deploying the dictionary for tst_qmldesktop")
 
 enable_testing()
 add_test(NAME qmldesktop COMMAND tst_qmldesktop)

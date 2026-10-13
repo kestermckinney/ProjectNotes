@@ -32,8 +32,6 @@ class QThread;
 class UpdateManager;
 class SqliteSyncPro;
 struct SyncResult;
-class PluginManager;
-class Plugin;
 class DesktopPluginServices;
 namespace PN::Plugins { class PluginRegistry; struct PluginManifest; struct PluginError; }
 class FileFinderService;
@@ -456,17 +454,16 @@ public:
     Q_INVOKABLE QVariantList folderProjects(const QString& folderId);
     int sidebarRev() const { return m_sidebarRev; }
 
-    // ── Python plugins (right-click menus, mirrors the Widgets TableView) ─────
-    // Menus registered by loaded plugins whose dataexport matches this model's
-    // table, as [{ title, submenu, index }]. `index` is an opaque handle into a
+    // ── Plugin menus ─────────────────────────────────────────────────────────
+    // Record menus that JavaScript plugins contribute to this model's entity,
+    // as [{ title, submenu, index }]. `index` is an opaque handle into a
     // per-call cache; pass it back to runPluginMenu. Rebuilt on each call, so
     // query it right before showing the menu.
     Q_INVOKABLE QVariantList pluginMenusForModel(QAbstractItemModel* model);
     // As above, but keyed directly by table name — for heterogeneous lists (the
     // global search results) where each row's table isn't the model's own table.
     Q_INVOKABLE QVariantList pluginMenusForTable(const QString& table);
-    // Run a plugin menu against a record: exports the record to XML (scoped by
-    // the menu's tablefilter) and hands it to the plugin function.
+    // Run a plugin menu against a record (its key, in the menu's entity).
     Q_INVOKABLE void runPluginMenu(QAbstractItemModel* model,
                                    const QString& recordId, int index);
     Q_INVOKABLE void runPluginMenuForTable(const QString& table,
@@ -1075,7 +1072,6 @@ private:
     static bool    s_updateChecksEnabled;
 
     // ── Plugins ──────────────────────────────────────────────────────────────
-    PluginManager* m_pluginManager = nullptr;
     // JavaScript (QJSEngine) plugins; see docs/QJSEnginePluginsPlan.md.
     PN::Plugins::PluginRegistry* m_jsPlugins = nullptr;
     DesktopPluginServices* m_pluginServices = nullptr;
@@ -1083,15 +1079,9 @@ private:
     void ensureJsPlugins();
     void appendJsRecordMenus(const QString& table, QVariantList* out);
     PN::Comm::EmailAddress pluginRecipient(const QVariant& value, PN::Comm::RecipientRole role) const;
-    void ensurePluginManager();   // create the manager once, after the DB is open
 
     // Per-call handle table for pluginMenusForModel → runPluginMenu.
     struct PluginMenuRef {
-        Plugin* plugin = nullptr;
-        QString functionname;
-        QString tablefilter;
-        QString parameter;
-        // Set for a JavaScript plugin menu instead of `plugin`.
         QString jsPluginId;
         QString jsMenuId;
     };

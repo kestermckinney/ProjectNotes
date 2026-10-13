@@ -21,7 +21,7 @@ The fields below are shown on each item's card when viewing internal items. Fiel
 | Date Due | The date the item should be resolved by. |
 | Updated | The last time any changes were made to the record. This value is updated automatically each time the item is edited. |
 | Date Resolved | The date the item was resolved. The value is set automatically when the **Status** is changed to **Resolved**, but can be edited manually from the [Action Item Detail Page](<ActionItemDetailPage.md>). |
-| Project | The project number and name for the project. Be careful changing this on the [Action Item Detail Page](<ActionItemDetailPage.md>) — in most cases [plugins](<../PluginsOverview/AddingFunctionality.md>) use this number to identify and relate project information from outside systems. |
+| Project | The project number and name for the project. Be careful changing this on the [Action Item Detail Page](<ActionItemDetailPage.md>) — in most cases [plugins](<../PluginsOverview/JavaScriptPlugins.md>) use this number to identify and relate project information from outside systems. |
 | Internal | Indicates if the item should not be viewable by companies. When **Show Internal / Budget Items** is turned off, internal items do not appear in the list at all. |
 
 Comments/updates entered on the [Action Item Detail Page](<ActionItemDetailPage.md>) aren't shown as a field on the card — open the item to read or add them.

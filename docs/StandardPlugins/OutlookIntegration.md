@@ -1,31 +1,38 @@
 # Outlook Integration
 
-The **Outlook Integration** plugin archives project email and, with Microsoft 365, publishes assigned items as Microsoft To Do tasks. Contact synchronization and **Full Contact Export** are built into [Preferences](../InterfaceOverview/Preferences.md#contact-synchronization), not this plugin.
-
-The plugin does not send project email or schedule meetings. Set those up through [Email and Meeting Setup](../InterfaceOverview/EmailAndMeetingSetup.md).
+The **Outlook Integration** plugin archives project email into project folders and, with Office 365, keeps your open tracker items in Microsoft To Do. Contact synchronization and **Full Contact Export** are built into [Preferences](../InterfaceOverview/Preferences.md#contact-synchronization), not this plugin, and it neither sends project email nor schedules meetings. Set those up through [Email and Meeting Setup](../InterfaceOverview/EmailAndMeetingSetup.md).
 
 ## Connection choices
 
-| Integration Type | Works on | Plugin features |
+| Integration | Works on | What it does |
 | :--- | :--- | :--- |
-| **Office 365 Application** | Windows, macOS, Linux | Archive project email and sync assigned items through Microsoft Graph, on a five-minute timer or by menu action. |
-| **Outlook Automation** | Windows with Outlook (classic) | Archive project email through Outlook. Menu action only. |
-
-**Outlook Automation** is the default for a new installation. On macOS and Linux, choose **Office 365 Application** to use this plugin.
+| **Office 365 Application** | Windows, macOS, Linux | Archives project email and syncs tracker items through Microsoft Graph, every five minutes and on request. |
+| **Outlook Application** | Windows with Outlook (classic) | Archives project email from Outlook, on request. |
 
 ## Configure the plugin
 
-Open **Plugins · Settings → Outlook Integration**. Choose the integration type, then set the **Application ID** and **Tenant ID** if you use Office 365 Application. The Microsoft Entra registration for that connection needs `Mail.ReadWrite` to archive email and `Tasks.ReadWrite` to publish assigned items. The plugin's account is separate from the built-in [Office 365 Integration](../InterfaceOverview/Office365Integration.md) account used for mail and calendar drafts, File Finder, and native contacts.
+Open **Settings > Outlook Integration** and choose the integration.
 
-Set **Backup Emails** and its inbox and sent folder settings to choose which project messages to archive. Use **Sync ToDo Items with Due Dates** and **Sync ToDo Items without Due Dates** to control task publishing. **Send Emails using Office 365** applies only to the optional IFS Cloud report plugin; it does not change Project Notes' built-in email handoff.
+Office 365 uses the account you sign in with under [Office 365 Integration](../InterfaceOverview/Office365Integration.md); there is no separate application or tenant to register. The plugin asks for two permissions on top of what Project Notes already uses: reading mail, to archive it, and reading and writing tasks, for To Do. The first time it needs them, sign in again under **Settings > Office 365 Integration** and approve them.
 
-Older plugin settings or dialogs may still show **Import Contacts** or **Export New Contacts**. Those controls no longer run contact actions. Use **Settings → Email, Contacts, and Calendar** instead. The native **Full Contact Export** checks for possible existing contacts and lets you update, skip, or deliberately create a new contact.
+| Setting | What it does |
+| :--- | :--- |
+| **Sync my open tracker items that have a due date** | Publishes your open items with a due date to the To Do "Tasks" list. |
+| **Sync my open tracker items without a due date** | The same for items with no due date. |
+| **Archive project emails automatically** | Every few minutes, saves messages whose subject contains a project number into that project's folder. |
+| **Inbox subfolder**, **Sent items subfolder** | Where in the project folder received and sent messages go, for example `Correspondence/Received`. |
 
-## Run manually
+"Your" items are the ones assigned to the project manager chosen in [Preferences](../InterfaceOverview/Preferences.md). Each task's title starts with the project and item number, so the plugin can update or remove it when the item changes or closes.
 
-With **Office 365 Application**, choose **Plugins · Utilities → Sync Tracker Items** or right-click a project and choose **Download All Emails**. With **Outlook Automation**, use **Download Emails from Outlook** on a project. The Office 365 Application also runs its configured work every five minutes.
+## Run it yourself
 
-Archived messages go into the project's configured folder. Project Notes matches them by a project number in the subject. See [Project Page](../InterfaceOverview/ProjectPage.md) to set the **Project Folder**.
+- **Plugins · Utilities > Sync Tracker Items** publishes every open item now (Office 365).
+- Right-click a project and choose **Utilities > Download All Emails** to archive all of that project's mail (Office 365).
+- With Outlook, right-click a project and choose **Utilities > Download Emails from Outlook**.
+
+Office 365 saves messages as `.eml` files and Outlook as `.msg` files, named by date and subject. A message already in the folder is not downloaded again. Set the project's folder on the [Project Page](../InterfaceOverview/ProjectPage.md) **Files & Folders** tab.
+
+Settings from the Python version of this plugin carry over the first time it starts. Its own Application ID and Tenant ID are no longer used.
 
 ## Related documentation
 
