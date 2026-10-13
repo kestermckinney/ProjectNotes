@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "PluginRuntime.h"
+#include "LoopbackRedirect.h"
 
 #include "ComBridge.h"
 #include "DataService.h"
@@ -75,7 +76,7 @@ const QHash<QString, QString>& forwardedMethods()
         {QStringLiteral("ui.showForm"), QStringLiteral("ui.dialogs")},
         {QStringLiteral("ui.showDialog"), QStringLiteral("ui.dialogs")},
         {QStringLiteral("ui.clipboardText"), QStringLiteral("clipboard")},
-        {QStringLiteral("app.projectFolder"), {}},
+        {QStringLiteral("app.projectFolder"), {}}, {QStringLiteral("app.defaults"), {}},
         {QStringLiteral("app.navigate"), QStringLiteral("app.navigate")},
         {QStringLiteral("secrets.get"), {}}, {QStringLiteral("secrets.set"), {}}, {QStringLiteral("secrets.remove"), {}},
         {QStringLiteral("files.openWithSystem"), QStringLiteral("files")},
@@ -434,6 +435,10 @@ bool PluginRuntime::checkPermission(const QString& method, const QVariantList& a
         *error = PluginError::denied(QStringLiteral("com"));
         return false;
     }
+    if (method.startsWith(QLatin1String("auth.")) && !m.hasPermission(QStringLiteral("auth.browser"))) {
+        *error = PluginError::denied(QStringLiteral("auth.browser"));
+        return false;
+    }
     Q_UNUSED(args);
     return true;
 }
@@ -615,6 +620,10 @@ void PluginRuntime::handleAsync(const QString& method, const QVariantList& args,
 
     if (method == QLatin1String("http.fetch")) {
         fetch(arg(0).toString(), arg(1).toMap(), reply);
+        return;
+    }
+    if (method == QLatin1String("auth.browserSignIn")) {
+        browserSignIn(arg(0).toMap(), reply);
         return;
     }
     if (method == QLatin1String("http.bodyBytes")) {
@@ -918,10 +927,51 @@ void PluginRuntime::fetch(const QString& urlText, const QVariantMap& options, Re
         self->m_bodies.insert(bodyId, bytes);
         // Keep only the most recent bodies for arrayBuffer().
         while (self->m_bodies.size() > 8)
-            self->m_bodies.remove(self->m_bodies.keys().first());
+            self->m_bodies.erase(self->m_bodies.begin());
         reply(QVariantMap{{QStringLiteral("status"), status}, {QStringLiteral("headers"), responseHeaders},
                           {QStringLiteral("body"), QString::fromUtf8(bytes)}, {QStringLiteral("bodyId"), bodyId}}, {});
     });
+}
+
+// Opens the sign-in page in the browser and waits for its redirect to a
+// loopback address. The plugin exchanges the returned code itself (http.fetch).
+void PluginRuntime::browserSignIn(const QVariantMap& options, Reply reply)
+{
+    const QUrl url(options.value(QStringLiteral("url")).toString());
+    if (!url.isValid() || (url.scheme() != QLatin1String("https") && url.scheme() != QLatin1String("http"))) {
+        reply({}, PluginError::make(QStringLiteral("validation-failed"), QStringLiteral("browserSignIn() needs an http or https url.")));
+        return;
+    }
+    if (!m_config.manifest.allowsHost(url.host())) {
+        PluginError error = PluginError::make(QStringLiteral("permission-denied"),
+                                              QStringLiteral("%1 is not listed in the manifest's \"http\" array.").arg(url.host()),
+                                              {{QStringLiteral("host"), url.host()}});
+        error.permission = QStringLiteral("http");
+        reply({}, error);
+        return;
+    }
+    if (m_signIn) {
+        reply({}, PluginError::make(QStringLiteral("busy"), QStringLiteral("A browser sign-in is already waiting.")));
+        return;
+    }
+    auto* redirect = new LoopbackRedirect(this);
+    QString problem;
+    const int timeout = options.value(QStringLiteral("timeoutSeconds"), 120).toInt() * 1000;
+    if (!redirect->start(QUrl(options.value(QStringLiteral("redirectUri")).toString()), timeout, &problem)) {
+        delete redirect;
+        reply({}, PluginError::make(QStringLiteral("validation-failed"), problem));
+        return;
+    }
+    m_signIn = redirect;
+    connect(redirect, &LoopbackRedirect::received, this, [redirect, reply](const QUrl& callback) {
+        redirect->deleteLater();
+        reply(QVariantMap{{QStringLiteral("url"), callback.toString(QUrl::FullyEncoded)}}, {});
+    });
+    connect(redirect, &LoopbackRedirect::failed, this, [redirect, reply](const QString& message) {
+        redirect->deleteLater();
+        reply({}, PluginError::make(QStringLiteral("timeout"), message));
+    });
+    forward(QStringLiteral("ui.openUrl"), {url.toString(QUrl::FullyEncoded)}, [](const QVariant&, const PluginError&) {});
 }
 
 // ── Calls into the plugin ────────────────────────────────────────────────────

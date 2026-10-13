@@ -116,6 +116,8 @@ declare module "projectnotes" {
         currentRecord(options?: { include?: string[] }): Promise<DataRecord | null>;
         navigate(entity: string, key: string, options?: { tab?: string }): Promise<void>;
         projectFolder(projectKey: string): Promise<string | null>;
+        defaults(): Promise<{ managingCompanyId: string | null; managingCompanyName: string | null;
+                              projectManagerId: string | null; projectManagerName: string | null }>;
         refresh(): void;
         onViewChanged(handler: (view: ViewInfo) => void): Subscription;
     };
@@ -257,6 +259,10 @@ declare module "projectnotes" {
             auth?: { type: "basic"; username: string; password: string } | { type: "bearer"; token: string };
             timeoutSeconds?: number }): Promise<HttpResponse>;
     };
+    // Needs the "auth.browser" permission; the url's host must be in "http".
+    export const auth: {
+        browserSignIn(options: { url: string; redirectUri: string; timeoutSeconds?: number }): Promise<{ url: string }>;
+    };
     export interface Timer { cancel(): void; }
     export const timers: {
         every(minutes: number, job: () => void | Promise<void>, options?: { runAtStart?: boolean }): Timer;
@@ -294,7 +300,7 @@ declare module "projectnotes" {
 
 declare module "projectnotes/common" {
     import { DataRecord } from "projectnotes";
-    export function replaceVariables(template: string, record: DataRecord): string;
+    export function replaceVariables(template: string, record: DataRecord, extras?: { [name: string]: any }): string;
     export function escapeHtml(text: string): string;
     export function textToHtml(text: string): string;
     export function validFilename(name: string): string;

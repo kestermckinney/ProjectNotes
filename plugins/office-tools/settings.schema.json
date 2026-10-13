@@ -1,0 +1,9 @@
+{ "fields": [
+    { "key": "_folders", "label": "Project subfolders for new documents", "type": "section" },
+    { "key": "ChangeOrderExportSubFolder", "label": "Change orders", "type": "text", "placeholder": "Project Management/PCR's" },
+    { "key": "PcrRegisterExportSubFolder", "label": "PCR register", "type": "text", "placeholder": "Project Management/PCR's" },
+    { "key": "PowerPointExportSubFolder", "label": "PowerPoint", "type": "text", "placeholder": "Project Management/Meeting Minutes" },
+    { "key": "RiskRegisterExportSubFolder", "label": "Risk register", "type": "text", "placeholder": "Project Management/Risk Management" },
+    { "key": "MsProjectExportSubFolder", "label": "MS Project schedule", "type": "text", "placeholder": "Project Management/Schedule",
+      "help": "Each folder is relative to the project's folder. When a project has no folder, you are asked where to save the document." }
+] }

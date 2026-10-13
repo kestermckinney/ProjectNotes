@@ -7,6 +7,7 @@
 #include "PluginTypes.h"
 
 #include <QHash>
+#include <QMap>
 #include <QJSValue>
 #include <QMutex>
 #include <QObject>
@@ -110,6 +111,7 @@ private:
 
     // http
     void fetch(const QString& url, const QVariantMap& options, Reply reply);
+    void browserSignIn(const QVariantMap& options, Reply reply);
 
     PluginHostConfig m_config;
     QPointer<PluginServices> m_services;
@@ -120,9 +122,10 @@ private:
     std::unique_ptr<DataService> m_data;
     std::unique_ptr<QSettings> m_settings;
     QNetworkAccessManager* m_network = nullptr;
+    QPointer<class LoopbackRedirect> m_signIn;
     std::unique_ptr<ComBridge> m_com;
     QHash<int, QTimer*> m_timers;
-    QHash<int, QByteArray> m_bodies;
+    QMap<int, QByteArray> m_bodies;     // ordered, so the oldest body is evicted first
     int m_nextBody = 1;
     int m_nextRequest = 1;
     int m_nextReply = 1;

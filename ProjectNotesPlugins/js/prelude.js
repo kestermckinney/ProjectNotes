@@ -224,6 +224,7 @@
         },
         navigate: function (entity, key, options) { return call("app.navigate", [entity, key, options || {}]); },
         projectFolder: function (projectKey) { return call("app.projectFolder", [projectKey]); },
+        defaults: function () { return call("app.defaults", []); },
         refresh: function () { callSync("app.refresh", []); },
         onViewChanged: function (handler) { return subscribe("app.viewChanged", { handler: handler }); },
     });
@@ -414,6 +415,11 @@
             arrayBuffer: function () { return call("http.bodyBytes", [r.bodyId]); },
         });
     }
+    // auth: the browser step of an OAuth authorization-code sign-in. Resolves
+    // {url} with the loopback callback URL; the plugin exchanges the code.
+    const auth = freeze({
+        browserSignIn: function (options) { return call("auth.browserSignIn", [options || {}]); },
+    });
     const http = freeze({
         fetch: function (url, options) {
             const opts = Object.assign({}, options || {});
@@ -556,8 +562,14 @@
     // "[$projects.project_number.1]" style variables, as My Shortcuts uses.
     // The entity segment may be the record's own entity or a child array; the
     // row number is 1-based. Ref values substitute their display value.
-    function replaceVariables(template, record) {
-        return String(template).replace(/\[\$([A-Za-z0-9_]+)\.([A-Za-z0-9_]+)\.(\d+)\]/g, function (whole, entity, column, row) {
+    function replaceVariables(template, record, extras) {
+        let text = String(template);
+        if (extras) {
+            Object.keys(extras).forEach(function (name) {
+                text = text.split("[$" + name + "]").join(extras[name] === null || extras[name] === undefined ? "" : String(extras[name]));
+            });
+        }
+        return text.replace(/\[\$([A-Za-z0-9_]+)\.([A-Za-z0-9_]+)\.(\d+)\]/g, function (whole, entity, column, row) {
             let source = null;
             const index = Math.max(1, +row) - 1;
             if (record && record.$entity === entity && index === 0) source = record;
@@ -587,7 +599,7 @@
     const api = {
         plugin: plugin, data: data, app: app, menus: menus, ui: ui, settings: settings, secrets: secrets,
         storage: storage, files: files, email: email, calendar: calendar, contacts: contacts,
-        office365: office365, http: http, timers: timers, log: log, reports: reports, PluginError: PluginError,
+        office365: office365, http: http, auth: auth, timers: timers, log: log, reports: reports, PluginError: PluginError,
     };
     if (capabilitySet.has("com")) api.com = com;
     if (capabilitySet.has("process.launch")) api.process = processApi;

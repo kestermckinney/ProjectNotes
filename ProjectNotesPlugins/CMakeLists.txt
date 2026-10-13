@@ -9,6 +9,7 @@ add_library(ProjectNotesPlugins STATIC
     ComBridge.h
     DataService.cpp         DataService.h
     JsConvert.h
+    LoopbackRedirect.cpp    LoopbackRedirect.h
     PluginHost.cpp          PluginHost.h
     PluginManifest.cpp      PluginManifest.h
     PluginRegistry.cpp      PluginRegistry.h

@@ -270,8 +270,13 @@ void DesktopPluginServices::requestUi(const PluginManifest& plugin, const QStrin
     } else if (op == QLatin1String("openUrl")) {
         const QUrl url(arg(args, 0).toString());
         const QString scheme = url.scheme().toLower();
-        if (scheme != QLatin1String("http") && scheme != QLatin1String("https") && scheme != QLatin1String("mailto")) {
-            reply({}, PluginError::make(QStringLiteral("validation-failed"), tr("openUrl() accepts http, https and mailto URLs only.")));
+        // Other schemes can start applications, so they need the "urls" permission.
+        if (scheme != QLatin1String("http") && scheme != QLatin1String("https") && scheme != QLatin1String("mailto")
+            && !plugin.hasPermission(QStringLiteral("urls"))) {
+            PluginError error = PluginError::make(QStringLiteral("permission-denied"),
+                tr("Opening %1: URLs needs the \"urls\" permission.").arg(scheme));
+            error.permission = QStringLiteral("urls");
+            reply({}, error);
             return;
         }
         reply(QDesktopServices::openUrl(url), {});
@@ -308,6 +313,8 @@ void DesktopPluginServices::requestApp(const PluginManifest& plugin, const QStri
             reply(query.value(0).toString().trimmed(), {});
         else
             reply(QVariant::fromValue(nullptr), {});
+    } else if (method == QLatin1String("app.defaults")) {
+        reply(m_app ? m_app->pluginDefaults() : QVariantMap(), {});
     } else if (method == QLatin1String("app.refresh")) {
         if (m_app)
             m_app->refreshViewsForPlugin();

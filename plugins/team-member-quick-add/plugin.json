@@ -1,0 +1,19 @@
+{
+    "id": "com.projectnotespro.team-member-quick-add",
+    "name": "Team Member Quick Add",
+    "version": "2.0.0",
+    "apiVersion": 1,
+    "description": "Add a team member who is not yet a contact, creating the contact (and company) in one step.",
+    "author": "Project Notes",
+    "main": "main.mjs",
+    "permissions": [
+        "data.read:projects",
+        "data.write:contacts,companies,project_team",
+        "ui.dialogs"
+    ],
+    "contributes": {
+        "menus": [
+            { "id": "quick-add", "title": "Quick Add", "context": "record", "entity": "project_team" }
+        ]
+    }
+}

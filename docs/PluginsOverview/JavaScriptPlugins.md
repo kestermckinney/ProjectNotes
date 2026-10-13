@@ -224,6 +224,7 @@ A `contributes.settings` entry adds a section to Settings. With a `schema`, Proj
 | `contacts` | `pick()` opens the contact picker; `syncNow()`, `sources()`, `toVCard()`, `fromVCard()`. |
 | `office365` | `graph()` calls Microsoft Graph with the user's Office 365 sign-in; `graphPages()` follows paging links. |
 | `http` | `fetch()` to the hosts listed in the manifest, with basic or bearer authentication. |
+| `auth` | `browserSignIn()` opens a sign-in page in the browser and returns the redirect to a `localhost` address, for OAuth sign-ins to services other than Office 365. |
 | `files` | Files inside the plugin folder (read only), its data folder, folders the user picked, and project folders from `app.projectFolder()`. |
 | `storage`, `settings`, `secrets` | Private files, settings, and credentials kept in the operating system's credential store. |
 | `com` | Windows only: automate Office and other COM applications (see below). |
@@ -250,6 +251,25 @@ try {
 
 List every ProgID and moniker in the manifest's `com` array. COM calls are synchronous. Objects are released when the plugin stops, but releasing them yourself frees the application sooner.
 
+Reading a member asks the object for a property and falls back to calling it as a method. A few objects, WMI's among them, run a method when it is read. Use `object.$call("Terminate")` for those, and `$get`/`$set` for properties that take arguments.
+
+`com` is only present where the build supports it, so read it as `pn.com` from `import * as pn from "projectnotes"` rather than importing it by name. A named import of a missing export stops the module from loading.
+
+### Browser sign-in
+
+Services that sign in with OAuth in a browser, such as Keycloak, use `auth.browserSignIn()`. Project Notes opens the page, listens on the loopback address in `redirectUri` until the browser comes back, and returns that URL. The plugin then exchanges the code for a token with `http.fetch()`:
+
+```js
+const { url } = yield auth.browserSignIn({
+    url: authorizeUrl + "?response_type=code&client_id=app&redirect_uri=" + encodeURIComponent(redirect) + "&state=" + state,
+    redirectUri: redirect,            // "http://localhost:8080/callback"
+    timeoutSeconds: 120,
+});
+const code = /[?&]code=([^&]+)/.exec(url)[1];
+```
+
+The page's host must be in the manifest's `http` array, and `redirectUri` must be `http://localhost:<port>` or `http://127.0.0.1:<port>`. Check the `state` you sent against the one that comes back.
+
 ## Permissions
 
 | Permission | Allows |
@@ -267,6 +287,8 @@ List every ProgID and moniker in the manifest's `com` array. COM calls are synch
 | `com` | `com.*` for the manifest's ProgIDs and monikers. |
 | `process.launch` | `process.launch()`. |
 | `app.navigate` | `app.navigate()`. |
+| `urls` | `ui.openUrl()` with schemes other than http, https and mailto. |
+| `auth.browser` | `auth.browserSignIn()`; the sign-in page's host must also be in `http`. |
 | `reports` | `reports.generate()` (planned). |
 
 A call without its permission fails with a `PluginError` whose `code` is `permission-denied` and whose `permission` names what to add to the manifest.

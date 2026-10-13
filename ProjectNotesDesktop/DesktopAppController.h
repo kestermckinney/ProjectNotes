@@ -833,6 +833,8 @@ public:
     QString writePluginIcs(const QVariantMap& meeting, const QString& path, PN::Plugins::PluginError* error);
     void navigateForPlugin(const QString& entity, const QString& key, const QString& tab, PN::Plugins::PluginError* error);
     void refreshViewsForPlugin();
+    // The managing company and project manager from Settings (app.defaults()).
+    QVariantMap pluginDefaults() const;
     PN::Contacts::ContactSyncSettingsModel* contactSyncModel() const { return m_contactSyncSettingsModel.get(); }
     PN::Comm::Office365Service* office365ServiceForPlugins() const { return m_office365Service; }
 

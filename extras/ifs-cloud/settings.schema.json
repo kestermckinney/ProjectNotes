@@ -1,0 +1,13 @@
+{ "fields": [
+    { "key": "URL", "label": "IFS Cloud address", "type": "text", "placeholder": "https://ifs.cornerstonecontrols.com",
+      "help": "The host must also be listed in the plugin's \"http\" array in plugin.json." },
+    { "key": "Realm", "label": "Sign-in realm", "type": "text", "placeholder": "cciprod" },
+    { "key": "SyncTrackerItems", "label": "Keep tracker items in step with IFS ISSUES tasks", "type": "checkbox" },
+    { "key": "_reports", "label": "SSRS status reports", "type": "section" },
+    { "key": "ReportServer", "label": "Report server", "type": "text", "placeholder": "indvifsbi05" },
+    { "key": "DomainUser", "label": "Domain user", "type": "text", "placeholder": "DOMAIN\\user" },
+    { "key": "DomainPassword", "label": "Domain password", "type": "password",
+      "help": "Moved to your system's credential store when saved. Leave blank to keep the stored password." },
+    { "key": "SsrsExportSubFolder", "label": "Project subfolder for reports", "type": "text",
+      "placeholder": "Project Management/Status Reports" }
+] }

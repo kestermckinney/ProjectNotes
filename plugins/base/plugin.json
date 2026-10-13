@@ -1,0 +1,25 @@
+{
+    "id": "com.projectnotespro.base",
+    "name": "Base Plugins",
+    "version": "2.0.0",
+    "apiVersion": 1,
+    "description": "Copy email addresses and file paths to the clipboard, and open your script editor.",
+    "author": "Project Notes",
+    "main": "main.mjs",
+    "permissions": [
+        "data.read:contacts,project_team,meeting_attendees,project_locations",
+        "clipboard"
+    ],
+    "legacySettings": ["Custom Editor"],
+    "contributes": {
+        "menus": [
+            { "id": "copy-contact-email", "title": "Copy Email to Clipboard", "context": "record", "entity": "contacts" },
+            { "id": "copy-team-email", "title": "Copy Email to Clipboard", "context": "record", "entity": "project_team" },
+            { "id": "copy-attendee-email", "title": "Copy Email to Clipboard", "context": "record", "entity": "meeting_attendees" },
+            { "id": "copy-path", "title": "Copy Path to Clipboard", "context": "record", "entity": "project_locations" }
+        ],
+        "settings": [
+            { "id": "editor", "title": "Script Editor", "schema": "settings.schema.json" }
+        ]
+    }
+}

@@ -85,9 +85,11 @@ void DesktopAppController::ensureJsPlugins()
     PN::Plugins::PluginRegistry::Paths paths;
     paths.bundled = appResourcesPath() + QStringLiteral("/plugins");
     paths.user = QDir::homePath() + QStringLiteral("/Project Notes/plugins");
-    // Tests point the user plugin folder somewhere disposable.
+    // Tests point both plugin folders somewhere disposable.
     if (qEnvironmentVariableIsSet("PN_PLUGIN_USER_DIR"))
         paths.user = qEnvironmentVariable("PN_PLUGIN_USER_DIR");
+    if (qEnvironmentVariableIsSet("PN_PLUGIN_BUNDLED_DIR"))
+        paths.bundled = qEnvironmentVariable("PN_PLUGIN_BUNDLED_DIR");
     paths.data = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QStringLiteral("/plugin-data");
     paths.temp = QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + QStringLiteral("/plugin-temp");
     QDir(paths.temp).removeRecursively();   // per-run temporary files
@@ -174,6 +176,23 @@ void DesktopAppController::refreshViewsForPlugin()
     for (SqlQueryModel* model : global_DBObjects.getOpenModels())
         if (model->isLoaded())
             model->refresh();
+}
+
+QVariantMap DesktopAppController::pluginDefaults() const
+{
+    const QString companyId = managingCompanyId();
+    const QString managerId = projectManagerId();
+    auto name = [](const QString& sql, const QString& id) {
+        QSqlQuery query(global_DBObjects.getDb());
+        query.prepare(sql);
+        query.addBindValue(id);
+        return (query.exec() && query.next()) ? query.value(0).toString() : QString();
+    };
+    auto orNull = [](const QString& v) { return v.isEmpty() ? QVariant::fromValue(nullptr) : QVariant(v); };
+    return {{QStringLiteral("managingCompanyId"), orNull(companyId)},
+            {QStringLiteral("managingCompanyName"), orNull(name(QStringLiteral("SELECT client_name FROM clients WHERE id = ?"), companyId))},
+            {QStringLiteral("projectManagerId"), orNull(managerId)},
+            {QStringLiteral("projectManagerName"), orNull(name(QStringLiteral("SELECT name FROM people WHERE id = ?"), managerId))}};
 }
 
 // ── Email ────────────────────────────────────────────────────────────────────

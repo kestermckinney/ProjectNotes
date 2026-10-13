@@ -1,6 +1,6 @@
 // Probe plugin for tst_pluginhost: runs one scenario per menu id and reports
 // {menuId, ok, result | error} through ui.message.
-import { data, menus, settings, storage, files, http, plugin, app, secrets, ui, PluginError } from "projectnotes";
+import { data, menus, settings, storage, files, http, auth, plugin, app, secrets, ui, PluginError } from "projectnotes";
 import { replaceVariables, formatDate, parseDate, escapeHtml } from "projectnotes/common";
 
 function report(menuId, ok, value) {
@@ -85,6 +85,18 @@ const scenarios = {
     *filesDenied() { yield files.readText("/etc/hostname"); },
     *filesPackage() { return yield files.readText(files.packagePath("plugin.json")).then(t => JSON.parse(t).id); },
     *httpDenied() { yield http.fetch("https://not-listed.example/x"); },
+    *browserSignIn() {
+        const r = yield auth.browserSignIn({ url: "https://sso.example.test/auth?client_id=probe",
+                                             redirectUri: "http://127.0.0.1:" + settings.get("signInPort") + "/callback",
+                                             timeoutSeconds: 10 });
+        return r.url;
+    },
+    *browserSignInBadHost() {
+        yield auth.browserSignIn({ url: "https://not-listed.example/auth", redirectUri: "http://127.0.0.1:1/callback" });
+    },
+    *browserSignInBadRedirect() {
+        yield auth.browserSignIn({ url: "https://sso.example.test/auth", redirectUri: "http://example.com:8080/callback" });
+    },
     *timer() {
         return yield new Promise(resolve => setTimeout(() => resolve("fired"), 30));
     },

@@ -62,6 +62,11 @@ int main(int argc, char* argv[])
     const QString userPlugins = dataDir + QStringLiteral("/user-plugins");
     QDir().mkpath(userPlugins);
     qputenv("PN_PLUGIN_USER_DIR", userPlugins.toUtf8());
+    // The plugins shipped in plugins/ are tested in tst_pluginhost; keep
+    // their menus and Settings tabs out of the UI tests.
+    const QString bundledPlugins = dataDir + QStringLiteral("/bundled-plugins");
+    QDir().mkpath(bundledPlugins);
+    qputenv("PN_PLUGIN_BUNDLED_DIR", bundledPlugins.toUtf8());
 
     QQuickStyle::setStyle("Basic");
 

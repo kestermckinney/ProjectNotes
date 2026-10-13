@@ -1,0 +1,21 @@
+{
+    "id": "com.projectnotespro.outlook-integration",
+    "name": "Outlook Integration",
+    "version": "2.0.0",
+    "apiVersion": 1,
+    "description": "Archives project emails into project folders and keeps your open tracker items in Microsoft To Do. Uses Office 365 (Microsoft Graph), or Outlook (classic) on Windows for archiving.",
+    "author": "Project Notes",
+    "main": "main.mjs",
+    "permissions": [
+        "data.read:projects,item_tracker,item_tracker_updates,project_locations",
+        "files", "office365", "com"
+    ],
+    "office365": { "scopes": ["Mail.Read", "Tasks.ReadWrite"] },
+    "com": ["Outlook.Application"],
+    "legacySettings": ["Outlook Integration"],
+    "contributes": {
+        "settings": [
+            { "id": "outlook", "title": "Outlook Integration", "schema": "settings.schema.json" }
+        ]
+    }
+}

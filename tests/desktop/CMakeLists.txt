@@ -254,7 +254,9 @@ add_test(NAME recordtree COMMAND tst_recordtree)
 add_executable(tst_pluginhost tst_pluginhost.cpp)
 target_include_directories(tst_pluginhost PRIVATE ${ROOT_DIR})
 target_link_libraries(tst_pluginhost PRIVATE Qt6::Core Qt6::Sql Qt6::Xml Qt6::Qml Qt6::Test Qt6::CorePrivate ProjectNotesPlugins ProjectNotesCore)
-target_compile_definitions(tst_pluginhost PRIVATE PN_TEST_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/fixtures")
+target_compile_definitions(tst_pluginhost PRIVATE PN_TEST_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/fixtures"
+                                                PN_REPO_PLUGINS="${ROOT_DIR}/plugins"
+                                                PN_REPO_ROOT="${ROOT_DIR}")
 add_test(NAME pluginhost COMMAND tst_pluginhost)
 
 add_executable(tst_communicationrepository tst_communicationrepository.cpp)
