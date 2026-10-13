@@ -1,6 +1,20 @@
 # QTextDocument PDF renderer plan
 
-Branch: `feature/qjsengine_plugins`. Prepared: 2026-10-12. Status: proposed plan. No application code has changed.
+Branch: `feature/qjsengine_plugins`. Prepared: 2026-10-12. Status: implemented 2026-10-13 (Phases A, B, C and E).
+
+## Implementation status
+
+`TextDocumentReportRenderer` prints every report, and Qt WebEngine is gone from the code, the tests and all three platforms' packages. `tst_textdocumentrenderer` covers the four workflows, page setup, the resource policy and hyperlinks; set `PN_RENDER_OUT` to keep its PDFs for review.
+
+What changed from the plan:
+
+- **Phase D was folded into E.** The `PN_PDF_RENDERER=webengine` fallback existed only during development; WebEngine was removed in its own commit ("Remove Qt WebEngine") so that commit can be reverted if a release with the fallback is wanted after all.
+- **Rows can split across pages.** A post-layout pass that pushed rows to the next page took 11 to 76 seconds on large reports and still split rows, because Qt moves a row only when every cell starts past the page bottom. It was dropped; repeating header rows remain.
+- **Blocked images.** `QTextDocument` falls back to `QImage::load()` on the raw URL when `loadResource` returns nothing, so the restricted document returns a transparent 1x1 image for every blocked URL.
+- **Layout details.** The document is laid out against the PDF device at 1200 dpi; root frame margins are given in CSS pixels (96 per inch); tables that relied on CSS `width:100%` alone also carry `width='100%'` attributes, which Qt honours.
+- **Packaging.** The Windows installer, Flatpak and macOS scripts no longer ship or verify WebEngine, and upgrades remove the files earlier releases installed (`packaging/windows/remove_retired_plugins.nsh`, `packaging/macos/projectnotes-scripts/preinstall`).
+
+The installers and the Flatpak build without the BaseApp still need checking on real machines.
 
 ## Goal
 

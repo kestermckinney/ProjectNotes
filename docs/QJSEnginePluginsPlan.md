@@ -1,6 +1,24 @@
 # QJSEngine plugin system plan
 
-Branch: `feature/qjsengine_plugins`. Prepared: 2026-10-12. Status: proposed plan with scope decisions recorded. No application code has changed.
+Branch: `feature/qjsengine_plugins`. Prepared: 2026-10-12. Status: implemented 2026-10-13 (Phases 0 to 7). See "Implementation status" below for what changed from the plan; the sections after it describe the design as built.
+
+## Implementation status
+
+All phases are done on the branch. Python is gone from the code and the packages, every bundled plugin runs on the JavaScript host, IFS Cloud builds as a separate `.pnplugin`, and `cmake -DPN_APP_STORE=ON` builds the Mac App Store flavor.
+
+Where the build differs from the original plan:
+
+- **No async/await.** Qt 6.11's `QJSEngine` stops at about ES2016 plus `?.` and `??`: no `async`/`await`, object spread, `Object.fromEntries`, `Array.flat` or `catch` without a binding. Plugins write generator functions (`function*` with `yield promise`), which the prelude drives as coroutines, and the prelude polyfills `Promise.prototype.finally`, `Object.fromEntries` and `flat`/`flatMap`. Examples below use generators.
+- **Change events.** `ChangeEvent.source` is `"app"` (user edits and sync, which the host cannot tell apart) or `"plugin"`.
+- **Additions to the API.** `app.defaults()` (managing company and project manager); `replaceVariables(template, record, extras)`, whose extras fill `[$name]`; the `urls` permission for `ui.openUrl()` with schemes other than http, https and mailto; and `auth.browserSignIn()` with the `auth.browser` permission, for OAuth sign-ins that end in a loopback redirect (the IFS Keycloak sign-in).
+- **Settings migration** is declared in the manifest. `legacySettings` lists the Python settings groups (with an optional key prefix) that the host copies once into the plugin's settings.
+- **Office 365 scopes.** A plugin's declared scopes are requested through `Office365Service::requestAdditionalScopes()`; `X.ReadWrite` satisfies `X.Read`.
+- **Plugin set.** The five template plugins, Open MS Project and Close Stranded Excel/Word are one Windows plugin, `office-tools`. Outlook download and To Do sync are one plugin, `outlook-integration`. IFS lives in `extras/ifs-cloud/`, and its tracker sync now follows the "sync tracker items" setting. The default IFS shortcuts became the IFS plugin's own menus instead of seeded My Shortcuts rows.
+- **ComBridge consolidation deferred.** The COM bridge (`ProjectNotesPlugins/ComBridge_win.cpp`) is separate from the existing `OutlookContacts.cpp` and `OutlookClassicMeetingBackend.cpp` helpers. Moving those working features onto it needs a Windows machine with Office to test, so it is left for later. None of the Windows-only code has been built or run on Windows yet.
+- **Plugin data per profile.** Plugin data and temporary folders follow `--developer-profile`; the user plugins folder is shared.
+- **App Store.** `RunGuard` is off in the sandboxed build (its System V semaphore is not allowed there; macOS keeps a bundle to one instance), and so are the in-app updater and Thunderbird. Security-scoped bookmarks cover picked and dropped project locations, File Finder roots and plugin settings paths. Plugin pickers grant access for the session only. The Objective-C++ bookmark code and `packaging/macos/build_appstore.sh` have not yet run on a Mac.
+
+Tests: `tst_recordtree` (golden XML, round trip, cascades, batched export), `tst_pluginhost` (API, permissions, watchdog, packages, the browser sign-in, every bundled plugin against fake services, Outlook Integration against a fake Graph, Office Tools without COM, IFS Cloud against a fake IFS server) and the QML UI suite.
 
 ## Goal
 
@@ -129,27 +147,28 @@ A newly installed user plugin starts disabled until the user approves its permis
 
 Each enabled plugin gets its own `QJSEngine` on its own worker `QThread`. That matches today's per-plugin worker, isolates crashes and runaway loops, and makes hot reload a matter of destroying one engine. A shared watchdog calls `setInterrupted(true)` on any engine that holds a synchronous call longer than a configurable budget (default 10 s for menu handlers, longer for timer jobs that declare it), then reports the plugin as hung instead of freezing the app.
 
-All host calls that touch the database, the network, other services, or the user return Promises. The `com` API is the exception: COM calls are synchronous by nature and already run off the GUI thread. A menu handler is an async function:
+All host calls that touch the database, the network, other services, or the user return Promises. The `com` API is the exception: COM calls are synchronous by nature and already run off the GUI thread. `QJSEngine` has no `async`/`await`, so a handler that waits is a generator function; each `yield` waits for a promise (or for another generator) and the prelude resumes it with the result:
 
 ```js
 // main.mjs
 import { data, ui } from "projectnotes";
 
-export async function onMenu(id, context) {
+export function* onMenu(id, context) {
     if (id !== "quickAdd") return;
-    const result = await ui.showDialog("QuickAddDialog.qml", {
+    const companies = yield data.list("companies", { fields: ["company_name"] });
+    const result = yield ui.showDialog("QuickAddDialog.qml", {
         projectId: context.record.project_id.id,
-        companies: await data.list("companies", { fields: ["company_name"] })
+        companies: companies.map(c => c.company_name)
     });
     if (!result) return;
-    await data.transaction(async tx => {
-        const contact = await tx.save("contacts", {
+    yield data.transaction(function* (tx) {
+        const contact = yield tx.save("contacts", {
             name: result.name, email: result.email,
             company_id: { lookup: result.company }
         });
-        await tx.save("project_team", {
+        yield tx.save("project_team", {
             project_id: { id: context.record.project_id.id },
-            contact_id: { id: contact.contact_id },
+            contact_id: { id: contact.record.$key },
             role: result.role
         });
     });
@@ -229,24 +248,25 @@ The mapping applies everywhere a plugin names data: `data.*` calls, manifest `pe
 
 ```js
 // Read: nested records, foreign keys carry both id and display value
-const project = await data.get("projects",
+// (inside a generator handler; each yield waits for the promise)
+const project = yield data.get("projects",
     { where: { project_number: "P4000" }, include: ["project_team", "project_locations"] });
 project.company_id;          // { id: "{ba96...}", lookup: "Special Law Firm" }
 project.project_team[0].role; // "Lead Support"
 
-const open = await data.list("item_tracker",
+const open = yield data.list("item_tracker",
     { where: { project_id: project.project_id, status: ["New", "Assigned"] },
       orderBy: ["priority", "date_due"], limit: 200 });
 
 // Write: same matching as XML import. Lookups resolve to ids; unique keys find existing rows.
-await data.save("project_locations", {
+yield data.save("project_locations", {
     project_id: { lookup: "P4000" },
     location_type: "Word Document",
     location_description: "Change Request : P4000 PCR01.docx",
     full_path: path
 });
-await data.remove("project_locations", { id: locationId });   // soft delete + owned-child cascade
-await data.transaction(async tx => { /* several saves, all or nothing */ });
+yield data.remove("project_locations", { id: locationId });   // soft delete + owned-child cascade
+yield data.transaction(function* (tx) { /* several saves, all or nothing */ });
 
 // Events the Python system never had
 data.onChanged(["item_tracker"], change => { /* {table, id, operation} */ });
@@ -316,7 +336,7 @@ interface PluginError extends Error {
 
 ### Plugin entry points
 
-`main.mjs` exports any of these. All may be `async`.
+`main.mjs` exports any of these. Each may return a promise or be a generator function.
 
 ```ts
 export function onStart(): void;                    // after load and after each hot reload
@@ -396,7 +416,7 @@ interface SaveResult   { record: DataRecord; operation: "insert" | "update"; }
 interface RemoveResult { removed: { entity: string; key: string }[]; }  // includes cascaded children
 interface ImportResult { inserted: number; updated: number; removed: number; }
 interface ChangeEvent  { entity: string; key: string; operation: "insert" | "update" | "delete";
-                         source: "user" | "sync" | "plugin"; pluginId?: string; }
+                         source: "app" | "plugin"; pluginId?: string; }   // "app": user edits and sync
 interface Subscription { unsubscribe(): void; }
 
 const data: {
@@ -447,6 +467,8 @@ const app: {
   currentRecord(options?: { include?: string[] }): Promise<DataRecord | null>;
   navigate(entity: string, key: string, options?: { tab?: string }): Promise<void>;
   projectFolder(projectKey: string): Promise<string | null>;   // resolved project folder, if any
+  defaults(): Promise<{ managingCompanyId: string | null; managingCompanyName: string | null;
+                        projectManagerId: string | null; projectManagerName: string | null }>;
   refresh(): void;                                             // reload visible lists
   onViewChanged(handler: (view: ViewInfo) => void): Subscription;
 };
@@ -708,6 +730,16 @@ const http: {
 };
 ```
 
+### `auth`
+
+The browser step of an OAuth authorization-code sign-in for services other than Office 365. Needs `auth.browser`; the page's host must be in `http`, and `redirectUri` must be `http://localhost:<port>` or `http://127.0.0.1:<port>`. The plugin checks `state` and exchanges the code with `http.fetch`.
+
+```ts
+const auth: {
+  browserSignIn(options: { url: string; redirectUri: string; timeoutSeconds?: number }): Promise<{ url: string }>;
+};
+```
+
 ### `timers`
 
 The global `setTimeout`, `setInterval`, `clearTimeout`, and `clearInterval` are also available.
@@ -808,6 +840,7 @@ interface PluginManifest {
   http?: string[];               // reachable hosts, wildcards allowed: "*.ifs.cloud"
   com?: string[];                // ProgIDs and monikers: "Word.Application", "winmgmts:"
   office365?: { scopes: string[] };                 // e.g. ["Tasks.ReadWrite", "Mail.Read"]
+  legacySettings?: (string | { group: string; prefix?: string })[];   // Python settings groups copied once
   contributes?: {
     menus?: Omit<MenuItem, "handler">[];
     settings?: { id: string; title: string; schema?: string; qml?: string }[];
@@ -833,6 +866,8 @@ interface PluginManifest {
 | `com` | `com.*` for the manifest's ProgIDs and monikers |
 | `process.launch` | `process.launch` |
 | `app.navigate` | `app.navigate` (other `app` members need no permission) |
+| `urls` | `ui.openUrl` with schemes other than http, https and mailto |
+| `auth.browser` | `auth.browserSignIn` |
 
 `plugin`, `settings`, `secrets`, `storage`, `menus`, `timers`, `log`, and `projectnotes/common` are always available, scoped to the plugin.
 
@@ -840,7 +875,7 @@ interface PluginManifest {
 
 The Office plugins depend on driving Word, Excel, PowerPoint, Project, and Outlook, plus WMI for the process cleanup plugins. A general COM bridge preserves that behavior without a native service per plugin.
 
-**Native side.** `ComDispatch` consolidates the `IDispatch` helpers now duplicated in `OutlookContacts.cpp` and `OutlookClassicMeetingBackend.cpp` into one tested wrapper: `CoCreateInstance` from a ProgID, `GetActiveObject` for a running instance, `CoGetObject` for monikers such as `winmgmts:`, method calls, property get/put, indexed properties, `_NewEnum` enumeration, and `VARIANT` conversion for strings, numbers, booleans, dates, null, arrays, and nested dispatch objects. The two existing backends move onto it once it is tested, so the app has a single COM implementation. ActiveQt's `QAxObject` was considered and rejected because it pulls in `Qt::Widgets` and does not bind monikers.
+**Native side.** `ComDispatch` consolidates the `IDispatch` helpers now duplicated in `OutlookContacts.cpp` and `OutlookClassicMeetingBackend.cpp` into one tested wrapper: `CoCreateInstance` from a ProgID, `GetActiveObject` for a running instance, `CoGetObject` for monikers such as `winmgmts:`, method calls, property get/put, indexed properties, `_NewEnum` enumeration, and `VARIANT` conversion for strings, numbers, booleans, dates, null, arrays, and nested dispatch objects. The two existing backends were to move onto it once it is tested, so the app has a single COM implementation; that move is deferred until it can be tested on Windows (see "Implementation status"). ActiveQt's `QAxObject` was considered and rejected because it pulls in `Qt::Widgets` and does not bind monikers.
 
 **JS side.** A JS `Proxy` over the primitives gives plugins the same shape the Python code uses:
 
@@ -959,5 +994,6 @@ For each port: record the Python behavior and settings first, port, compare outp
 
 ## Remaining questions
 
-1. The user plugin folder is `~/Project Notes/plugins/` for every developer profile, as it is today. Should developer profiles (`--developer-profile`) get their own plugin folder so a test profile can run different plugins?
-2. Keep `extras/ifs/` in this repository, or move it to its own repository later?
+1. The user plugin folder is `~/Project Notes/plugins/` for every developer profile, as it is today (plugin settings and data are per profile). Should developer profiles also get their own plugin folder so a test profile can run different plugins?
+2. Keep `extras/ifs-cloud/` in this repository, or move it to its own repository later?
+3. When can the Windows build, the Office plugins and the App Store flavor be tested on real machines? Those are the parts no test here covers.

@@ -62,7 +62,7 @@ ProjectNotes / tst_qmldesktop
 
 ProjectNotesIntegrations: OAuth, HTTP seam, templates, local template store
 ProjectNotesEmail: snapshots, audiences, report builders, dispatch, adapters
-ProjectNotesEmailRendering: Qt WebEngine implementation; no report business rules
+ProjectNotesEmailRendering: QTextDocument + QPdfWriter implementation (Qt WebEngine until 2026-10); no report business rules
 ```
 
 Arrows mean link/dependency direction. Neither Integrations nor Email depends on DesktopAppController, global QML singletons or Python. The repository accepts database path/lock/preferences as inputs instead of linking to global application controllers. Renderer implementation is a separate target so content/service tests do not need Chromium to run. Keep the library count at these three new static libraries; do not create a library for every class.
@@ -118,7 +118,7 @@ ProjectNotesEmail/
     OutlookAutomation.h/.cpp
 ProjectNotesEmailRendering/
   CMakeLists.txt
-  WebEngineReportRenderer.h/.cpp
+  TextDocumentReportRenderer.h/.cpp   (replaced WebEngineReportRenderer; see TextDocumentPdfRendererPlan.md)
   ReportResourcePolicy.h/.cpp
 ProjectNotesDesktop/
   CommunicationsController.h/.cpp
