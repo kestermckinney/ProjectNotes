@@ -50,6 +50,10 @@ struct PluginManifest {
     QStringList office365Scopes;
     QList<MenuContribution> menus;
     QList<SettingsContribution> settings;
+    // Settings groups of the Python plugin this replaces, copied once into the
+    // plugin's own settings on first start: {group, prefix}. A key K of group G
+    // becomes prefix + K. The originals are left in place.
+    QList<QPair<QString, QString>> legacySettings;
 
     QString folder;                 // absolute plugin folder
     bool bundled = false;

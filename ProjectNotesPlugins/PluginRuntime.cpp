@@ -201,6 +201,28 @@ bool PluginRuntime::start(QString* error)
     m_settings = std::make_unique<QSettings>(m_config.settingsOrganization, QStringLiteral("PluginSettings"));
     m_settings->setFallbacksEnabled(false);
 
+    // One-time copy of the settings of the Python plugin this replaces.
+    for (const auto& [group, prefix] : manifest.legacySettings) {
+        const QString flag = QStringLiteral("%1/_migrated/%2").arg(manifest.id, QString(group).replace(QLatin1Char('/'), QLatin1Char('_')));
+        if (group.isEmpty() || m_settings->value(flag).toBool())
+            continue;
+        m_settings->beginGroup(group);
+        const QStringList keys = m_settings->allKeys();
+        QVariantMap values;
+        for (const QString& key : keys)
+            values.insert(key, m_settings->value(key));
+        m_settings->endGroup();
+        m_settings->beginGroup(manifest.id);
+        for (auto it = values.constBegin(); it != values.constEnd(); ++it)
+            if (!m_settings->contains(prefix + it.key()))
+                m_settings->setValue(prefix + it.key(), it.value());
+        m_settings->endGroup();
+        m_settings->setValue(flag, true);
+        QLog_Info(CONSOLELOG, QStringLiteral("[%1] migrated %2 setting(s) from \"%3\".")
+                                  .arg(manifest.id).arg(values.size()).arg(group));
+    }
+    m_settings->sync();
+
     m_data = std::make_unique<DataService>(manifest);
     if (!m_config.databasePath.isEmpty()) {
         PluginError dataError;
@@ -675,11 +697,15 @@ QVariant PluginRuntime::handleSync(const QString& method, const QVariantList& ar
         } else if (op == QLatin1String("remove")) {
             m_settings->remove(arg(0).toString());
         } else if (op == QLatin1String("keys")) {
-            value = m_settings->allKeys();
+            QStringList keys = m_settings->allKeys();
+            keys.erase(std::remove_if(keys.begin(), keys.end(),
+                                      [](const QString& k) { return k.startsWith(QLatin1String("_migrated/")); }), keys.end());
+            value = keys;
         } else if (op == QLatin1String("all")) {
             QVariantMap all;
             for (const QString& key : m_settings->allKeys())
-                all.insert(key, m_settings->value(key));
+                if (!key.startsWith(QLatin1String("_migrated/")))
+                    all.insert(key, m_settings->value(key));
             value = all;
         }
         m_settings->endGroup();

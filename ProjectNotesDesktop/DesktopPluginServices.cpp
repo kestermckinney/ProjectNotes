@@ -415,10 +415,30 @@ void DesktopPluginServices::requestOffice365(const PluginManifest& plugin, const
                           {QStringLiteral("scopes"), account.grantedScopes}}, {});
         return;
     }
+    // A scope is satisfied by itself or, for X.Read, by X.ReadWrite.
+    auto normalize = [](QString scope) {
+        scope.remove(QStringLiteral("https://graph.microsoft.com/"), Qt::CaseInsensitive);
+        return scope.toLower();
+    };
+    QStringList granted;
+    for (const QString& scope : account.grantedScopes)
+        granted.append(normalize(scope));
+    QStringList missing;
+    for (const QString& scope : plugin.office365Scopes) {
+        const QString wanted = normalize(scope);
+        const QString readWrite = QString(wanted).replace(QStringLiteral(".read"), QStringLiteral(".readwrite"));
+        if (!granted.contains(wanted) && !granted.contains(readWrite))
+            missing.append(scope);
+    }
     if (method == QLatin1String("office365.signIn")) {
-        if (!account.authenticated)
-            office->startSignIn();
-        reply(account.authenticated, {});
+        if (account.authenticated && missing.isEmpty()) {
+            reply(true, {});
+            return;
+        }
+        if (!missing.isEmpty())
+            office->requestAdditionalScopes(missing);
+        office->startSignIn();
+        reply(false, {});   // sign-in continues in Settings > Office 365 Integration
         return;
     }
     // office365.graph
@@ -426,14 +446,10 @@ void DesktopPluginServices::requestOffice365(const PluginManifest& plugin, const
         reply({}, PluginError::make(QStringLiteral("unavailable"), tr("Sign in to Office 365 in Settings first.")));
         return;
     }
-    QStringList missing;
-    for (const QString& scope : plugin.office365Scopes)
-        if (!account.grantedScopes.contains(scope, Qt::CaseInsensitive))
-            missing.append(scope);
     if (!missing.isEmpty()) {
         reply({}, PluginError::make(QStringLiteral("consent-required"),
-                                    tr("Office 365 has not granted %1. Sign in again from Settings > Office 365 Integration.")
-                                        .arg(missing.join(QStringLiteral(", "))),
+                                    tr("Office 365 has not granted %1. Call office365.signIn() or sign in again from "
+                                       "Settings > Office 365 Integration.").arg(missing.join(QStringLiteral(", "))),
                                     {{QStringLiteral("missing"), missing}}));
         return;
     }

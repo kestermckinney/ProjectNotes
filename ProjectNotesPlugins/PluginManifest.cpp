@@ -128,6 +128,14 @@ bool PluginManifest::load(const QString& folder, PluginManifest* out, QString* e
         }
     }
 
+    for (const QJsonValue& value : json.value(QStringLiteral("legacySettings")).toArray()) {
+        if (value.isString())
+            m.legacySettings.append({value.toString(), QString()});
+        else
+            m.legacySettings.append({value.toObject().value(QStringLiteral("group")).toString(),
+                                     value.toObject().value(QStringLiteral("prefix")).toString()});
+    }
+
     const QJsonObject contributes = json.value(QStringLiteral("contributes")).toObject();
     for (const QJsonValue& value : contributes.value(QStringLiteral("menus")).toArray()) {
         const QJsonObject o = value.toObject();
