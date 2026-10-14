@@ -1,10 +1,6 @@
 # Copyright (C) 2024, 2025, 2026 Paul McKinney
 import platform
 
-if (platform.system() == 'Windows'):
-    from includes.excel_tools import ProjectNotesExcelTools
-    import win32com
-
 from includes.common import ProjectNotesCommon
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
 
@@ -40,14 +36,10 @@ pluginmenus = []
 
 # this plugin is only supported on windows
 if platform.system() == 'Windows':
-    import winreg
-
-    _msproject_available = False
-    try:
-        winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, "MSProject.Application")
-        _msproject_available = True
-    except (FileNotFoundError, OSError):
-        pass
+    def open_project_file(path):
+        if not QDesktopServices.openUrl(QUrl.fromLocalFile(path)):
+            QMessageBox.critical(QApplication.activeWindow(), "Cannot Open MS Project File",
+                "No application could open this MS Project file.")
 
     class SelectProject(QDialog):
         def __init__(self, parent: QMainWindow = None):
@@ -57,23 +49,10 @@ if platform.system() == 'Windows':
 
         def open_project(self):
             selected_items = self.ui.m_listWidgetFiles.selectedItems()
-
-            # Check if there are any selected items
             if selected_items:
-                # Get the text of the first selected item
-                openfile = selected_items[0].text()
-
-            if not openfile is None:
-                QDesktopServices.openUrl(QUrl("file:///" + openfile))
+                open_project_file(selected_items[0].text())
 
     def menu_open_ms_project(xmlstr, parameter):
-        if not _msproject_available:
-            QMessageBox.critical(QApplication.activeWindow(), "MS Project Not Available",
-                "Microsoft Project does not appear to be installed on this computer.\n\n"
-                "MS Project is required to use this feature.")
-            return ""
-
-        openfile = None
         filelist = []
         xmlval = QDomDocument()
 
@@ -86,16 +65,13 @@ if platform.system() == 'Windows':
         if xmlroot:
             projlocation = pnc.find_node(xmlroot, "table", "name", "project_locations")
 
-            if not projlocation.isNull():
-                locationrow = projlocation.firstChild()
-
+            locationrow = projlocation.firstChild()
             while not locationrow.isNull():
                 checkfile = pnc.get_column_value(locationrow, "full_path")
 
-                if checkfile[-4:] == ".mpp":
+                if checkfile.lower().endswith(".mpp"):
                     if QFile(checkfile).exists():
                         filelist.append(checkfile)
-                        openfile = checkfile
 
                 locationrow = locationrow.nextSibling()
 
@@ -107,7 +83,7 @@ if platform.system() == 'Windows':
             sp.ui.m_listWidgetFiles.addItems(filelist)
             sp.show()
         elif len(filelist) == 1:
-                QDesktopServices.openUrl(QUrl("file:///" + filelist[0]))
+            open_project_file(filelist[0])
         else:
             QMessageBox.critical(QApplication.activeWindow(), "No MS Project File Found", "No MS Project files were found.  Check files are listed in Files & Folders and they are accessible.")
 
@@ -115,9 +91,8 @@ if platform.system() == 'Windows':
 
     pnc = ProjectNotesCommon()
 
-    if _msproject_available:
-        pluginmenus.append({"menutitle" : "Open MS Project", "function" : "menu_open_ms_project", "tablefilter" : "projects/project_locations", "submenu" : "", "dataexport" : "projects"})
-        sp = SelectProject(pnc.get_main_window())
+    pluginmenus.append({"menutitle" : "Open MS Project", "function" : "menu_open_ms_project", "tablefilter" : "projects/project_locations", "submenu" : "", "dataexport" : "projects"})
+    sp = SelectProject(pnc.get_main_window())
 
 # setup test data
 """

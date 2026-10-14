@@ -301,6 +301,7 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\plugins\includes\icloud_tools.py"
    File "${DEPLOY_DIR}\plugins\includes\noteformatter.py"
   File "${DEPLOY_DIR}\plugins\includes\outlook_tools.py"
+  File "${DEPLOY_DIR}\plugins\includes\settings_dialog.py"
   File "${DEPLOY_DIR}\plugins\includes\word_tools.py"
 
   SetOutPath "$INSTDIR\plugins\forms"
@@ -466,6 +467,7 @@ Section Uninstall
   Delete "$INSTDIR\plugins\includes\ifs_tools.py"
   Delete "$INSTDIR\plugins\includes\noteformatter.py"
   Delete "$INSTDIR\plugins\includes\outlook_tools.py"
+  Delete "$INSTDIR\plugins\includes\settings_dialog.py"
   Delete "$INSTDIR\plugins\includes\word_tools.py"
   Delete "$INSTDIR\plugins\includes\__pycache__\*.*"
   RMDir  "$INSTDIR\plugins\includes\__pycache__"
