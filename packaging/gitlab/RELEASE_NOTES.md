@@ -1,4 +1,4 @@
-# Project Notes 3.4.0
+# Project Notes 6.4.0
 
 This release expands contact management and communication workflows, improves keyboard access and navigation, and completes the move to the Qt Quick desktop interface.
 
