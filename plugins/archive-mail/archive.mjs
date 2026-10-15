@@ -138,7 +138,7 @@ function* archiveProject(cfg, projectKey, projectNumber, all) {
 // projects with a project folder, 20 emails per mailbox folder each.
 export function* archiveFromGraph(cfg, project) {
     if (!cfg.inboxFolder || !cfg.sentFolder) {
-        log.warn("Set the inbox and sent items subfolders in Settings > Outlook Integration.");
+        log.warn("Set the inbox and sent items subfolders in Settings > Archive Mail.");
         return 0;
     }
     if (project) return yield archiveProject(cfg, project.$key, project.project_number, true);

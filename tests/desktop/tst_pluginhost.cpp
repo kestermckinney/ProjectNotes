@@ -564,6 +564,14 @@ void PluginHostTest::timersAndCommonHelpers()
     QVERIFY2(r.value(QStringLiteral("ok")).toBool(), qPrintable(QJsonDocument(r).toJson()));
     const QJsonObject result = r.value(QStringLiteral("result")).toObject();
     QCOMPARE(result.value(QStringLiteral("vars")).toString(), QStringLiteral("x P4000 Acme Corp Lead "));
+    QCOMPARE(result.value(QStringLiteral("tokens")).toString(), QStringLiteral("x P4000 Acme Corp Lead  09/02/2026 a@x.test, b@x.test|Lead|"));
+    // The same cases tst_communicationcontracts.cpp runs against the C++ renderer.
+    const QJsonArray grammar = result.value(QStringLiteral("grammar")).toArray();
+    QCOMPARE(grammar.at(0).toString(), QStringLiteral("A<B|09/02/2026"));
+    QCOMPARE(grammar.at(1).toString(), QStringLiteral("A&lt;B"));
+    QCOMPARE(grammar.at(2).toString(), QStringLiteral("{{ project.name }}"));
+    QCOMPARE(grammar.at(3).toString(), QString());
+    QCOMPARE(grammar.at(4).toString(), QStringLiteral("a {{ project.name"));
     QCOMPARE(result.value(QStringLiteral("date")).toString(), QStringLiteral("09/02/2026"));
     QCOMPARE(result.value(QStringLiteral("parsed")).toString(), QStringLiteral("2026-09-02"));
     QCOMPARE(result.value(QStringLiteral("html")).toString(), QStringLiteral("&lt;a&amp;b&gt;"));
@@ -748,7 +756,6 @@ void PluginHostTest::bundledPluginsRun()
                         {QStringLiteral("Data Type"), QStringLiteral("people")}}}).toJson(QJsonDocument::Compact)));
     legacy.setValue(QStringLiteral("New Risk Register/ExportSubFolder"), QStringLiteral("Risks"));
     legacy.setValue(QStringLiteral("Outlook Integration/IntegrationType"), QStringLiteral("Office 365 Application"));
-    legacy.setValue(QStringLiteral("Outlook Integration/SyncToDoDoWithoutDue"), QStringLiteral("true"));
     legacy.setValue(QStringLiteral("Outlook Integration/BackupInBoxFolder"), QStringLiteral("Mail/Received"));
     legacy.setValue(QStringLiteral("Outlook Integration/BackupSentFolder"), QStringLiteral("Mail/Sent"));
     legacy.sync();
@@ -787,14 +794,7 @@ void PluginHostTest::bundledPluginsRun()
         const QString verb = args.value(0).toString();
         const QString path = args.value(1).toString();
         graphCalls.append(QVariant(QVariantList{verb, path, args.value(2)}));
-        if (verb == QLatin1String("GET") && path == QLatin1String("me/todo/lists"))
-            ok(200, {{QStringLiteral("value"), QVariantList{QVariantMap{{QStringLiteral("id"), QStringLiteral("L1")},
-                                                                        {QStringLiteral("displayName"), QStringLiteral("Tasks")}}}}});
-        else if (verb == QLatin1String("GET") && path.endsWith(QLatin1String("/tasks")))
-            ok(200, {{QStringLiteral("value"), QVariantList{}}});
-        else if (verb == QLatin1String("POST"))
-            ok(201, {});
-        else if (verb == QLatin1String("GET") && path == QLatin1String("me/mailFolders/inbox/messages"))
+        if (verb == QLatin1String("GET") && path == QLatin1String("me/mailFolders/inbox/messages"))
             ok(200, {{QStringLiteral("value"), QVariantList{QVariantMap{
                 {QStringLiteral("id"), QStringLiteral("M1")}, {QStringLiteral("subject"), QStringLiteral("P4000 rack update")},
                 {QStringLiteral("sentDateTime"), QStringLiteral("2026-09-12T14:05:00Z")}}}}});
@@ -819,7 +819,7 @@ void PluginHostTest::bundledPluginsRun()
 
     const QStringList expected{QStringLiteral("com.projectnotespro.base"), QStringLiteral("com.projectnotespro.myshortcuts"),
                                QStringLiteral("com.projectnotespro.team-member-quick-add"),
-                               QStringLiteral("com.projectnotespro.outlook-integration"),
+                               QStringLiteral("com.projectnotespro.archive-mail"),
                                QStringLiteral("com.projectnotespro.office-tools")};
     for (const QString& id : expected) {
         const PluginInfo info = registry.plugin(id);
@@ -886,20 +886,10 @@ void PluginHostTest::bundledPluginsRun()
     }
     QSqlDatabase::removeDatabase(QStringLiteral("bundled-check"));
 
-    // Outlook Integration over Graph: the project manager's open item becomes
-    // a To Do task, and the project's email lands in its folder as .eml.
-    const QString outlook = QStringLiteral("com.projectnotespro.outlook-integration");
-    registry.runMenu(outlook, QStringLiteral("sync-tasks"), {}, {});
-    QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(outlook, QStringLiteral("ui.notify")).size(), 1, 10000);
-    QVariantMap posted;
-    for (const QVariant& call : std::as_const(graphCalls))
-        if (call.toList().value(0).toString() == QLatin1String("POST"))
-            posted = call.toList().value(2).toMap().value(QStringLiteral("body")).toMap();
-    QVERIFY2(!posted.isEmpty(), qPrintable(QJsonDocument::fromVariant(graphCalls).toJson()));
-    QCOMPARE(posted.value(QStringLiteral("title")).toString(), QStringLiteral("P4000-2 IT New Server Install Order cables"));
-
+    // Archive Mail over Graph: the project's email lands in its folder as .eml.
+    const QString outlook = QStringLiteral("com.projectnotespro.archive-mail");
     registry.runMenu(outlook, QStringLiteral("download-graph"), QStringLiteral("projects"), QStringLiteral("project-p4000"));
-    QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(outlook, QStringLiteral("ui.notify")).size(), 2, 10000);
+    QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(outlook, QStringLiteral("ui.notify")).size(), 1, 10000);
     QVERIFY2(registry.plugin(outlook).lastError.isEmpty(), qPrintable(registry.plugin(outlook).lastError));
     const QString eml = projectFolder + QStringLiteral("/Mail/Received/20260912T140500Z-P4000 rack update.eml");
     QVERIFY2(QFileInfo::exists(eml), qPrintable(QDir(projectFolder + QStringLiteral("/Mail/Received")).entryList().join(QLatin1Char(','))));

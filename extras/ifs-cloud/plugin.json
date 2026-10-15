@@ -22,7 +22,7 @@
             { "id": "import", "title": "Import IFS Projects", "context": "global", "submenu": "Utilities" },
             { "id": "status-report", "title": "Generate Status Report", "context": "record", "entity": "projects",
               "include": ["project_team"],
-              "parameter": "/ReportServer/Pages/ReportViewer.aspx?%2fProd%2fLead+Engineers%2fProject+Status+Report&ProjectId=[$projects.project_number.1]&StatusDate=[$REPORTDATE]&ReportPeriod=[$projects.status_report_period.1]" }
+              "parameter": "/ReportServer/Pages/ReportViewer.aspx?%2fProd%2fLead+Engineers%2fProject+Status+Report&ProjectId={{ projects.project_number }}&StatusDate={{ report.date }}&ReportPeriod={{ projects.status_report_period }}" }
         ],
         "settings": [
             { "id": "ifs", "title": "IFS Cloud", "schema": "settings.schema.json" }

@@ -2,12 +2,7 @@
     { "key": "IntegrationType", "label": "Integration", "type": "choice",
       "choices": ["Office 365 Application", "Outlook Application"],
       "help": "Office 365 uses your Microsoft 365 sign-in from Settings > Office 365 Integration. Outlook (classic) archiving is available on Windows." },
-    { "key": "_tasks", "label": "Microsoft To Do", "type": "section" },
-    { "key": "SyncToDoWithDue", "label": "Sync my open tracker items that have a due date", "type": "checkbox" },
-    { "key": "SyncToDoDoWithoutDue", "label": "Sync my open tracker items without a due date", "type": "checkbox" },
     { "key": "_email", "label": "Email archive", "type": "section" },
-    { "key": "BackupEmails", "label": "Archive project emails automatically", "type": "checkbox",
-      "help": "Every few minutes, saves emails whose subject contains a project number into that project's folder." },
     { "key": "BackupInBoxFolder", "label": "Inbox subfolder", "type": "text", "placeholder": "Correspondence/Received" },
     { "key": "BackupSentFolder", "label": "Sent items subfolder", "type": "text", "placeholder": "Correspondence/Sent" }
 ] }

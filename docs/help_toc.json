@@ -180,12 +180,8 @@
           "path": "StandardPlugins/PluginSettings.md"
         },
         {
-          "title": "Outlook Integration",
-          "path": "StandardPlugins/OutlookIntegration.md"
-        },
-        {
-          "title": "iCloud Contacts",
-          "path": "StandardPlugins/iCloudContacts.md"
+          "title": "Archive Mail",
+          "path": "StandardPlugins/ArchiveMail.md"
         },
         {
           "title": "My Shortcuts",

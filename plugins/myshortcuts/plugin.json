@@ -3,7 +3,7 @@
     "name": "My Shortcuts",
     "version": "2.0.0",
     "apiVersion": 1,
-    "description": "Menus that open URLs you configure. A URL can include values from the record you right-click, such as [$projects.project_number.1].",
+    "description": "Menus that open URLs you configure. A URL can include values from the record you right-click, such as {{ projects.project_number }}.",
     "author": "Project Notes",
     "main": "main.mjs",
     "permissions": ["data.read:*", "urls"],

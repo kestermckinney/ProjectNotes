@@ -9,7 +9,7 @@ Project Notes installs a small set of JavaScript plugins. They add menus to reco
 | Base Plugins | Copy a contact's email or a file's path to the clipboard; open your script editor. See [Editor](<Editor.md>). | All |
 | My Shortcuts | Menus that open web pages filled in from the record you right-click. See [My Shortcuts](<MyShortcuts.md>). | All |
 | Team Member Quick Add | Add a new contact to a project's team in one step. See [Team Member Quick Add](<TeamMemberQuickAdd.md>). | All |
-| Outlook Integration | Archive project email and keep your tracker items in Microsoft To Do. See [Outlook Integration](<OutlookIntegration.md>). | All (Outlook classic archiving on Windows) |
+| Archive Mail | Archive project email into project folders. See [Archive Mail](<ArchiveMail.md>). | All (Outlook classic archiving on Windows) |
 | Office Tools | New project documents from Word, Excel, PowerPoint and MS Project templates; Open MS Project; close stranded Excel and Word processes. See [Office Document Templates](<NewDocumentTemplates.md>). | Windows |
 
 The IFS Cloud plugin is installed separately. See [IFS Cloud Integration](<IFSCloud.md>).
@@ -34,7 +34,7 @@ Plugin settings, UI state, and connection details are stored in your **operating
 
 | Category | Examples |
 | :--- | :--- |
-| Local application and plugin configuration | Document template subfolders, My Shortcuts, Outlook Integration options, IFS Cloud addresses, File Finder search locations and classifications, email templates |
+| Local application and plugin configuration | Document template subfolders, My Shortcuts, Archive Mail options, IFS Cloud addresses, File Finder search locations and classifications, email templates |
 | Cloud sync connection | Sync enabled flag and Project Notes Pro account |
 | Window position and size | Restored on the next launch |
 | UI zoom level | Set with **Ctrl +/-/0** or the zoom row of the [Application Menu](<../InterfaceOverview/ApplicationMenu.md>)'s **View** group. See [UI Zoom](<../InterfaceOverview/VectorZoom.md>). |
@@ -66,28 +66,35 @@ Saved report and meeting audiences also live in the database, in the `project_em
 
 ## Placeholders
 
-Several plugins fill placeholders with values from the record you right-click. A placeholder has the form `[$entity.column.row]`:
+Email templates, meeting templates, My Shortcuts and Office document templates all fill in values the same way. A placeholder is a dotted name between double braces, such as `{{ project.name }}`. Spaces inside the braces are optional. To write the braces themselves, put a backslash in front: `\{{`.
+
+Email and meeting templates have a fixed list of names, shown in the template editor: `project.number`, `project.name`, `company.name`, `preferences.managerName`, `preferences.managingCompanyName`, `current.date` and a few more for each kind of email. Office templates use `project.number`, `project.name`, `company.name`, `current.date` and, for change orders, `change.number`. See [Office Document Templates](<NewDocumentTemplates.md>).
+
+My Shortcuts also reads the record you right-click. A name there has the form `entity.column`:
 
 - `entity` is the kind of record, such as `projects` or `contacts` (see [Data Types](<../PluginsOverview/DataTypes.md>));
-- `column` is a field of that record;
-- `row` is 1 for the record you right-clicked.
+- `column` is a field of that record.
+
+To reach a row of a related list, put the row number between them: `{{ project_team.2.role }}` is the role of the second team member.
+
+To get a column from every row, use `*` as the row: `{{ project_team.*.email }}` joins the email address of each team member with a comma and a space, skipping empty ones. Without a row number, a related list gives its first row.
 
 | Placeholder | Becomes |
 | :--- | :--- |
-| `[$projects.project_number.1]` | The project number |
-| `[$projects.project_name.1]` | The project name |
-| `[$contacts.name.1]` | The contact's name |
-| `[$contacts.email.1]` | The contact's email address |
-| `[$project_notes.note_title.1]` | A meeting's title |
+| `{{ projects.project_number }}` | The project number |
+| `{{ projects.project_name }}` | The project name |
+| `{{ contacts.name }}` | The contact's name |
+| `{{ contacts.email }}` | The contact's email address |
+| `{{ project_notes.note_title }}` | A meeting's title |
 
 A shortcut such as
 
 ```
-https://outlook.office365.com/mail/?folderid=Inbox&searchText=[$projects.project_number.1] [$projects.project_name.1]
+https://outlook.office365.com/mail/?folderid=Inbox&searchText={{ projects.project_number }} {{ projects.project_name }}
 ```
 
 opens `https://outlook.office365.com/mail/?folderid=Inbox&searchText=P-002 Website Redesign` for project P-002. Export a record to [XML](<../PluginsOverview/ProjectNotesXML.md>) to see every column you can use.
 
-Office templates use tags instead, such as `<PROJECTNUMBER>` and `<PROJECTNAME>`. See [Office Document Templates](<NewDocumentTemplates.md>).
+Older shortcuts and templates written as `[$projects.project_number.1]` or `<PROJECTNAME>` keep working. My Shortcuts rewrites its saved shortcuts to the new form the next time it starts.
 
 Starting with 6.4.0, opening a database retires the old Widgets page-state and XML filter settings. Retired database settings are marked deleted so the cleanup syncs. Current QML filters, sort orders, project folders, templates, and shared preferences are preserved. The obsolete `project_risks` table, including any historical rows, is removed; current risks are stored in `item_tracker`. Desktop startup also removes the old Widgets window geometry, table layouts, and local XML filter settings while preserving current view options and plugin settings.

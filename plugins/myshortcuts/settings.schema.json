@@ -1,6 +1,6 @@
 { "fields": [
     { "key": "_help", "type": "note",
-      "label": "Each shortcut adds a menu that opens its URL. Leave Entity empty for a menu under Plugins in the application menu, or name an entity (projects, contacts, companies, project_team, project_locations, project_notes, meeting_attendees, item_tracker, item_tracker_updates, status_report_items) to add it to that record's right-click menu. A URL can use [$entity.column.1] for a value of the clicked record, and [$managing_company_name], [$managing_manager_name] and [$project_manager_id]." },
+      "label": "Each shortcut adds a menu that opens its URL. Leave Entity empty for a menu under Plugins in the application menu, or name an entity (projects, contacts, companies, project_team, project_locations, project_notes, meeting_attendees, item_tracker, item_tracker_updates, status_report_items) to add it to that record's right-click menu. A URL can use {{ entity.column }} for a value of the clicked record, such as {{ projects.project_number }}, and {{ preferences.managingCompanyName }}, {{ preferences.managerName }} and {{ preferences.managerId }}." },
     { "key": "shortcuts", "label": "Shortcuts", "type": "table", "columns": [
         { "key": "menu", "label": "Menu", "type": "text" },
         { "key": "submenu", "label": "Submenu", "type": "text" },

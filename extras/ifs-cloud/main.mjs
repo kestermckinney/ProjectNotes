@@ -14,29 +14,29 @@ const SYNC_MINUTES = 3;
 // record you right-click. These were the default My Shortcuts entries.
 const IFS_PAGES = [
     { title: "Open Time Entry", entity: "contacts",
-      path: "/main/ifsapplications/web/page/TimeRegistrationManager/TimeHeaderPage;$filter=%28startswith%28CompanyPersonRef%2FInternalDisplayName,'[$contacts.name.1]'%29%29" },
+      path: "/main/ifsapplications/web/page/TimeRegistrationManager/TimeHeaderPage;$filter=%28startswith%28CompanyPersonRef%2FInternalDisplayName,'{{ contacts.name }}'%29%29" },
     { title: "Open Project", entity: "projects",
-      path: "/main/ifsapplications/web/page/ProjectDefinition/Form;path=0.1731531774.1886945984.458817809;$filter=%28%20ProjectId%20eq%20'[$projects.project_number.1]'%20%29" },
+      path: "/main/ifsapplications/web/page/ProjectDefinition/Form;path=0.1731531774.1886945984.458817809;$filter=%28%20ProjectId%20eq%20'{{ projects.project_number }}'%20%29" },
     { title: "Open Gantt", entity: "projects",
-      path: "/main/ifsapplications/web/page/ProjectGantt/Form;$filter=%28%20ProjectId%20eq%20'[$projects.project_number.1]'%20%29" },
+      path: "/main/ifsapplications/web/page/ProjectGantt/Form;$filter=%28%20ProjectId%20eq%20'{{ projects.project_number }}'%20%29" },
     { title: "Invoicing Plan", entity: "projects",
-      path: "/main/ifsapplications/web/page/InvoicingPlan/List;$filter=%28%20ProjectId%20eq%20'[$projects.project_number.1]'%20%29;usedefaultfilter=false" },
+      path: "/main/ifsapplications/web/page/InvoicingPlan/List;$filter=%28%20ProjectId%20eq%20'{{ projects.project_number }}'%20%29;usedefaultfilter=false" },
     { title: "Open PC Distribution", entity: "projects",
-      path: "/main/ifsapplications/web/page/CPcDistribution/Form;$filter=%28%20DistributionId%20eq%20'[$projects.project_number.1]'%20%29" },
+      path: "/main/ifsapplications/web/page/CPcDistribution/Form;$filter=%28%20DistributionId%20eq%20'{{ projects.project_number }}'%20%29" },
     { title: "Open PO Table", entity: "projects",
-      path: "/main/ifsapplications/web/page/CCustomerPOs/List;$filter=%28%20ProjectId%20eq%20'[$projects.project_number.1]'%20%29" },
+      path: "/main/ifsapplications/web/page/CCustomerPOs/List;$filter=%28%20ProjectId%20eq%20'{{ projects.project_number }}'%20%29" },
     { title: "Open Standard Price", entity: "projects",
-      path: "/main/ifsapplications/web/page/StandardSalesPrice/Form;$filter=%28%20ProjectSalesPriceId%20eq%20'[$projects.project_number.1]'%20%29" },
+      path: "/main/ifsapplications/web/page/StandardSalesPrice/Form;$filter=%28%20ProjectSalesPriceId%20eq%20'{{ projects.project_number }}'%20%29" },
 ];
 const REPORT_VIEWER = "/ReportServer/Pages/ReportViewer.aspx?";
 const REPORTS = [
-    { title: "Customer Parts Tracking", query: "%2FProd%2FLead+Engineers%2FCustomer+Parts+Tracking&ProjectID=[$projects.project_number.1]&rs:ClearSession=true&rc:Zoom=Page%20Width" },
+    { title: "Customer Parts Tracking", query: "%2FProd%2FLead+Engineers%2FCustomer+Parts+Tracking&ProjectID={{ projects.project_number }}&rs:ClearSession=true&rc:Zoom=Page%20Width" },
     { title: "Invalid Report Codes", query: "%2FProd%2FProjects%2FInvalid+Report+Code+Assignments&rs:ClearSession=true&rc:Zoom=Page%20Width" },
-    { title: "Parts Ordered", query: "%2FProd%2FProjects%2FProject+Parts+Ordered&ProjectID=[$projects.project_number.1]&rs:ClearSession=true&rc:Zoom=Page%20Width" },
-    { title: "Project Report", query: "%2FProd%2FProjects%2FProject+Report&ProjectId=[$projects.project_number.1]&rs:ClearSession=true&rc:Zoom=Page%20Width" },
-    { title: "Project Status", query: "%2FProd%2FLead+Engineers%2FProject+Status+Report&ProjectId=[$projects.project_number.1]&ReportPeriod=30&rs:ClearSession=true&rc:Zoom=Page%20Width" },
+    { title: "Parts Ordered", query: "%2FProd%2FProjects%2FProject+Parts+Ordered&ProjectID={{ projects.project_number }}&rs:ClearSession=true&rc:Zoom=Page%20Width" },
+    { title: "Project Report", query: "%2FProd%2FProjects%2FProject+Report&ProjectId={{ projects.project_number }}&rs:ClearSession=true&rc:Zoom=Page%20Width" },
+    { title: "Project Status", query: "%2FProd%2FLead+Engineers%2FProject+Status+Report&ProjectId={{ projects.project_number }}&ReportPeriod=30&rs:ClearSession=true&rc:Zoom=Page%20Width" },
     { title: "Missing Time Entry", query: "%2fProd%2fProjects%2fMissing+Time+Entry&rs:Command=Render&rs:ClearSession=true&rc:Zoom=Page%20Width" },
-    { title: "Item Tracker", query: "%2FProd%2FLead+Engineers%2FIssues+List&ProjectId=[$projects.project_number.1]&rs:ClearSession=true&rc:Zoom=Page%20Width" },
+    { title: "Item Tracker", query: "%2FProd%2FLead+Engineers%2FIssues+List&ProjectId={{ projects.project_number }}&rs:ClearSession=true&rc:Zoom=Page%20Width" },
 ];
 
 let timer = null;

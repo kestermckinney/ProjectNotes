@@ -1,7 +1,7 @@
 // Probe plugin for tst_pluginhost: runs one scenario per menu id and reports
 // {menuId, ok, result | error} through ui.message.
 import { data, menus, settings, storage, files, http, auth, plugin, app, secrets, ui, PluginError } from "projectnotes";
-import { replaceVariables, formatDate, parseDate, escapeHtml } from "projectnotes/common";
+import { render, replaceVariables, formatDate, parseDate, escapeHtml } from "projectnotes/common";
 
 function report(menuId, ok, value) {
     return ui.message(JSON.stringify(ok ? { menuId, ok, result: value }
@@ -102,8 +102,16 @@ const scenarios = {
     },
     *common() {
         const rec = { $entity: "projects", project_number: "P4000", company_id: { id: "c1", lookup: "Acme Corp" },
-                      project_team: [{ $entity: "project_team", role: "Lead" }] };
-        return { vars: replaceVariables("x [$projects.project_number.1] [$projects.company_id.1] [$project_team.role.1] [$project_team.role.2]", rec),
+                      project_team: [{ $entity: "project_team", role: "Lead", email: "a@x.test" }, { $entity: "project_team", role: "", email: "b@x.test" }] };
+        const values = { "project.name": "A<B", "current.date": "09/02/2026" };
+        return { tokens: replaceVariables("x {{ projects.project_number }} {{projects.company_id}} {{ project_team.1.role }} {{ project_team.2.role }} {{ report.date }} {{ project_team.*.email }}|{{ project_team.*.role }}|{{ project_team.*.nope }}", rec,
+                                          { "report.date": "09/02/2026" }),
+                 grammar: [render("{{ project.name }}|{{ current.date }}", values),
+                           render("{{ project.name }}", values, { html: true }),
+                           render("\\{{ project.name }}", values),
+                           render("{{ constructor.x }}{{ project.name() }}{{ nope }}", values),
+                           render("a {{ project.name", values)],
+                 vars: replaceVariables("x [$projects.project_number.1] [$projects.company_id.1] [$project_team.role.1] [$project_team.role.2]", rec),
                  date: formatDate("2026-09-02", "MM/dd/yyyy"), parsed: parseDate("9/2/26"), html: escapeHtml("<a&b>") };
     },
     *arrays() {

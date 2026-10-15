@@ -8,15 +8,19 @@ Right-click a project and choose **Templates**, then one of:
 
 | Command | Template | Placeholders filled in | Default subfolder |
 | :--- | :--- | :--- | :--- |
-| **Change Order** | `PCR Template.docx` (asks for the change number) | `<PROJECTNUMBER>`, `<CLIENTNAME>`, `<PROJECTNAME>`, `<CRDATE>`, `<CRNUMBER>` | `Project Management/PCR's` |
+| **Change Order** | `PCR Template.docx` (asks for the change number) | `{{ project.number }}`, `{{ company.name }}`, `{{ project.name }}`, `{{ current.date }}`, `{{ change.number }}` | `Project Management/PCR's` |
 | **PCR Register** | `PCR Registry Template.xlsx` | none; the copy opens in Excel | `Project Management/PCR's` |
-| **PowerPoint** | one you choose | `<PROJECTNUMBER>`, `<PROJECTNAME>` | `Project Management/Meeting Minutes` |
-| **Risk Register** | `Risk Register Template.xlsx` | `<PROJECTNAME>`, with the project number in front | `Project Management/Risk Management` |
-| **MS Project** | one you choose (`.mpp`) | tasks whose name contains `PROJECTNAME` | `Project Management/Schedule` |
+| **PowerPoint** | one you choose | `{{ project.number }}`, `{{ project.name }}`, `{{ current.date }}` | `Project Management/Meeting Minutes` |
+| **Risk Register** | `Risk Register Template.xlsx` | `{{ project.number }}`, `{{ project.name }}`, `{{ company.name }}`, `{{ current.date }}` | `Project Management/Risk Management` |
+| **MS Project** | one you choose (`.mpp`) | tasks whose name contains `{{ project.name }}` | `Project Management/Schedule` |
 
 Each command copies the template into the project folder's subfolder, names the copy after the project (for example `P-100 Risk Register.xlsx`), fills in the placeholders, and adds the file to the project's **Files & Folders**. A file that already exists is opened as it is, not overwritten. When the project has no folder, you are asked where to save.
 
 The Change Order and PCR Register templates are not included with Project Notes; the first time, you are asked to choose your own. The Risk Register, Lessons Learned and Meeting templates come in the plugin's `templates` folder.
+
+## Placeholders
+
+Templates use the same `{{ name }}` placeholders as email templates. See [Plugin Settings](<PluginSettings.md#placeholders>). Templates made for earlier versions, with `<PROJECTNUMBER>`, `<CLIENTNAME>`, `<PROJECTNAME>`, `<CRDATE>` or `<CRNUMBER>`, still work. In the Risk Register, the old `<PROJECTNAME>` tag still gets the project number in front of the name.
 
 ## Subfolders
 

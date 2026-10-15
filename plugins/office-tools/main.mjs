@@ -92,6 +92,29 @@ function* withOffice(progId, work) {
     }
 }
 
+// Template placeholders use the same {{ dotted.path }} tokens as the email
+// templates. Each entry lists every spelling to find: the token with and
+// without inner spaces, and the <TAG> older templates were written with.
+function placeholder(path, legacyTag, value) {
+    const find = ["{{ " + path + " }}", "{{" + path + "}}"];
+    if (legacyTag) find.push("<" + legacyTag + ">");
+    return { find: find, value: String(value) };
+}
+
+function projectPlaceholders(project) {
+    return [
+        placeholder("project.number", "PROJECTNUMBER", text(project.project_number)),
+        placeholder("project.name", "PROJECTNAME", text(project.project_name)),
+        placeholder("company.name", "CLIENTNAME", text(project.company_id)),
+    ];
+}
+
+function today() {
+    const now = new Date();
+    const pad = n => (n < 10 ? "0" : "") + n;
+    return pad(now.getMonth() + 1) + "/" + pad(now.getDate()) + "/" + now.getFullYear();
+}
+
 function wordReplace(doc, search, replacement) {
     // Find.Execute(FindText, MatchCase, MatchWholeWord, MatchWildcards,
     // MatchSoundsLike, MatchAllWordForms, Forward, Wrap=wdFindContinue,
@@ -111,15 +134,14 @@ function* changeOrder(context) {
     const target = folder + "/" + name;
     if (!(yield copyTemplate(template, target))) return;
 
-    const today = new Date();
-    const pad = n => (n < 10 ? "0" : "") + n;
+    const entries = projectPlaceholders(project).concat([
+        placeholder("current.date", "CRDATE", today()),
+        placeholder("change.number", "CRNUMBER", text(project.project_number).replace(/\D/g, "") + "-" + number),
+    ]);
     const done = yield withOffice("Word.Application", function* (word) {
         const doc = word.Documents.Open(windowsPath(target));
-        wordReplace(doc, "<PROJECTNUMBER>", text(project.project_number));
-        wordReplace(doc, "<CLIENTNAME>", text(project.company_id));
-        wordReplace(doc, "<PROJECTNAME>", text(project.project_name));
-        wordReplace(doc, "<CRDATE>", pad(today.getMonth() + 1) + "/" + pad(today.getDate()) + "/" + today.getFullYear());
-        wordReplace(doc, "<CRNUMBER>", text(project.project_number).replace(/\D/g, "") + "-" + number);
+        for (const entry of entries)
+            for (const find of entry.find) wordReplace(doc, find, entry.value);
         doc.Save();
         word.Visible = true;
         doc.Activate();
@@ -159,9 +181,18 @@ function* riskRegister(context) {
         const workbook = excel.Workbooks.Open(windowsPath(target));
         try {
             const sheet = workbook.Sheets("Risk Register");
-            // Replace(What, Replacement, LookAt=xlPart)
-            sheet.Range("A1", "Z10000").Replace("<PROJECTNAME>",
-                (text(project.project_number) + " " + text(project.project_name)).slice(0, 255), 2);
+            // Replace(What, Replacement, LookAt=xlPart). The older <PROJECTNAME>
+            // tag also carried the project number in front.
+            const entries = [
+                placeholder("project.number", null, text(project.project_number)),
+                placeholder("project.name", null, text(project.project_name)),
+                placeholder("company.name", "CLIENTNAME", text(project.company_id)),
+                placeholder("current.date", null, today()),
+                { find: ["<PROJECTNAME>"], value: text(project.project_number) + " " + text(project.project_name) },
+            ];
+            for (const entry of entries)
+                for (const find of entry.find)
+                    sheet.Range("A1", "Z10000").Replace(find, entry.value.slice(0, 255), 2);
             workbook.Save();
         } finally {
             excel.Workbooks.Close();
@@ -189,11 +220,12 @@ function* powerPoint(context) {
     const done = yield withOffice("PowerPoint.Application", function* (powerpoint) {
         const presentation = powerpoint.Presentations.Open(windowsPath(target));
         const count = presentation.Slides.Count;
+        const entries = projectPlaceholders(project).concat([placeholder("current.date", null, today())]);
         for (let i = 1; i <= count; ++i) {
             for (const shape of presentation.Slides(i).Shapes) {
                 if (shape.HasTextFrame && shape.TextFrame.HasText) {
-                    shape.TextFrame.TextRange.Replace("<PROJECTNUMBER>", text(project.project_number));
-                    shape.TextFrame.TextRange.Replace("<PROJECTNAME>", text(project.project_name));
+                    for (const entry of entries)
+                        for (const find of entry.find) shape.TextFrame.TextRange.Replace(find, entry.value);
                 }
             }
         }
@@ -220,7 +252,9 @@ function* msProject(context) {
         msp.Visible = true;
         // ReplaceEx(Field, Test, Value, Replacement, ReplaceAll, Next,
         // MatchCase, FieldType, Replacement field type, Search all fields)
-        msp.ReplaceEx("Name", "contains", "PROJECTNAME", name, true, true, false, 188743694, 7, true);
+        // The older bare PROJECTNAME text and the {{ project.name }} token both work.
+        for (const find of ["PROJECTNAME", "{{ project.name }}", "{{project.name}}"])
+            msp.ReplaceEx("Name", "contains", find, name, true, true, false, 188743694, 7, true);
         msp.FileSave();
         return true;
     });

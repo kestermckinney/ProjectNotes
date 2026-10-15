@@ -28,9 +28,9 @@ A plugin's record menu names one entity. Right-click a record of that kind and t
 
 ## Placeholders
 
-A placeholder has the form `[$entity.column.row]`: the entity, a column, and the row, starting at 1 for the record you right-clicked. `[$projects.project_number.1]` is the project number of the project, `[$contacts.email.1]` the email address of the contact.
+A placeholder has the form `{{ entity.column }}`: the entity and a column of the record you right-clicked. `{{ projects.project_number }}` is the project number of the project, `{{ contacts.email }}` the email address of the contact. For a row of a related list, add the row number after the entity: `{{ project_team.2.role }}`. Use `*` for every row: `{{ project_team.*.email }}` lists all the email addresses, separated by commas.
 
-Shortcuts saved before plugins moved to JavaScript used the XML names (`[$people.name.1]`). My Shortcuts converts them the first time it starts.
+Shortcuts saved before plugins moved to JavaScript used the XML names (`[$people.name.1]`). My Shortcuts converts them to the current names and the `{{ }}` form the first time it starts.
 
 ## Finding the columns
 

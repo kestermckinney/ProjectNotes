@@ -16,7 +16,7 @@ function today() {
 
 // The report period parameter takes days.
 function reportUrl(template, project, reportDate) {
-    let url = replaceVariables(template, project, { REPORTDATE: formatDate(reportDate, "MM/dd/yyyy") });
+    let url = replaceVariables(template, project, { "report.date": formatDate(reportDate, "MM/dd/yyyy") });
     url = url.replace("&ReportPeriod=Bi-Weekly", "&ReportPeriod=14").replace("&ReportPeriod=Weekly", "&ReportPeriod=7")
              .replace("&ReportPeriod=Monthly", "&ReportPeriod=30").replace("&ReportPeriod=None", "&ReportPeriod=30")
              .replace("&ReportPeriod=&", "&ReportPeriod=30&");

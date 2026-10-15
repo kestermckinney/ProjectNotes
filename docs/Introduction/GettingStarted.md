@@ -53,7 +53,7 @@ Project Notes is capable of connecting information from various systems. In orde
 
 There are three methods to import companies and contacts.
 
-* **Importing From Outlook** - The Outlook Integration plugin imports and exports contacts through Microsoft 365 on any platform, or directly from Outlook (classic) on Windows. See [Outlook Integration](<../StandardPlugins/OutlookIntegration.md>) for details.
+* **Importing From Outlook** - Preferences synchronizes contacts through Microsoft 365 on any platform, or directly with Outlook (classic) on Windows. See [Contact Synchronization](<../InterfaceOverview/Preferences.md#contact-synchronization>) for details. The [Archive Mail](<../StandardPlugins/ArchiveMail.md>) plugin saves project email into project folders.
 * **Importing From XML** - All database items can be imported from a [Project Notes XML](<../PluginsOverview/ProjectNotesXML.md>) file. Choose **Import XML…** from the app menu (the menu icon at the top of the icon rail) to import a file.
 * **Entering Manually** - Company information can be entered using the [Companies List Page](<../InterfaceOverview/CompaniesListPage.md>), and contacts can be entered using the [Contacts List Page](<../InterfaceOverview/ContactsListPage.md>).
 

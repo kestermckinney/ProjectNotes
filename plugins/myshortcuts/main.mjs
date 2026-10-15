@@ -1,7 +1,7 @@
 // My Shortcuts: configurable URL menus. Replaces plugins/myshortcuts_plugin.py
 // and the My Shortcuts settings dialog.
 import { app, menus, settings, ui, log } from "projectnotes";
-import { replaceVariables } from "projectnotes/common";
+import { replaceVariables, upgradeVariables } from "projectnotes/common";
 
 // The Python plugin stored rows as {Menu, Submenu, URL, "Data Type"} with the
 // stored table names. Translate them once to the published vocabulary.
@@ -13,6 +13,30 @@ function translateUrl(url) {
     return String(url || "").replace(/\[\$([A-Za-z0-9_]+)\.([A-Za-z0-9_]+)\.(\d+)\]/g, function (whole, table, column, row) {
         return "[$" + (entityNames[table] || table) + "." + (columnNames[column] || column) + "." + row + "]";
     });
+}
+
+// Earlier versions wrote [$managing_company_name] and so on; these are the
+// names the {{ }} tokens use, shared with the email templates.
+const extraNames = { managing_company_name: "preferences.managingCompanyName",
+                     managing_manager_name: "preferences.managerName",
+                     project_manager_id: "preferences.managerId" };
+
+function toTokens(url) {
+    return upgradeVariables(url).replace(/\{\{\s*(managing_company_name|managing_manager_name|project_manager_id)\s*\}\}/g,
+                                        function (whole, name) { return "{{ " + extraNames[name] + " }}"; });
+}
+
+// Saved URLs written with [$...] placeholders become {{ }} tokens once.
+function upgradeSaved() {
+    const rows = settings.get("shortcuts", []) || [];
+    let changed = false;
+    rows.forEach(function (row) {
+        if (row && typeof row.url === "string" && row.url.indexOf("[$") >= 0) {
+            row.url = toTokens(row.url);
+            changed = true;
+        }
+    });
+    if (changed) settings.set("shortcuts", rows);
 }
 
 function migrate() {
@@ -48,10 +72,10 @@ function register() {
 
 function* open(context) {
     const defaults = yield app.defaults();
-    const url = replaceVariables(context.parameter, context.record || {}, {
-        managing_company_name: defaults.managingCompanyName,
-        managing_manager_name: defaults.projectManagerName,
-        project_manager_id: defaults.projectManagerId,
+    const url = replaceVariables(toTokens(context.parameter), context.record || {}, {
+        "preferences.managingCompanyName": defaults.managingCompanyName,
+        "preferences.managerName": defaults.projectManagerName,
+        "preferences.managerId": defaults.projectManagerId,
     });
     const opened = yield ui.openUrl(url);
     if (!opened) yield ui.message("Could not open " + url, { kind: "warning" });
@@ -59,6 +83,7 @@ function* open(context) {
 
 export function onStart() {
     migrate();
+    upgradeSaved();
     register();
 }
 

@@ -133,6 +133,7 @@ set(DESKTOP_QML_FILES
     qml/MeetingTemplateSettingsPane.qml
     qml/ThemedMessageDialog.qml
     qml/PluginUiHost.qml
+    qml/ThemedCheckBox.qml
     qml/SchemaForm.qml
     qml/PluginsSettingsPane.qml
     qml/PluginSettingsSection.qml

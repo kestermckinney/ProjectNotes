@@ -317,6 +317,7 @@ Section Uninstall
   RMDir /r "$INSTDIR\plugins\base"
   RMDir /r "$INSTDIR\plugins\myshortcuts"
   RMDir /r "$INSTDIR\plugins\office-tools"
+  RMDir /r "$INSTDIR\plugins\archive-mail"
   RMDir /r "$INSTDIR\plugins\outlook-integration"
   RMDir /r "$INSTDIR\plugins\team-member-quick-add"
   RMDir  "$INSTDIR\plugins"

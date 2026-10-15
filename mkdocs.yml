@@ -51,8 +51,7 @@ nav:
     - 'Project Notes XML': PluginsOverview/ProjectNotesXML.md
   - 'Standard Plugins':
     - 'Plugin Settings': StandardPlugins/PluginSettings.md
-    - 'Outlook Integration': StandardPlugins/OutlookIntegration.md
-    - 'iCloud Contacts': StandardPlugins/iCloudContacts.md
+    - 'Archive Mail': StandardPlugins/ArchiveMail.md
     - 'My Shortcuts': StandardPlugins/MyShortcuts.md
     - 'Team Member Quick Add': StandardPlugins/TeamMemberQuickAdd.md
     - 'Office Document Templates': StandardPlugins/NewDocumentTemplates.md

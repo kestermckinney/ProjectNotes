@@ -159,7 +159,7 @@ ColumnLayout {
 
     Component {
         id: checkboxField
-        CheckBox {
+        ThemedCheckBox {
             readonly property var field: parent ? parent.field : ({})
             text: field.label
             checked: { form._revision; return !!form.value(field.key) }

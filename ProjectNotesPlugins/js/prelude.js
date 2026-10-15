@@ -559,25 +559,76 @@
         if (!parts.y || !parts.M || !parts.d) return null;
         return pad(parts.y, 4) + "-" + pad(parts.M, 2) + "-" + pad(parts.d, 2);
     }
-    // "[$projects.project_number.1]" style variables, as My Shortcuts uses.
-    // The entity segment may be the record's own entity or a child array; the
-    // row number is 1-based. Ref values substitute their display value.
-    function replaceVariables(template, record, extras) {
-        let text = String(template);
-        if (extras) {
-            Object.keys(extras).forEach(function (name) {
-                text = text.split("[$" + name + "]").join(extras[name] === null || extras[name] === undefined ? "" : String(extras[name]));
+    // "{{ dotted.path }}" tokens, the same grammar the email and meeting
+    // templates use (ProjectNotesIntegrations/TemplateParser.cpp): whitespace
+    // inside the braces is trimmed, "\{{" writes a literal "{{", and each
+    // segment is a letter or "_" followed by letters, digits or "_". Digit-only
+    // segments and "*" are also allowed here, as row numbers. `values` is an object
+    // keyed by the full path, or a function(path) returning the value. A token
+    // that is invalid or has no value renders as nothing; an unclosed one is
+    // kept as written. Options: html escapes each value.
+    function render(template, values, options) {
+        const input = String(template);
+        const html = !!(options && options.html);
+        const lookup = typeof values === "function" ? values : function (path) {
+            return values && Object.prototype.hasOwnProperty.call(values, path) ? values[path] : undefined;
+        };
+        let out = "";
+        for (let i = 0; i < input.length;) {
+            if (input.substr(i, 3) === "\\{{") { out += "{{"; i += 3; continue; }
+            if (input.substr(i, 2) !== "{{") { out += input[i++]; continue; }
+            const end = input.indexOf("}}", i + 2);
+            if (end < 0) { out += input.slice(i); break; }
+            const key = input.slice(i + 2, end).trim();
+            const valid = key !== "" && key.split(".").every(function (part) {
+                return /^(?:[A-Za-z_][A-Za-z0-9_]*|\d+|\*)$/.test(part) && part !== "__proto__" && part !== "prototype" && part !== "constructor";
             });
+            let value = valid ? lookup(key) : undefined;
+            if (value && typeof value === "object" && "id" in value) value = value.lookup !== null ? value.lookup : value.id;
+            if (value !== null && value !== undefined) out += html ? escapeHtml(String(value)) : String(value);
+            i = end + 2;
         }
-        return text.replace(/\[\$([A-Za-z0-9_]+)\.([A-Za-z0-9_]+)\.(\d+)\]/g, function (whole, entity, column, row) {
-            let source = null;
+        return out;
+    }
+    // Rewrite the "[$entity.column.row]" and "[$name]" spelling earlier
+    // versions saved into "{{ entity.row.column }}" and "{{ name }}".
+    function upgradeVariables(template) {
+        return String(template)
+            .replace(/\[\$([A-Za-z0-9_]+)\.([A-Za-z0-9_]+)\.(\d+)\]/g, "{{ $1.$3.$2 }}")
+            .replace(/\[\$([A-Za-z0-9_]+)\]/g, "{{ $1 }}");
+    }
+    // Fill a template from a record and optional named extras. Paths:
+    //   entity.column        the record (or its first child row) for that entity
+    //   entity.N.column      row N (1-based) of a child array, or the record when N is 1
+    //   entity.*.column      that column of every row, empty ones skipped, joined with ", "
+    //   name                 any key of `extras`, dots included ("report.date")
+    // Ref values substitute their display value. Old "[$...]" spellings still work.
+    function cell(value) {
+        if (value && typeof value === "object" && "id" in value) value = value.lookup !== null ? value.lookup : value.id;
+        return value === null || value === undefined ? "" : String(value);
+    }
+    function replaceVariables(template, record, extras) {
+        function fromRow(entity, row, column) {
             const index = Math.max(1, +row) - 1;
+            let source = null;
             if (record && record.$entity === entity && index === 0) source = record;
             else if (record && Array.isArray(record[entity])) source = record[entity][index] || null;
-            if (!source) return "";
-            let value = source[column];
-            if (value && typeof value === "object" && "id" in value) value = value.lookup !== null ? value.lookup : value.id;
-            return value === null || value === undefined ? "" : String(value);
+            return source ? source[column] : undefined;
+        }
+        function fromAllRows(entity, column) {
+            let rows = [];
+            if (record && Array.isArray(record[entity])) rows = record[entity];
+            else if (record && record.$entity === entity) rows = [record];
+            return rows.map(function (row) { return cell(row[column]); })
+                       .filter(function (v) { return v !== ""; }).join(", ");
+        }
+        return render(upgradeVariables(template), function (path) {
+            if (extras && Object.prototype.hasOwnProperty.call(extras, path)) return extras[path];
+            const parts = path.split(".");
+            if (parts.length === 2) return fromRow(parts[0], 1, parts[1]);
+            if (parts.length === 3 && parts[1] === "*") return fromAllRows(parts[0], parts[2]);
+            if (parts.length === 3 && /^\d+$/.test(parts[1])) return fromRow(parts[0], parts[1], parts[2]);
+            return undefined;
         });
     }
     const common = freeze({
@@ -588,7 +639,9 @@
             return function () { return settle(generatorFunction.apply(this, arguments)); };
         },
         all: function (items) { return settle(items); },
+        render: render,
         replaceVariables: replaceVariables,
+        upgradeVariables: upgradeVariables,
         escapeHtml: escapeHtml,
         textToHtml: function (text) { return escapeHtml(text).replace(/\r\n|\r|\n/g, "<br>"); },
         validFilename: function (name) { return String(name).replace(/[\\/:*?"<>|]/g, "_").replace(/\s+$/g, "").trim(); },

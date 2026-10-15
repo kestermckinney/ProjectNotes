@@ -300,7 +300,13 @@ declare module "projectnotes" {
 
 declare module "projectnotes/common" {
     import { DataRecord } from "projectnotes";
+    /** Fill "{{ dotted.path }}" tokens, the grammar email templates use. `values` is keyed by full path or is a lookup function. Missing values render as nothing; `\{{` writes a literal `{{`. */
+    export function render(template: string, values: { [path: string]: any } | ((path: string) => any),
+                           options?: { html?: boolean }): string;
+    /** Fill a template from a record: `{{ projects.project_number }}`, `{{ project_team.2.role }}` (row 2), `{{ project_team.*.email }}` (every row, joined with ", "), plus named `extras` such as `{{ report.date }}`. Old `[$entity.column.row]` spellings still work. */
     export function replaceVariables(template: string, record: DataRecord, extras?: { [name: string]: any }): string;
+    /** Rewrite the older `[$entity.column.row]` and `[$name]` spellings to `{{ }}` tokens. */
+    export function upgradeVariables(template: string): string;
     export function escapeHtml(text: string): string;
     export function textToHtml(text: string): string;
     export function validFilename(name: string): string;

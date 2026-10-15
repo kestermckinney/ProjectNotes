@@ -50,6 +50,7 @@ set(_pn_retired_scripts
     "plugins/ifs_cloud_settings_plugin"
     "plugins/ifs_project_report_plugin"
     "plugins/outlooksync_plugin"
+    "plugins/outlook-integration"
     "plugins/paul_cleanpc_plugin"
     "plugins/schedulecustomerkickoffinvite_plugin"
     "plugins/schedulecustomerlessonslearnedinvite_plugin"
