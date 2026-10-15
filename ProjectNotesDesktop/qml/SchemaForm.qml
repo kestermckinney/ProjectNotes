@@ -271,9 +271,33 @@ ColumnLayout {
             readonly property var rows: { form._revision; var v = form.value(field.key); return Array.isArray(v) ? v : [] }
             spacing: 4
             function setCell(row, key, value) {
+                delete live[row + ":" + key]
+                liveRevision++
                 var copy = rows.map(function (r) { return Object.assign({}, r) })
                 copy[row][key] = value
                 form.setValue(field.key, copy)
+            }
+            // Placeholders a cell may insert: the column's "variables", plus those in
+            // "variablesByValue" for the row's value of the "variablesBy" column.
+            // `live` holds text typed into a "variablesBy" cell that has not been
+            // committed yet (a cell commits when it loses focus), so the menu follows
+            // what is on screen rather than the last saved value.
+            property var live: ({})
+            property int liveRevision: 0
+            function isDriver(key) {
+                for (var i = 0; i < columns.length; ++i)
+                    if (columns[i].variablesBy === key) return true
+                return false
+            }
+            function variablesFor(column, row) {
+                liveRevision
+                var list = (column.variables || []).slice()
+                if (column.variablesBy && column.variablesByValue) {
+                    var typed = live[row + ":" + column.variablesBy]
+                    var key = typed !== undefined ? typed : (rows[row] ? rows[row][column.variablesBy] : "")
+                    list = list.concat(column.variablesByValue[String(key || "").trim()] || [])
+                }
+                return list
             }
             Label { text: field.label + (field.required ? " *" : ""); color: Theme.text2; font.pixelSize: Theme.fontSm }
             RowLayout {
@@ -300,14 +324,54 @@ ColumnLayout {
                     spacing: 4
                     Repeater {
                         model: table.columns
-                        TextField {
+                        Item {
+                            id: cellRoot
                             required property var modelData
                             Layout.fillWidth: true
                             Layout.preferredWidth: 1
-                            color: Theme.text
-                            background: Rectangle { color: Theme.surface; border.color: Theme.border; radius: Theme.radiusSm }
-                            text: { var v = table.rows[tableRow.index][modelData.key]; return v === undefined || v === null ? "" : String(v) }
-                            onEditingFinished: table.setCell(tableRow.index, modelData.key, text)
+                            implicitHeight: 30
+                            TextField {
+                                id: cell
+                                anchors.fill: parent
+                                visible: cellRoot.modelData.type !== "choice"
+                                color: Theme.text
+                                selectByMouse: true
+                                background: Rectangle { color: Theme.surface; border.color: Theme.border; radius: Theme.radiusSm }
+                                text: { var v = table.rows[tableRow.index][modelData.key]; return v === undefined || v === null ? "" : String(v) }
+                                onEditingFinished: table.setCell(tableRow.index, modelData.key, text)
+                                onTextEdited: if (table.isDriver(modelData.key)) {
+                                    table.live[tableRow.index + ":" + modelData.key] = text
+                                    table.liveRevision++
+                                }
+                                // Same themed edit menu as the email templates. A column
+                                // that lists "variables" adds Insert Field to it, with the
+                                // list for this row's value of the "variablesBy" column.
+                                SpellCheckField {
+                                    target: cell
+                                    spellCheckEnabled: false
+                                    insertFields: table.variablesFor(cellRoot.modelData, tableRow.index)
+                                    onInsertFieldRequested: (path) => {
+                                        var token = "{{ " + path + " }}"
+                                        var start = Math.min(cell.selectionStart, cell.selectionEnd)
+                                        var end = Math.max(cell.selectionStart, cell.selectionEnd)
+                                        if (end > start) cell.remove(start, end)
+                                        cell.insert(start, token)
+                                        cell.cursorPosition = start + token.length
+                                        table.setCell(tableRow.index, cellRoot.modelData.key, cell.text)
+                                    }
+                                }
+                            }
+                            // A "choice" column is a drop-down of its "choices", with a blank entry.
+                            Loader {
+                                anchors.fill: parent
+                                active: cellRoot.modelData.type === "choice"
+                                sourceComponent: ComboField {
+                                    options: cellRoot.modelData.choices || []
+                                    includeNone: true
+                                    value: { var v = table.rows[tableRow.index][cellRoot.modelData.key]; return v === undefined || v === null ? "" : String(v) }
+                                    onActivated: (v) => table.setCell(tableRow.index, cellRoot.modelData.key, v)
+                                }
+                            }
                         }
                     }
                     ToolButton {
@@ -316,6 +380,7 @@ ColumnLayout {
                         onClicked: {
                             var copy = table.rows.slice()
                             copy.splice(tableRow.index, 1)
+                            table.live = ({})
                             form.setValue(table.field.key, copy)
                         }
                     }

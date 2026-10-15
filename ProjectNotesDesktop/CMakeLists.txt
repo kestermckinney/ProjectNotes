@@ -247,6 +247,17 @@ elseif(WIN32)
     target_link_libraries(ProjectNotes PRIVATE Advapi32 Shell32)
 endif()
 
+# CMake can emit a build RUNPATH made only of empty entries ("::::"), and an
+# empty entry means the current directory. A stray libcrypto/libssl in the
+# working directory (or a launcher's directory) then shadows the system OpenSSL
+# and the app fails to start with "OPENSSL_3.0.1 not found". Link with the
+# install RPATH ($ORIGIN) instead of the computed one.
+if(UNIX AND NOT APPLE AND NOT ANDROID)
+    set_target_properties(ProjectNotes PROPERTIES
+        BUILD_WITH_INSTALL_RPATH ON
+        INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib64")
+endif()
+
 if(Hunspell_INCLUDE_DIRS AND NOT "${Hunspell_INCLUDE_DIRS}" MATCHES "NOTFOUND")
     target_include_directories(ProjectNotes PRIVATE ${Hunspell_INCLUDE_DIRS})
 endif()

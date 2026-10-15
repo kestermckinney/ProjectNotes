@@ -143,8 +143,12 @@ declare module "projectnotes" {
         type: "text" | "multiline" | "password" | "number" | "date" | "checkbox" | "choice" | "combo"
             | "file" | "folder" | "contact" | "table" | "section" | "note";
         required?: boolean; placeholder?: string; help?: string;
-        choices?: string[]; filters?: string[]; columns?: FormField[];
+        choices?: string[]; /* a "choice" table column is a drop-down with a blank entry */ filters?: string[]; columns?: FormField[];
         visibleWhen?: { [key: string]: any };
+        /** Text cells in a table: `{{ path }}` placeholders listed under Insert Field in the cell's right-click menu. */
+        variables?: string[];
+        /** Also list `variablesByValue[row[variablesBy]]`, so the choices follow another column of the same row. */
+        variablesBy?: string; variablesByValue?: { [value: string]: string[] };
     }
     export interface FormSchema { fields: FormField[]; }
     export interface Progress { update(fraction: number | null, text?: string): void; readonly cancelled: boolean; }

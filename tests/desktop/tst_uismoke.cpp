@@ -9,6 +9,9 @@
 // data the parity group seeds first (same process, same database).
 
 #include <QtTest/QtTest>
+#include <QFile>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QQmlApplicationEngine>
 
 #include "PluginUiController.h"
@@ -259,7 +262,6 @@ private slots:
         QTRY_VERIFY_WITH_TIMEOUT(dialog->property("visible").toBool(), 1000);
         QVERIFY(dialog->property("width").toDouble() > 0);
         QVERIFY(dialog->property("height").toDouble() > 0);
-        QTest::qWait(300);
         QVERIFY(!dialog->findChild<QQuickItem *>("projectEmailSubject"));
         QVERIFY(!dialog->findChild<QQuickItem *>("projectEmailBody"));
         auto *draftButton = dialog->findChild<QQuickItem *>("projectEmailDraftButton");
@@ -585,7 +587,6 @@ private slots:
         for (int i = 0; i < allGroups.size(); ++i)
             if (allGroups[i].toMap().value("name").toString() == "Navigate") navigateIndex = i;
         QVERIFY(QMetaObject::invokeMethod(menu, "_activateGroup", Q_ARG(QVariant, navigateIndex)));
-        QTest::qWait(300);
         const QImage screenshot = window->grabWindow();
         if (!screenshot.isNull()) screenshot.save("/tmp/projectnotes-navigate-menu.png");
         QTest::keyClick(window, Qt::Key_2, Qt::ControlModifier);
@@ -1417,6 +1418,98 @@ private slots:
         QVERIFY2(doubled.isEmpty(),
                  qPrintable(QStringLiteral("text editors that kept Qt's own context menu too: %1")
                                 .arg(doubled.join(QStringLiteral(", ")))));
+    }
+
+    // My Shortcuts' table: the URL cell's right-click menu offers Insert Field
+    // with the preferences values plus the columns of the row's Entity, and the
+    // Entity cell is a drop-down. Uses the plugin's real settings schema.
+    void test_09b_schemaFormTableInsertField()
+    {
+        clearWarnings();
+        QFile file(QStringLiteral(PN_TEST_FIXTURES) + QStringLiteral("/../../../plugins/myshortcuts/settings.schema.json"));
+        QVERIFY2(file.open(QIODevice::ReadOnly), qPrintable(file.fileName()));
+        QQmlComponent component(engine);
+        component.setData(R"(
+            import QtQuick
+            import ProjectNotesDesktop
+            SchemaForm {
+                id: form
+                width: 900
+                property string schemaJson: ""
+                fields: JSON.parse(schemaJson).fields
+                values: ({ shortcuts: [{ menu: "a", submenu: "", entity: "", url: "x" }] })
+                // Every insertFields list under the form, as JSON, read inside QML where
+                // a `var` property is plain JavaScript.
+                function insertFieldLists() {
+                    var out = []
+                    function walk(item) {
+                        if (item.spellCheckEnabled !== undefined)
+                            out.push(item.insertFields)
+                        for (var i = 0; i < item.children.length; ++i) walk(item.children[i])
+                    }
+                    walk(form)
+                    return JSON.stringify(out)
+                }
+                function choiceOptions() {
+                    var out = []
+                    function walk(item) {
+                        if (item.includeNone === true && item.options !== undefined && item.options.indexOf("projects") >= 0)
+                            out.push(item)
+                        for (var i = 0; i < item.children.length; ++i) walk(item.children[i])
+                    }
+                    walk(form)
+                    return out.length ? out[0] : null
+                }
+            }
+        )", QUrl());
+        QScopedPointer<QObject> object(component.createWithInitialProperties(
+            {{QStringLiteral("schemaJson"), QString::fromUtf8(file.readAll())}}));
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* form = qobject_cast<QQuickItem*>(object.data());
+        QVERIFY(form);
+        QQuickWindow window;
+        form->setParentItem(window.contentItem());
+        window.resize(900, 600);
+        window.show();
+
+        auto insertFields = [&]() {
+            QVariant json;
+            QMetaObject::invokeMethod(form, "insertFieldLists", Q_RETURN_ARG(QVariant, json));
+            QList<QStringList> found;
+            for (const QJsonValue& list : QJsonDocument::fromJson(json.toString().toUtf8()).array()) {
+                QStringList names;
+                for (const QJsonValue& name : list.toArray())
+                    names.append(name.toString());
+                found.append(names);
+            }
+            return found;
+        };
+        QTRY_VERIFY_WITH_TIMEOUT(!insertFields().isEmpty(), 3000);
+        // Four text cells in the row; only the URL cell lists any fields. A blank Entity
+        // still offers the preferences values.
+        auto longest = [&]() {
+            int most = 0;
+            for (const QStringList& list : insertFields())
+                most = qMax(most, int(list.size()));
+            return most;
+        };
+        QCOMPARE(longest(), 3);
+
+        // Choose projects in the Entity drop-down.
+        QObject* entityCombo = nullptr;
+        {
+            QVariant found;
+            QMetaObject::invokeMethod(form, "choiceOptions", Q_RETURN_ARG(QVariant, found));
+            entityCombo = found.value<QObject*>();
+        }
+        QVERIFY2(entityCombo, "Entity should be a drop-down");
+        QVERIFY(QMetaObject::invokeMethod(entityCombo, "activated", Q_ARG(QString, QStringLiteral("projects"))));
+        QTRY_VERIFY_WITH_TIMEOUT(longest() > 10, 3000);
+        bool hasNumber = false;
+        for (const QStringList& list : insertFields())
+            hasNumber = hasNumber || list.contains(QStringLiteral("projects.project_number"));
+        QVERIFY(hasNumber);
+        assertClean("schema form table insert field");
     }
 
     void cleanupTestCase()
