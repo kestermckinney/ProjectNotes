@@ -131,13 +131,13 @@ Item {
                         font.weight: parent.index === page.currentTab ? Font.DemiBold : Font.Normal
                     }
                     Rectangle {
-                        objectName: "preferencesContactReviewDot"
+                        objectName: "contactsCalendarReviewDot"
                         width: 8; height: 8; radius: 4
                         color: Theme.red
                         anchors.top: parent.top
                         anchors.right: parent.right
                         anchors.margins: 4
-                        visible: tabDelegate.modelData.key === "preferences" && page.contactsNeedReview
+                        visible: tabDelegate.modelData.key === "emailContactsCalendar" && page.contactsNeedReview
                     }
                     HoverHandler { id: tabHover }
                     TapHandler {

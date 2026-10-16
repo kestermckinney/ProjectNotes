@@ -57,6 +57,7 @@ public:
     Q_INVOKABLE void beginNew();
     Q_INVOKABLE bool duplicateSelected();
     Q_INVOKABLE bool deleteSelected();
+    Q_INVOKABLE bool resetDefaults();
     Q_INVOKABLE bool save();
     Q_INVOKABLE bool appendField(const QString &path, const QString &target);
     Q_INVOKABLE bool validateDraft();

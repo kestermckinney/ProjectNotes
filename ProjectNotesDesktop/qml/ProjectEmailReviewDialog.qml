@@ -24,6 +24,13 @@ Dialog {
     Connections {
         target: dialog.controller
         function onStateChanged() {
+            if (dialog.plainContact && !dialog.visible) {
+                if (dialog.controller.stageName === "reviewing") {
+                    if (!DesktopAppController.handoffPreparedReview()) dialog.open()
+                } else if (dialog.controller.stageName === "failed") {
+                    dialog.open()
+                }
+            }
             if (dialog.visible && dialog.controller.stageName === "completed") Qt.callLater(dialog.close)
         }
     }
@@ -49,7 +56,7 @@ Dialog {
     function openContact(contactId) {
         sharingLocation = false
         plainContact = true
-        if (DesktopAppController.prepareContactEmailReview(contactId)) open()
+        DesktopAppController.prepareContactEmailReview(contactId)
     }
     function openLocation(projectId, locationId, attachment) {
         sharingLocation = true

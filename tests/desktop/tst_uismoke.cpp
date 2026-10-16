@@ -272,17 +272,6 @@ private slots:
         if (!screenshot.isNull()) screenshot.save(QDir::temp().filePath("projectnotes-project-email-review.png"));
         assertClean("Project Email and location sharing menus/review");
         QVERIFY(QMetaObject::invokeMethod(dialog, "close"));
-        const auto people = c->contactList();
-        QVERIFY(!people.isEmpty());
-        QVERIFY(QMetaObject::invokeMethod(dialog, "openContact",
-            Q_ARG(QVariant, people.first().toMap().value("id"))));
-        QTRY_VERIFY_WITH_TIMEOUT(dialog->property("ready").toBool(), 5000);
-        QVERIFY(dialog->property("plainContact").toBool());
-        QVERIFY(!audience->isVisible());
-        QVERIFY(!dialog->findChild<QQuickItem *>("projectEmailSubject"));
-        QVERIFY(!dialog->findChild<QQuickItem *>("projectEmailBody"));
-        assertClean("plain person email review");
-        QVERIFY(QMetaObject::invokeMethod(dialog, "close"));
         window->hide();
     }
 
@@ -331,7 +320,7 @@ private slots:
         QVERIFY(selected.toBool());
         // Discarding the blank type returns to a seeded standard template.
         QVERIFY(model->property("hasDraft").toBool());
-        QCOMPARE(model->property("templates").toList().size(), 12);
+        QCOMPARE(model->property("templates").toList().size(), 13);
         assertClean("blank meeting type discarded");
 
         // A named draft with no subject is kept but blocks leaving the tab

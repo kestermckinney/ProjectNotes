@@ -671,6 +671,10 @@ void CommunicationContractsTest::editsTemplatesWithoutQmlEvaluation()
     TemplateEditorModel isolated(organization, QStringLiteral("database-b"));
     isolated.setWorkflow(QStringLiteral("status-report"));
     QCOMPARE(isolated.templates().size(), 1);
+    isolated.setWorkflow(QStringLiteral("project-email"));
+    QVERIFY(isolated.draftRichBody().isEmpty());
+    isolated.setWorkflow(QStringLiteral("share-location"));
+    QVERIFY(isolated.draftRichBody().contains(QStringLiteral("Please see the item below.")));
 }
 
 void CommunicationContractsTest::storesUserDefinedMeetingTypes()
@@ -715,7 +719,7 @@ void CommunicationContractsTest::initializesStandardMeetingTypes()
     QVERIFY(store.templates().isEmpty());
     QVERIFY(store.initializeDefaults().ok());
     const QList<MeetingTemplate> values = store.templates();
-    QCOMPARE(values.size(), 12);
+    QCOMPARE(values.size(), 13);
     QSet<QString> ids;
     int internalTypes = 0;
     TemplateContext context;
@@ -747,13 +751,17 @@ void CommunicationContractsTest::initializesStandardMeetingTypes()
         QCOMPARE(value.durationMinutes, 60);
     }
     QCOMPARE(internalTypes, 3);
+    QVERIFY(!values.at(4).agenda.contains(QStringLiteral("Vendor Management")));
+    QVERIFY(values.at(5).agenda.contains(QStringLiteral("Opportunities for Improvement")));
+    QVERIFY(!values.at(11).agenda.contains(QStringLiteral("RAG status")));
+    QVERIFY(!values.at(12).agenda.contains(QStringLiteral("MoSCoW")));
     QVERIFY(values.at(1).agenda.contains(QStringLiteral("DeltaV waterfall approach")));
     QVERIFY(values.at(1).agenda.contains(QStringLiteral("Syncade workshops &amp; workstreams")));
 
     // Persisted templates reload into the editor as ordinary editable types.
     MeetingTemplateEditorModel editor;
     editor.setDatabaseKey(m_templateDatabasePath);
-    QCOMPARE(editor.templates().size(), 12);
+    QCOMPARE(editor.templates().size(), 13);
     for (const MeetingTemplate &value : values) {
         QVERIFY(editor.selectTemplate(value.id));
         QVERIFY(editor.validateDraft());
@@ -767,7 +775,14 @@ void CommunicationContractsTest::initializesStandardMeetingTypes()
     QVERIFY(store.templates().isEmpty());
     QCOMPARE(global_DBObjects.loadParameter(MeetingTemplateStore::storageKey()), QStringLiteral("[]"));
     QVERIFY(store.initializeDefaults().ok());
-    QCOMPARE(store.templates().size(), 12);
+    QCOMPARE(store.templates().size(), 13);
+    QCOMPARE(global_DBObjects.loadParameter(MeetingTemplateStore::storageKey()), stored);
+
+    // A deliberate reset restores removed and edited defaults.
+    QVERIFY(store.save({QStringLiteral("custom"), QStringLiteral("Custom"), 30,
+                        QStringLiteral("Custom subject"), QStringLiteral("<p>Custom agenda</p>")}).ok());
+    QVERIFY(store.resetDefaults().ok());
+    QCOMPARE(store.templates().size(), 13);
     QCOMPARE(global_DBObjects.loadParameter(MeetingTemplateStore::storageKey()), stored);
 }
 
@@ -793,7 +808,7 @@ void CommunicationContractsTest::preservesExistingMeetingTypesDuringInitializati
     QVERIFY(store.remove(defaults.last().id).ok());
     stored = global_DBObjects.loadParameter(MeetingTemplateStore::storageKey());
     QVERIFY(store.initializeDefaults().ok());
-    QCOMPARE(store.templates().size(), 11);
+    QCOMPARE(store.templates().size(), 12);
     QCOMPARE(global_DBObjects.loadParameter(MeetingTemplateStore::storageKey()), stored);
 }
 

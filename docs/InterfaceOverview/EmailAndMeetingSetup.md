@@ -172,7 +172,7 @@ Templates are stored for the open database and the active Project Notes profile.
 
 ## Define your meeting types
 
-**Settings > Meeting Templates** holds the meeting types you can schedule. When Project Notes starts with an empty meeting type list, it adds 12 standard types covering kickoff, status, lessons learned, closeout, risk and issue review, change control, technical review, FAT / SAT readiness, steering committee status and requirements workshops. Kickoff and status each have an internal and a customer-facing version.
+**Settings > Meeting Templates** holds the meeting types you can schedule. When Project Notes starts with an empty meeting type list, it adds 13 standard types covering kickoff, status, lessons learned, closeout, risk and issue review, change control, technical review, FAT / SAT readiness, steering committee status and requirements workshops. Kickoff, status, and lessons learned each have an internal and a customer-facing version. **Reset to Defaults** replaces all saved meeting types, including custom types and edits, with the current standard set.
 
 Each standard type includes a purpose, an agenda and a 60-minute duration. Its subject inserts the project number and name. Internal types end in **(Internal)**; customer-facing titles omit **Customer**. Edit these types to suit your organization, or add your own:
 
