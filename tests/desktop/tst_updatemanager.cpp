@@ -87,12 +87,30 @@ private slots:
             QJsonObject{{"name", "ProjectNotes-macOS.dmg"}, {"url", backing}},
             QJsonObject{{"name", mac}, {"url", backing}}
         };
-        QCOMPARE(UpdateManager::selectInstallerLink(links, {}, "-Windows-x64-Setup.exe"), direct);
+        QCOMPARE(UpdateManager::selectInstallerLink(links, "ProjectNotes-", "-Windows-x64-Setup.exe"), direct);
         QCOMPARE(UpdateManager::selectInstallerLink(links, "macOS", ".zip"), backing);
 
         // Plain asset links are supported without a direct_asset_path.
         links = QJsonArray{QJsonObject{{"name", windows.toUpper()}, {"url", backing}}};
-        QCOMPARE(UpdateManager::selectInstallerLink(links, {}, "-Windows-x64-Setup.exe"), backing);
+        QCOMPARE(UpdateManager::selectInstallerLink(links, "ProjectNotes-", "-Windows-x64-Setup.exe"), backing);
+
+        // The published GitLab release uses descriptive names. Its Remote Host
+        // link precedes the desktop installer and must not be selected.
+        links = QJsonArray{
+            QJsonObject{{"name", "Project Notes Remote Host 6.4.1 Windows x64 Installer"},
+                        {"direct_asset_url", "https://gitlab.com/releases/ProjectNotesRemoteHost-6.4.1-Windows-x64-Setup.exe"}},
+            QJsonObject{{"name", "Project Notes 6.4.1 Windows x64 Installer"},
+                        {"direct_asset_url", "https://gitlab.com/releases/ProjectNotes-6.4.1-Windows-x64-Setup.exe"},
+                        {"url", "https://gitlab.com/packages/opaque"}}
+        };
+        QCOMPARE(UpdateManager::selectInstallerLink(links, "ProjectNotes-", "-Windows-x64-Setup.exe"),
+                 QStringLiteral("https://gitlab.com/releases/ProjectNotes-6.4.1-Windows-x64-Setup.exe"));
+
+        links = QJsonArray{QJsonObject{
+            {"name", "Project Notes 6.4.1 Windows x64 Installer"},
+            {"url", "https://gitlab.com/packages/ProjectNotes-6%2E4%2E1-Windows-x64-Setup%2Eexe"}}};
+        QCOMPARE(UpdateManager::selectInstallerLink(links, "ProjectNotes-", "-Windows-x64-Setup.exe"),
+                 QStringLiteral("https://gitlab.com/packages/ProjectNotes-6%2E4%2E1-Windows-x64-Setup%2Eexe"));
 
         // Missing/unsafe URLs do not hide a subsequent valid installer link.
         links = QJsonArray{
@@ -102,9 +120,9 @@ private slots:
             QJsonObject{{"name", windows}, {"url", "/relative/setup.exe"}},
             QJsonObject{{"name", windows}, {"url", backing}}
         };
-        QCOMPARE(UpdateManager::selectInstallerLink(links, {}, "-Windows-x64-Setup.exe"), backing);
+        QCOMPARE(UpdateManager::selectInstallerLink(links, "ProjectNotes-", "-Windows-x64-Setup.exe"), backing);
         QVERIFY(UpdateManager::selectInstallerLink(links, "macOS", ".zip").isEmpty());
-        QVERIFY(UpdateManager::selectInstallerLink({}, {}, "-Windows-x64-Setup.exe").isEmpty());
+        QVERIFY(UpdateManager::selectInstallerLink({}, "ProjectNotes-", "-Windows-x64-Setup.exe").isEmpty());
     }
 
     void releaseResponses_data()
