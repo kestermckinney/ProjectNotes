@@ -27,6 +27,7 @@
 #include "databaseobjects.h"
 #include "databasestructure.h"
 #include "databaseupgrade_v6_4_0.h"
+#include "version.h"
 #include "legacywidgetsettings.h"
 #include <QSettings>
 #include <QScopeGuard>
@@ -179,7 +180,7 @@ private slots:
         for (const QString &key : retained) QCOMPARE(global_DBObjects.loadParameter(key), QString("review-test"));
         QVERIFY(q.exec("SELECT current_version FROM application_version"));
         QVERIFY(q.next());
-        QCOMPARE(q.value(0).toString(), QString("6.4.1"));
+        QCOMPARE(q.value(0).toString(), QStringLiteral(APP_VERSION_STRING));
         q.finish();
         QVERIFY(q.exec("SELECT deleted, syncdate, updateddate FROM application_settings "
                        "WHERE parameter_name='PageState:ProjectsPage:project-id'"));
@@ -217,7 +218,7 @@ private slots:
             QSqlQuery restore(global_DBObjects.getDb());
             restore.exec("DROP TRIGGER IF EXISTS review_cleanup_failure");
             restore.exec("DELETE FROM application_settings WHERE parameter_name='PageState:rollback-test:record'");
-            restore.exec("UPDATE application_version SET current_version='6.4.1'");
+            restore.exec("UPDATE application_version SET current_version='" APP_VERSION_STRING "'");
         });
         DatabaseStructure structure;
         QVERIFY(!structure.UpgradeDatabase());
@@ -1045,7 +1046,7 @@ private slots:
 
     void test_21_appVersion()
     {
-        QCOMPARE(c->appVersion(), QStringLiteral("6.4.1"));
+        QCOMPARE(c->appVersion(), QStringLiteral(APP_VERSION_STRING));
     }
 
     // installUpdate with no prior successful check must fail gracefully (no crash,
