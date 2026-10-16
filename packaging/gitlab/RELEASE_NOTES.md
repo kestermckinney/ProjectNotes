@@ -1,23 +1,10 @@
-# Project Notes 6.4.1
+# Project Notes 6.4.2
 
-This release expands contact management and communication workflows, improves keyboard access and navigation, and completes the move to the Qt Quick desktop interface.
+This maintenance release fixes the Windows in-app update path.
 
-### New features
+### Fixes
 
-- **Contact synchronization:** Sync contacts with macOS Contacts, Microsoft Outlook, and Thunderbird. Review proposed imports and exports, resolve duplicate matches, and inspect conflicts before applying changes.
-- **Meeting and email integrations:** Create project and location email drafts, prepare meeting invitations with iCalendar, Thunderbird, Microsoft 365, or native Apple Mail and Calendar, and use reusable meeting templates.
-- **Reports and audiences:** Preview reports before sending, save recipient audiences, select recipients with clearer review steps, and include location attachments in project communications.
-- **Navigation and preferences:** Use keyboard shortcuts and improved focus behavior across lists, folders, the navigation rail, forms, and preferences. Settings are organized into clearer sections.
-- **Contact and company records:** The interface and data layer now use Contact and Company terminology consistently, with updated filtering, search, details, and mobile screens.
-- **Windows integrations:** The Windows package includes Outlook and Thunderbird contact helpers alongside the main application and Remote Host installer.
-
-### Fixes and improvements
-
-- Fixed keyboard navigation and selection in combo boxes, forms, lists, and dialogs.
-- Improved contact import matching, duplicate-aware exports, and contact-sync formatting.
-- Fixed meeting attendee flows, email recipient selection, and project/location attachment handling.
-- Removed the retired Widgets interface and obsolete bundled meeting/email plugins. Existing databases are cleaned of retired settings while current QML preferences and project data are preserved.
-- Improved update handling and release downloads through GitLab.
+- The Windows updater now finds the desktop installer when GitLab gives its release link a descriptive label instead of a filename. It also skips the separate Remote Host installer.
 
 Linux builds are distributed through a signed Flatpak repository on GitLab Pages. Windows and macOS installers are distributed as release assets.
 
