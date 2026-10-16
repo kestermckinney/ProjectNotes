@@ -157,12 +157,20 @@ Dialog {
                                     }
                                 }
                             }
-                            Button {
-                                objectName: "useBothCompaniesButton"
-                                text: qsTr("Use Both")
-                                enabled: review.hasCompany && dialog.syncModel && !dialog.syncModel.busy
+                            RowLayout {
                                 Layout.alignment: Qt.AlignRight
-                                onClicked: dialog.syncModel.resolve(review.modelData.key, "clientUseBoth", "", "", "")
+                                Button {
+                                    objectName: "skipCompanyButton"
+                                    text: qsTr("Skip")
+                                    enabled: dialog.syncModel && !dialog.syncModel.busy
+                                    onClicked: dialog.syncModel.resolve(review.modelData.key, "clientSkip", "", "", "")
+                                }
+                                Button {
+                                    objectName: "useBothCompaniesButton"
+                                    text: qsTr("Use Both")
+                                    enabled: review.hasCompany && dialog.syncModel && !dialog.syncModel.busy
+                                    onClicked: dialog.syncModel.resolve(review.modelData.key, "clientUseBoth", "", "", "")
+                                }
                             }
                         }
                         RowLayout {
@@ -281,13 +289,21 @@ Dialog {
                                 }
                             }
                         }
-                        Button {
-                            objectName: "useBothContactsButton"
-                            text: qsTr("Use Both")
+                        RowLayout {
                             visible: !review.exportReview && !review.companyReview
-                            enabled: review.hasPerson && dialog.syncModel && !dialog.syncModel.busy
                             Layout.alignment: Qt.AlignRight
-                            onClicked: dialog.syncModel.resolve(review.modelData.key, "useBoth", "", "", "")
+                            Button {
+                                objectName: "skipContactButton"
+                                text: qsTr("Skip")
+                                enabled: dialog.syncModel && !dialog.syncModel.busy
+                                onClicked: dialog.syncModel.resolve(review.modelData.key, "ignore", "", "", "")
+                            }
+                            Button {
+                                objectName: "useBothContactsButton"
+                                text: qsTr("Use Both")
+                                enabled: review.hasPerson && dialog.syncModel && !dialog.syncModel.busy
+                                onClicked: dialog.syncModel.resolve(review.modelData.key, "useBoth", "", "", "")
+                            }
                         }
                         Rectangle {
                             Layout.fillWidth: true

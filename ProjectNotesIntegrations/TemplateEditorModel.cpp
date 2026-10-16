@@ -45,10 +45,10 @@ QList<CommunicationTemplate> bundledTemplates()
              QStringLiteral("{{ content.body }}")},
             {QStringLiteral("project-email-native-v1"), QObject::tr("Project email"), Workflow::ProjectEmail,
              QStringLiteral("{{ project.number }} {{ project.name }}"),
-             QStringLiteral("<p>Regarding {{ project.number }} {{ project.name }}.</p>")},
+             QString()},
             {QStringLiteral("share-location-native-v1"), QObject::tr("Share location"), Workflow::ShareLocation,
              QStringLiteral("{{ project.number }} {{ project.name }} - {{ location.description }}"),
-             QStringLiteral("<p>Please see the shared location below.</p>{{ content.body }}")}};
+             QStringLiteral("<p>Please see the item below.</p>{{ content.body }}")}};
 }
 
 QString nativeTemplateId(Workflow workflow)

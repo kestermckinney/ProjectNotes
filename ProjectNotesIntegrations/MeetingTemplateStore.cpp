@@ -146,10 +146,24 @@ QList<MeetingTemplate> standardTemplates()
 <li>Project Communication</li>
 <li>Obstacles</li>
 <li>On-Site Implementation</li>
-<li>Vendor Management</li>
 <li>Schedule and Budget</li>
 <li>Additional Observations</li>
 <li>Capture of Actionable Improvements / Best Practices</li>
+</ul>)")),
+        standardTemplate(
+            QStringLiteral("standard-lessons-learned"),
+            QStringLiteral("Lessons Learned Meeting"),
+            QStringLiteral("Review the project with the customer, capture what worked well and what can be improved, "
+                           "and agree on actions for future work."),
+            QStringLiteral(R"(<ul>
+<li>Project Objectives and Outcomes</li>
+<li>Planning and Schedule</li>
+<li>Communication and Collaboration</li>
+<li>Design, Delivery, and Testing</li>
+<li>Implementation and Handover</li>
+<li>What Went Well</li>
+<li>Opportunities for Improvement</li>
+<li>Agreed Actions and Owners</li>
 </ul>)")),
         standardTemplate(
             QStringLiteral("standard-project-closeout"),
@@ -229,7 +243,7 @@ QList<MeetingTemplate> standardTemplates()
             QStringLiteral("Provide high-level visibility to sponsors and executives on overall health, "
                            "major risks, and decisions needed."),
             QStringLiteral(R"(<ul>
-<li>Overall Project Health Snapshot (RAG status)</li>
+<li>Overall Project Health Snapshot</li>
 <li>Key Accomplishments Since Last Meeting</li>
 <li>Schedule &amp; Budget Summary</li>
 <li>Major Risks &amp; Issues Requiring Attention</li>
@@ -248,7 +262,7 @@ QList<MeetingTemplate> standardTemplates()
 <li>Desired Future-State Discussion</li>
 <li>Detailed Requirements Capture (by area / workstream)</li>
 <li>Assumptions, Constraints &amp; Dependencies</li>
-<li>Prioritization / MoSCoW</li>
+<li>Prioritization</li>
 <li>Open Questions</li>
 <li>Next Steps &amp; Documentation Plan</li>
 </ul>)"))
@@ -305,6 +319,17 @@ ValidationResult MeetingTemplateStore::initializeDefaults()
     const QList<MeetingTemplate> values = templates(&result);
     if (!result.ok() || !values.isEmpty()) return result;
     if (!write(standardTemplates())) result.addError("template-store-write-failed", storageKey());
+    return result;
+}
+
+ValidationResult MeetingTemplateStore::resetDefaults()
+{
+    ValidationResult result;
+    if (!global_DBObjects.isOpen()) {
+        result.addError("template-store-unavailable", storageKey());
+    } else if (!write(standardTemplates())) {
+        result.addError("template-store-write-failed", storageKey());
+    }
     return result;
 }
 

@@ -126,7 +126,7 @@ void ReportBuildersTest::buildsStatusReportWithEscapedValuesAndLetterLayout()
     // The email body must carry the same styling as the exported report.
     QVERIFY(document->emailFragment.startsWith(QStringLiteral("<style>")));
     QVERIFY(document->emailFragment.contains(QStringLiteral("background:#DCE6F1")));
-    QVERIFY(document->emailFragment.contains(QStringLiteral(".ev-columns{display:flex")));
+    QVERIFY(document->emailFragment.contains(QStringLiteral("<td width='50%' valign='top'><table class='ev-table'")));
     QVERIFY(document->htmlDocument.contains(document->emailFragment));
     QCOMPARE(document->defaultSubject, QStringLiteral("P-1 North - Status Report 09/15/2026"));
     QCOMPARE(document->pdfLayout.pageSize().id(), QPageSize::Letter);

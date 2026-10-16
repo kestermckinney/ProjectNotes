@@ -38,6 +38,8 @@ public:
     // a nonempty list and corrupt data are preserved. Deleting every type
     // leaves an empty list that will be seeded again at the next startup.
     ValidationResult initializeDefaults();
+    // Replace all saved meeting types with the current standard set.
+    ValidationResult resetDefaults();
     ValidationResult save(MeetingTemplate value);
     ValidationResult remove(const QString &id);
 

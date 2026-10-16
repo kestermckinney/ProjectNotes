@@ -102,6 +102,21 @@ private slots:
         QCOMPARE(review.preparation.recipients.size(), 2);
         QCOMPARE(review.preparation.recipients.first().address, "manager@example.test");
     }
+    void projectEmailCanCreateDraftWithEmptyBody() {
+        CommunicationTemplate value{"custom", "Custom", Workflow::ProjectEmail,
+            "{{ project.number }} {{ project.name }}", {}};
+        const auto review = ProjectEmailPreparationFactory::create(
+            snapshot(), source(Workflow::ProjectEmail), BackendId::DefaultApp, value);
+        QVERIFY(review.validation.ok());
+        QVERIFY(review.preparation.document.emailFragment.isEmpty());
+
+        const auto email = EmailContentBuilder::prepare(review.preparation);
+        QVERIFY(email.validation.ok());
+        QVERIFY(email.request.has_value());
+        QCOMPARE(email.request->subject, "P1 A & B");
+        QVERIFY(email.request->html.isEmpty());
+        QCOMPARE(email.request->recipients.size(), 2);
+    }
     void locationOffersEncodedLinkOrDownloadAndValidatesFiles() {
         auto context = source(Workflow::ShareLocation); context.locationId = "location";
         CommunicationTemplate value{"custom", "Custom", Workflow::ShareLocation,

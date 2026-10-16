@@ -123,6 +123,12 @@ ColumnLayout {
                 deleteDialog.open()
             }
         }
+        Button {
+            objectName: "resetMeetingTemplatesButton"
+            text: qsTr("Reset to Defaults")
+            enabled: pane.templateModel !== null
+            onClicked: resetDialog.open()
+        }
     }
 
     Label {
@@ -220,5 +226,14 @@ ColumnLayout {
         confirmText: qsTr("Delete")
         destructive: true
         onConfirmed: if (pane.templateModel) pane.templateModel.deleteSelected()
+    }
+    ThemedMessageDialog {
+        id: resetDialog
+        title: qsTr("Reset Meeting Templates")
+        message: qsTr("Replace all meeting templates, including custom types and edits, with the defaults?")
+        iconName: "warning"
+        confirmText: qsTr("Reset")
+        destructive: true
+        onConfirmed: if (pane.templateModel) pane.templateModel.resetDefaults()
     }
 }
