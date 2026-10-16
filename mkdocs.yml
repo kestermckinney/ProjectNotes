@@ -13,6 +13,7 @@ nav:
     - 'Getting Started': Introduction/GettingStarted.md
     - 'System Requirements': Introduction/SystemRequirements.md
     - 'Installing on Linux': Introduction/InstallLinux.md
+    - 'Mac App Store Version': Introduction/MacAppStore.md
     - 'Command-Line Options': Introduction/DeveloperProfile.md
   - 'Interface Overview':
     - 'Application Menu': InterfaceOverview/ApplicationMenu.md

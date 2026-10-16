@@ -20,6 +20,10 @@
           "path": "Introduction/InstallLinux.md"
         },
         {
+          "title": "Mac App Store Version",
+          "path": "Introduction/MacAppStore.md"
+        },
+        {
           "title": "Command-Line Options",
           "path": "Introduction/DeveloperProfile.md"
         }
