@@ -1,6 +1,6 @@
-# Project Notes 6.4.2
+# Project Notes 6.4.3
 
-This maintenance release fixes the Windows in-app update path.
+This maintenance release is part of testing the application auto-update features and fixes the Windows in-app update path.
 
 ### Fixes
 
