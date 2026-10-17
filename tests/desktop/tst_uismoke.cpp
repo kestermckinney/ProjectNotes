@@ -1512,6 +1512,96 @@ private slots:
         assertClean("schema form table insert field");
     }
 
+    // A plugin Settings section's table loads saved rows and saves edits. The
+    // rows reach QML through PluginUiController::settingValues as a sequence
+    // wrapper (Array.isArray false), which once left the table empty; an edit
+    // reaches setSetting as a QJSValue, which QSettings once failed to store.
+    void test_09c_pluginSettingsTableRoundTrip()
+    {
+        clearWarnings();
+        PluginUiController* ui = PluginUiController::instance();
+        QVERIFY(ui);
+        const QString id = QStringLiteral("test.settingstable");
+        const QVariantMap first {{QStringLiteral("menu"), QStringLiteral("a")}, {QStringLiteral("submenu"), QString()},
+                                 {QStringLiteral("entity"), QStringLiteral("projects")}, {QStringLiteral("url"), QStringLiteral("x")}};
+        QVariantMap second = first;
+        second.insert(QStringLiteral("menu"), QStringLiteral("b"));
+        ui->setSetting(id, QStringLiteral("shortcuts"), QVariantList{first, second});
+
+        QFile file(QStringLiteral(PN_TEST_FIXTURES) + QStringLiteral("/../../../plugins/myshortcuts/settings.schema.json"));
+        QVERIFY2(file.open(QIODevice::ReadOnly), qPrintable(file.fileName()));
+        const QVariantMap info {{QStringLiteral("pluginId"), id}, {QStringLiteral("id"), QStringLiteral("shortcuts")},
+                                {QStringLiteral("title"), QStringLiteral("Shortcuts")},
+                                {QStringLiteral("schema"), QJsonDocument::fromJson(file.readAll()).toVariant()}};
+
+        QQmlComponent component(engine);
+        component.setData(R"(
+            import QtQuick
+            import ProjectNotesDesktop
+            PluginSettingsSection {
+                id: section
+                width: 900
+                function find(item, test) {
+                    if (test(item)) return item
+                    for (var i = 0; i < item.children.length; ++i) {
+                        var found = find(item.children[i], test)
+                        if (found) return found
+                    }
+                    return null
+                }
+                function schemaForm() { return find(section, function (i) { return i._revision !== undefined }) }
+                function storedRows() {
+                    var v = schemaForm().value("shortcuts")
+                    return Array.isArray(v) ? v.length : -1
+                }
+                // Rows on screen: each has one remove button (the button, not
+                // the label inside it, has a clicked signal).
+                function shownRows() {
+                    var count = 0
+                    function walk(item) {
+                        if (item.text === "×" && typeof item.clicked === "function" && item.visible) ++count
+                        for (var i = 0; i < item.children.length; ++i) walk(item.children[i])
+                    }
+                    walk(section)
+                    return count
+                }
+                // What the Add Row button does.
+                function addRow() {
+                    var form = schemaForm()
+                    form.setValue("shortcuts", form.value("shortcuts").concat([{ menu: "c", submenu: "", entity: "", url: "y" }]))
+                }
+            }
+        )", QUrl());
+        QScopedPointer<QObject> object(component.createWithInitialProperties({{QStringLiteral("info"), info}}));
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* section = qobject_cast<QQuickItem*>(object.data());
+        QVERIFY(section);
+        QQuickWindow window;
+        section->setParentItem(window.contentItem());
+        window.resize(900, 600);
+        window.show();
+
+        auto call = [&](const char* name) {
+            QVariant result;
+            QMetaObject::invokeMethod(section, name, Q_RETURN_ARG(QVariant, result));
+            return result.toInt();
+        };
+        QCOMPARE(call("storedRows"), 2);
+        QTRY_COMPARE_WITH_TIMEOUT(call("shownRows"), 2, 3000);
+
+        QVERIFY(QMetaObject::invokeMethod(section, "addRow"));
+        QTRY_COMPARE_WITH_TIMEOUT(call("shownRows"), 3, 3000);
+        const QVariant saved = ui->settingValues(id).value(QStringLiteral("shortcuts"));
+        QCOMPARE(saved.typeId(), int(QMetaType::QVariantList));
+        const QVariantList rows = saved.toList();
+        QCOMPARE(rows.size(), 3);
+        QCOMPARE(rows.at(0).toMap().value(QStringLiteral("menu")).toString(), QStringLiteral("a"));
+        QCOMPARE(rows.at(2).toMap().value(QStringLiteral("menu")).toString(), QStringLiteral("c"));
+
+        ui->setSetting(id, QStringLiteral("shortcuts"), QVariant());
+        assertClean("plugin settings table round trip");
+    }
+
     void cleanupTestCase()
     {
         delete engine;   // tear the window down before the app object goes away

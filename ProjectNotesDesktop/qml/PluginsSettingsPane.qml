@@ -16,29 +16,75 @@ ColumnLayout {
     spacing: 12
     property string error: ""
 
-    function permissionText(p) {
-        var lines = []
+    // Plain-language list of what a plugin can do, grouped for display. Each item
+    // carries a group heading and a flag for the permissions a user should look at
+    // twice (changing data, starting programs, Windows automation, shipped QML).
+    function permissionItems(p) {
+        var items = []
+        function add(group, text, warn) { items.push({ group: group, text: text, warn: !!warn }) }
         ;(p.permissions || []).forEach(function (perm) {
-            if (perm.indexOf("data.read:") === 0) lines.push(qsTr("Read: %1").arg(perm.slice(10).split(",").join(", ")))
-            else if (perm.indexOf("data.write:") === 0) lines.push(qsTr("Read and change: %1").arg(perm.slice(11).split(",").join(", ")))
-            else if (perm === "files") lines.push(qsTr("Files and folders you choose, and project folders"))
-            else if (perm === "http") lines.push(qsTr("Internet access to: %1").arg((p.httpHosts || []).join(", ")))
-            else if (perm === "com") lines.push(qsTr("Windows automation of: %1").arg((p.comObjects || []).join(", ")))
-            else if (perm === "office365") lines.push(qsTr("Office 365 (%1)").arg((p.office365Scopes || []).join(", ")))
-            else if (perm === "email.compose") lines.push(qsTr("Prepare email drafts for your review"))
-            else if (perm === "calendar.draft") lines.push(qsTr("Prepare meeting drafts for your review"))
-            else if (perm === "process.launch") lines.push(qsTr("Start other programs"))
-            else if (perm === "ui.dialogs") lines.push(qsTr("Show its own dialogs"))
-            else if (perm === "clipboard") lines.push(qsTr("Copy to and read from the clipboard"))
-            else if (perm === "urls") lines.push(qsTr("Open links that start other applications"))
-            else if (perm === "auth.browser") lines.push(qsTr("Sign you in through your web browser"))
-            else if (perm === "contacts.pick") lines.push(qsTr("Ask you to choose contacts"))
-            else if (perm === "contacts.sync") lines.push(qsTr("Start contact syncs"))
-            else if (perm === "app.navigate") lines.push(qsTr("Open pages in Project Notes"))
-            else lines.push(perm)
+            if (perm.indexOf("data.read:") === 0) add(qsTr("Data"), qsTr("Read: %1").arg(perm.slice(10).split(",").join(", ")))
+            else if (perm.indexOf("data.write:") === 0) add(qsTr("Data"), qsTr("Read and change: %1").arg(perm.slice(11).split(",").join(", ")), true)
+            else if (perm === "http") add(qsTr("Network"), qsTr("Internet access to: %1").arg((p.httpHosts || []).join(", ")))
+            else if (perm === "office365") add(qsTr("Network"), qsTr("Office 365 (%1)").arg((p.office365Scopes || []).join(", ")))
+            else if (perm === "files") add(qsTr("Files and system"), qsTr("Files and folders you choose, and project folders"))
+            else if (perm === "process.launch") add(qsTr("Files and system"), qsTr("Start other programs"), true)
+            else if (perm === "com") add(qsTr("Files and system"), qsTr("Windows automation of: %1").arg((p.comObjects || []).join(", ")), true)
+            else if (perm === "clipboard") add(qsTr("Files and system"), qsTr("Copy to and read from the clipboard"))
+            else if (perm === "urls") add(qsTr("Files and system"), qsTr("Open links that start other applications"))
+            else if (perm === "auth.browser") add(qsTr("Sign-in"), qsTr("Sign you in through your web browser"))
+            else if (perm === "email.compose") add(qsTr("Email and calendar"), qsTr("Prepare email drafts for your review"))
+            else if (perm === "calendar.draft") add(qsTr("Email and calendar"), qsTr("Prepare meeting drafts for your review"))
+            else if (perm === "contacts.pick") add(qsTr("Contacts"), qsTr("Ask you to choose contacts"))
+            else if (perm === "contacts.sync") add(qsTr("Contacts"), qsTr("Start contact syncs"))
+            else if (perm === "ui.dialogs") add(qsTr("Interface"), qsTr("Show its own dialogs"))
+            else if (perm === "app.navigate") add(qsTr("Interface"), qsTr("Open pages in Project Notes"))
+            else add(qsTr("Other"), perm)
         })
-        if (p.shipsQml) lines.push(qsTr("Includes its own user interface (QML), which runs with the same trust as the app"))
+        if (p.shipsQml) add(qsTr("Interface"), qsTr("Includes its own user interface (QML), which runs with the same trust as the app"), true)
+        return items
+    }
+
+    function permissionText(p) {
+        var lines = permissionItems(p).map(function (item) { return item.text })
         return lines.length ? lines.join("\n") : qsTr("No special permissions")
+    }
+
+    function escapeHtml(s) {
+        return String(s === undefined || s === null ? "" : s)
+            .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+    }
+
+    // Rich-text body for the install and review dialogs: a header, the plugin's
+    // description, then its permissions grouped under small headings.
+    function detailsHtml(p, intro) {
+        var muted = Theme.text2
+        var html = ""
+        if (intro) html += "<p style=\"color:" + Theme.amber + "\">" + escapeHtml(intro) + "</p>"
+        var byline = p.version ? qsTr("Version %1").arg(escapeHtml(p.version)) : ""
+        if (p.author) byline += (byline ? " · " : "") + qsTr("by %1").arg(escapeHtml(p.author))
+        if (byline) html += "<p style=\"color:" + muted + "\">" + byline + "</p>"
+        if (p.description) html += "<p>" + escapeHtml(p.description) + "</p>"
+
+        var items = permissionItems(p)
+        if (!items.length) {
+            html += "<p style=\"color:" + muted + "\">" + qsTr("No special permissions") + "</p>"
+            return html
+        }
+        html += "<p><b>" + qsTr("It will be able to:") + "</b></p>"
+        var group = ""
+        items.forEach(function (item) {
+            if (item.group !== group) {
+                if (group) html += "</ul>"
+                group = item.group
+                html += "<p style=\"margin-top:8px; color:" + muted + "\">" + escapeHtml(group) + "</p><ul style=\"margin-top:0\">"
+            }
+            var text = escapeHtml(item.text)
+            if (item.warn) text = "<span style=\"color:" + Theme.amber + "\">" + text + "</span>"
+            html += "<li>" + text + "</li>"
+        })
+        html += "</ul>"
+        return html
     }
 
     Label {
@@ -116,7 +162,20 @@ ColumnLayout {
                         Label { id: badge; anchors.centerIn: parent; text: card.p.bundled ? qsTr("Included") : qsTr("Installed"); color: Theme.text2; font.pixelSize: Theme.fontXs }
                     }
                 }
-                Label { visible: !!card.p.description; text: card.p.description || ""; color: Theme.text2; wrapMode: Text.Wrap; Layout.fillWidth: true }
+                Label {
+                    visible: !!card.p.author
+                    text: qsTr("by %1").arg(card.p.author || "")
+                    color: Theme.text3; font.pixelSize: Theme.fontSm
+                    Layout.fillWidth: true; elide: Text.ElideRight
+                }
+                Label {
+                    visible: !!card.p.description
+                    text: card.p.description || ""
+                    color: Theme.text2; font.pixelSize: Theme.fontBody
+                    wrapMode: Text.Wrap; lineHeight: 1.25
+                    Layout.fillWidth: true
+                    Layout.topMargin: 4; Layout.bottomMargin: 4
+                }
                 Label {
                     Layout.fillWidth: true
                     wrapMode: Text.Wrap
@@ -188,14 +247,12 @@ ColumnLayout {
         iconName: "extension"
         iconColor: Theme.accent
         confirmText: qsTr("Install")
+        richMessage: true
         function openFor(i, url) {
             info = i
             source = url
             title = qsTr("Install %1").arg(i.name)
-            message = (i.replaces ? qsTr("This replaces the installed copy.\n\n") : "")
-                + qsTr("Version %1%2\n\nIt will be able to:\n%3")
-                    .arg(i.version || "?").arg(i.author ? qsTr(" by %1").arg(i.author) : "")
-                    .arg(pane.permissionText(i))
+            message = pane.detailsHtml(i, i.replaces ? qsTr("This replaces the installed copy.") : "")
             open()
         }
         onConfirmed: {
@@ -210,11 +267,12 @@ ColumnLayout {
         property var plugin: ({})
         iconName: "verified_user"
         iconColor: Theme.accent
+        richMessage: true
         function openFor(p, readOnly) {
             plugin = p
             title = p.name
             confirmText = readOnly ? "" : qsTr("Turn On")
-            message = qsTr("%1 can:\n%2").arg(p.name).arg(pane.permissionText(p))
+            message = pane.detailsHtml(p, "")
             open()
         }
         onConfirmed: pane.error = PluginUiController.approve(plugin.id)

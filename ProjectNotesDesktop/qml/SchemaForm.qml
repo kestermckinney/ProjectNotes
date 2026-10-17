@@ -30,9 +30,18 @@ ColumnLayout {
     function _reset() {
         var copy = {}
         var source = values || {}
-        for (var k in source) copy[k] = source[k]
+        for (var k in source) copy[k] = _plain(source[k])
         _values = copy
         _revision++
+    }
+
+    // A list read from settings through C++ can reach QML as an array-like
+    // sequence wrapper rather than a JavaScript array: indexing and length work,
+    // but Array.isArray() is false, so a table would show no rows. Copy it.
+    function _plain(v) {
+        if (v !== null && typeof v === "object" && !Array.isArray(v) && typeof v.length === "number")
+            return Array.prototype.slice.call(v)
+        return v
     }
 
     function value(key) { return _values[key] }

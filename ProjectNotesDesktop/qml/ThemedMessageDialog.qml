@@ -15,6 +15,9 @@ Dialog {
     id: dialog
     property string message: ""
     property bool selectableMessage: false
+    // message is HTML (a subset Qt's RichText understands). Callers must escape
+    // any text taken from data; see PluginsSettingsPane.escapeHtml.
+    property bool richMessage: false
     property string iconName: "error"
     property color iconColor: Theme.red
     property string confirmText: ""
@@ -63,6 +66,7 @@ Dialog {
                 wrapMode: Text.Wrap
                 color: Theme.text
                 font.pixelSize: Theme.fontLg
+                textFormat: dialog.richMessage ? Text.RichText : Text.PlainText
                 text: dialog.message
             }
             ScrollView {

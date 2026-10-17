@@ -315,11 +315,14 @@ QVariantMap PluginUiController::settingValues(const QString& pluginId) const
 
 void PluginUiController::setSetting(const QString& pluginId, const QString& key, const QVariant& value)
 {
+    // QML passes a JavaScript value (an array of row objects, for a table) wrapped
+    // in a QJSValue. QSettings cannot store that wrapper, so unwrap it first.
+    const QVariant plain = value.typeId() == QMetaType::fromType<QJSValue>().id() ? value.value<QJSValue>().toVariant() : value;
     {
         QSettings settings(m_organization, QStringLiteral("PluginSettings"));
         settings.beginGroup(pluginId);
-        if (value.isValid() && !value.isNull())
-            settings.setValue(key, value);
+        if (plain.isValid() && !plain.isNull())
+            settings.setValue(key, plain);
         else
             settings.remove(key);
     }
