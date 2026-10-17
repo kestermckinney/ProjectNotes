@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
     QDir().mkpath(dataDir);
     qInfo("Test data location: %s", qUtf8Printable(dataDir));
     // JavaScript plugins installed by the UI smoke tests go here, never into
-    // the real ~/Project Notes/plugins folder.
+    // the real user plugins folder.
     const QString userPlugins = dataDir + QStringLiteral("/user-plugins");
     QDir().mkpath(userPlugins);
     qputenv("PN_PLUGIN_USER_DIR", userPlugins.toUtf8());

@@ -568,6 +568,26 @@ bool PluginRegistry::install(const QString& path, QString* installedId, QString*
     return true;
 }
 
+int PluginRegistry::importPluginsFrom(const QString& folder, QString* error)
+{
+    int copied = 0;
+    const QDir source(folder);
+    for (const QString& name : source.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
+        const QString from = source.filePath(name);
+        PluginManifest manifest;
+        QString ignored;
+        if (!PluginManifest::load(from, &manifest, &ignored))
+            continue;   // not a plugin folder
+        const QString target = QDir(m_paths.user).filePath(manifest.id);
+        if (QFileInfo::exists(target))
+            continue;
+        if (!copyFolder(from, target, error))
+            return copied;
+        ++copied;
+    }
+    return copied;
+}
+
 bool PluginRegistry::uninstall(const QString& id, QString* error)
 {
     const PluginInfo info = plugin(id);

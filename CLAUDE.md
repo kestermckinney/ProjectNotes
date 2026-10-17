@@ -65,7 +65,7 @@ Key tables: `projects`, `project_notes`, `item_tracker`, `item_tracker_updates`,
 
 ### JavaScript Plugin System
 
-- `ProjectNotesPlugins/` is the plugin host library (no Widgets or Quick dependency). `PluginRegistry` discovers plugin folders in the bundled `plugins/` and the user's `~/Project Notes/plugins`, keeps enabled/approved state, and hot-reloads. Each plugin runs in its own `QJSEngine` on its own thread (`PluginHost`/`PluginRuntime`), with a watchdog.
+- `ProjectNotesPlugins/` is the plugin host library (no Widgets or Quick dependency). `PluginRegistry` discovers plugin folders in the bundled `plugins/` and the user's `plugins/` under the app data location (`QStandardPaths::AppDataLocation`), keeps enabled/approved state, and hot-reloads. Each plugin runs in its own `QJSEngine` on its own thread (`PluginHost`/`PluginRuntime`), with a watchdog.
 - `js/prelude.js` builds the `projectnotes` and `projectnotes/common` modules over a private host bridge; `js/projectnotes.d.ts` documents them. QJSEngine is roughly ES2016, so plugins use generator functions (`function*` with `yield promise`) instead of async/await.
 - Data access goes through `DataService` with published names (`contacts`, `companies`, `project_team`; see `PublishedSchema`) and the `RecordTree` import/export rules shared with XML import.
 - Permissions are declared in `plugin.json`. User plugins need approval, and a change in what they ask for needs it again.

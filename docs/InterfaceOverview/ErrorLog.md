@@ -35,7 +35,7 @@ A typical plugin error entry looks like:
 
 ```
 [2026-10-13 10:22:03] [ERROR] [com.example.my-plugin] onMenu: fetchData is not defined
-fetchData@file:///home/you/Project Notes/plugins/my-plugin/main.mjs:42
+fetchData@file:///home/you/.local/share/projectnotes/plugins/my-plugin/main.mjs:42
 ```
 
 ## Related Log Files

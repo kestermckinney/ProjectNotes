@@ -44,7 +44,7 @@ class PluginRegistry final : public QObject {
 public:
     struct Paths {
         QString bundled;         // appResourcesPath()/plugins
-        QString user;            // ~/Project Notes/plugins
+        QString user;            // <app data location>/plugins
         QString data;            // writable root for per-plugin data folders
         QString temp;            // per-plugin temporary folders (app cache)
     };
@@ -90,6 +90,9 @@ public:
     bool uninstall(const QString& id, QString* error);
     // Validates without installing; fills `manifest`.
     bool inspectPackage(const QString& path, PluginManifest* manifest, QString* error);
+    // Copies each plugin folder in `folder` into the user folder unless a plugin
+    // with the same id is already there. Returns the number copied; the source is left as is.
+    int importPluginsFrom(const QString& folder, QString* error);
 
     // QML -> plugin calls; `reply` runs on the GUI thread.
     void invoke(const QString& pluginId, const QString& token, const QString& name,

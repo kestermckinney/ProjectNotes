@@ -20,7 +20,7 @@ Email, meeting invitations and the project reports are built into Project Notes,
 
 Open **Settings > Plugins** to see every plugin, turn one on or off, install a `.pnplugin` package, or open your plugins folder. Plugins that come with Project Notes are on from the start. A plugin you install stays off until you review what it asks to do (read or change certain records, reach certain web sites, automate Office, and so on) and approve it. If a later version asks for more, you review it again.
 
-Your own plugins live in the **Project Notes/plugins** folder in your home folder, never in the application's folder, so upgrades leave them alone. See [JavaScript Plugins](<../PluginsOverview/JavaScriptPlugins.md>) to write one.
+Your own plugins live in the plugins folder in the application's data folder, never in the application's install folder, so upgrades leave them alone. **Open Plugins Folder** shows where it is. See [JavaScript Plugins](<../PluginsOverview/JavaScriptPlugins.md>) to write one.
 
 Settings saved by the Python plugins of earlier releases carry over: each plugin copies its old settings the first time it starts. Python plugins themselves no longer run.
 

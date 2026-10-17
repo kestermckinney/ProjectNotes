@@ -14,6 +14,6 @@ Until you choose one, Project Notes uses the editor that ships with your operati
 
 **To choose a different editor**, open **Settings > Script Editor**, choose the editor program, and save.
 
-Project Notes reloads a plugin when you save one of its files. Keep your own plugins in the **Project Notes/plugins** folder in your home folder: upgrades replace the plugins in the application's folder. See [JavaScript Plugins](<../PluginsOverview/JavaScriptPlugins.md>) for the plugin API.
+Project Notes reloads a plugin when you save one of its files. Keep your own plugins in the plugins folder in the application's data folder (**Settings > Plugins > Open Plugins Folder** opens it): upgrades replace the plugins in the application's folder. See [JavaScript Plugins](<../PluginsOverview/JavaScriptPlugins.md>) for the plugin API.
 
 Builds that cannot start other programs, such as the Mac App Store version, leave the Script Editor menu out.

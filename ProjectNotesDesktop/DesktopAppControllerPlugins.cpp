@@ -85,10 +85,16 @@ void DesktopAppController::ensureJsPlugins()
     const QString organization = QStringLiteral("ProjectNotes") + s_developerProfile;
     PN::Plugins::PluginRegistry::Paths paths;
     paths.bundled = appResourcesPath() + QStringLiteral("/plugins");
-    paths.user = QDir::homePath() + QStringLiteral("/Project Notes/plugins");
+    // User plugins sit beside the data folder, in the platform's application data
+    // location. That folder is writable under the App Sandbox and in Flatpak.
+    paths.user = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QStringLiteral("/plugins");
+    // Builds before 6.4 kept user plugins in ~/Project Notes/plugins. Those are copied over once.
+    QString legacyUserPlugins = QDir::homePath() + QStringLiteral("/Project Notes/plugins");
     // Tests point both plugin folders somewhere disposable.
-    if (qEnvironmentVariableIsSet("PN_PLUGIN_USER_DIR"))
+    if (qEnvironmentVariableIsSet("PN_PLUGIN_USER_DIR")) {
         paths.user = qEnvironmentVariable("PN_PLUGIN_USER_DIR");
+        legacyUserPlugins.clear();   // never read the real home folder from tests
+    }
     if (qEnvironmentVariableIsSet("PN_PLUGIN_BUNDLED_DIR"))
         paths.bundled = qEnvironmentVariable("PN_PLUGIN_BUNDLED_DIR");
     // A developer profile keeps its own plugin data, as it keeps its own database.
@@ -131,14 +137,26 @@ void DesktopAppController::ensureJsPlugins()
     connect(m_pluginServices, &PN::Plugins::PluginServices::viewChanged, m_jsPlugins,
             &PN::Plugins::PluginRegistry::notifyViewChanged);
 
+    QSettings state(organization, QStringLiteral("AppSettings"));
+    // Copy plugins from the old folder once. The originals stay where they are.
+    if (!legacyUserPlugins.isEmpty() && !state.value(QStringLiteral("UserPluginsMoved")).toBool()) {
+        state.setValue(QStringLiteral("UserPluginsMoved"), true);
+        QString error;
+        const int copied = m_jsPlugins->importPluginsFrom(legacyUserPlugins, &error);
+        if (!error.isEmpty())
+            QLog_Warning(SYNCERRORLOG, QStringLiteral("Could not move plugins from %1: %2").arg(legacyUserPlugins, error));
+        else if (copied > 0)
+            QLog_Info(CONSOLELOG, QStringLiteral("Copied %1 plugin(s) from %2.").arg(copied).arg(legacyUserPlugins));
+    }
+
     m_jsPlugins->loadAll();
 
     // Python plugins no longer run. Point out any the user added, once.
-    const QStringList leftovers = QDir(paths.user).entryList({QStringLiteral("*.py")}, QDir::Files);
-    QSettings state(organization, QStringLiteral("AppSettings"));
+    const QStringList leftovers = legacyUserPlugins.isEmpty() ? QStringList()
+                                  : QDir(legacyUserPlugins).entryList({QStringLiteral("*.py")}, QDir::Files);
     if (!leftovers.isEmpty() && !state.value(QStringLiteral("PythonPluginsNoticeShown")).toBool()) {
         state.setValue(QStringLiteral("PythonPluginsNoticeShown"), true);
-        const QString text = tr("Project Notes no longer runs Python plugins, so %1 in your plugins folder will not load. "
+        const QString text = tr("Project Notes no longer runs Python plugins, so %1 in your old Project Notes/plugins folder will not load. "
                                 "See Help > User Guide > JavaScript Plugins to rewrite them.")
                                  .arg(leftovers.size() == 1 ? leftovers.first() : tr("%n file(s)", nullptr, int(leftovers.size())));
         QTimer::singleShot(3000, ui, [ui, text] { emit ui->notificationRequested(text, QStringLiteral("warning"), 15); });
