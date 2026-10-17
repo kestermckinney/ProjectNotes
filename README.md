@@ -91,6 +91,11 @@ For build and setup details, see:
 - [System Requirements](Systemrequirements.md)
 - [Developer documentation](docs/index.md)
 
+## Related projects
+
+- [SqliteSyncPro](https://gitlab.com/kestermckinney/SqliteSyncPro) — the Qt library used for ProjectNotes synchronization.
+- [ScheduleIO](https://gitlab.com/kestermckinney/ScheduleIO) — a Qt library for reading, writing, and calculating Microsoft Project schedules.
+
 ## License
 
 Copyright (c) Paul McKinney.
