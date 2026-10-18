@@ -24,6 +24,14 @@ Your own plugins live in the plugins folder in the application's data folder, ne
 
 Settings saved by the Python plugins of earlier releases carry over: each plugin copies its old settings the first time it starts. Python plugins themselves no longer run.
 
+## Backing up and moving plugin settings
+
+Plugin settings belong to one computer, so **Settings > Plugins** has a **Back Up Plugin Settings** section for copying them somewhere else. It lists each installed plugin that has saved settings. Tick the ones you want and click **Export Settings…** to save them in a JSON file. On the other computer, or after a reinstall, click **Import Settings…** and pick the file. Imported values replace the same settings on that computer. Settings the file doesn't mention stay as they are.
+
+Passwords are never written to the file. They stay in the operating system's credential store, so enter them again after an import.
+
+Files saved by the **Settings Migrator** of the old Python plugins import the same way. Each old settings group goes to the plugin that replaced it, so a My Shortcuts or IFS Cloud backup from an earlier release still works. A group whose plugin isn't installed yet is kept, and the plugin picks it up when you install it.
+
 ## Where settings are kept
 
 Settings in Project Notes are stored in two places depending on what they control.

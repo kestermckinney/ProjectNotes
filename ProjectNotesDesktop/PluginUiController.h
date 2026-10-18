@@ -30,6 +30,7 @@ class PluginUiController final : public QObject {
     Q_PROPERTY(QVariantList settingsSections READ settingsSections NOTIFY pluginsChanged)
     Q_PROPERTY(QString userPluginsPath READ userPluginsPath NOTIFY pluginsChanged)
     Q_PROPERTY(bool userPluginsAllowed READ userPluginsAllowed NOTIFY pluginsChanged)
+    Q_PROPERTY(int settingsRevision READ settingsRevision NOTIFY settingsRevisionChanged)
 public:
     explicit PluginUiController(QObject* parent = nullptr);
     static PluginUiController* instance();
@@ -72,6 +73,20 @@ public:
     // ── Plugin settings (schema-form sections) ─────────────────────────────
     Q_INVOKABLE QVariantMap settingValues(const QString& pluginId) const;
     Q_INVOKABLE void setSetting(const QString& pluginId, const QString& key, const QVariant& value);
+    // Bumped when settings change outside a Settings section (an import), so
+    // open sections reread their values.
+    int settingsRevision() const { return m_settingsRevision; }
+
+    // ── Settings backup (export to / import from a JSON file) ──────────────
+    // Installed plugins with saved settings: {id, name, count}.
+    Q_INVOKABLE QVariantList settingsBackupCandidates() const;
+    // Writes the settings of `pluginIds` to `file`. Password fields are left
+    // out; secrets stay in the system credential store. Returns an error or "".
+    Q_INVOKABLE QString exportSettings(const QUrl& file, const QStringList& pluginIds);
+    // Reads a file written by exportSettings, or by the Python plugins'
+    // Settings Migrator, and writes its values over the current ones.
+    // Returns {ok, error, plugins (names), count}.
+    Q_INVOKABLE QVariantMap importSettings(const QUrl& file);
     // Calls an exported plugin function from a Settings section or dialog.
     QJSValue invokePlugin(QJSEngine* engine, const QString& pluginId, const QString& token, const QString& name, const QJSValue& args);
 
@@ -83,6 +98,7 @@ signals:
     void progressUpdated(const QString& token, double fraction, const QString& text);
     void notificationRequested(const QString& text, const QString& kind, int seconds);
     void pluginsChanged();
+    void settingsRevisionChanged();
     void pluginError(const QString& id, const QString& name, const QString& message);
 
 private:
@@ -95,6 +111,7 @@ private:
     QPointer<PN::Plugins::PluginRegistry> m_registry;
     QHash<int, Request> m_requests;
     int m_nextRequest = 1;
+    int m_settingsRevision = 0;
     QString m_organization = QStringLiteral("ProjectNotes");
 };
 

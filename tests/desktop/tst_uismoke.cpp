@@ -12,6 +12,7 @@
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QJsonObject>
 #include <QQmlApplicationEngine>
 
 #include "PluginUiController.h"
@@ -1644,6 +1645,57 @@ private slots:
         assertClean("plugin settings table round trip");
     }
 
+    // Settings > Plugins backup: exportSettings writes a plugin's values
+    // (tables included) to JSON and importSettings restores them. test_10
+    // covers password fields and Python Settings Migrator files.
+    void test_09d_pluginSettingsBackupRoundTrip()
+    {
+        clearWarnings();
+        PluginUiController* ui = PluginUiController::instance();
+        QVERIFY(ui);
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        const QString id = QStringLiteral("test.settingsbackup");
+        const QVariantList rows {QVariantMap{{QStringLiteral("menu"), QStringLiteral("a")}},
+                                 QVariantMap{{QStringLiteral("menu"), QStringLiteral("b")}}};
+        ui->setSetting(id, QStringLiteral("rows"), rows);
+        ui->setSetting(id, QStringLiteral("folder"), QStringLiteral("Plans"));
+
+        const QUrl backup = QUrl::fromLocalFile(dir.filePath(QStringLiteral("backup.json")));
+        QCOMPARE(ui->exportSettings(backup, {id}), QString());
+        QFile file(backup.toLocalFile());
+        QVERIFY(file.open(QIODevice::ReadOnly));
+        const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();
+        QCOMPARE(root.value(QStringLiteral("format")).toString(), QStringLiteral("projectnotes-plugin-settings"));
+        QCOMPARE(root.value(QStringLiteral("plugins")).toObject().value(id).toObject()
+                     .value(QStringLiteral("rows")).toArray().size(), 2);
+        QVERIFY(!ui->exportSettings(QUrl::fromLocalFile(dir.filePath(QStringLiteral("none.json"))),
+                                    {QStringLiteral("test.nosettings")}).isEmpty());
+
+        ui->setSetting(id, QStringLiteral("rows"), QVariant());
+        ui->setSetting(id, QStringLiteral("folder"), QStringLiteral("Changed"));
+        const int revision = ui->settingsRevision();
+        QVariantMap result = ui->importSettings(backup);
+        QVERIFY2(result.value(QStringLiteral("ok")).toBool(), qPrintable(result.value(QStringLiteral("error")).toString()));
+        QCOMPARE(result.value(QStringLiteral("count")).toInt(), 2);
+        QCOMPARE(ui->settingsRevision(), revision + 1);
+        QVariantMap values = ui->settingValues(id);
+        QCOMPARE(values.value(QStringLiteral("folder")).toString(), QStringLiteral("Plans"));
+        const QVariantList restored = values.value(QStringLiteral("rows")).toList();
+        QCOMPARE(restored.size(), 2);
+        QCOMPARE(restored.at(1).toMap().value(QStringLiteral("menu")).toString(), QStringLiteral("b"));
+
+        QFile bad(dir.filePath(QStringLiteral("bad.json")));
+        QVERIFY(bad.open(QIODevice::WriteOnly));
+        bad.write("not json");
+        bad.close();
+        QVERIFY(!ui->importSettings(QUrl::fromLocalFile(bad.fileName())).value(QStringLiteral("ok")).toBool());
+
+        ui->setSetting(id, QStringLiteral("rows"), QVariant());
+        ui->setSetting(id, QStringLiteral("folder"), QVariant());
+        assertClean("plugin settings backup round trip");
+    }
+
     void cleanupTestCase()
     {
         delete engine;   // tear the window down before the app object goes away
@@ -1682,6 +1734,37 @@ private slots:
         ui->setSetting(id, QStringLiteral("color"), QStringLiteral("Blue"));
         QCOMPARE(ui->settingValues(id).value(QStringLiteral("color")).toString(), QStringLiteral("Blue"));
         nav("selectSection", "projects");
+
+        // Settings backup: password fields stay out of the file, and a Python
+        // Settings Migrator file reaches this plugin through legacySettings.
+        {
+            QTemporaryDir dir;
+            QVERIFY(dir.isValid());
+            ui->setSetting(id, QStringLiteral("token"), QStringLiteral("hunter2"));
+            bool listed = false;
+            for (const QVariant& candidate : ui->settingsBackupCandidates())
+                listed = listed || candidate.toMap().value(QStringLiteral("id")).toString() == id;
+            QVERIFY(listed);
+            const QUrl backup = QUrl::fromLocalFile(dir.filePath(QStringLiteral("backup.json")));
+            QCOMPARE(ui->exportSettings(backup, {id}), QString());
+            QFile file(backup.toLocalFile());
+            QVERIFY(file.open(QIODevice::ReadOnly));
+            const QJsonObject saved = QJsonDocument::fromJson(file.readAll()).object()
+                                          .value(QStringLiteral("plugins")).toObject().value(id).toObject();
+            QCOMPARE(saved.value(QStringLiteral("color")).toString(), QStringLiteral("Blue"));
+            QVERIFY(!saved.contains(QStringLiteral("token")));
+            ui->setSetting(id, QStringLiteral("token"), QVariant());
+
+            QFile legacy(dir.filePath(QStringLiteral("legacy.json")));
+            QVERIFY(legacy.open(QIODevice::WriteOnly));
+            legacy.write(R"({ "UI Test Legacy": { "Folder": "from python" } })");
+            legacy.close();
+            const QVariantMap result = ui->importSettings(QUrl::fromLocalFile(legacy.fileName()));
+            QVERIFY2(result.value(QStringLiteral("ok")).toBool(), qPrintable(result.value(QStringLiteral("error")).toString()));
+            QCOMPARE(result.value(QStringLiteral("plugins")).toStringList(), QStringList{QStringLiteral("UI Test Plugin")});
+            QCOMPARE(ui->settingValues(id).value(QStringLiteral("OldFolder")).toString(), QStringLiteral("from python"));
+            ui->setSetting(id, QStringLiteral("OldFolder"), QVariant());
+        }
 
         // A schema form: answer it as the OK button would.
         registry->runMenu(id, QStringLiteral("form"), {}, {});

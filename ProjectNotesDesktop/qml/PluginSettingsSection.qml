@@ -29,7 +29,8 @@ ColumnLayout {
         visible: !!section.info.schema
         Layout.fillWidth: true
         fields: section.info.schema && section.info.schema.fields ? section.info.schema.fields : []
-        values: section.info.pluginId ? PluginUiController.settingValues(section.info.pluginId) : ({})
+        // settingsRevision: reread after a settings import.
+        values: PluginUiController.settingsRevision, section.info.pluginId ? PluginUiController.settingValues(section.info.pluginId) : ({})
         onChanged: (key, value) => PluginUiController.setSetting(section.info.pluginId, key, value)
     }
 

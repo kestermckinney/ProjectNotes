@@ -1,4 +1,5 @@
 { "fields": [
     { "key": "color", "label": "Color", "type": "choice", "choices": ["Red", "Blue"] },
-    { "key": "path", "label": "Folder", "type": "folder" }
+    { "key": "path", "label": "Folder", "type": "folder" },
+    { "key": "token", "label": "Token", "type": "password" }
 ] }

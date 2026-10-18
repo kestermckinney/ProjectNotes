@@ -8,13 +8,20 @@
 
 #include "QLogger.h"
 
+#include <QDateTime>
 #include <QDesktopServices>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QQmlComponent>
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QQuickItem>
+#include <QSaveFile>
+#include <QSet>
 #include <QSettings>
 
 using namespace QLogger;
@@ -39,6 +46,32 @@ QVariantMap describe(const PluginInfo& info)
             {QStringLiteral("httpHosts"), m.httpHosts}, {QStringLiteral("comObjects"), m.comObjects},
             {QStringLiteral("office365Scopes"), m.office365Scopes},
             {QStringLiteral("shipsQml"), info.valid && m.shipsQml()}, {QStringLiteral("folder"), info.folder}};
+}
+
+const QString kSettingsBackupFormat = QStringLiteral("projectnotes-plugin-settings");
+
+// Bookkeeping the runtime writes next to a plugin's settings (legacy copy flags).
+bool isInternalSettingKey(const QString& key)
+{
+    return key.startsWith(QLatin1String("_migrated/"));
+}
+
+// Keys of a plugin's "password" form fields, which a settings backup leaves out.
+QSet<QString> passwordKeys(const PluginInfo& info)
+{
+    QSet<QString> keys;
+    for (const auto& section : info.manifest.settings) {
+        if (section.schema.isEmpty())
+            continue;
+        QFile file(QDir(info.folder).filePath(section.schema));
+        if (!file.open(QIODevice::ReadOnly))
+            continue;
+        const QJsonArray fields = QJsonDocument::fromJson(file.readAll()).object().value(QStringLiteral("fields")).toArray();
+        for (const QJsonValue& field : fields)
+            if (field.toObject().value(QStringLiteral("type")).toString() == QLatin1String("password"))
+                keys.insert(field.toObject().value(QStringLiteral("key")).toString());
+    }
+    return keys;
 }
 
 QJSValue makeDeferred(QJSEngine* engine)
@@ -328,6 +361,138 @@ void PluginUiController::setSetting(const QString& pluginId, const QString& key,
     }
     if (m_registry)
         m_registry->notifySettingsChanged(pluginId, {key});
+}
+
+QVariantList PluginUiController::settingsBackupCandidates() const
+{
+    QVariantList out;
+    if (!m_registry)
+        return out;
+    QSettings settings(m_organization, QStringLiteral("PluginSettings"));
+    settings.setFallbacksEnabled(false);
+    for (const PluginInfo& info : m_registry->plugins()) {
+        if (info.manifest.id.isEmpty())
+            continue;
+        const QSet<QString> skip = passwordKeys(info);
+        settings.beginGroup(info.manifest.id);
+        int count = 0;
+        for (const QString& key : settings.allKeys())
+            if (!isInternalSettingKey(key) && !skip.contains(key))
+                ++count;
+        settings.endGroup();
+        if (count > 0)
+            out.append(QVariantMap {{QStringLiteral("id"), info.manifest.id},
+                                    {QStringLiteral("name"), info.manifest.name.isEmpty() ? info.manifest.id : info.manifest.name},
+                                    {QStringLiteral("count"), count}});
+    }
+    return out;
+}
+
+QString PluginUiController::exportSettings(const QUrl& file, const QStringList& pluginIds)
+{
+    const QString local = file.isLocalFile() ? file.toLocalFile() : file.toString();
+    QJsonObject plugins;
+    {
+        QSettings settings(m_organization, QStringLiteral("PluginSettings"));
+        settings.setFallbacksEnabled(false);
+        for (const QString& id : pluginIds) {
+            const QSet<QString> skip = m_registry ? passwordKeys(m_registry->plugin(id)) : QSet<QString>();
+            settings.beginGroup(id);
+            QJsonObject values;
+            for (const QString& key : settings.allKeys())
+                if (!isInternalSettingKey(key) && !skip.contains(key))
+                    values.insert(key, QJsonValue::fromVariant(settings.value(key)));
+            settings.endGroup();
+            if (!values.isEmpty())
+                plugins.insert(id, values);
+        }
+    }
+    if (plugins.isEmpty())
+        return tr("The selected plugins have no saved settings.");
+
+    const QJsonObject root {{QStringLiteral("format"), kSettingsBackupFormat}, {QStringLiteral("version"), 1},
+                            {QStringLiteral("exported"), QDateTime::currentDateTime().toString(Qt::ISODate)},
+                            {QStringLiteral("plugins"), plugins}};
+    QSaveFile out(local);
+    if (!out.open(QIODevice::WriteOnly) || out.write(QJsonDocument(root).toJson(QJsonDocument::Indented)) < 0 || !out.commit())
+        return tr("Could not write %1: %2").arg(QDir::toNativeSeparators(local), out.errorString());
+    QLog_Info(CONSOLELOG, QStringLiteral("Exported settings of %1 plugin(s) to %2.").arg(plugins.size()).arg(local));
+    return {};
+}
+
+QVariantMap PluginUiController::importSettings(const QUrl& file)
+{
+    const auto fail = [](const QString& error) {
+        return QVariantMap {{QStringLiteral("ok"), false}, {QStringLiteral("error"), error}};
+    };
+    const QString local = file.isLocalFile() ? file.toLocalFile() : file.toString();
+    QFile in(local);
+    if (!in.open(QIODevice::ReadOnly))
+        return fail(tr("Could not open %1: %2").arg(QDir::toNativeSeparators(local), in.errorString()));
+    QJsonParseError parseError;
+    const QJsonDocument doc = QJsonDocument::fromJson(in.readAll(), &parseError);
+    if (parseError.error != QJsonParseError::NoError || !doc.isObject())
+        return fail(tr("%1 is not a plugin settings file.").arg(QDir::toNativeSeparators(local)));
+
+    // Files from exportSettings name their format. Any other object is an
+    // export from the Python plugins' Settings Migrator: {group: {key: value}}.
+    const QJsonObject root = doc.object();
+    const bool current = root.value(QStringLiteral("format")).toString() == kSettingsBackupFormat;
+    if (!current && root.contains(QStringLiteral("format")))
+        return fail(tr("%1 is not a plugin settings file.").arg(QDir::toNativeSeparators(local)));
+    const QJsonObject groups = current ? root.value(QStringLiteral("plugins")).toObject() : root;
+
+    // Python plugin groups a JavaScript plugin took over: group -> {plugin id, key prefix}.
+    // A group with no installed successor is stored as is, where that plugin's
+    // one-time legacy copy finds it once it is installed.
+    QHash<QString, QPair<QString, QString>> successors;
+    if (m_registry)
+        for (const PluginInfo& info : m_registry->plugins())
+            for (const auto& [group, prefix] : info.manifest.legacySettings)
+                successors.insert(group, {info.manifest.id, prefix});
+
+    QHash<QString, QStringList> changed;
+    int count = 0;
+    {
+        QSettings settings(m_organization, QStringLiteral("PluginSettings"));
+        settings.setFallbacksEnabled(false);
+        for (auto it = groups.constBegin(); it != groups.constEnd(); ++it) {
+            if (it.key().isEmpty() || !it.value().isObject())
+                continue;
+            QString target = it.key();
+            QString prefix;
+            if (!current && successors.contains(target)) {
+                prefix = successors.value(target).second;
+                target = successors.value(target).first;
+            }
+            const QJsonObject values = it.value().toObject();
+            settings.beginGroup(target);
+            for (auto v = values.constBegin(); v != values.constEnd(); ++v) {
+                if (isInternalSettingKey(v.key()))
+                    continue;
+                settings.setValue(prefix + v.key(), v.value().toVariant());
+                changed[target].append(prefix + v.key());
+                ++count;
+            }
+            settings.endGroup();
+        }
+    }
+    if (count == 0)
+        return fail(tr("The file has no plugin settings."));
+
+    QStringList names;
+    for (auto it = changed.constBegin(); it != changed.constEnd(); ++it) {
+        const PluginInfo info = m_registry ? m_registry->plugin(it.key()) : PluginInfo();
+        names.append(info.manifest.name.isEmpty() ? it.key() : info.manifest.name);
+        if (m_registry)
+            m_registry->notifySettingsChanged(it.key(), it.value());
+    }
+    names.removeDuplicates();
+    names.sort(Qt::CaseInsensitive);
+    ++m_settingsRevision;
+    emit settingsRevisionChanged();
+    QLog_Info(CONSOLELOG, QStringLiteral("Imported %1 plugin setting(s) from %2.").arg(count).arg(local));
+    return {{QStringLiteral("ok"), true}, {QStringLiteral("plugins"), names}, {QStringLiteral("count"), count}};
 }
 
 QJSValue PluginUiController::invokePlugin(QJSEngine* engine, const QString& pluginId, const QString& token,

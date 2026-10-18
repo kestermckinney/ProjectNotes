@@ -9,12 +9,34 @@ import ProjectNotesDesktop
 
 // Settings > Plugins: installed JavaScript plugins, enabling them (with a
 // review of what a user plugin asks for), installing .pnplugin packages or
-// plugin folders, and opening the user plugin folder.
+// plugin folders, opening the user plugin folder, and backing up plugin
+// settings to a JSON file to restore here or on another computer.
 ColumnLayout {
     id: pane
     objectName: "pluginsSettingsPane"
     spacing: 12
     property string error: ""
+    property string backupStatus: ""
+    // Plugins with saved settings, and the ones ticked for export (id -> bool).
+    property var backupCandidates: []
+    property var backupChecked: ({})
+
+    function refreshBackupCandidates() {
+        var list = PluginUiController.settingsBackupCandidates()
+        var checked = {}
+        list.forEach(function (c) { checked[c.id] = pane.backupChecked[c.id] !== false })
+        backupChecked = checked
+        backupCandidates = list
+    }
+    function selectedBackupIds() {
+        return backupCandidates.filter(function (c) { return backupChecked[c.id] }).map(function (c) { return c.id })
+    }
+    Component.onCompleted: refreshBackupCandidates()
+    Connections {
+        target: PluginUiController
+        function onPluginsChanged() { pane.refreshBackupCandidates() }
+        function onSettingsRevisionChanged() { pane.refreshBackupCandidates() }
+    }
 
     // Plain-language list of what a plugin can do, grouped for display. Each item
     // carries a group heading and a flag for the permissions a user should look at
@@ -217,6 +239,117 @@ ColumnLayout {
                     }
                 }
             }
+        }
+    }
+
+    // Settings backup: export plugin settings to a JSON file and import them
+    // here or on another computer. Also reads the Python Settings Migrator files.
+    Rectangle {
+        objectName: "pluginSettingsBackup"
+        Layout.fillWidth: true
+        Layout.topMargin: 8
+        implicitHeight: backupColumn.implicitHeight + 20
+        radius: Theme.radius
+        color: Theme.surface
+        border.color: Theme.border
+
+        ColumnLayout {
+            id: backupColumn
+            anchors.fill: parent
+            anchors.margins: 10
+            spacing: 6
+            Label {
+                text: qsTr("Back Up Plugin Settings")
+                color: Theme.text; font.pixelSize: Theme.fontLg; font.weight: Font.DemiBold
+            }
+            Label {
+                Layout.fillWidth: true
+                wrapMode: Text.Wrap
+                color: Theme.text2; font.pixelSize: Theme.fontBody
+                text: qsTr("Save plugin settings to a file, then import the file here or on another computer. Passwords are not included; they stay in your system's credential store. Files saved by the old Settings Migrator can be imported too.")
+            }
+            Label {
+                visible: pane.backupCandidates.length === 0
+                text: qsTr("No plugin has saved settings yet.")
+                color: Theme.text3; font.pixelSize: Theme.fontSm
+            }
+            Repeater {
+                model: pane.backupCandidates
+                delegate: ThemedCheckBox {
+                    required property var modelData
+                    Layout.fillWidth: true
+                    text: qsTr("%1 (%n setting(s))", "", modelData.count).arg(modelData.name)
+                    checked: pane.backupChecked[modelData.id] === true
+                    onToggled: {
+                        var next = Object.assign({}, pane.backupChecked)
+                        next[modelData.id] = checked
+                        pane.backupChecked = next
+                    }
+                }
+            }
+            RowLayout {
+                spacing: 8
+                Layout.topMargin: 4
+                Button {
+                    objectName: "exportPluginSettingsButton"
+                    text: qsTr("Export Settings…")
+                    enabled: pane.selectedBackupIds().length > 0
+                    onClicked: exportPicker.open()
+                }
+                Button {
+                    objectName: "importPluginSettingsButton"
+                    text: qsTr("Import Settings…")
+                    onClicked: importPicker.open()
+                }
+            }
+            Label {
+                visible: pane.backupStatus !== ""
+                Layout.fillWidth: true
+                wrapMode: Text.Wrap
+                text: pane.backupStatus
+                color: Theme.text3; font.pixelSize: Theme.fontSm
+            }
+        }
+    }
+
+    FileDialog {
+        id: exportPicker
+        title: qsTr("Export Plugin Settings")
+        fileMode: FileDialog.SaveFile
+        defaultSuffix: "json"
+        nameFilters: [qsTr("JSON files (*.json)")]
+        onAccepted: {
+            pane.error = PluginUiController.exportSettings(selectedFile, pane.selectedBackupIds())
+            pane.backupStatus = pane.error === ""
+                ? qsTr("Saved to %1.").arg(PluginUiController.urlToPath(selectedFile)) : ""
+        }
+    }
+    FileDialog {
+        id: importPicker
+        title: qsTr("Import Plugin Settings")
+        fileMode: FileDialog.OpenFile
+        nameFilters: [qsTr("JSON files (*.json)"), qsTr("All files (*)")]
+        onAccepted: importConfirm.openFor(selectedFile)
+    }
+
+    ThemedMessageDialog {
+        id: importConfirm
+        property url source
+        iconName: "settings_backup_restore"
+        iconColor: Theme.accent
+        confirmText: qsTr("Import")
+        function openFor(url) {
+            source = url
+            title = qsTr("Import Plugin Settings")
+            message = qsTr("Settings in %1 replace the current values of the same settings. Other settings are kept.")
+                          .arg(PluginUiController.urlToPath(url))
+            open()
+        }
+        onConfirmed: {
+            var result = PluginUiController.importSettings(source)
+            pane.error = result.ok ? "" : result.error
+            pane.backupStatus = result.ok
+                ? qsTr("Imported %n setting(s) for %1.", "", result.count).arg(result.plugins.join(", ")) : ""
         }
     }
 

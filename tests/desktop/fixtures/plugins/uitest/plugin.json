@@ -6,6 +6,7 @@
     "description": "Exercises plugin dialogs in tst_uismoke.",
     "main": "main.mjs",
     "permissions": ["ui.dialogs"],
+    "legacySettings": [{ "group": "UI Test Legacy", "prefix": "Old" }],
     "contributes": {
         "menus": [
             { "id": "form", "title": "Form Test", "context": "global", "submenu": "Tests" },
