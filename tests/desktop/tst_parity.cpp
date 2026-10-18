@@ -19,6 +19,9 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QDomDocument>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QUuid>
@@ -27,6 +30,7 @@
 #include "databaseobjects.h"
 #include "databasestructure.h"
 #include "databaseupgrade_v6_4_0.h"
+#include "FolderManager.h"
 #include "legacywidgetsettings.h"
 #include <QSettings>
 #include <QScopeGuard>
@@ -230,6 +234,95 @@ private slots:
         db_rwlock.unlock();
     }
 
+    void test_upgrade650MovesProjectFoldersIntoTables()
+    {
+        QSqlQuery q(global_DBObjects.getDb());
+        const QString tag = uniq("fold");
+        const QStringList projects{tag + "-p1", tag + "-p2", tag + "-p3", tag + "-p4"};
+        for (const QString& id : projects) {
+            q.prepare("INSERT INTO projects(id, project_number, project_name, deleted) VALUES(?, ?, ?, 0)");
+            q.addBindValue(id);
+            q.addBindValue(id);
+            q.addBindValue("Folder migration " + id);
+            QVERIFY(q.exec());
+        }
+        const QString fa = tag + "-fa", fb = tag + "-fb", fc = tag + "-fc", gone = tag + "-gone";
+        // A folder deleted since the old document was written.
+        q.prepare("INSERT INTO project_folders(id, folder_name, deleted) VALUES(?, ?, 1)");
+        q.addBindValue(gone);
+        q.addBindValue(tag + " Old");
+        QVERIFY(q.exec());
+        auto cleanup = qScopeGuard([&] {
+            QSqlQuery r(global_DBObjects.getDb());
+            r.exec("DELETE FROM projects WHERE id LIKE '" + tag + "%'");
+            r.exec("DELETE FROM project_folders WHERE id LIKE '" + tag + "%'");
+            r.exec("DELETE FROM application_settings WHERE parameter_name='project_folders'");
+        });
+
+        auto folder = [&](const QString& id, const QString& name, const QString& icon, const QString& color) {
+            return QJsonObject{{"id", id}, {"name", tag + " " + name}, {"icon", icon}, {"color", color}};
+        };
+        const QJsonObject document{
+            {"folders", QJsonArray{folder(fa, "Favorites", "star", "#111111"), folder(fb, "Clients", "work", "#222222"),
+                                   folder(fc, "favorites", "bolt", "#333333"), folder(gone, "Old", "folder", "#444444")}},
+            {"memberships", QJsonObject{{projects[0], QJsonArray{fb, fa}}, {projects[1], QJsonArray{gone, fa}},
+                                        {projects[2], QJsonArray{gone}}, {projects[3], QJsonArray{fc}}}},
+            {"allCollapsed", true}};
+        const QString json = QString::fromUtf8(QJsonDocument(document).toJson(QJsonDocument::Compact));
+        QVERIFY(global_DBObjects.saveParameter("project_folders", json));
+
+        DatabaseStructure structure;
+        QVERIFY(structure.UpgradeDatabase());
+
+        auto folderOf = [&](const QString& projectId) {
+            QSqlQuery f(global_DBObjects.getDb());
+            f.prepare("SELECT folder_id FROM projects WHERE id = ?");
+            f.addBindValue(projectId);
+            return f.exec() && f.next() ? f.value(0) : QVariant();
+        };
+        // One folder per project: the first one it listed that still exists.
+        QCOMPARE(folderOf(projects[0]).toString(), fb);
+        QCOMPARE(folderOf(projects[1]).toString(), fa);
+        QVERIFY(folderOf(projects[2]).isNull());
+        // A duplicate name merges into the folder that already has it.
+        QCOMPARE(folderOf(projects[3]).toString(), fa);
+
+        QVERIFY(q.exec("SELECT id, folder_name, icon, color, sort_order, deleted, updateddate FROM project_folders "
+                       "WHERE id LIKE '" + tag + "%' ORDER BY id"));
+        QMap<QString, QVariantList> rows;
+        while (q.next())
+            rows.insert(q.value(0).toString(), {q.value(1), q.value(2), q.value(3), q.value(4), q.value(5), q.value(6)});
+        q.finish();
+        QCOMPARE(rows.size(), 3);
+        QVERIFY(!rows.contains(fc));
+        QCOMPARE(rows.value(fa).at(0).toString(), tag + " Favorites");
+        QCOMPARE(rows.value(fa).at(1).toString(), QString("star"));
+        QCOMPARE(rows.value(fa).at(2).toString(), QString("#111111"));
+        QCOMPARE(rows.value(fa).at(3).toInt(), 0);
+        QCOMPARE(rows.value(fb).at(3).toInt(), 1);
+        QVERIFY(!rows.value(fa).at(5).isNull());
+        QCOMPARE(rows.value(gone).at(4).toInt(), 1);   // stays deleted
+
+        // The setting is retired as a synced soft delete.
+        QVERIFY(global_DBObjects.loadParameter("project_folders").isEmpty());
+        QVERIFY(q.exec("SELECT COUNT(*) FROM application_settings WHERE parameter_name='project_folders' AND deleted=1"));
+        QVERIFY(q.next());
+        QCOMPARE(q.value(0).toInt(), 1);
+        q.finish();
+
+        // Running again, or an old client pushing the document back, changes nothing.
+        QVERIFY(structure.UpgradeDatabase());
+        QVERIFY(global_DBObjects.saveParameter("project_folders", json));
+        QVERIFY(structure.UpgradeDatabase());
+        QCOMPARE(folderOf(projects[0]).toString(), fb);
+        QVERIFY(folderOf(projects[2]).isNull());
+        QVERIFY(q.exec("SELECT COUNT(*) FROM project_folders WHERE id LIKE '" + tag + "%' AND deleted = 0"));
+        QVERIFY(q.next());
+        QCOMPARE(q.value(0).toInt(), 2);
+        q.finish();
+        QVERIFY(global_DBObjects.loadParameter("project_folders").isEmpty());
+    }
+
     // ── Static option lists back the ComboBoxes on every form ─────────────────
     void test_00_optionLists()
     {
@@ -315,6 +408,106 @@ private slots:
         QVERIFY(mapHasValue(data, name));
 
         m_projectId = id; m_projectName = name; m_projectNumber = num;
+    }
+
+    void test_03b_projectFolders()
+    {
+        FolderManager folders;
+        folders.reload();
+        const QString tag = uniq("Folder ");
+        const QString a = folders.addFolder(tag + " A", "star", "#111111");
+        const QString b = folders.addFolder(tag + " B");
+        QVERIFY(!a.isEmpty());
+        QVERIFY(!b.isEmpty());
+        auto cleanup = qScopeGuard([&] {
+            folders.removeFolder(a);
+            folders.removeFolder(b);
+        });
+
+        // Names are required and unique, ignoring case.
+        QVERIFY(folders.addFolder("  ").isEmpty());
+        QVERIFY(folders.addFolder(tag.toLower() + " a").isEmpty());
+        QVERIFY(!folders.folderNameError(tag + " B", a).isEmpty());
+        QVERIFY(folders.folderNameError(tag + " A", a).isEmpty());
+        QVERIFY(!folders.renameFolder(a, tag + " b"));
+        QVERIFY(folders.renameFolder(a, tag + " Renamed"));
+        QCOMPARE(folders.folderName(a), tag + " Renamed");
+        QVERIFY(folders.setFolderIcon(a, "bolt"));
+        QVERIFY(folders.setFolderColor(a, "#abcdef"));
+        QVERIFY(folders.moveFolder(b, 0));
+        QSqlQuery q(global_DBObjects.getDb());
+        QVERIFY(q.exec("SELECT folder_name, icon, color FROM project_folders WHERE id = '" + a + "'"));
+        QVERIFY(q.next());
+        QCOMPARE(q.value(0).toString(), tag + " Renamed");
+        QCOMPARE(q.value(1).toString(), QString("bolt"));
+        QCOMPARE(q.value(2).toString(), QString("#abcdef"));
+        q.finish();
+        int indexA = -1, indexB = -1;
+        const QVariantList list = folders.folders();
+        for (int i = 0; i < list.size(); ++i) {
+            if (list.at(i).toMap().value("id") == a) indexA = i;
+            if (list.at(i).toMap().value("id") == b) indexB = i;
+        }
+        QVERIFY(indexB >= 0 && indexB < indexA);
+
+        // Collapse state stays out of the database.
+        QVERIFY(folders.setFolderCollapsed(a, true));
+        QVERIFY(q.exec("SELECT COUNT(*) FROM application_settings WHERE parameter_name LIKE '%" + a + "%'"));
+        QVERIFY(q.next());
+        QCOMPARE(q.value(0).toInt(), 0);
+        q.finish();
+        QVERIFY(folders.setFolderCollapsed(a, false));
+
+        // One folder per project; a deleted folder releases its projects.
+        QVERIFY(c->addProject() >= 0);
+        QAbstractItemModel* projects = c->projectsListModel();
+        QString projectId;
+        for (int r = 0; r < projects->rowCount() && projectId.isEmpty(); ++r)
+            projectId = projects->data(projects->index(r, 0)).toString();
+        QVERIFY(!projectId.isEmpty());
+        QVERIFY(folders.setProjectFolder(projectId, a));
+        QCOMPARE(folders.folderForProject(projectId), a);
+        QVERIFY(folders.setProjectFolder(projectId, b));
+        QCOMPARE(folders.folderForProject(projectId), b);
+        QVERIFY(!folders.setProjectFolder(projectId, "no-such-folder"));
+        QCOMPARE(folders.folders().at(0).toMap().value("count").toInt(), 1);
+
+        // The Folder filter lists every folder plus Not Categorized.
+        const QVariantList values = c->columnDistinctValues(projects, "folder_id");
+        QVERIFY(values.size() >= 3);
+        QCOMPARE(values.first().toMap().value("value").toString(), QString());
+        QStringList valueIds;
+        for (const QVariant& v : values) valueIds << v.toMap().value("value").toString();
+        QVERIFY(valueIds.contains(a));
+        QVERIFY(valueIds.contains(b));
+
+        // Filtering the list to a folder keeps every sidebar group whole.
+        const int allBefore = c->folderProjects("").size();
+        c->filterProjectsByFolder(b);
+        QCOMPARE(c->projectFolderFilter(), QStringList{b});
+        QCOMPARE(projects->rowCount(), 1);
+        QCOMPARE(projects->data(projects->index(0, 0)).toString(), projectId);
+        QCOMPARE(c->folderProjects("").size(), allBefore);
+        QCOMPARE(c->folderProjects(b).size(), 1);
+        c->filterProjectsByFolder("");
+        QCOMPARE(c->projectFolderFilter(), QStringList{QString()});
+        for (int r = 0; r < projects->rowCount(); ++r)
+            QVERIFY(projects->data(projects->index(r, 0)).toString() != projectId);
+        QCOMPARE(c->folderProjects("").size(), allBefore);
+        c->filterProjectsByFolder("");   // the same folder again toggles it off
+        QVERIFY(c->projectFolderFilter().isEmpty());
+        QVERIFY(!c->hasActiveColumnFilters(projects));
+
+        QVERIFY(folders.removeFolder(b));
+        QVERIFY(folders.folderForProject(projectId).isEmpty());
+        QVERIFY(q.exec("SELECT folder_id FROM projects WHERE id = '" + projectId + "'"));
+        QVERIFY(q.next());
+        QVERIFY(q.value(0).isNull());
+        q.finish();
+        QVERIFY(q.exec("SELECT deleted FROM project_folders WHERE id = '" + b + "'"));
+        QVERIFY(q.next());
+        QCOMPARE(q.value(0).toInt(), 1);
+        q.finish();
     }
 
     void test_04_pickerLists()

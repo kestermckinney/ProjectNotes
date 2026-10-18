@@ -32,6 +32,18 @@ const scenarios = {
         return { first: saved.operation, second: again.operation, sameKey: saved.record.$key === again.record.$key,
                  company: saved.record.company_id, email: again.record.email };
     },
+    *projectFolder() {
+        const before = yield data.get("projects", { project_number: "P4000" });
+        yield data.save("projects", { project_number: "P4000", folder_id: { lookup: "Favorites" } });
+        const inFolder = yield data.count("projects", { folder_id: { lookup: "Favorites" } });
+        const moved = yield data.get("projects", { project_number: "P4000" });
+        yield data.save("projects", { project_number: "P4000", folder_id: null });
+        const cleared = yield data.get("projects", { project_number: "P4000" });
+        let unknown = null;
+        try { yield data.save("projects", { project_number: "P4000", folder_id: { lookup: "No Such Folder" } }); }
+        catch (e) { unknown = e.code; }
+        return { before: before.folder_id, inFolder, moved: moved.folder_id, cleared: cleared.folder_id, unknown };
+    },
     *readOnly() { yield data.save("contacts", { name: "X", company_name: "nope" }); },
     *storedName() { yield data.list("people"); },
     *badLookup() { yield data.save("contacts", { name: "Nobody", company_id: { lookup: "No Such Co" } }); },

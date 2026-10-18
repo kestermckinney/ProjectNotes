@@ -9,6 +9,7 @@
 #include <QSqlError>
 #include <QSet>
 #include <QDebug>
+#include <QCoreApplication>
 #include <algorithm>
 
 namespace PN::ModelViewState {
@@ -53,6 +54,22 @@ QVariantList columnDistinctValues(QAbstractItemModel* model,
     // pick a different value. constructWhereClause(false) keeps the model's
     // built-in filters (context filter, deleted-row filter) but drops the
     // interactive user filter.
+    // Folders are offered whether or not any project uses them yet, in their
+    // sidebar order, after "Not Categorized". The empty value matches NULL.
+    if (src->getLookupTable(col) == QLatin1String("project_folders")) {
+        QVariantList values;
+        values.append(QVariantMap{{"value", QString()},
+                                  {"label", QCoreApplication::translate("ModelViewState", "Not Categorized")}});
+        QSqlQuery q(src->getDBOs()->getDb());
+        if (q.exec(QStringLiteral("SELECT id, folder_name FROM project_folders WHERE deleted = 0 "
+                                  "ORDER BY sort_order, folder_name COLLATE NOCASE")))
+            while (q.next())
+                values.append(QVariantMap{{"value", q.value(0).toString()}, {"label", q.value(1).toString()}});
+        else
+            qWarning() << "columnDistinctValues folder query failed:" << q.lastError().text();
+        return values;
+    }
+
     const QString dbcol = src->getColumnName(col);
     QString where = src->constructWhereClause(false);   // "" or " WHERE ... "
     where = where.isEmpty() ? QStringLiteral(" WHERE ") : (where + QStringLiteral(" AND "));
@@ -120,7 +137,7 @@ static QString columnFilterSettingKey(SqlQueryModel* src)
     return "UI:ColumnFilters:" + settingsScopeForModel(src);
 }
 
-static void applyFilterSpecsToModel(SqlQueryModel* src, const QVariantList& specs)
+void applyFilterSpecsToModel(SqlQueryModel* src, const QVariantList& specs)
 {
     src->clearAllUserSearches();
 

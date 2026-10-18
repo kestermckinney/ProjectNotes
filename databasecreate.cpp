@@ -268,6 +268,7 @@ void db_CreateNewDatabase()
             status_report_period TEXT,
             client_id            TEXT,
             project_status       TEXT,
+            folder_id            TEXT,
             updateddate          INTEGER,
             syncdate             INTEGER,
             deleted              INTEGER DEFAULT 0
@@ -285,6 +286,25 @@ void db_CreateNewDatabase()
     global_DBObjects.execute(R"(
         CREATE UNIQUE INDEX idx_projects_number ON projects (project_number) WHERE deleted = 0;
     )");
+
+    global_DBObjects.execute(R"(
+        CREATE INDEX idx_projects_folder ON projects (folder_id);
+    )");
+
+    // User-defined project folders; projects.folder_id points here (NULL = none)
+    global_DBObjects.execute(R"(
+        CREATE TABLE project_folders (
+            id          TEXT PRIMARY KEY NOT NULL,
+            folder_name TEXT NOT NULL,
+            icon        TEXT NOT NULL DEFAULT 'folder',
+            color       TEXT NOT NULL DEFAULT '#c98a1a',
+            sort_order  INTEGER NOT NULL DEFAULT 0,
+            updateddate INTEGER,
+            syncdate    INTEGER,
+            deleted     INTEGER NOT NULL DEFAULT 0
+        );
+    )");
+    global_DBObjects.execute(R"(CREATE UNIQUE INDEX idx_project_folders_name ON project_folders(folder_name COLLATE NOCASE) WHERE deleted = 0;)");
 
     // Status report items table
     global_DBObjects.execute(R"(
@@ -423,6 +443,15 @@ void db_CreateNewDatabase()
         WHEN NEW.syncdate IS OLD.syncdate
         BEGIN
             UPDATE projects SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
+            WHERE id = NEW.id;
+        END;
+    )");
+
+    global_DBObjects.execute(R"(
+        CREATE TRIGGER trg_project_folders_updated AFTER UPDATE ON project_folders
+        WHEN NEW.syncdate IS OLD.syncdate
+        BEGIN
+            UPDATE project_folders SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
             WHERE id = NEW.id;
         END;
     )");

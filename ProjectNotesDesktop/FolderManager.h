@@ -7,27 +7,22 @@
 #include <QObject>
 #include <QVariantList>
 #include <QString>
-#include <QStringList>
 #include <QHash>
 #include <QVector>
+
+#include "databaseobjects.h"
 
 class QQmlEngine;
 class QJSEngine;
 
 // FolderManager — user-defined project folders (e.g. "Favorites").
 //
-// A project can belong to multiple folders. Folder definitions and the
-// project→folder memberships are persisted as a single JSON document in the
-// application_settings table (parameter_name = "project_folders") via
-// DatabaseObjects::saveParameter / loadParameter, so they sync through the
-// existing SqliteSyncPro plumbing like any other setting.
+// Folders are rows in the synced project_folders table. A project belongs to
+// at most one folder, recorded in projects.folder_id; NULL, empty, or the id
+// of a folder deleted on another device all mean "Not Categorized".
 //
-// JSON shape:
-//   { "folders":     [ {"id","name","icon","color","order"} ],
-//     "memberships": { "<projectId>": ["<folderId>", ...] } }
-//
-// Projects that are members of no folder are shown by QML under an implicit
-// "All Projects" group; that group is not stored here.
+// Whether a sidebar group is collapsed is a per-device preference kept in the
+// local QSettings store, never in the database.
 class FolderManager : public QObject
 {
     Q_OBJECT
@@ -37,9 +32,7 @@ class FolderManager : public QObject
     Q_PROPERTY(QVariantList folders READ folders NOTIFY foldersChanged)
 
     // Collapsed state of the sidebar's two implicit groups (not real folders,
-    // so they have no entry in `folders`). Persisted alongside folders/
-    // memberships so collapse state survives a restart and syncs like the
-    // rest of this document.
+    // so they have no entry in `folders`).
     Q_PROPERTY(bool allProjectsCollapsed READ allProjectsCollapsed
                    WRITE setAllProjectsCollapsed NOTIFY allProjectsCollapsedChanged)
     Q_PROPERTY(bool uncategorizedCollapsed READ uncategorizedCollapsed
@@ -47,23 +40,28 @@ class FolderManager : public QObject
 
 public:
     explicit FolderManager(QObject* parent = nullptr);
+    ~FolderManager() override;
 
     static FolderManager* create(QQmlEngine* engine, QJSEngine* scriptEngine);
     static FolderManager* instance() { return s_instance; }
 
     QVariantList folders() const;
 
-    bool allProjectsCollapsed() const { return m_allProjectsCollapsed; }
+    bool allProjectsCollapsed() const;
     void setAllProjectsCollapsed(bool collapsed);
-    bool uncategorizedCollapsed() const { return m_uncategorizedCollapsed; }
+    bool uncategorizedCollapsed() const;
     void setUncategorizedCollapsed(bool collapsed);
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
-    // Load the stored JSON from application_settings. Call once the database is
-    // open (from QML after AppController.openOrCreateDatabase()).
+    // Re-read folders and project counts. Called once the database is open and
+    // whenever external data may have changed (sync, import, plugins); signals
+    // QML only when something actually differs.
     Q_INVOKABLE void reload();
 
     // ── Folder CRUD ──────────────────────────────────────────────────────────
+    // Why `name` can't be used, or "" when it can. excludeFolderId is the
+    // folder being renamed, so keeping its own name isn't a clash.
+    Q_INVOKABLE QString folderNameError(const QString& name, const QString& excludeFolderId = QString()) const;
     Q_INVOKABLE QString addFolder(const QString& name,
                                   const QString& icon = QStringLiteral("folder"),
                                   const QString& color = QStringLiteral("#c98a1a"));
@@ -73,14 +71,13 @@ public:
     Q_INVOKABLE bool    removeFolder(const QString& folderId);
     Q_INVOKABLE bool    moveFolder(const QString& folderId, int newIndex);
     Q_INVOKABLE bool    setFolderCollapsed(const QString& folderId, bool collapsed);
+    Q_INVOKABLE QString folderName(const QString& folderId) const;
 
-    // ── Membership (multi-folder) ────────────────────────────────────────────
-    Q_INVOKABLE bool        addProjectToFolder(const QString& projectId, const QString& folderId);
-    Q_INVOKABLE bool        removeProjectFromFolder(const QString& projectId, const QString& folderId);
-    Q_INVOKABLE void        removeProjectFromAllFolders(const QString& projectId);
-    Q_INVOKABLE bool        isProjectInFolder(const QString& projectId, const QString& folderId) const;
-    Q_INVOKABLE QStringList foldersForProject(const QString& projectId) const;
-    Q_INVOKABLE QStringList projectIdsInFolder(const QString& folderId) const;
+    // ── Membership (one folder per project) ──────────────────────────────────
+    // folderId "" moves the project to Not Categorized.
+    Q_INVOKABLE bool    setProjectFolder(const QString& projectId, const QString& folderId);
+    Q_INVOKABLE QString folderForProject(const QString& projectId) const;
+    bool isFolder(const QString& folderId) const { return indexOfFolder(folderId) >= 0; }
 
 signals:
     void foldersChanged();
@@ -93,27 +90,20 @@ private:
         QString name;
         QString icon;
         QString color;
-        bool    collapsed = false;
+        bool operator==(const Folder& o) const
+        { return id == o.id && name == o.name && icon == o.icon && color == o.color; }
     };
 
     int  indexOfFolder(const QString& folderId) const;
-    void load();
-    void save();
+    void load(QVector<Folder>& folders, QHash<QString, int>& counts) const;
+    bool updateFolder(const QString& folderId, const char* column, const QVariant& value);
+    void folderRowChanged(const QString& folderId, KeyColumnChange::OperationType operation);
+    void refresh();
 
-    QVector<Folder>              m_folders;
-    QHash<QString, QStringList>  m_memberships;   // projectId -> [folderId,...]
-    bool                         m_allProjectsCollapsed  = false;
-    bool                         m_uncategorizedCollapsed = false;
-
-    // The exact JSON string currently reflected in m_folders/m_memberships (as
-    // last loaded from or saved to application_settings). reload() compares the
-    // stored document against this so a no-op reload — e.g. after a sync cycle
-    // that didn't touch project_folders — skips the foldersChanged churn.
-    QString                      m_rawJson;
+    QVector<Folder>      m_folders;      // in sort_order
+    QHash<QString, int>  m_counts;       // folderId -> live projects in it
 
     static FolderManager* s_instance;
-
-    static const QString kSettingKey;
 };
 
 #endif // FOLDERMANAGER_H

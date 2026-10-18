@@ -25,6 +25,7 @@
    <column name="cpi">1</column>
    <column name="status_overdue">Yes</column>
    <column name="invoicing_overdue">Yes</column>
+   <column name="folder_id"></column>
    <table filter_field_1="project_id" filter_value_1="project-p4000" name="project_locations">
     <row>
      <column name="id">loc-folder</column>

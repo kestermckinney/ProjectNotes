@@ -104,6 +104,7 @@ set(DESKTOP_QML_FILES
     qml/MoveReviewDialog.qml
     qml/MoveToDialog.qml
     qml/MoveToFolderDialog.qml
+    qml/FolderEditDialog.qml
     qml/FindReplaceBar.qml
     qml/KebabButton.qml
     qml/ProjectChip.qml

@@ -700,6 +700,8 @@ ApplicationWindow {
             onFilterRequested: () => filterDialog.openFor(root.currentSection)
             onSortRequested: (sx, sy) => sortMenu.openFor(root.currentSection, sx, sy)
             onItemMoveRequested: (itemId, pid) => root.requestTrackerItemMove(itemId, pid)
+            // Filtering by folder shows the list it filters.
+            onFolderFilterApplied: if (contentStack.depth > 1) root.selectSection("projects")
         }
 
         ColumnLayout {

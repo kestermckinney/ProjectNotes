@@ -67,12 +67,37 @@ Rectangle {
         row.openRecord()
     }
 
+    // Left/Right on a folder header collapse/expand it.
+    function expandRow(expandedNow) {
+        var rows = navigationRows()
+        for (var i = 0; i < rows.length; ++i)
+            if (rows[i].navigationKey === keyboardKey && typeof rows[i].setExpanded === "function") {
+                rows[i].setExpanded(expandedNow)
+                return true
+            }
+        return false
+    }
+
+    // A folder header was activated: filter the projects list to that folder
+    // ("" = Not Categorized), or show every folder for All Projects.
+    function filterToFolder(folderId, isAll) {
+        if (isAll)
+            DesktopAppController.clearProjectFolderFilter()
+        else
+            DesktopAppController.filterProjectsByFolder(folderId)
+        sidebar.folderFilterApplied()
+    }
+
     Keys.priority: Keys.AfterItem
     Keys.onPressed: (event) => {
         if (event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier)) return
         switch (event.key) {
         case Qt.Key_Up: moveRow(-1); break
         case Qt.Key_Down: moveRow(1); break
+        case Qt.Key_Left:
+        case Qt.Key_Right:
+            if (!expandRow(event.key === Qt.Key_Right)) return
+            break
         case Qt.Key_Return:
         case Qt.Key_Enter:
             if (!event.isAutoRepeat) activateRow()
@@ -107,6 +132,9 @@ Rectangle {
     signal sortRequested(real sx, real sy)
     // A tracker item was dropped on a project row; forwarded from FolderGroup.
     signal itemMoveRequested(string itemId, string projectId)
+    // A folder header changed the projects list's folder filter; Main shows
+    // the list if a project is open.
+    signal folderFilterApplied()
 
     // Shared record/plugin context menu for every project row in the sidebar
     // (all FolderGroups funnel their right-click and kebab clicks here through
@@ -153,6 +181,44 @@ Rectangle {
     }
 
     MoveToFolderDialog { id: moveToFolderDialog }
+    FolderEditDialog { id: folderEditDialog }
+
+    // Right-click menu on a folder header. _folder is the FolderManager.folders
+    // entry, or null for the Not Categorized / All Projects groups.
+    Popup {
+        id: folderMenu
+        objectName: "folderHeaderMenu"
+        property var _folder: null
+        function openAt(folder, sx, sy) {
+            _folder = folder
+            var sw = width * Theme.uiScale
+            var sh = height * Theme.uiScale
+            x = Math.max(6, Math.min(sx, (parent ? parent.width  : sx + sw) - sw - 6))
+            y = Math.max(6, Math.min(sy, (parent ? parent.height : sy + sh) - sh - 6))
+            open()
+        }
+        parent: Overlay.overlay
+        modal: true
+        dim: false
+        padding: 3
+        width: Math.max(170, implicitContentWidth + leftPadding + rightPadding)
+        scale: Theme.uiScale
+        transformOrigin: Item.TopLeft
+        background: Rectangle { radius: Theme.radius; color: Theme.surface; border.color: Theme.border }
+        ClickShield { host: folderMenu }
+        contentItem: ColumnLayout {
+            spacing: 0
+            MenuRow {
+                visible: folderMenu._folder !== null
+                icon: "edit"; label: qsTr("Edit Folder…")
+                onActivated: { folderMenu.close(); folderEditDialog.openFor(folderMenu._folder) }
+            }
+            MenuRow {
+                icon: "create_new_folder"; label: qsTr("New Folder…")
+                onActivated: { folderMenu.close(); folderEditDialog.openNew() }
+            }
+        }
+    }
 
     MeetingNotesReportReviewDialog {
         id: meetingNotesReportReview
@@ -232,6 +298,8 @@ Rectangle {
                         onMenuRequested: (pid, label, sx, sy) => sidebar.openProjectMenu(pid, label, sx, sy)
                         onItemMoveRequested: (itemId, pid) => sidebar.itemMoveRequested(itemId, pid)
                         onToggled: (exp) => FolderManager.setFolderCollapsed(modelData.id, !exp)
+                        onFilterRequested: sidebar.filterToFolder(modelData.id, false)
+                        onFolderMenuRequested: (sx, sy) => folderMenu.openAt(modelData, sx, sy)
                     }
                 }
 
@@ -239,7 +307,7 @@ Rectangle {
                     navigationOwner: sidebar
                     width: parent.width - 12
                     folderId: "__uncategorized__"
-                    folderName: "Not Categorized"
+                    folderName: qsTr("Not Categorized")
                     isAll: false
                     isUncategorized: true
                     expanded: !FolderManager.uncategorizedCollapsed
@@ -249,12 +317,14 @@ Rectangle {
                     onMenuRequested: (pid, label, sx, sy) => sidebar.openProjectMenu(pid, label, sx, sy)
                     onItemMoveRequested: (itemId, pid) => sidebar.itemMoveRequested(itemId, pid)
                     onToggled: (exp) => FolderManager.uncategorizedCollapsed = !exp
+                    onFilterRequested: sidebar.filterToFolder("", false)
+                    onFolderMenuRequested: (sx, sy) => folderMenu.openAt(null, sx, sy)
                 }
 
                 FolderGroup {
                     navigationOwner: sidebar
                     width: parent.width - 12
-                    folderName: "All Projects"
+                    folderName: qsTr("All Projects")
                     isAll: true
                     expanded: !FolderManager.allProjectsCollapsed
                     selectedProjectId: sidebar.selectedProjectId
@@ -263,6 +333,8 @@ Rectangle {
                     onMenuRequested: (pid, label, sx, sy) => sidebar.openProjectMenu(pid, label, sx, sy)
                     onItemMoveRequested: (itemId, pid) => sidebar.itemMoveRequested(itemId, pid)
                     onToggled: (exp) => FolderManager.allProjectsCollapsed = !exp
+                    onFilterRequested: sidebar.filterToFolder("", true)
+                    onFolderMenuRequested: (sx, sy) => folderMenu.openAt(null, sx, sy)
                 }
             }
         }

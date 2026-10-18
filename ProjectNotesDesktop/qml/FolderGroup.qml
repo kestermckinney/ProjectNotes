@@ -8,10 +8,12 @@ import QtQuick.Layouts
 import ProjectNotesDesktop
 
 // One collapsible folder group in the project sidebar. Its header + body form a
-// DropArea: dropping a project row here adds it to this folder (multi-folder —
-// the project keeps its other memberships). The "All Projects" variant
-// (isAll = true) lists every project and, on drop, removes all folder
-// memberships from the dropped project.
+// DropArea: dropping a project row here moves it into this folder (a project
+// is in one folder at a time). The "All Projects" variant (isAll = true) lists
+// every project and, on drop, takes the dropped project out of its folder.
+//
+// Tapping the header's name filters the projects list to this folder; only
+// the chevron collapses or expands the group.
 Column {
     id: group
 
@@ -51,9 +53,22 @@ Column {
     // A tracker item card (Drag.keys ["Tracker Item"]) was dropped on a project
     // row. Handled by ProjectSidebar → Main.requestTrackerItemMove.
     signal itemMoveRequested(string itemId, string projectId)
-    // The header was tapped and `expanded` flipped to the given value. The
+    // The chevron was tapped and `expanded` flipped to the given value. The
     // instantiating site (ProjectSidebar) persists this via FolderManager.
     signal toggled(bool expandedNow)
+    // The header's name was tapped: filter the projects list to this group.
+    signal filterRequested()
+    // The header was right-clicked, at the given scene coordinates.
+    signal folderMenuRequested(real sceneX, real sceneY)
+
+    // True while the projects list is filtered to exactly this group.
+    readonly property bool filterActive: {
+        var _rev = DesktopAppController.filterRev
+        var shown = DesktopAppController.projectFolderFilter()
+        if (group.isAll)
+            return shown.length === 0
+        return shown.length === 1 && shown[0] === (group.isUncategorized ? "" : group.folderId)
+    }
 
     // Visible members of this folder ("" = every visible project), served from
     // the controller's one-pass snapshot. Referencing sidebarRev makes the
@@ -73,10 +88,7 @@ Column {
         var pid = drop.source ? drop.source.projectId : ""
         if (!pid)
             return
-        if (group.isAll || group.isUncategorized)
-            FolderManager.removeProjectFromAllFolders(pid)
-        else
-            FolderManager.addProjectToFolder(pid, group.folderId)
+        FolderManager.setProjectFolder(pid, (group.isAll || group.isUncategorized) ? "" : group.folderId)
         drop.accept()
     }
 
@@ -90,7 +102,11 @@ Column {
         id: folderHeader
         readonly property string navigationKey: group.navigationKey + "/folder"
         objectName: "sidebar_" + navigationKey
-        function openRecord() { group.toggled(!group.expanded) }
+        function openRecord() { group.filterRequested() }
+        function setExpanded(expandedNow) {
+            if (group.expanded !== expandedNow)
+                group.toggled(expandedNow)
+        }
         width: parent.width
         height: 22
 
@@ -105,7 +121,9 @@ Column {
             anchors.fill: parent
             anchors.rightMargin: 2
             radius: Theme.radiusSm
-            color: headerDrop.containsDrag ? Theme.dropHighlight : "transparent"
+            color: headerDrop.containsDrag ? Theme.dropHighlight
+                 : group.filterActive && !group.isAll ? Theme.accentSoft
+                 : "transparent"
             border.width: 2
             border.color: group.navigationOwner && group.navigationOwner.activeFocus
                           && group.navigationOwner.keyboardKey === folderHeader.navigationKey
@@ -125,7 +143,7 @@ Column {
             }
             Text {
                 text: group.folderName.toUpperCase()
-                color: Theme.text3
+                color: group.filterActive && !group.isAll ? Theme.accent : Theme.text3
                 font.pixelSize: Theme.listFont
                 font.weight: Font.Bold
                 font.letterSpacing: 0.6
@@ -137,17 +155,39 @@ Column {
                 color: Theme.text3
                 font.pixelSize: Theme.listFont
             }
-            MaterialIcon {
-                name: group.expanded ? "expand_more" : "chevron_right"
-                size: 14
-                color: Theme.text3
+            Item {
+                id: chevron
+                objectName: "sidebar_" + folderHeader.navigationKey + "/chevron"
+                implicitWidth: 20
+                implicitHeight: 20
+                MaterialIcon {
+                    anchors.centerIn: parent
+                    name: group.expanded ? "expand_more" : "chevron_right"
+                    size: 14
+                    color: chevronHover.hovered ? Theme.text : Theme.text3
+                }
+                HoverHandler { id: chevronHover }
             }
         }
 
         TapHandler {
-            onTapped: {
+            acceptedButtons: Qt.RightButton
+            onTapped: (eventPoint) => {
+                var p = folderHeader.mapToItem(null, eventPoint.position.x, eventPoint.position.y)
+                group.folderMenuRequested(p.x, p.y)
+            }
+        }
+
+        // One handler for the whole header: the chevron collapses, anywhere
+        // else filters. Separate nested handlers would both see the tap.
+        TapHandler {
+            onTapped: (eventPoint) => {
                 if (group.navigationOwner) group.navigationOwner.focusRow(folderHeader)
-                folderHeader.openRecord()
+                var p = chevron.mapFromItem(folderHeader, eventPoint.position.x, eventPoint.position.y)
+                if (p.x >= 0 && p.x <= chevron.width && p.y >= -4 && p.y <= chevron.height + 4)
+                    group.toggled(!group.expanded)
+                else
+                    folderHeader.openRecord()
             }
         }
     }

@@ -5,6 +5,7 @@
 #define DESKTOPAPPCONTROLLER_H
 
 #include <QObject>
+#include <QPointer>
 
 #include <functional>
 #include <QAbstractItemModel>
@@ -30,6 +31,8 @@ class QQmlEngine;
 class QJSEngine;
 class QThread;
 class UpdateManager;
+class ProjectsModel;
+class SortFilterProxyModel;
 class SqliteSyncPro;
 struct SyncResult;
 class DesktopPluginServices;
@@ -165,6 +168,8 @@ public:
     // the data location so a separate dev database is used. Set before the QML
     // engine loads (from main.cpp).
     static void setDeveloperProfile(const QString& profile) { s_developerProfile = profile; }
+    // Organization name of the local, per-user QSettings store.
+    static QString localSettingsOrganization() { return QStringLiteral("ProjectNotes") + s_developerProfile; }
 
     // --test-supabase: route cloud sync at the TEST Supabase instance instead of
     // production. Set from main.cpp before the engine loads.
@@ -453,8 +458,19 @@ public:
     // visible project (the "All Projects" group). Served from a snapshot built
     // in one pass over the proxy and cached until sidebarRev bumps — replaces
     // the old per-folder full-model Repeater + O(rows) folderVisibleCount().
+    // A Folder filter on the projects list is ignored here, so every group
+    // keeps its projects while the list shows one folder.
     Q_INVOKABLE QVariantList folderProjects(const QString& folderId);
     int sidebarRev() const { return m_sidebarRev; }
+
+    // Folder filter on the projects list, driven by clicking a sidebar folder.
+    // folderId "" filters to Not Categorized; filtering to the folder that is
+    // already the only one shown clears the folder filter instead.
+    Q_INVOKABLE void filterProjectsByFolder(const QString& folderId);
+    Q_INVOKABLE void clearProjectFolderFilter();
+    // Values of the active Folder filter: [] when there is none, [""] for Not
+    // Categorized. Re-read on filterRev.
+    Q_INVOKABLE QStringList projectFolderFilter() const;
 
     // ── Plugin menus ─────────────────────────────────────────────────────────
     // Record menus that JavaScript plugins contribute to this model's entity,
@@ -1025,6 +1041,15 @@ private:
     int  m_sidebarRev            = 0;
     void rebuildFolderSnapshot();
     void invalidateFolderSnapshot();
+    // While the projects list has a Folder filter, the snapshot reads a mirror
+    // of it that carries every other filter, the quick search and the sort.
+    QAbstractItemModel* syncSidebarMirror();
+    void dropSidebarMirror();
+    // QPointer: the model is parented to global_DBObjects, which can close.
+    QPointer<ProjectsModel>        m_sidebarMirrorModel;
+    QPointer<SortFilterProxyModel> m_sidebarMirrorProxy;
+    QString m_sidebarMirrorKey;              // filters last applied to the mirror
+    bool    m_syncingSidebarMirror = false;  // ignore the mirror's own signals
 
     // Bumped by applyColumnFilters/clearColumnFilters/applyQuickFilter — see
     // filterRev/hasActiveColumnFilters(). Filter changes are discrete user

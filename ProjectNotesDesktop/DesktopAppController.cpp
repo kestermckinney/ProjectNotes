@@ -2424,12 +2424,14 @@ void DesktopAppController::rebuildFolderSnapshot()
         m_folderMgrConnected = true;
     }
 
-    // One pass over the proxy's currently-visible rows (which already reflect
-    // the active quick-search and column filters). Each row lands in the ""
-    // (All Projects) list plus every folder it's a member of.
-    const int rows = proxy->rowCount();
+    // One pass over the visible rows (which already reflect the active
+    // quick-search and column filters). Each row lands in the "" (All
+    // Projects) list plus its folder, or Not Categorized.
+    QAbstractItemModel* rowsModel = syncSidebarMirror();
+    const int folderCol = global_DBObjects.projectinformationmodel()->getColumnNumber(QStringLiteral("folder_id"));
+    const int rows = rowsModel->rowCount();
     for (int r = 0; r < rows; ++r) {
-        const QString pid = proxy->data(proxy->index(r, 0)).toString();
+        const QString pid = rowsModel->data(rowsModel->index(r, 0)).toString();
         // A row the New Project button only staged has no id and isn't a project
         // yet — keep it out of the sidebar (and its counts) until it's written.
         if (pid.isEmpty())
@@ -2437,19 +2439,134 @@ void DesktopAppController::rebuildFolderSnapshot()
 
         QVariantMap row;
         row.insert(QStringLiteral("id"),             pid);
-        row.insert(QStringLiteral("project_number"), proxy->data(proxy->index(r, 1)).toString());
-        row.insert(QStringLiteral("project_name"),   proxy->data(proxy->index(r, 2)).toString());
-        row.insert(QStringLiteral("project_status"), proxy->data(proxy->index(r, 14)).toString());
+        row.insert(QStringLiteral("project_number"), rowsModel->data(rowsModel->index(r, 1)).toString());
+        row.insert(QStringLiteral("project_name"),   rowsModel->data(rowsModel->index(r, 2)).toString());
+        row.insert(QStringLiteral("project_status"), rowsModel->data(rowsModel->index(r, 14)).toString());
 
         m_folderSnapshot[QString()].append(row);
         if (fm) {
-            const QStringList memberOf = fm->foldersForProject(pid);
-            for (const QString& fid : memberOf)
-                m_folderSnapshot[fid].append(row);
-            if (memberOf.isEmpty())
-                m_folderSnapshot[kUncategorizedFolderKey].append(row);
+            const QString folderId = rowsModel->data(rowsModel->index(r, folderCol)).toString();
+            m_folderSnapshot[fm->isFolder(folderId) ? folderId : kUncategorizedFolderKey].append(row);
         }
     }
+}
+
+QAbstractItemModel* DesktopAppController::syncSidebarMirror()
+{
+    SortFilterProxyModel* proxy = global_DBObjects.projectinformationmodelproxy();
+    ProjectsModel* src = global_DBObjects.projectinformationmodel();
+    const int folderCol = src->getColumnNumber(QStringLiteral("folder_id"));
+    if (!src->getUserFilterState() || !src->hasUserFilters(folderCol)) {
+        dropSidebarMirror();
+        return proxy;
+    }
+
+    if (!m_sidebarMirrorModel || !m_sidebarMirrorProxy) {
+        dropSidebarMirror();
+        m_sidebarMirrorModel = new ProjectsModel(&global_DBObjects);
+        m_sidebarMirrorModel->setNoExport();
+        m_sidebarMirrorProxy = new SortFilterProxyModel(this);
+        m_sidebarMirrorProxy->setSourceModel(m_sidebarMirrorModel);
+        // Edits to projects outside the shown folder only reach the mirror.
+        auto invalidate = [this]() { if (!m_syncingSidebarMirror) invalidateFolderSnapshot(); };
+        connect(m_sidebarMirrorProxy, &QAbstractItemModel::modelReset, this, invalidate);
+        connect(m_sidebarMirrorProxy, &QAbstractItemModel::rowsInserted, this, invalidate);
+        connect(m_sidebarMirrorProxy, &QAbstractItemModel::rowsRemoved, this, invalidate);
+        connect(m_sidebarMirrorProxy, &QAbstractItemModel::layoutChanged, this, invalidate);
+        connect(m_sidebarMirrorProxy, &QAbstractItemModel::dataChanged, this, invalidate);
+        // Anything that reloads the list (a refresh, an import) reloads the mirror too.
+        connect(src, &QAbstractItemModel::modelReset, m_sidebarMirrorModel,
+                [this]() { if (!m_syncingSidebarMirror) m_sidebarMirrorKey.clear(); });
+        m_sidebarMirrorKey.clear();
+    }
+
+    m_syncingSidebarMirror = true;
+
+    QVariantList specs = PN::ModelViewState::activeColumnFilters(proxy);
+    for (int i = specs.size() - 1; i >= 0; --i)
+        if (specs.at(i).toMap().value(QStringLiteral("field")).toString() == QLatin1String("folder_id"))
+            specs.removeAt(i);
+    const int statusCol = src->getColumnNumber(QStringLiteral("project_status"));
+    const QString statusFilter = src->hasFilter(statusCol) ? src->getFilter(statusCol).toString() : QString();
+    const QString key = QString::fromUtf8(QJsonDocument(QJsonArray::fromVariantList(specs)).toJson(QJsonDocument::Compact))
+                        + QChar(0x1f) + statusFilter;
+    if (key != m_sidebarMirrorKey) {
+        if (statusFilter.isEmpty())
+            m_sidebarMirrorModel->clearFilter(statusCol);
+        else
+            m_sidebarMirrorModel->setFilter(statusCol, statusFilter);
+        PN::ModelViewState::applyFilterSpecsToModel(m_sidebarMirrorModel, specs);
+        if (specs.isEmpty())
+            m_sidebarMirrorModel->deactivateUserFilter();
+        else
+            m_sidebarMirrorModel->activateUserFilter();
+        m_sidebarMirrorModel->refresh();
+        m_sidebarMirrorKey = key;
+    }
+    m_sidebarMirrorProxy->setQuickSearchNow(proxy->quickSearch());
+    if (m_sidebarMirrorProxy->appliedSortColumn() != proxy->appliedSortColumn()
+        || m_sidebarMirrorProxy->appliedSortOrder() != proxy->appliedSortOrder())
+        m_sidebarMirrorProxy->sort(proxy->appliedSortColumn(), proxy->appliedSortOrder());
+
+    m_syncingSidebarMirror = false;
+    return m_sidebarMirrorProxy;
+}
+
+void DesktopAppController::dropSidebarMirror()
+{
+    delete m_sidebarMirrorProxy.data();
+    delete m_sidebarMirrorModel.data();
+    m_sidebarMirrorKey.clear();
+}
+
+void DesktopAppController::filterProjectsByFolder(const QString& folderId)
+{
+    QAbstractItemModel* model = projectsListModel();
+    if (!sourceModelOf(model)) return;
+    // A tap on the folder already shown alone clears the filter (toggle), the
+    // same convention as applyQuickFilter.
+    if (projectFolderFilter() == QStringList{folderId}) {
+        clearProjectFolderFilter();
+        return;
+    }
+    QVariantList specs = PN::ModelViewState::activeColumnFilters(model);
+    for (int i = specs.size() - 1; i >= 0; --i)
+        if (specs.at(i).toMap().value(QStringLiteral("field")).toString() == QLatin1String("folder_id"))
+            specs.removeAt(i);
+    specs.append(QVariantMap{{QStringLiteral("field"), QStringLiteral("folder_id")},
+                             {QStringLiteral("values"), QVariantList{folderId}},
+                             {QStringLiteral("search"), QString()},
+                             {QStringLiteral("rangeStart"), QString()},
+                             {QStringLiteral("rangeEnd"), QString()}});
+    applyColumnFilters(model, specs);
+}
+
+void DesktopAppController::clearProjectFolderFilter()
+{
+    QAbstractItemModel* model = projectsListModel();
+    if (!sourceModelOf(model) || projectFolderFilter().isEmpty()) return;
+    QVariantList specs = PN::ModelViewState::activeColumnFilters(model);
+    for (int i = specs.size() - 1; i >= 0; --i)
+        if (specs.at(i).toMap().value(QStringLiteral("field")).toString() == QLatin1String("folder_id"))
+            specs.removeAt(i);
+    if (specs.isEmpty())
+        clearColumnFilters(model);
+    else
+        applyColumnFilters(model, specs);
+}
+
+QStringList DesktopAppController::projectFolderFilter() const
+{
+    QStringList out;
+    const QVariantList specs = PN::ModelViewState::activeColumnFilters(projectsListModel());
+    for (const QVariant& spec : specs) {
+        const QVariantMap map = spec.toMap();
+        if (map.value(QStringLiteral("field")).toString() != QLatin1String("folder_id"))
+            continue;
+        for (const QVariant& value : map.value(QStringLiteral("values")).toList())
+            out.append(value.toString());
+    }
+    return out;
 }
 
 void DesktopAppController::invalidateFolderSnapshot()

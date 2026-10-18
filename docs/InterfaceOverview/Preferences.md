@@ -17,7 +17,7 @@ Options, Data, and About. A few other Settings-page tabs are substantial
 enough to have their own documentation:
 
 - [Cloud Sync](<RemoteHost.md>) — Sync your database with Project Notes Pro
-- [Project Folders](<ProjectFolders.md>) — Configure per-project folder locations
+- [Project Folders](<ProjectFolders.md>) — Create, rename, and color the folders in the project sidebar
 - [File Finder](<FileFinder.md>) — Native automatic project file discovery
 - [Office 365 Integration](<Office365Integration.md>) — Native Microsoft 365 sign-in used by File Finder
 

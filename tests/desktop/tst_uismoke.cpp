@@ -672,7 +672,7 @@ private slots:
         QVERIFY(!projectId.isEmpty());
         const QString folderId = folders->addFolder("Keyboard Folder");
         QVERIFY(!folderId.isEmpty());
-        QVERIFY(folders->addProjectToFolder(projectId, folderId));
+        QVERIFY(folders->setProjectFolder(projectId, folderId));
         QVERIFY(folders->setFolderCollapsed(folderId, true));
         QStringList extraFolders;
         for (int i = 0; i < 20; ++i) {
@@ -690,9 +690,18 @@ private slots:
         sidebar->setProperty("keyboardKey", headerKey);
         sidebar->forceActiveFocus();
         QVERIFY(!expanded());
-        QTest::keyClick(window, Qt::Key_Return);
+        // Right/Left expand and collapse a header; Return filters by it.
+        QTest::keyClick(window, Qt::Key_Right);
         QTRY_VERIFY(expanded());
         QCOMPARE(sidebar->property("keyboardKey").toString(), headerKey);
+        const int allCount = c->folderProjects("").size();
+        QTest::keyClick(window, Qt::Key_Return);
+        QTRY_COMPARE(c->projectFolderFilter(), QStringList{folderId});
+        QCOMPARE(c->projectsListModel()->rowCount(), 1);
+        QCOMPARE(c->folderProjects("").size(), allCount);
+        QTest::keyClick(window, Qt::Key_Return);
+        QTRY_VERIFY(c->projectFolderFilter().isEmpty());
+        QVERIFY(expanded());
         QTest::keyClick(window, Qt::Key_Down);
         QCOMPARE(sidebar->property("keyboardKey").toString(), folderId + "/project/" + projectId);
         QTest::keyClick(window, Qt::Key_Enter);
@@ -706,12 +715,12 @@ private slots:
         sidebar->forceActiveFocus();
         QTest::keyClick(window, Qt::Key_Up);
         QCOMPARE(sidebar->property("keyboardKey").toString(), headerKey);
-        QTest::keyClick(window, Qt::Key_Return);
+        QTest::keyClick(window, Qt::Key_Left);
         QTRY_VERIFY(!expanded());
         QTest::keyClick(window, Qt::Key_Down);
         QCOMPARE(sidebar->property("keyboardKey").toString(), extraFolders.first() + "/folder");
         // Expanding an empty folder leaves its header highlighted.
-        QTest::keyClick(window, Qt::Key_Return);
+        QTest::keyClick(window, Qt::Key_Right);
         QCOMPARE(sidebar->property("keyboardKey").toString(), extraFolders.first() + "/folder");
         QTest::keyClick(window, Qt::Key_Down);
         QCOMPARE(sidebar->property("keyboardKey").toString(), extraFolders[1] + "/folder");
@@ -737,6 +746,39 @@ private slots:
         QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier, click);
         QVERIFY(sidebar->hasActiveFocus());
         QCOMPARE(sidebar->property("keyboardKey").toString(), headerKey);
+        // Clicking the name filters; only the chevron collapses.
+        QTRY_COMPARE(c->projectFolderFilter(), QStringList{folderId});
+        QVERIFY(!expanded());
+        auto* chevron = findVisualChild(sidebar, "sidebar_" + headerKey + "/chevron");
+        QVERIFY(chevron);
+        const QPoint chevronClick = chevron->mapToScene(QPointF(chevron->width() / 2, chevron->height() / 2)).toPoint();
+        QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier, chevronClick);
+        QTRY_VERIFY(expanded());
+        QCOMPARE(c->projectFolderFilter(), QStringList{folderId});
+        c->clearProjectFolderFilter();
+        QVERIFY(c->projectFolderFilter().isEmpty());
+        // The header menu's folder dialog edits name, icon and color together.
+        auto* editDialog = root->findChild<QObject*>("folderEditDialog");
+        QVERIFY(editDialog);
+        QVariantMap folderMap;
+        for (const QVariant& f : folders->folders())
+            if (f.toMap().value("id").toString() == folderId) folderMap = f.toMap();
+        QVERIFY(QMetaObject::invokeMethod(editDialog, "openFor", Q_ARG(QVariant, folderMap)));
+        QTRY_VERIFY(editDialog->property("opened").toBool());
+        auto* nameField = editDialog->findChild<QObject*>("folderEditName");
+        QVERIFY(nameField);
+        nameField->setProperty("text", "Keyboard Folder Renamed");
+        editDialog->setProperty("_icon", "bolt");
+        QVERIFY(QMetaObject::invokeMethod(editDialog, "_save"));
+        QTRY_VERIFY(!editDialog->property("visible").toBool());
+        QCOMPARE(folders->folderName(folderId), QString("Keyboard Folder Renamed"));
+        QVERIFY(QMetaObject::invokeMethod(editDialog, "openNew"));
+        QTRY_VERIFY(editDialog->property("opened").toBool());
+        nameField->setProperty("text", "keyboard folder renamed");
+        QVERIFY(QMetaObject::invokeMethod(editDialog, "_save"));
+        QVERIFY(!editDialog->property("_error").toString().isEmpty());   // duplicate name
+        QVERIFY(QMetaObject::invokeMethod(editDialog, "close"));
+        QTRY_VERIFY(!editDialog->property("visible").toBool());
         for (const auto& id : extraFolders) QVERIFY(folders->removeFolder(id));
         QVERIFY(folders->removeFolder(folderId));
         folders->setAllProjectsCollapsed(allCollapsed);

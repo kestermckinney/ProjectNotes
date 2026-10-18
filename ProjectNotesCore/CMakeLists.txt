@@ -40,6 +40,7 @@ set(CORE_SOURCES
     ../databaseupgrade_v6_1_0.cpp ../databaseupgrade_v6_1_0.h
     ../databaseupgrade_v6_2_0.cpp ../databaseupgrade_v6_2_0.h
     ../databaseupgrade_v6_4_0.cpp ../databaseupgrade_v6_4_0.h
+    ../databaseupgrade_v6_5_0.cpp ../databaseupgrade_v6_5_0.h
     ../officedeeplink.cpp   ../officedeeplink.h
 
     # Data models

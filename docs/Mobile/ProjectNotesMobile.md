@@ -37,6 +37,7 @@ The entry point for project work. Displays all projects as a scrollable list. A 
 
 - Tap a project to open the [Project Details Page](#project-details-page).
 - The list respects the **Show Closed Projects** setting in [View Options](#view-options).
+- Tap the filter button and choose **Folder** to show only the projects in one or more project folders. Every folder is listed, along with **Not Categorized** for projects in no folder. Check as many as you like and tap **Apply**. Folders are created and named in the desktop app and sync to the phone with the rest of your data.
 
 ### Project Details Page
 

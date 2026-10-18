@@ -1,54 +1,66 @@
 # Project Folders
 
-Project Folders let you group projects in the sidebar — for example a **Favorites** folder for the projects you check every day. A project can belong to several folders at once, and every project always continues to appear under the built-in **All Projects** group regardless of its folder memberships. Projects that belong to no folder are also listed under a built-in **Not Categorized** group, shown between your own folders and **All Projects**.
+Project Folders group projects in the sidebar. A **Favorites** folder for the projects you check every day is a common start. Each project sits in one folder at a time, and every project also appears under the built-in **All Projects** group. Projects that are in no folder are listed under **Not Categorized**, shown between your own folders and **All Projects**.
 
-Folders, their icons and colors, and which projects belong to them are stored with your synced data, so they follow you across devices that share the same database.
+Folders, their names, icons and colors, and the folder each project is in are stored with your synced data. They follow you to every device that shares the same database.
 
 ## Hiding the Sidebar
 
 The sidebar only appears on the [Project List Page](<ProjectListPage.md>), and you can put it away when you want the full window for the project cards. Choose **Show Project Folders** from the app menu's **View** group, or click the panel button near the bottom of the icon rail. Either one toggles the panel, and Project Notes remembers the choice for the next launch. The rail button is dimmed on other sections, since there is no sidebar to hide there.
 
+## Showing One Folder's Projects
+
+Click a folder's name in the sidebar to filter the project list to that folder. The header stays highlighted while the filter is on. Click the same name again, or click **All Projects**, to show every project. **Not Categorized** works the same way and shows the projects that are in no folder.
+
+The folder filter is an ordinary column filter on the project list, so the **Filter** button lights up and the filter shows under **Folder** in the filter editor. Other filters and the quick search still apply on top of it. While the list shows one folder, the sidebar keeps listing every folder's projects, so you can switch folders with one click.
+
+If a project is open, clicking a folder name takes you back to the project list.
+
+## Collapsing a Folder
+
+Click the arrow at the right end of a folder header to collapse or expand that group. Clicking anywhere else on the header filters the list instead. With the keyboard, move to a header with the arrow keys, press **Right** to expand it, **Left** to collapse it, and **Enter** to filter by it.
+
+Collapsed groups are remembered on each computer separately. Collapsing a folder on one device leaves it open on your others.
+
 ## Creating a Folder
 
-Folders are created and managed from **Settings > Project Folders**.
+Create folders from **Settings > Project Folders**, or right-click any folder header in the sidebar and choose **New Folder…**.
 
-**To create a folder:**
+**To create a folder in Settings:**
 
 1. Open **Settings** and go to the **Project Folders** section.
 2. Type a name into the **New folder name…** field.
 3. Click **Add Folder**.
 
-The new folder appears both in the Settings list and as a group in the project sidebar, starting with a star icon and the first color swatch.
+The new folder appears in the Settings list and as a group in the project sidebar, starting with a star icon and the first color swatch. Folder names must be unique; a name that differs from an existing one only by capitalization is refused.
 
-## Organizing Projects into Folders
+## Renaming a Folder and Changing Its Icon or Color
 
-Once a folder exists, add projects to it by dragging them in the sidebar.
+In **Settings > Project Folders**:
 
-**To add a project to a folder:**
+- Click a folder's name to edit it. Press **Enter** or click elsewhere to save, or **Escape** to put the old name back.
+- Click the folder's icon to choose another one.
+- Click a color swatch to change its color.
 
-1. In the project sidebar, press and drag a project row.
-2. Drop it onto the header of the target folder group.
+From the sidebar, right-click the folder header and choose **Edit Folder…**. One dialog changes the name, icon and color together.
 
-The project is added to that folder without losing its membership in any other folder. Dropping a project onto the **All Projects** group instead removes it from every folder it currently belongs to. Each folder header shows a live count of the projects it contains, and a folder can be collapsed or expanded by clicking its header — Project Notes remembers which groups you collapsed and restores them on the next launch.
+## Putting Projects into Folders
 
-## Moving a Project to Exactly One Folder
+Drag a project row in the sidebar and drop it onto a folder header. The project moves into that folder and leaves the one it was in. Dropping a project onto **Not Categorized** or **All Projects** takes it out of its folder. Each folder header shows a live count of the projects in it.
 
-Dragging *adds* a membership; the **Move To Folder** dialog instead puts a project in exactly one folder in a single click.
+The **Move To Folder** dialog does the same thing without dragging:
 
-**To move a project to a folder:**
+1. Right-click the project. This works in the sidebar, on its card on the [Project List Page](<ProjectListPage.md>), or on its own [Project Page](<ProjectPage.md>). Choose **Move To…** and the **Move To Folder** dialog opens.
+2. Click the destination folder. The dialog closes with no separate confirm step.
 
-1. Right-click the project — in the sidebar, on its card on the [Project List Page](<ProjectListPage.md>), or on its own [Project Page](<ProjectPage.md>) — and choose **Move To…**. The **Move To Folder** dialog opens.
-2. Click the destination folder. The project's existing folder memberships are replaced with that single folder, and the dialog closes — there is no separate confirm step.
+Choosing **Not Categorized** at the bottom of the list takes the project out of its folder.
 
-Choosing **Not Categorized** at the bottom of the list removes the project from every folder instead.
+A duplicated project lands in the same folder as the original.
 
-## Assigning and Changing Folder Colors
+## Deleting a Folder
 
-Each folder has a color, shown as a small swatch next to its name in the sidebar and used to tint its folder icon.
+Click the trash icon next to a folder in **Settings > Project Folders**. Only the folder is removed. Its projects move to **Not Categorized**.
 
-**To change a folder's color:**
+## Upgrading from Earlier Versions
 
-1. Open **Settings > Project Folders**.
-2. Click one of the color swatches next to the folder.
-
-The folder icon updates immediately everywhere it is shown. Clicking the folder's icon in Settings cycles it through the available icon choices. A folder is removed from Settings with its trash icon; this only deletes the folder itself, not the projects that belonged to it.
+Before version 6.5.0, folders were saved as a single setting, and a project could be in several folders. The first time 6.5.0 opens your database, it moves your folders into their own table. A project that was in several folders keeps the first one it was listed in. The old setting is then removed from your synced settings. Collapsed groups start out expanded after the upgrade.

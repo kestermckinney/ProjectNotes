@@ -153,6 +153,13 @@ const open = yield data.list("item_tracker", {
 
 Columns that refer to contacts or companies use the same vocabulary: `contact_id`, `company_id`, `company_name`. Call `data.schema(entity)` for the full column list with types, required columns and allowed values.
 
+A project's `folder_id` is the sidebar folder it sits in, as a reference like any other foreign key: `{ id: "...", lookup: "Favorites" }`, or `null` when the project is in no folder. Move a project by saving `folder_id: { lookup: "Favorites" }`, and take it out of its folder with `folder_id: null`. A project is in one folder at a time. Folders themselves are created and renamed in the application.
+
+```js
+const favorites = yield data.list("projects", { where: { folder_id: { lookup: "Favorites" } } });
+yield data.save("projects", { project_number: "P4000", folder_id: { lookup: "Favorites" } });
+```
+
 ## User interface
 
 ### Messages, prompts and forms

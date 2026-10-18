@@ -185,6 +185,7 @@ private slots:
     void queryWithIncludes();
     void whereOperators();
     void saveInsertsThenUpdates();
+    void projectFolderReference();
     void saveRejections_data();
     void saveRejections();
     void transactions();
@@ -250,7 +251,7 @@ void PluginHostTest::initTestCase()
     writeFile(m_bundled + QStringLiteral("/probe/plugin.json"),
               manifest(QStringLiteral("probe"),
                        {QStringLiteral("data.read:companies,contacts,projects,project_team,item_tracker,item_tracker_updates,project_notes"),
-                        QStringLiteral("data.write:companies,contacts,item_tracker"), QStringLiteral("files"),
+                        QStringLiteral("data.write:companies,contacts,projects,item_tracker"), QStringLiteral("files"),
                         QStringLiteral("auth.browser")},
                        QStringLiteral(R"(, "http": ["sso.example.test"], "contributes": {"menus": [{"id": "project", "title": "Probe", "context": "record",
                                        "entity": "projects", "include": ["project_team"]}]})")));
@@ -410,6 +411,31 @@ void PluginHostTest::saveInsertsThenUpdates()
     QVERIFY(result.value(QStringLiteral("sameKey")).toBool());
     QCOMPARE(result.value(QStringLiteral("company")).toObject().value(QStringLiteral("lookup")).toString(), QStringLiteral("Globex, Inc."));
     QCOMPARE(result.value(QStringLiteral("email")).toString(), QStringLiteral("zoe2@example.com"));
+}
+
+void PluginHostTest::projectFolderReference()
+{
+    {
+        QSqlDatabase db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), QStringLiteral("folder-seed"));
+        db.setDatabaseName(m_database);
+        QVERIFY(db.open());
+        QSqlQuery q(db);
+        QVERIFY2(q.exec(QStringLiteral("INSERT INTO project_folders(id, folder_name, icon, color, sort_order, deleted) "
+                                       "VALUES('folder-fav', 'Favorites', 'star', '#c98a1a', 0, 0)")), qPrintable(q.lastError().text()));
+        q.finish();
+        db.close();
+    }
+    QSqlDatabase::removeDatabase(QStringLiteral("folder-seed"));
+
+    const QJsonObject r = run(QStringLiteral("projectFolder"));
+    QVERIFY2(r.value(QStringLiteral("ok")).toBool(), qPrintable(QJsonDocument(r).toJson()));
+    const QJsonObject result = r.value(QStringLiteral("result")).toObject();
+    QVERIFY(result.value(QStringLiteral("before")).isNull());
+    QCOMPARE(result.value(QStringLiteral("inFolder")).toInt(), 1);
+    QCOMPARE(result.value(QStringLiteral("moved")).toObject().value(QStringLiteral("id")).toString(), QStringLiteral("folder-fav"));
+    QCOMPARE(result.value(QStringLiteral("moved")).toObject().value(QStringLiteral("lookup")).toString(), QStringLiteral("Favorites"));
+    QVERIFY(result.value(QStringLiteral("cleared")).isNull());
+    QCOMPARE(result.value(QStringLiteral("unknown")).toString(), QStringLiteral("validation-failed"));
 }
 
 void PluginHostTest::saveRejections_data()

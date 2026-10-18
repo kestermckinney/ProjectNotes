@@ -397,7 +397,7 @@ Item {
                 // Project Folder
                 SettingsSection {
                 title: "Project Folders"
-                subtitle: "Group projects into folders (e.g. Favorites). A project can belong to several folders. Drag projects onto a folder in the sidebar to add them."
+                subtitle: "Group projects into folders (e.g. Favorites). A project is in one folder at a time. Drag a project onto a folder in the sidebar to move it there, and click a folder's name to show only its projects. Click a folder name below to rename it."
 
                 // New-folder row
                 RowLayout {
@@ -441,6 +441,16 @@ Item {
                     }
                 }
 
+                Text {
+                    objectName: "folderNameError"
+                    visible: page._folderError !== ""
+                    text: page._folderError
+                    color: Theme.red
+                    font.pixelSize: Theme.fontSm
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                }
+
                 // Existing folders
                 Repeater {
                     model: FolderManager.folders
@@ -481,13 +491,29 @@ Item {
                                 }
                             }
 
-                            Text {
+                            // Rename in place: Enter or leaving the field saves,
+                            // Escape puts the old name back.
+                            TextField {
+                                id: folderNameField
+                                objectName: "folderNameField_" + folderRow.folder.id
                                 text: folderRow.folder.name
                                 color: Theme.text
                                 font.pixelSize: Theme.fontLg
                                 font.weight: Font.DemiBold
                                 Layout.fillWidth: true
-                                elide: Text.ElideRight
+                                leftPadding: 4; rightPadding: 4; topPadding: 2; bottomPadding: 2
+                                background: Rectangle {
+                                    radius: Theme.radiusSm
+                                    color: folderNameField.activeFocus ? Theme.bg : "transparent"
+                                    border.color: folderNameField.activeFocus ? Theme.accent : "transparent"
+                                }
+                                onEditingFinished: page._renameFolder(folderRow.folder, folderNameField)
+                                Keys.onEscapePressed: {
+                                    folderNameField.text = folderRow.folder.name
+                                    page._folderError = ""
+                                    folderNameField.focus = false
+                                }
+                                SpellCheckField { spellCheckEnabled: false }
                             }
 
                             Text {
@@ -1595,12 +1621,31 @@ Item {
         }
     }
 
+    property string _folderError: ""
+
     function _createFolder() {
         var name = newFolderField.text.trim()
         if (name.length === 0)
             return
+        page._folderError = FolderManager.folderNameError(name, "")
+        if (page._folderError !== "")
+            return
         FolderManager.addFolder(name, "star", Theme.folderColors[0])
         newFolderField.clear()
+    }
+
+    function _renameFolder(folder, field) {
+        var name = field.text.trim()
+        if (name === folder.name) {
+            page._folderError = ""
+            return
+        }
+        page._folderError = FolderManager.folderNameError(name, folder.id)
+        if (page._folderError !== "") {
+            field.text = folder.name
+            return
+        }
+        FolderManager.renameFolder(folder.id, name)
     }
 
     function _addSearchRoot() {

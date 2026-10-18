@@ -158,6 +158,15 @@ void SortFilterProxyModel::setQuickSearch(const QString& text)
     }
 }
 
+void SortFilterProxyModel::setQuickSearchNow(const QString& text)
+{
+    if (m_quickSearch == text)
+        return;
+    m_quickSearch = text;
+    m_quickSearchDebounce.stop();
+    invalidateRowsFilter();
+}
+
 QVariant SortFilterProxyModel::headerData(int section, Qt::Orientation orientation,
                                 int role) const {
     return sourceModel()->headerData(section, orientation,
