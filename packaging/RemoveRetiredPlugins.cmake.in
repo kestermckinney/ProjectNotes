@@ -96,6 +96,8 @@ set(_pn_retired_scripts
     "plugins/includes/word_tools"
     "threads/ifssync_thread"
     "threads/outlooksync_thread"
+    # Shipped by early releases.
+    "plugins/includes/graphapitools"
 )
 
 set(_pn_retired_files
@@ -113,7 +115,6 @@ set(_pn_retired_files
     "plugins/includes/dialogNotesArchiveOptions.ui"
     "plugins/includes/dialogStatusRptOptions.ui"
     "plugins/includes/dialogTrackerRptOptions.ui"
-    "plugins/templates/Tracker Items Template.xlsx"
     "plugins/forms/dialogDuplicateFilesFound.ui"
     "plugins/forms/dialogEditor.ui"
     "plugins/forms/dialogExportLocation.ui"
@@ -123,9 +124,20 @@ set(_pn_retired_files
     "plugins/forms/dialogSSRSOptions.ui"
     "plugins/forms/dialogSettingsMigrator.ui"
     "plugins/forms/dialogTeamMemberQuickAdd.ui"
-    "plugins/templates/Lessons Learned Template.xlsx"
-    "plugins/templates/Meeting Template.xlsx"
-    "plugins/templates/Risk Register Template.xlsx"
+    # Forms and sample data of early releases.
+    "plugins/includes/dialogClassification.ui"
+    "plugins/includes/dialogEditor.ui"
+    "plugins/includes/dialogFileFinder.ui"
+    "plugins/includes/dialogIFSCloud.ui"
+    "plugins/includes/dialogMeetingTemplate.ui"
+    "plugins/includes/dialogMeetingTypes.ui"
+    "plugins/includes/dialogMyShortcuts.ui"
+    "plugins/includes/dialogOutlookIntegrationOptions.ui"
+    "plugins/examplemeeting.xml"
+    "plugins/exampleproject.xml"
+    "plugins/people.xml"
+    "plugins/plugintest.db"
+    "plugins/TestExcel.xlsx"
 )
 
 # Emptied folders, innermost first. A folder that still holds something (for
@@ -134,9 +146,9 @@ set(_pn_retired_dirs
     "plugins/__pycache__"
     "plugins/includes/__pycache__"
     "threads/__pycache__"
+    "__pycache__"
     "plugins/includes"
     "plugins/forms"
-    "plugins/templates"
     "threads"
 )
 
@@ -154,6 +166,24 @@ foreach(_pn_script IN LISTS _pn_retired_scripts)
     endif()
 endforeach()
 
+# Any bytecode left in the Python folders, including that of scripts not named
+# above (an older interpreter's cpython-39 files, for example). Nothing else
+# ever lived in these __pycache__ folders.
+file(GLOB _pn_bytecode
+    "${_pn_runtime_root}/plugins/__pycache__/*.pyc"
+    "${_pn_runtime_root}/plugins/__pycache__/*.pyo"
+    "${_pn_runtime_root}/plugins/includes/__pycache__/*.pyc"
+    "${_pn_runtime_root}/plugins/includes/__pycache__/*.pyo"
+    "${_pn_runtime_root}/threads/__pycache__/*.pyc"
+    "${_pn_runtime_root}/threads/__pycache__/*.pyo"
+    "${_pn_runtime_root}/__pycache__/*.pyc"
+    "${_pn_runtime_root}/__pycache__/*.pyo"
+)
+if(_pn_bytecode)
+    message(STATUS "Removing leftover Python bytecode")
+    file(REMOVE ${_pn_bytecode})
+endif()
+
 foreach(_pn_file IN LISTS _pn_retired_files)
     set(_pn_path "${_pn_runtime_root}/${_pn_file}")
     if(EXISTS "${_pn_path}" OR IS_SYMLINK "${_pn_path}")
@@ -161,6 +191,14 @@ foreach(_pn_file IN LISTS _pn_retired_files)
         file(REMOVE "${_pn_path}")
     endif()
 endforeach()
+
+# The old shared templates folder goes whole, including any files added to it:
+# document templates now come from each plugin, and the folder's former role
+# is being replaced.
+if(IS_DIRECTORY "${_pn_runtime_root}/plugins/templates" AND NOT IS_SYMLINK "${_pn_runtime_root}/plugins/templates")
+    message(STATUS "Removing retired templates folder: ${_pn_runtime_root}/plugins/templates")
+    file(REMOVE_RECURSE "${_pn_runtime_root}/plugins/templates")
+endif()
 
 foreach(_pn_dir IN LISTS _pn_retired_dirs)
     set(_pn_path "${_pn_runtime_root}/${_pn_dir}")

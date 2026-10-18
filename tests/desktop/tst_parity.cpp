@@ -183,7 +183,7 @@ private slots:
         for (const QString &key : retained) QCOMPARE(global_DBObjects.loadParameter(key), QString("review-test"));
         QVERIFY(q.exec("SELECT current_version FROM application_version"));
         QVERIFY(q.next());
-        QCOMPARE(q.value(0).toString(), QString("6.4.0"));
+        QCOMPARE(q.value(0).toString(), QString("6.5.0"));
         q.finish();
         QVERIFY(q.exec("SELECT deleted, syncdate, updateddate FROM application_settings "
                        "WHERE parameter_name='PageState:ProjectsPage:project-id'"));
@@ -221,7 +221,7 @@ private slots:
             QSqlQuery restore(global_DBObjects.getDb());
             restore.exec("DROP TRIGGER IF EXISTS review_cleanup_failure");
             restore.exec("DELETE FROM application_settings WHERE parameter_name='PageState:rollback-test:record'");
-            restore.exec("UPDATE application_version SET current_version='6.4.0'");
+            restore.exec("UPDATE application_version SET current_version='6.5.0'");
         });
         DatabaseStructure structure;
         QVERIFY(!structure.UpgradeDatabase());
@@ -1238,7 +1238,7 @@ private slots:
 
     void test_21_appVersion()
     {
-        QCOMPARE(c->appVersion(), QStringLiteral("6.4.0"));
+        QCOMPARE(c->appVersion(), QStringLiteral("6.5.0"));
     }
 
     // installUpdate with no prior successful check must fail gracefully (no crash,

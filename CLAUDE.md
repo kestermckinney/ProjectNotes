@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ProjectNotes is a Qt/C++ desktop application (v6.4.0) for project management — tracking notes, meeting minutes, risks, issues, action items, contacts, and companies. It has a JavaScript (QJSEngine) plugin system for extensibility and integrates with tools like Outlook, IFS ERP, and MS Office. A companion iOS/iPadOS app, ProjectNotesMobile, shares the same data layer and syncs with the desktop app via SqliteSyncPro.
+ProjectNotes is a Qt/C++ desktop application (v6.5.0) for project management — tracking notes, meeting minutes, risks, issues, action items, contacts, and companies. It has a JavaScript (QJSEngine) plugin system for extensibility and integrates with tools like Outlook, IFS ERP, and MS Office. A companion iOS/iPadOS app, ProjectNotesMobile, shares the same data layer and syncs with the desktop app via SqliteSyncPro.
 
 ## Build Commands
 

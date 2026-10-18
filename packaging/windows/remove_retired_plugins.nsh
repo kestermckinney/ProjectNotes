@@ -70,7 +70,6 @@ Delete "$INSTDIR\plugins\includes\dialogDuplicateFilesFound.ui"
 Delete "$INSTDIR\plugins\includes\dialogNotesArchiveOptions.ui"
 Delete "$INSTDIR\plugins\includes\dialogStatusRptOptions.ui"
 Delete "$INSTDIR\plugins\includes\dialogTrackerRptOptions.ui"
-Delete "$INSTDIR\plugins\templates\Tracker Items Template.xlsx"
 
 ; ── Replaced by JavaScript plugins ──────────────────────────────────────────────
 Delete "$INSTDIR\plugins\base_plugin.py"
@@ -109,9 +108,22 @@ Delete "$INSTDIR\plugins\forms\dialogOutlookIntegrationOptions.ui"
 Delete "$INSTDIR\plugins\forms\dialogSSRSOptions.ui"
 Delete "$INSTDIR\plugins\forms\dialogSettingsMigrator.ui"
 Delete "$INSTDIR\plugins\forms\dialogTeamMemberQuickAdd.ui"
-Delete "$INSTDIR\plugins\templates\Lessons Learned Template.xlsx"
-Delete "$INSTDIR\plugins\templates\Meeting Template.xlsx"
-Delete "$INSTDIR\plugins\templates\Risk Register Template.xlsx"
+
+; ── Shipped by early releases ──────────────────────────────────────────────────
+Delete "$INSTDIR\plugins\includes\graphapitools.py"
+Delete "$INSTDIR\plugins\includes\dialogClassification.ui"
+Delete "$INSTDIR\plugins\includes\dialogEditor.ui"
+Delete "$INSTDIR\plugins\includes\dialogFileFinder.ui"
+Delete "$INSTDIR\plugins\includes\dialogIFSCloud.ui"
+Delete "$INSTDIR\plugins\includes\dialogMeetingTemplate.ui"
+Delete "$INSTDIR\plugins\includes\dialogMeetingTypes.ui"
+Delete "$INSTDIR\plugins\includes\dialogMyShortcuts.ui"
+Delete "$INSTDIR\plugins\includes\dialogOutlookIntegrationOptions.ui"
+Delete "$INSTDIR\plugins\examplemeeting.xml"
+Delete "$INSTDIR\plugins\exampleproject.xml"
+Delete "$INSTDIR\plugins\people.xml"
+Delete "$INSTDIR\plugins\plugintest.db"
+Delete "$INSTDIR\plugins\TestExcel.xlsx"
 
 ; ── Retired threads ────────────────────────────────────────────────────────────
 Delete "$INSTDIR\threads\filefinder_thread.py"
@@ -126,14 +138,20 @@ Delete "$INSTDIR\plugins\includes\__pycache__\*.pyc"
 Delete "$INSTDIR\plugins\includes\__pycache__\*.pyo"
 Delete "$INSTDIR\threads\__pycache__\*.pyc"
 Delete "$INSTDIR\threads\__pycache__\*.pyo"
+Delete "$INSTDIR\__pycache__\*.pyc"
+Delete "$INSTDIR\__pycache__\*.pyo"
 
 ; ── Emptied folders (RMDir only removes a folder that is already empty) ────────
 RMDir "$INSTDIR\plugins\__pycache__"
 RMDir "$INSTDIR\plugins\includes\__pycache__"
 RMDir "$INSTDIR\threads\__pycache__"
+RMDir "$INSTDIR\__pycache__"
 RMDir "$INSTDIR\plugins\includes"
 RMDir "$INSTDIR\plugins\forms"
-RMDir "$INSTDIR\plugins\templates"
+; The old shared templates folder goes whole, including any files added to it:
+; document templates now come from each plugin, and the folder's former role
+; is being replaced.
+RMDir /r "$INSTDIR\plugins\templates"
 RMDir "$INSTDIR\threads"
 
 ; ── Embedded Python runtime (earlier releases) ─────────────────────────────────
@@ -180,4 +198,5 @@ Delete "$INSTDIR\Qt6WebEngineQuick.dll"
 Delete "$INSTDIR\QtWebEngineProcess.exe"
 RMDir /r "$INSTDIR\resources"
 RMDir /r "$INSTDIR\translations"
+RMDir /r "$INSTDIR\qtwebengine_locales"
 RMDir /r "$INSTDIR\position"

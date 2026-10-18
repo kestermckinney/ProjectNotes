@@ -1,12 +1,19 @@
-# Project Notes 6.4.0
+# Project Notes 6.5.0
 
-Project Notes now uses GitLab for source code, release downloads, and desktop update checks.
+Plugins are now written in JavaScript and run inside Project Notes. Python is no longer needed or bundled.
 
-- Replaces the legacy desktop interface with the Qt Quick desktop application.
-- Adds built-in report previews, saved report audiences, email templates, and report delivery.
-- Adds meeting scheduling with iCalendar, Thunderbird, and Microsoft 365, plus native Apple Mail/Calendar and Windows Outlook integration.
-- Improves project navigation, note editing, context menus, and dialog interactions.
-- Distributes Linux builds through a signed Flatpak repository on GitLab Pages, supporting updates through desktop software managers and `flatpak update`.
+- Rewrites the bundled plugins (My Shortcuts, Archive Mail, Office Tools, Team Member Quick Add) and the IFS Cloud plugin in JavaScript. Their settings carry over from the Python versions on first start.
+- Adds plugin installation from `.pnplugin` packages, with a review of what each plugin can do before it runs.
+- Adds plugin settings backup under **Settings > Plugins**. Export settings to a file and import them on another computer. Files from the old Settings Migrator import too.
+- Moves your own plugins to the application data folder, so upgrades leave them alone.
+- Renders report PDFs without Qt WebEngine, which makes the download much smaller.
+- Adds native macOS Contacts support and renames People and Clients to Contacts and Companies throughout.
+- Reorganizes the Settings page and moves Appearance into Preferences.
+- Stores project folders in their own synced table. A project is now in one folder at a time, and existing folders move over on the first start; a project that was in several folders keeps the first one.
+- Click a folder's name in the sidebar to show only its projects. The arrow at the end of the header collapses the folder, and collapsed folders are now remembered per computer.
+- Renames folders from Settings or from a new right-click menu on folder headers, which also edits the icon and color.
+- Adds a Folder filter to the project list on desktop and mobile, and exposes `folder_id` on projects to plugins.
+- The Windows and macOS installers remove the embedded Python runtime, its packages, and the retired Python plugins left behind by earlier versions.
 
 ### Install on Linux
 
@@ -32,4 +39,4 @@ flatpak remote-modify --gpg-import=projectnotes.gpg --url=https://kestermckinney
 flatpak update com.projectnotespro.ProjectNotes
 ```
 
-Existing desktop builds that still check GitHub require a one-time manual installation of this version to switch their update checks to GitLab. Windows and macOS update downloads require their matching installers to be attached to the release.
+Desktop builds older than 6.4.0 still check GitHub for updates and need a one-time manual installation of this version to switch to GitLab. Windows and macOS update downloads require their matching installers to be attached to the release.

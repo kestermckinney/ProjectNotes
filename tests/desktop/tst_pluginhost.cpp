@@ -261,7 +261,7 @@ void PluginHostTest::initTestCase()
     m_registry->setPaths({m_bundled, m_user, m_dir.filePath(QStringLiteral("data")), m_dir.filePath(QStringLiteral("temp"))});
     m_registry->setDatabasePath(m_database);
     m_registry->setSettingsOrganization(QStringLiteral("ProjectNotesPluginTest"));
-    m_registry->setAppVersion(QStringLiteral("6.4.0"));
+    m_registry->setAppVersion(QStringLiteral("6.5.0"));
     m_registry->setWatchdogBudgetMs(1500);
     startProbe();
 }
@@ -838,7 +838,7 @@ void PluginHostTest::bundledPluginsRun()
                        m_dir.filePath(QStringLiteral("bundled-data")), m_dir.filePath(QStringLiteral("bundled-temp"))});
     registry.setDatabasePath(database);
     registry.setSettingsOrganization(organization);
-    registry.setAppVersion(QStringLiteral("6.4.0"));
+    registry.setAppVersion(QStringLiteral("6.5.0"));
     registry.setHotReload(false);
     QSignalSpy errors(&registry, &PluginRegistry::pluginError);
     registry.loadAll();
@@ -946,7 +946,7 @@ void PluginHostTest::bundledPluginsRun()
                              m_dir.filePath(QStringLiteral("office-data")), m_dir.filePath(QStringLiteral("office-temp"))});
     officeRegistry.setDatabasePath(database);
     officeRegistry.setSettingsOrganization(organization);
-    officeRegistry.setAppVersion(QStringLiteral("6.4.0"));
+    officeRegistry.setAppVersion(QStringLiteral("6.5.0"));
     officeRegistry.setHotReload(false);
     QSignalSpy officeErrors(&officeRegistry, &PluginRegistry::pluginError);
     officeRegistry.loadAll();
@@ -1087,7 +1087,7 @@ void PluginHostTest::ifsCloudPlugin()
     registry.setPaths({root, m_dir.filePath(QStringLiteral("ifs-user")), m_dir.filePath(QStringLiteral("ifs-data")), m_dir.filePath(QStringLiteral("ifs-temp"))});
     registry.setDatabasePath(database);
     registry.setSettingsOrganization(organization);
-    registry.setAppVersion(QStringLiteral("6.4.0"));
+    registry.setAppVersion(QStringLiteral("6.5.0"));
     registry.setHotReload(false);
     QSignalSpy errors(&registry, &PluginRegistry::pluginError);
     registry.loadAll();

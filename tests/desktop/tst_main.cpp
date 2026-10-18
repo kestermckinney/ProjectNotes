@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
     QApplication::setOrganizationDomain("projectnotespro.com");
     QApplication::setApplicationName("projectnotes");
     QApplication::setApplicationDisplayName("Project Notes");
-    QApplication::setApplicationVersion("6.4.0");
+    QApplication::setApplicationVersion("6.5.0");
 
     DesktopAppController::setDeveloperProfile("qmltest");
     DesktopAppController::setUpdateChecksEnabled(false);   // no network in tests
