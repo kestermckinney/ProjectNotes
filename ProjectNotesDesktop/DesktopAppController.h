@@ -128,6 +128,9 @@ class DesktopAppController : public QObject
     // folder membership change. FolderGroup references it so its rows/count
     // bindings re-fetch folderProjects().
     Q_PROPERTY(int sidebarRev READ sidebarRev NOTIFY sidebarRevChanged)
+    // Bumped whenever a project's primary project folder may have changed, so
+    // bindings re-read primaryProjectLocationId().
+    Q_PROPERTY(int projectFolderRev READ projectFolderRev NOTIFY projectFolderRevChanged)
 
     // Cloud sync — settings are read/written to the same QSettings the Widgets
     // app uses, so both share one configuration.
@@ -729,6 +732,21 @@ public:
     // local file), using desktop services like the Widgets app.
     Q_INVOKABLE void        openProjectLocation(int row);
 
+    // ── Primary project folder ───────────────────────────────────────────────
+    // The project's primary project folder: a live File Folder location, or ""
+    // when it has none. Re-read on projectFolderRev.
+    Q_INVOKABLE QString     primaryProjectLocationId(const QString& projectId) const;
+    // True once the user has set or cleared the primary project folder, which
+    // stops File Finder from choosing one.
+    Q_INVOKABLE bool        projectFolderChosenByUser(const QString& projectId) const;
+    // locationId "" leaves the project without a project folder. Either way
+    // the choice is the user's from then on.
+    Q_INVOKABLE bool        setPrimaryProjectLocation(const QString& projectId, const QString& locationId);
+    // Hand the choice back to File Finder, which fills in a primary project
+    // folder on its next scan if the project has none.
+    Q_INVOKABLE bool        letFileFinderChooseProjectFolder(const QString& projectId);
+    int projectFolderRev() const { return m_projectFolderRev; }
+
     // ── Status report items ──────────────────────────────────────────────────
     Q_INVOKABLE int         addStatusItem(const QString& projectId);
     Q_INVOKABLE bool        deleteStatusItem(int row);
@@ -887,6 +905,7 @@ signals:
     void quitForUpdate();
     void viewOptionsChanged();
     void sidebarRevChanged();
+    void projectFolderRevChanged();
     void filterRevChanged();
     void sortRevChanged();
     void projectManagerChanged();
@@ -1039,6 +1058,8 @@ private:
     bool m_sidebarRevPending     = false;   // a coalesced rev bump is queued
     bool m_folderMgrConnected    = false;   // FolderManager signal hooked up
     int  m_sidebarRev            = 0;
+    int  m_projectFolderRev      = 0;
+    void bumpProjectFolderRev();
     void rebuildFolderSnapshot();
     void invalidateFolderSnapshot();
     // While the projects list has a Folder filter, the snapshot reads a mirror

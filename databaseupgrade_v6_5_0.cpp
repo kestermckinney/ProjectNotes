@@ -70,6 +70,56 @@ bool db_UpgradeStep_v6_5_0()
     const QSqlError indexError = run(QStringLiteral("CREATE INDEX IF NOT EXISTS idx_projects_folder ON projects(folder_id)"));
     if (indexError.isValid()) return fail(indexError);
 
+    // The project's primary folder location. primary_location_manual = 1 once
+    // the user sets or clears it, so File Finder leaves the choice alone.
+    if (!db_HasColumn(db, QStringLiteral("projects"), QStringLiteral("primary_location_id"))) {
+        const QStringList primary {
+            QStringLiteral("ALTER TABLE projects ADD COLUMN primary_location_id TEXT"),
+            QStringLiteral("ALTER TABLE projects ADD COLUMN primary_location_manual INTEGER DEFAULT 0"),
+            // Once, when the column arrives: the folder the app used to pick at
+            // read time becomes the stored primary. After this the column alone
+            // decides, so a project can deliberately have none.
+            QStringLiteral(R"(
+                UPDATE projects SET primary_location_id = (
+                    SELECT l.id FROM project_locations l
+                    WHERE l.project_id = projects.id AND l.deleted = 0 AND l.location_type = 'File Folder'
+                      AND trim(coalesce(l.full_path, '')) <> ''
+                    ORDER BY CASE WHEN l.location_description = 'Project Folder' THEN 0 ELSE 1 END,
+                             l.location_description, l.id
+                    LIMIT 1)
+                WHERE EXISTS (
+                    SELECT 1 FROM project_locations l
+                    WHERE l.project_id = projects.id AND l.deleted = 0 AND l.location_type = 'File Folder'
+                      AND trim(coalesce(l.full_path, '')) <> ''))"),
+        };
+        for (const QString &sql : primary) {
+            const QSqlError error = run(sql);
+            if (error.isValid()) return fail(error);
+        }
+    }
+    // Deleting the primary location leaves the project without one; the
+    // manual flag is kept, so File Finder doesn't pick a replacement for a
+    // folder the user chose.
+    const QStringList primaryTriggers {
+        QStringLiteral(R"(
+            CREATE TRIGGER IF NOT EXISTS trg_project_locations_primary_deleted
+            AFTER UPDATE OF deleted ON project_locations
+            WHEN NEW.deleted = 1 AND COALESCE(OLD.deleted, 0) = 0
+            BEGIN
+                UPDATE projects SET primary_location_id = NULL WHERE primary_location_id = NEW.id;
+            END)"),
+        QStringLiteral(R"(
+            CREATE TRIGGER IF NOT EXISTS trg_project_locations_primary_removed
+            AFTER DELETE ON project_locations
+            BEGIN
+                UPDATE projects SET primary_location_id = NULL WHERE primary_location_id = OLD.id;
+            END)"),
+    };
+    for (const QString &sql : primaryTriggers) {
+        const QSqlError error = run(sql);
+        if (error.isValid()) return fail(error);
+    }
+
     // Folders and memberships used to live in one JSON setting. An older synced
     // client can push it back, so every live copy is merged and then retired.
     QSqlQuery legacy(db);

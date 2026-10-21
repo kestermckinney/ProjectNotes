@@ -29,6 +29,19 @@ Popup {
     property string emailProjectId: ""
     property var saveEmailSource: null
     property string locationPath: ""
+    // A project location's type; "File Folder" rows offer the primary project
+    // folder actions for emailProjectId's project.
+    property string locationType: ""
+    readonly property bool canProjectFolder: emailTable === "project_locations" && emailProjectId !== ""
+                                             && recordId !== "" && locationType === "File Folder"
+    readonly property bool _isProjectFolder: {
+        var _rev = DesktopAppController.projectFolderRev
+        return canProjectFolder && DesktopAppController.primaryProjectLocationId(emailProjectId) === recordId
+    }
+    readonly property bool _projectFolderChosen: {
+        var _rev = DesktopAppController.projectFolderRev
+        return canProjectFolder && DesktopAppController.projectFolderChosenByUser(emailProjectId)
+    }
     readonly property string emailTable: recordTable !== "" ? recordTable
         : model ? DesktopAppController.tableNameForModel(model) : ""
     readonly property string projectEmailContext: emailTable === "projects" ? recordId : emailProjectId
@@ -440,6 +453,21 @@ Popup {
                   onHoveredChanged: menu._rowHover("", hovered) }
         MenuRow { icon: "attach_file"; label: qsTr("Share as Attachment…"); visible: menu.canShareLocation
                   onActivated: { menu.close(); menu.locationEmailRequested(true) }
+                  onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "star"; label: qsTr("Set as Primary Project Folder")
+                  objectName: "setPrimaryProjectFolder"
+                  visible: menu.canProjectFolder && !menu._isProjectFolder
+                  onActivated: { menu.close(); DesktopAppController.setPrimaryProjectLocation(menu.emailProjectId, menu.recordId) }
+                  onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "folder_off"; label: qsTr("Clear Primary Project Folder")
+                  objectName: "clearPrimaryProjectFolder"
+                  visible: menu.canProjectFolder && menu._isProjectFolder
+                  onActivated: { menu.close(); DesktopAppController.setPrimaryProjectLocation(menu.emailProjectId, "") }
+                  onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "manage_search"; label: qsTr("Let File Finder Choose Project Folder")
+                  objectName: "fileFinderChoosesProjectFolder"
+                  visible: menu.canProjectFolder && menu._projectFolderChosen
+                  onActivated: { menu.close(); DesktopAppController.letFileFinderChooseProjectFolder(menu.emailProjectId) }
                   onHoveredChanged: menu._rowHover("", hovered) }
         MenuRow { icon: "delete";       label: qsTr("Delete");      visible: menu.canDelete;    danger: true; onActivated: menu._fire(menu.deleteRequested)
                    onHoveredChanged: menu._rowHover("", hovered) }

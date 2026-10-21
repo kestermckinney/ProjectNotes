@@ -115,6 +115,7 @@ declare module "projectnotes" {
         currentView(): ViewInfo;
         currentRecord(options?: { include?: string[] }): Promise<DataRecord | null>;
         navigate(entity: string, key: string, options?: { tab?: string }): Promise<void>;
+        /** The project's primary project folder path, or null when it has none. */
         projectFolder(projectKey: string): Promise<string | null>;
         defaults(): Promise<{ managingCompanyId: string | null; managingCompanyName: string | null;
                               projectManagerId: string | null; projectManagerName: string | null }>;

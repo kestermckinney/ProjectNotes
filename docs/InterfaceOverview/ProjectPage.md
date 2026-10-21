@@ -125,7 +125,7 @@ Links to project documents and web locations are set up under the **Locations** 
 | **Column** | **Description** |
 | :--- | :--- |
 | Type | The type of file location determines how Project Notes handles the Location field. Using the incorrect Type can cause the Location value to get corrupted. Plugins can use the Type field for specific operations. The types available are File Folder, Web Link, Microsoft Project, Word Document, Excel Document, PDF File, and Generic File (System Identified) |
-| Description | An open description field. Plugins can look for specific values. One example is "Project Folder". Plugins use this location to automatically generate project files and folders. |
+| Description | An open description field. File Finder names the folder it finds for the project "Project Folder". |
 | Location | The file path or web address referred to by the Type field. The field must be formatted correctly according to its type. For example, `C:\MyFolder` would not work properly for a Web Link, and `http://www.google.com` would not work correctly as a File Folder type. |
 
 
@@ -156,6 +156,16 @@ You can drag one or more files or folders from Finder (macOS) or File Explorer (
 3. Click out of the field — the change saves automatically.
 
 
+
+**The primary project folder:**
+
+One **File Folder** location can be the project's primary project folder, marked with a star. Plugins, reports and Archive Mail save their files there. File Finder fills it in when it finds the project's folder, unless you have already made a choice. A project can also have no project folder at all.
+
+1. Click the **⋮** button on a **File Folder** location.
+2. Choose **Set as Primary Project Folder** to make it the project's folder, or **Clear Primary Project Folder** on the starred one to leave the project without a folder.
+3. Once you have set or cleared it, File Finder leaves your choice alone. Choose **Let File Finder Choose Project Folder** to hand the choice back; if the project has no folder, the next scan picks the one File Finder finds.
+
+Deleting the starred location leaves the project without a project folder.
 
 **To open a location:**
 

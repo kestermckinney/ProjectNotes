@@ -146,12 +146,13 @@ export function* archiveFromGraph(cfg, project) {
     const state = (yield storage.readJson("state.json")) || {};
     const skip = (state.project_emails_export && state.project_emails_export.skip) || 0;
     const top = 5;
-    const folders = yield data.list("project_locations", {
-        where: { location_description: "Project Folder" }, orderBy: ["project_number"], limit: top, offset: skip });
+    // Projects with a primary project folder; archiveProject skips any whose
+    // folder is gone.
+    const folders = yield data.list("projects", {
+        where: { primary_location_id: { $null: false } }, orderBy: ["project_number"], limit: top, offset: skip });
     let saved = 0;
-    for (const location of folders) {
-        if (location.project_id) saved += yield archiveProject(cfg, location.project_id.id, location.project_number, false);
-    }
+    for (const project of folders)
+        saved += yield archiveProject(cfg, project.$key, project.project_number, false);
     state.project_emails_export = { skip: folders.length < top ? 0 : skip + top };
     yield storage.writeJson("state.json", state);
     return saved;

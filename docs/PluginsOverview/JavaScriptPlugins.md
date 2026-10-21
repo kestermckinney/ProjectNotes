@@ -160,6 +160,8 @@ const favorites = yield data.list("projects", { where: { folder_id: { lookup: "F
 yield data.save("projects", { project_number: "P4000", folder_id: { lookup: "Favorites" } });
 ```
 
+A project's primary project folder is `primary_location_id`, the key of one of its `project_locations` rows with type `File Folder`, or `null` when the project has none. `primary_location_manual` is `true` once the user has set or cleared it, and File Finder only fills in a folder while it is `false`. Read the folder's path with `app.projectFolder(projectKey)`, which returns `null` for a project without one. Projects are not given a folder from a location's description any more.
+
 ## User interface
 
 ### Messages, prompts and forms

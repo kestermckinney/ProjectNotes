@@ -26,6 +26,8 @@
    <column name="status_overdue">Yes</column>
    <column name="invoicing_overdue">Yes</column>
    <column name="folder_id"></column>
+   <column name="primary_location_id"></column>
+   <column name="primary_location_manual">0</column>
    <table filter_field_1="project_id" filter_value_1="project-p4000" name="project_notes">
     <row>
      <column name="id">note-review</column>

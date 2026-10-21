@@ -246,6 +246,36 @@ private slots:
         QVERIFY(menu->property("canShareLink").toBool());
         menu->setProperty("locationPath", "/tmp/file.pdf");
         QVERIFY(!menu->property("canShareLink").toBool());
+        // Primary project folder actions: File Folder locations only, and the
+        // set / clear / hand-back items follow the stored choice.
+        {
+            const QString folderId = "smoke-primary-folder";
+            QSqlQuery q(global_DBObjects.getDb());
+            QVERIFY(q.exec("INSERT INTO project_locations(id, project_id, location_type, location_description, full_path, deleted) "
+                           "VALUES('" + folderId + "', '" + projectId + "', 'File Folder', 'Smoke Folder', '/tmp/smoke', 0)"));
+            const QString before = c->primaryProjectLocationId(projectId);
+            const bool beforeChosen = c->projectFolderChosenByUser(projectId);
+            menu->setProperty("recordId", folderId);
+            menu->setProperty("locationType", "PDF File");
+            QVERIFY(!menu->property("canProjectFolder").toBool());
+            menu->setProperty("locationType", "File Folder");
+            QVERIFY(menu->property("canProjectFolder").toBool());
+            QVERIFY(c->setPrimaryProjectLocation(projectId, folderId));
+            QVERIFY(menu->property("_isProjectFolder").toBool());
+            QVERIFY(menu->property("_projectFolderChosen").toBool());
+            QVERIFY(c->setPrimaryProjectLocation(projectId, ""));
+            QVERIFY(!menu->property("_isProjectFolder").toBool());
+            QVERIFY(c->letFileFinderChooseProjectFolder(projectId));
+            QVERIFY(!menu->property("_projectFolderChosen").toBool());
+            QVERIFY(q.exec("DELETE FROM project_locations WHERE id = '" + folderId + "'"));
+            q.prepare("UPDATE projects SET primary_location_id = ?, primary_location_manual = ? WHERE id = ?");
+            q.addBindValue(before.isEmpty() ? QVariant() : QVariant(before));
+            q.addBindValue(beforeChosen ? 1 : 0);
+            q.addBindValue(projectId);
+            QVERIFY(q.exec());
+            menu->setProperty("locationType", "");
+            menu->setProperty("recordId", projectId);
+        }
         menu->setProperty("recordTable", "meeting_attendees");
         menu->setProperty("contactId", "person");
         QVERIFY(menu->property("canProjectEmail").toBool());

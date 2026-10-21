@@ -510,6 +510,83 @@ private slots:
         q.finish();
     }
 
+    void test_03c_primaryProjectFolder()
+    {
+        const QString projectId = m_projectId;
+        QVERIFY(!projectId.isEmpty());
+        const QString tag = uniq("loc");
+        const QString main = tag + "-main", other = tag + "-other", link = tag + "-link";
+        QSqlQuery q(global_DBObjects.getDb());
+        const QList<QStringList> rows{{main, "File Folder", "Project Folder", "/projects/main"},
+                                      {other, "File Folder", "Contracts", "/projects/contracts"},
+                                      {link, "Web Link", "Project Folder", "https://example.test/team"}};
+        for (const QStringList& row : rows) {
+            q.prepare("INSERT INTO project_locations(id, project_id, location_type, location_description, full_path, deleted) "
+                      "VALUES(?, ?, ?, ?, ?, 0)");
+            q.addBindValue(row[0]);
+            q.addBindValue(projectId);
+            q.addBindValue(row[1]);
+            q.addBindValue(row[2]);
+            q.addBindValue(row[3]);
+            QVERIFY(q.exec());
+        }
+        auto cleanup = qScopeGuard([&] {
+            QSqlQuery r(global_DBObjects.getDb());
+            r.exec("DELETE FROM project_locations WHERE id LIKE '" + tag + "%'");
+            r.exec("UPDATE projects SET primary_location_id = NULL, primary_location_manual = 0 WHERE id = '" + projectId + "'");
+        });
+        auto manualFlag = [&]() {
+            QSqlQuery f(global_DBObjects.getDb());
+            f.prepare("SELECT primary_location_manual FROM projects WHERE id = ?");
+            f.addBindValue(projectId);
+            return f.exec() && f.next() ? f.value(0).toInt() : -1;
+        };
+
+        // The upgrade that adds the columns backfills the "Project Folder" row once.
+        for (const char* sql : {"DROP TRIGGER IF EXISTS trg_project_locations_primary_deleted",
+                                "DROP TRIGGER IF EXISTS trg_project_locations_primary_removed",
+                                "ALTER TABLE projects DROP COLUMN primary_location_manual",
+                                "ALTER TABLE projects DROP COLUMN primary_location_id"})
+            QVERIFY2(q.exec(sql), qPrintable(q.lastError().text()));
+        DatabaseStructure structure;
+        QVERIFY(structure.UpgradeDatabase());
+        global_DBObjects.projectinformationmodel()->refresh();
+        QCOMPARE(c->primaryProjectLocationId(projectId), main);
+        QVERIFY(!c->projectFolderChosenByUser(projectId));
+
+        // Only this project's live folder locations can be chosen.
+        QVERIFY(!c->setPrimaryProjectLocation(projectId, link));
+        QVERIFY(!c->setPrimaryProjectLocation(projectId, "no-such-location"));
+        QSignalSpy revs(c, &DesktopAppController::projectFolderRevChanged);
+        QVERIFY(c->setPrimaryProjectLocation(projectId, other));
+        QVERIFY(revs.count() >= 1);
+        QCOMPARE(c->primaryProjectLocationId(projectId), other);
+        QVERIFY(c->projectFolderChosenByUser(projectId));
+
+        // Clearing leaves the project without a folder, and it stays that way.
+        QVERIFY(c->setPrimaryProjectLocation(projectId, ""));
+        QVERIFY(c->primaryProjectLocationId(projectId).isEmpty());
+        QCOMPARE(manualFlag(), 1);
+        QVERIFY(structure.UpgradeDatabase());
+        QVERIFY(c->primaryProjectLocationId(projectId).isEmpty());
+
+        QVERIFY(c->letFileFinderChooseProjectFolder(projectId));
+        QCOMPARE(manualFlag(), 0);
+        QVERIFY(c->primaryProjectLocationId(projectId).isEmpty());
+
+        // Deleting the primary location clears it but keeps the user's flag.
+        QVERIFY(c->setPrimaryProjectLocation(projectId, main));
+        QVERIFY(q.exec("UPDATE project_locations SET deleted = 1 WHERE id = '" + main + "'"));
+        QVERIFY(q.exec("SELECT primary_location_id, primary_location_manual FROM projects WHERE id = '" + projectId + "'"));
+        QVERIFY(q.next());
+        QVERIFY(q.value(0).isNull());
+        QCOMPARE(q.value(1).toInt(), 1);
+        q.finish();
+        QVERIFY(c->setPrimaryProjectLocation(projectId, other));
+        QVERIFY(q.exec("DELETE FROM project_locations WHERE id = '" + other + "'"));
+        QVERIFY(c->primaryProjectLocationId(projectId).isEmpty());
+    }
+
     void test_04_pickerLists()
     {
         // Client / person pickers used by the project + person forms.

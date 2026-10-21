@@ -64,7 +64,9 @@ ProjectsModel::ProjectsModel(DatabaseObjects* dbo) : SqlQueryModel(dbo)
                  then 'Yes'
             else 'No'
         end) invoicing_overdue,
-        folder_id
+        folder_id,
+        primary_location_id,
+        primary_location_manual
         FROM projects
         )");
 
@@ -106,6 +108,12 @@ ProjectsModel::ProjectsModel(DatabaseObjects* dbo) : SqlQueryModel(dbo)
     // a folder deleted elsewhere) means the project is in no folder.
     addColumn("folder_id", tr("Folder"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
               "project_folders", "id", "folder_name");
+    // The primary project folder (a File Folder location). Manual = 1 once the
+    // user has set or cleared it; File Finder only fills it in while it is 0.
+    // A plain location id rather than a lookup: XML import keeps location ids,
+    // and the project row is read before its locations exist.
+    addColumn("primary_location_id", tr("Project Folder"), DBString, DBNotSearchable, DBNotRequired, DBEditable);
+    addColumn("primary_location_manual", tr("Project Folder Chosen"), DBBool, DBNotSearchable, DBNotRequired, DBEditable);
 
     addRelatedTable("project_notes", "project_id", "id", "Meeting", DBExportable);
     addRelatedTable("item_tracker", "project_id", "id", "Action/Tracker Item", DBExportable);

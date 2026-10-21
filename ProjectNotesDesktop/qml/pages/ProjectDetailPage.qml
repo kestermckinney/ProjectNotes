@@ -16,6 +16,11 @@ Item {
 
     property int    projectRow: -1
     property string projectId:  ""
+    // The location shown with the primary project folder badge ("" = none).
+    readonly property string _primaryLocationId: {
+        var _rev = DesktopAppController.projectFolderRev
+        return page.projectId !== "" ? DesktopAppController.primaryProjectLocationId(page.projectId) : ""
+    }
     property bool   isNewRecord: false
     property bool   _changed: false
 
@@ -1080,7 +1085,8 @@ Item {
                                     rowMenu.openFor(DesktopAppController.projectLocationsModel,
                                         (locCard.model.id || "").toString(), qsTr("Location"),
                                         (locCard.model.location_description || locCard.model.full_path || "").toString(),
-                                        sx, sy, false, "", "", (locCard.model.full_path || "").toString())
+                                        sx, sy, false, "", "", (locCard.model.full_path || "").toString(),
+                                        (locCard.model.location_type || "").toString())
                                 }
                                 // Icon that reflects the location's file type.
                                 readonly property var _typeIcons: ({
@@ -1106,6 +1112,17 @@ Item {
                                         Layout.fillWidth: true
                                         spacing: 6
                                         MaterialIcon { name: locCard._typeIcon; size: 14; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
+                                        // The project's primary project folder.
+                                        MaterialIcon {
+                                            objectName: "primaryProjectFolderBadge"
+                                            visible: (locCard.model.id || "").toString() !== ""
+                                                     && (locCard.model.id || "").toString() === page._primaryLocationId
+                                            name: "star"; size: 13; color: Theme.amber
+                                            Layout.alignment: Qt.AlignVCenter
+                                            ToolTip.visible: primaryHover.hovered
+                                            ToolTip.text: qsTr("Primary project folder")
+                                            HoverHandler { id: primaryHover }
+                                        }
                                         Text {
                                             text: (locCard.model.location_description || locCard.model.full_path
                                                    || qsTr("(unnamed location)")).toString()

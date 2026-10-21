@@ -289,11 +289,14 @@ DesktopAppController::DesktopAppController(QObject* parent)
             [](const QString &message) { QLog_Debug(DEBUGLOG, message); });
 #endif
     connect(m_fileFinder, &FileFinderService::locationsChanged, this,
-            [](int, int) {
+            [this](int, int, int primaryFolders) {
         // The worker commits a complete scan in one transaction, so refresh
         // dependent views once rather than once for every discovered location.
         global_DBObjects.projectlocationsmodel()->refresh();
         global_DBObjects.searchresultsmodel()->markDirty();
+        if (primaryFolders > 0)
+            global_DBObjects.projectinformationmodel()->refresh();
+        bumpProjectFolderRev();
     });
 
     // Install a backing store for DatabaseObjects "local" parameters (per-machine
@@ -494,6 +497,18 @@ bool DesktopAppController::openOrCreateDatabase()
         connect(projProxy, &QAbstractItemModel::dataChanged,
                 this, &DesktopAppController::invalidateFolderSnapshot);
     }
+
+    // Sync, plugins and edits that touch projects or their locations can move
+    // or clear a primary project folder.
+    connect(&global_DBObjects, &DatabaseObjects::displayChangesPending, this, [this](const QVariantList& changes) {
+        for (const QVariant& change : changes) {
+            const QString table = change.toMap().value(QStringLiteral("table")).toString();
+            if (table == QLatin1String("projects") || table == QLatin1String("project_locations")) {
+                bumpProjectFolderRev();
+                return;
+            }
+        }
+    });
 
     global_DBObjects.setGlobalSearches(false);
     global_DBObjects.projectinformationmodel()->refresh();
@@ -3980,9 +3995,17 @@ int DesktopAppController::addProjectLocation(const QString& projectId)
 bool DesktopAppController::deleteProjectLocation(int row)
 {
     global_DBObjects.setLastSaveError("");
+    const QString projectId = getProjectLocationData(row).value(QStringLiteral("project_id")).toString();
     if (deleteProxyRow(global_DBObjects.projectlocationsmodelproxy(),
-                       global_DBObjects.projectlocationsmodel(), row))
+                       global_DBObjects.projectlocationsmodel(), row)) {
+        // A trigger clears the project's primary project folder if this was it.
+        if (!projectId.isEmpty()) {
+            global_DBObjects.pushRowChange(QStringLiteral("projects"), projectId);
+            global_DBObjects.updateDisplayData();
+        }
+        bumpProjectFolderRev();
         return true;
+    }
     const QString err = global_DBObjects.lastSaveError();
     if (!err.isEmpty())
         emit errorOccurred(tr("Cannot Delete"), err);
@@ -4132,6 +4155,72 @@ void DesktopAppController::openProjectLocation(int row)
     }
 
     QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+}
+
+// ── Primary project folder ───────────────────────────────────────────────────
+
+QString DesktopAppController::primaryProjectLocationId(const QString& projectId) const
+{
+    QSqlQuery q(global_DBObjects.getDb());
+    q.prepare(QStringLiteral("SELECT l.id FROM projects p JOIN project_locations l ON l.id = p.primary_location_id "
+                             "WHERE p.id = ? AND l.deleted = 0 AND l.location_type = 'File Folder'"));
+    q.addBindValue(projectId);
+    return q.exec() && q.next() ? q.value(0).toString() : QString();
+}
+
+bool DesktopAppController::projectFolderChosenByUser(const QString& projectId) const
+{
+    QSqlQuery q(global_DBObjects.getDb());
+    q.prepare(QStringLiteral("SELECT COALESCE(primary_location_manual, 0) FROM projects WHERE id = ?"));
+    q.addBindValue(projectId);
+    return q.exec() && q.next() && q.value(0).toInt() != 0;
+}
+
+bool DesktopAppController::setPrimaryProjectLocation(const QString& projectId, const QString& locationId)
+{
+    if (projectId.isEmpty())
+        return false;
+    if (!locationId.isEmpty()) {
+        // Only one of this project's own, live folder locations can be primary.
+        QSqlQuery check(global_DBObjects.getDb());
+        check.prepare(QStringLiteral("SELECT 1 FROM project_locations WHERE id = ? AND project_id = ? "
+                                     "AND deleted = 0 AND location_type = 'File Folder'"));
+        check.addBindValue(locationId);
+        check.addBindValue(projectId);
+        if (!check.exec() || !check.next())
+            return false;
+    }
+    QSqlQuery q(global_DBObjects.getDb());
+    q.prepare(QStringLiteral("UPDATE projects SET primary_location_id = ?, primary_location_manual = 1 WHERE id = ?"));
+    q.addBindValue(locationId.isEmpty() ? QVariant() : QVariant(locationId));
+    q.addBindValue(projectId);
+    if (!q.exec())
+        return false;
+    global_DBObjects.pushRowChange(QStringLiteral("projects"), projectId);
+    global_DBObjects.updateDisplayData();
+    bumpProjectFolderRev();
+    return true;
+}
+
+bool DesktopAppController::letFileFinderChooseProjectFolder(const QString& projectId)
+{
+    QSqlQuery q(global_DBObjects.getDb());
+    q.prepare(QStringLiteral("UPDATE projects SET primary_location_manual = 0 WHERE id = ?"));
+    q.addBindValue(projectId);
+    if (!q.exec() || q.numRowsAffected() == 0)
+        return false;
+    global_DBObjects.pushRowChange(QStringLiteral("projects"), projectId);
+    global_DBObjects.updateDisplayData();
+    bumpProjectFolderRev();
+    if (m_fileFinder && m_fileFinder->enabled())
+        m_fileFinder->scanNow();
+    return true;
+}
+
+void DesktopAppController::bumpProjectFolderRev()
+{
+    ++m_projectFolderRev;
+    emit projectFolderRevChanged();
 }
 
 // ── Status report items ──────────────────────────────────────────────────────

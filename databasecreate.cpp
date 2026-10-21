@@ -269,6 +269,8 @@ void db_CreateNewDatabase()
             client_id            TEXT,
             project_status       TEXT,
             folder_id            TEXT,
+            primary_location_id  TEXT,
+            primary_location_manual INTEGER DEFAULT 0,
             updateddate          INTEGER,
             syncdate             INTEGER,
             deleted              INTEGER DEFAULT 0
@@ -453,6 +455,22 @@ void db_CreateNewDatabase()
         BEGIN
             UPDATE project_folders SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
             WHERE id = NEW.id;
+        END;
+    )");
+
+    // Deleting a project's primary location leaves the project without one.
+    global_DBObjects.execute(R"(
+        CREATE TRIGGER trg_project_locations_primary_deleted AFTER UPDATE OF deleted ON project_locations
+        WHEN NEW.deleted = 1 AND COALESCE(OLD.deleted, 0) = 0
+        BEGIN
+            UPDATE projects SET primary_location_id = NULL WHERE primary_location_id = NEW.id;
+        END;
+    )");
+
+    global_DBObjects.execute(R"(
+        CREATE TRIGGER trg_project_locations_primary_removed AFTER DELETE ON project_locations
+        BEGIN
+            UPDATE projects SET primary_location_id = NULL WHERE primary_location_id = OLD.id;
         END;
     )");
 

@@ -41,7 +41,7 @@ void CommunicationRepositoryTest::createDatabase()
     auto db = QSqlDatabase::addDatabase("QSQLITE", connection);
     db.setDatabaseName(databasePath()); QVERIFY(db.open());
     QSqlQuery q(db);
-    QVERIFY(q.exec("CREATE TABLE projects(id TEXT,project_number TEXT,project_name TEXT,client_id TEXT,status_report_period TEXT,budget TEXT,actual TEXT,bcwp TEXT,bcws TEXT,bac TEXT,deleted INTEGER)"));
+    QVERIFY(q.exec("CREATE TABLE projects(id TEXT,project_number TEXT,project_name TEXT,client_id TEXT,status_report_period TEXT,budget TEXT,actual TEXT,bcwp TEXT,bcws TEXT,bac TEXT,deleted INTEGER,primary_location_id TEXT)"));
     QVERIFY(q.exec("CREATE TABLE people(id TEXT,name TEXT,email TEXT,client_id TEXT,deleted INTEGER)"));
     QVERIFY(q.exec("CREATE TABLE clients(id TEXT,client_name TEXT,deleted INTEGER)"));
     QVERIFY(q.exec("CREATE TABLE project_people(id TEXT,project_id TEXT,people_id TEXT,receive_status_report INTEGER,deleted INTEGER)"));
@@ -51,7 +51,7 @@ void CommunicationRepositoryTest::createDatabase()
     QVERIFY(q.exec("CREATE TABLE item_tracker_updates(id TEXT,item_id TEXT,update_note TEXT)"));
     QVERIFY(q.exec("CREATE TABLE status_report_items(id TEXT,project_id TEXT,task_category TEXT,task_description TEXT,deleted INTEGER)"));
     QVERIFY(q.exec("CREATE TABLE project_locations(id TEXT,project_id TEXT,location_type TEXT,location_description TEXT,full_path TEXT,deleted INTEGER)"));
-    QVERIFY(q.exec("INSERT INTO projects VALUES('p','001','Project','client','Weekly','100','25','30','35','100',0)"));
+    QVERIFY(q.exec("INSERT INTO projects VALUES('p','001','Project','client','Weekly','100','25','30','35','100',0,'folder-project')"));
     QVERIFY(q.exec("INSERT INTO project_locations VALUES('folder-other','p','File Folder','Other Folder','/synthetic/other',0)"));
     QVERIFY(q.exec("INSERT INTO project_locations VALUES('folder-project','p','File Folder','Project Folder','/synthetic/project',0)"));
     QVERIFY(q.exec("INSERT INTO project_locations VALUES('folder-deleted','p','File Folder','Project Folder','/synthetic/deleted',1)"));
@@ -105,6 +105,27 @@ void CommunicationRepositoryTest::loadsTypedSnapshotWithoutUiFilters()
     const auto statusResult = loader.load(request);
     QVERIFY(statusResult.error.code.isEmpty());
     QCOMPARE(statusResult.snapshot.currentSelectionContactIds, QStringList({QStringLiteral("a")}));
+
+    // Only the primary project folder counts: none, or a deleted one, leaves
+    // the snapshot without a folder even though a "Project Folder" row exists.
+    for (const QString &primary : {QString(), QStringLiteral("folder-deleted")}) {
+        {
+            auto db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), QStringLiteral("repo-primary"));
+            db.setDatabaseName(databasePath());
+            QVERIFY(db.open());
+            QSqlQuery q(db);
+            q.prepare(QStringLiteral("UPDATE projects SET primary_location_id = ? WHERE id = 'p'"));
+            q.addBindValue(primary.isEmpty() ? QVariant() : QVariant(primary));
+            QVERIFY(q.exec());
+            q.finish();
+            db.close();
+        }
+        QSqlDatabase::removeDatabase(QStringLiteral("repo-primary"));
+        request.operationId = QUuid::createUuid();
+        const auto noFolder = loader.load(request);
+        QVERIFY(noFolder.error.code.isEmpty());
+        QCOMPARE(noFolder.snapshot.projectFolderPath, QString());
+    }
 }
 
 void CommunicationRepositoryTest::preservesInvalidNoteDateAsInvalid()

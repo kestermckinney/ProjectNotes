@@ -13,6 +13,7 @@ Plugins are now written in JavaScript and run inside Project Notes. Python is no
 - Click a folder's name in the sidebar to show only its projects. The arrow at the end of the header collapses the folder, and collapsed folders are now remembered per computer.
 - Renames folders from Settings or from a new right-click menu on folder headers, which also edits the icon and color.
 - Adds a Folder filter to the project list on desktop and mobile, and exposes `folder_id` on projects to plugins.
+- Each project now stores its primary project folder. File Finder sets it when it finds the project's folder, and the **⋮** menu on a folder location sets or clears it. Plugins and reports save into this folder, and a project can have none.
 - The Windows and macOS installers remove the embedded Python runtime, its packages, and the retired Python plugins left behind by earlier versions.
 
 ### Install on Linux
