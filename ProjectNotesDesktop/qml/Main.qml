@@ -411,6 +411,12 @@ ApplicationWindow {
             return
         root.selectedProjectId = projectId
         var r = DesktopAppController.projectRowForId(projectId)
+        // The sidebar lists every project, so the one picked may sit outside
+        // the folder the projects list is filtered to. Drop that filter.
+        if (r < 0 && DesktopAppController.projectFolderFilter().length > 0) {
+            DesktopAppController.clearProjectFolderFilter()
+            r = DesktopAppController.projectRowForId(projectId)
+        }
         if (r < 0) return
         root.crumbSub = DesktopAppController.projectNumberForId(projectId)
                         + " " + DesktopAppController.projectNameForId(projectId)
