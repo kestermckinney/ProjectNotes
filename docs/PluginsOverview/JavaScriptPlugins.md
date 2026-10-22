@@ -273,6 +273,7 @@ const { url } = yield auth.browserSignIn({
     url: authorizeUrl + "?response_type=code&client_id=app&redirect_uri=" + encodeURIComponent(redirect) + "&state=" + state,
     redirectUri: redirect,            // "http://localhost:8080/callback"
     timeoutSeconds: 120,
+    serviceName: "Keycloak",          // optional; named on the "Login Successful" page
 });
 const code = /[?&]code=([^&]+)/.exec(url)[1];
 ```

@@ -12,11 +12,102 @@ namespace PN::Plugins {
 
 namespace {
 
-const char kDonePage[] =
-    "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>Project Notes</title>"
-    "<style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;"
-    "min-height:90vh;background:#1e2a44;color:#fff}div{text-align:center}p{opacity:.7}</style></head>"
-    "<body><div><h2>You are signed in</h2><p>You can close this window and return to Project Notes.</p></div></body></html>";
+// The page the browser shows once it has come back to Project Notes.
+// serviceName (already HTML-escaped) names the service in the subtitle and
+// message; without one the page just says the sign-in finished.
+QByteArray donePage(const QString& serviceName)
+{
+    const QString subtitle = serviceName.isEmpty() ? QStringLiteral("Sign-in")
+                                                   : serviceName + QStringLiteral(" Integration");
+    const QString message = serviceName.isEmpty()
+        ? QStringLiteral("You are now signed in.")
+        : QStringLiteral("You are now authenticated with %1.").arg(serviceName);
+    QString page = QStringLiteral(R"PAGE(<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Notes &mdash; Login</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(160deg, #1a2744 0%, #2a3f6f 60%, #1e3a5f 100%);
+    font-family: 'Segoe UI', Arial, sans-serif;
+  }
+  .card {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 48px 56px;
+    max-width: 460px;
+    width: 90%;
+    text-align: center;
+    backdrop-filter: blur(4px);
+  }
+  .logo { margin-bottom: 28px; }
+  .logo svg { width: 64px; height: 64px; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4)); }
+  .app-name { color: #ffffff; font-size: 22px; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .app-sub {
+    color: rgba(255,255,255,0.55);
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 36px;
+  }
+  .check-circle {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    box-shadow: 0 4px 16px rgba(46,204,113,0.4);
+    animation: pop 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+  }
+  @keyframes pop {
+    from { transform: scale(0); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+  .check-circle svg { width: 32px; height: 32px; }
+  h1 { color: #ffffff; font-size: 20px; font-weight: 600; margin-bottom: 12px; }
+  p { color: rgba(255,255,255,0.7); font-size: 14px; line-height: 1.6; }
+  .divider { border: none; border-top: 1px solid rgba(255,255,255,0.12); margin: 32px 0 24px; }
+  .footer { color: rgba(255,255,255,0.3); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="10" y="14" width="44" height="46" rx="4" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
+      <rect x="22" y="8" width="20" height="12" rx="3" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.7)" stroke-width="2"/>
+      <line x1="18" y1="30" x2="46" y2="30" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/>
+      <line x1="18" y1="38" x2="46" y2="38" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/>
+      <line x1="18" y1="46" x2="36" y2="46" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="app-name">Project Notes</div>
+  <div class="app-sub">%1</div>
+  <div class="check-circle">
+    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polyline points="6,17 13,24 26,9" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <h1>Login Successful</h1>
+  <p>%2<br>You can close this window and return to Project Notes.</p>
+  <hr class="divider">
+  <div class="footer">This window was opened automatically by Project Notes.</div>
+</div>
+</body>
+</html>)PAGE");
+    return page.arg(subtitle, message).toUtf8();
+}
 
 } // namespace
 
@@ -108,7 +199,7 @@ void LoopbackRedirect::handleConnection(QTcpServer* server)
                 s->disconnectFromHost();
                 return;
             }
-            const QByteArray page(kDonePage);
+            const QByteArray page = donePage(m_serviceName.toHtmlEscaped());
             s->write("HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nConnection: close\r\nContent-Length: "
                      + QByteArray::number(page.size()) + "\r\n\r\n" + page);
             s->disconnectFromHost();

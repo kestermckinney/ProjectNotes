@@ -736,7 +736,7 @@ The browser step of an OAuth authorization-code sign-in for services other than 
 
 ```ts
 const auth: {
-  browserSignIn(options: { url: string; redirectUri: string; timeoutSeconds?: number }): Promise<{ url: string }>;
+  browserSignIn(options: { url: string; redirectUri: string; timeoutSeconds?: number; serviceName?: string }): Promise<{ url: string }>;
 };
 ```
 

@@ -163,7 +163,8 @@ export function* token() {
         response_type: "code", client_id: CLIENT_ID, redirect_uri: REDIRECT_URI, scope: "openid", state: state });
     let callback;
     try {
-        callback = (yield auth.browserSignIn({ url: authorizeUrl, redirectUri: REDIRECT_URI, timeoutSeconds: 120 })).url;
+        callback = (yield auth.browserSignIn({ url: authorizeUrl, redirectUri: REDIRECT_URI, timeoutSeconds: 120,
+                                             serviceName: "IFS" })).url;
     } catch (e) {
         cooldownUntil = Date.now() + COOLDOWN_MS;
         log.warn("IFS browser sign-in did not finish: " + e.message);

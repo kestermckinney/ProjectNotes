@@ -955,6 +955,7 @@ void PluginRuntime::browserSignIn(const QVariantMap& options, Reply reply)
         return;
     }
     auto* redirect = new LoopbackRedirect(this);
+    redirect->setServiceName(options.value(QStringLiteral("serviceName")).toString().trimmed());
     QString problem;
     const int timeout = options.value(QStringLiteral("timeoutSeconds"), 120).toInt() * 1000;
     if (!redirect->start(QUrl(options.value(QStringLiteral("redirectUri")).toString()), timeout, &problem)) {

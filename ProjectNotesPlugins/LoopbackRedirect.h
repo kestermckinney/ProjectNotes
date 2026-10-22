@@ -27,6 +27,8 @@ public:
     // Starts listening; received() or failed() follows, once.
     bool start(const QUrl& redirectUri, int timeoutMs, QString* error);
     quint16 port() const;
+    // Shown on the page the browser lands on, e.g. "IFS". Optional.
+    void setServiceName(const QString& name) { m_serviceName = name; }
 
 signals:
     void received(const QUrl& callbackUrl);
@@ -37,6 +39,7 @@ private:
     void finish();
 
     QUrl m_redirectUri;
+    QString m_serviceName;
     QList<QTcpServer*> m_servers;
     QTimer m_timeout;
     bool m_done = false;

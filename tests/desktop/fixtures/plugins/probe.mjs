@@ -100,7 +100,7 @@ const scenarios = {
     *browserSignIn() {
         const r = yield auth.browserSignIn({ url: "https://sso.example.test/auth?client_id=probe",
                                              redirectUri: "http://127.0.0.1:" + settings.get("signInPort") + "/callback",
-                                             timeoutSeconds: 10 });
+                                             timeoutSeconds: 10, serviceName: "Probe <SSO>" });
         return r.url;
     },
     *browserSignInBadHost() {

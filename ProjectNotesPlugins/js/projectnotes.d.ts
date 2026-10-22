@@ -266,7 +266,7 @@ declare module "projectnotes" {
     };
     // Needs the "auth.browser" permission; the url's host must be in "http".
     export const auth: {
-        browserSignIn(options: { url: string; redirectUri: string; timeoutSeconds?: number }): Promise<{ url: string }>;
+        browserSignIn(options: { url: string; redirectUri: string; timeoutSeconds?: number; serviceName?: string }): Promise<{ url: string }>;
     };
     export interface Timer { cancel(): void; }
     export const timers: {

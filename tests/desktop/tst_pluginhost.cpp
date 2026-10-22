@@ -569,7 +569,10 @@ void PluginHostTest::browserSignIn()
         return response + socket.readAll();
     };
     QVERIFY(request("/favicon.ico").startsWith("HTTP/1.1 204"));
-    QVERIFY(request("/callback?code=abc%2B1&state=s1").startsWith("HTTP/1.1 200"));
+    const QByteArray page = request("/callback?code=abc%2B1&state=s1");
+    QVERIFY(page.startsWith("HTTP/1.1 200"));
+    // The plugin's service name is shown, HTML-escaped.
+    QVERIFY(page.contains("You are now authenticated with Probe &lt;SSO&gt;."));
     QTRY_VERIFY(m_services.messageCount(QStringLiteral("probe")) > before);
     QJsonObject r = m_services.lastMessage(QStringLiteral("probe"));
     QVERIFY2(r.value(QStringLiteral("ok")).toBool(), qPrintable(QJsonDocument(r).toJson()));
