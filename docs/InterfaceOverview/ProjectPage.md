@@ -106,6 +106,14 @@ Team members are set up under the **Team** tab of the Project Page. Team members
 2. Choose **Go To Contact** from the menu.
 3. The application will automatically switch to the Contacts page and open that contact's full record.
 
+**To add team members from vCards:**
+
+Drop one or more vCards on the **Team** tab: a `.vcf` file, or a contact dragged from Outlook or Apple Contacts. Each person is matched to an existing contact by name, or added as a new contact (with their company matched or created), and then put on the team. Someone already on the team is skipped.
+
+**To export a team member as a vCard:**
+
+Drag the team member's name out of Project Notes. Drop it on a folder or the desktop to save `<name>.vcf`, or on a mail message or contacts app to hand over the card. Right-click the row for **Email Contact…** and **Export Contact…**. See [Contacts List Page](<ContactsListPage.md>) for what the card contains.
+
 
 
 ## Reports and Meetings

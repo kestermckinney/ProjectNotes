@@ -10,6 +10,7 @@
 #include "ProjectNotesPlugins/PublishedSchema.h"
 #include "ProjectNotesContacts/ContactSyncSettingsModel.h"
 #include "ProjectNotesContacts/VCard.h"
+#include "personvcard.h"
 #include "ProjectNotesIntegrations/HttpTransport.h"
 #include "ProjectNotesIntegrations/Office365Service.h"
 
@@ -366,23 +367,12 @@ void DesktopPluginServices::requestContacts(const PluginManifest& plugin, const 
         if (!m_ui) { reply({}, unavailable(tr("Dialogs are not available."))); return; }
         m_ui->openRequest(plugin.id, QStringLiteral("contactPicker"), arg(args, 0).toMap(), reply);
     } else if (method == QLatin1String("contacts.toVCard")) {
-        QSqlQuery query(global_DBObjects.getDb());
-        query.prepare(QStringLiteral("SELECT p.id, p.name, p.email, p.office_phone, p.cell_phone, p.role, c.client_name "
-                                     "FROM people p LEFT JOIN clients c ON c.id = p.client_id WHERE p.id = ?"));
-        query.addBindValue(arg(args, 0).toString());
-        if (!query.exec() || !query.next()) {
+        const QByteArray card = personVCard(global_DBObjects.getDb(), arg(args, 0).toString());
+        if (card.isEmpty()) {
             reply({}, PluginError::make(QStringLiteral("not-found"), tr("No contact has key \"%1\".").arg(arg(args, 0).toString())));
             return;
         }
-        PN::Contacts::Contact contact;
-        contact.id = query.value(0).toString();
-        contact.name = query.value(1).toString();
-        contact.company = query.value(6).toString();
-        if (!query.value(2).toString().isEmpty()) contact.emails << query.value(2).toString();
-        if (!query.value(3).toString().isEmpty()) contact.phones << query.value(3).toString();
-        if (!query.value(4).toString().isEmpty()) contact.phones << query.value(4).toString();
-        if (!query.value(5).toString().isEmpty()) contact.fields.insert(QStringLiteral("role"), query.value(5).toString());
-        reply(QString::fromUtf8(PN::Contacts::writeVCard(contact, contact.id)), {});
+        reply(QString::fromUtf8(card), {});
     } else if (method == QLatin1String("contacts.fromVCard")) {
         // A file may hold several cards.
         const QString text = arg(args, 0).toString();

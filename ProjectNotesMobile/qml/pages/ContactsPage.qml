@@ -26,6 +26,11 @@ Page {
     FilterSheet     { id: filterSheet }
     SortSheet       { id: sortSheet }
     QuickFilterDialog { id: qfDialog }
+    ContactCardDialog {
+        id: cardDialog
+        property var _quickFilters: []
+        onQuickFilterRequested: qfDialog.openWith(AppController.contactsModel, _quickFilters)
+    }
 
     header: ToolBar {
         RowLayout {
@@ -110,12 +115,18 @@ Page {
             required property var model
             width: listView.width
 
-            // Long press → Quick Filter. The delegate's own pressAndHold, not a
+            // Long press → contact card actions, plus Quick Filter when the row
+            // has a company. The delegate's own pressAndHold, not a
             // TapHandler: only the button's hold timer (armed solely by
             // connecting to this signal) suppresses the clicked() that would
             // otherwise navigate to this row when you let go — see
             // AllItemsPage.qml.
-            onPressAndHold: qfDialog.openWith(AppController.contactsModel, root._quickFiltersForRow(delegateRoot.model))
+            onPressAndHold: {
+                cardDialog._quickFilters = root._quickFiltersForRow(delegateRoot.model)
+                cardDialog.openFor((delegateRoot.model.id || "").toString(),
+                                   (delegateRoot.model.name || "").toString(),
+                                   cardDialog._quickFilters.length > 0)
+            }
 
             contentItem: RowLayout {
                 spacing: 12

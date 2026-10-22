@@ -8,13 +8,16 @@
 namespace PN::Comm {
 ProjectEmailReview ProjectEmailPreparationFactory::create(
     const CommunicationSnapshot &snapshot, SourceContext source, BackendId backend,
-    const CommunicationTemplate &contentTemplate, bool attachLocation)
+    const CommunicationTemplate &contentTemplate, bool attachLocation, bool shareContactCard)
 {
     ProjectEmailReview review;
     review.validation = validate(source);
     if (snapshot.projectId != source.projectId || snapshot.databaseGeneration != source.databaseGeneration)
         review.validation.addError("snapshot-source-mismatch", "source");
     const bool plainContact = source.workflow == Workflow::ContactEmail;
+    if (shareContactCard && (!plainContact || source.contactId.isEmpty()))
+        review.validation.addError("email-workflow-invalid", "source.workflow");
+    QString cardName;
     if (source.workflow != Workflow::ProjectEmail && source.workflow != Workflow::ShareLocation && !plainContact)
         review.validation.addError("email-workflow-invalid", "source.workflow");
     review.rule.excludeProjectManager = source.workflow == Workflow::ShareLocation;
@@ -24,7 +27,12 @@ ProjectEmailReview ProjectEmailPreparationFactory::create(
     if (source.workflow == Workflow::ProjectEmail || plainContact) {
         context.values.insert("contact.name", QString());
         context.values.insert("contact.email", QString());
-        if (!source.contactId.isEmpty()) {
+        if (!source.contactId.isEmpty() && shareContactCard) {
+            bool found = false;
+            for (const SnapshotContact &contact : snapshot.contacts)
+                if (contact.id == source.contactId) { found = true; cardName = contact.name; }
+            if (!found) review.validation.addError("contact-not-found", "source.contactId");
+        } else if (!source.contactId.isEmpty()) {
             review.rule.source = ContactSource::ChosenContacts;
             review.rule.chosenContactIds = {source.contactId};
             // Keep the project's other recipients available to the shared
@@ -76,6 +84,17 @@ ProjectEmailReview ProjectEmailPreparationFactory::create(
         ? TemplateApplicationResult{} : TemplateApplication::apply(contentTemplate, context, nativeHtml);
     review.validation.issues += rendered.validation.issues;
     if (!review.validation.ok()) return review;
+    if (shareContactCard) {
+        auto &prepared = review.preparation;
+        prepared.operationId = QUuid::createUuid();
+        prepared.source = std::move(source);
+        prepared.backend = backend;
+        prepared.document.workflow = prepared.source.workflow;
+        prepared.document.defaultSubject = QStringLiteral("Contact: %1").arg(cardName.simplified());
+        prepared.document.htmlDocument = QStringLiteral("<!DOCTYPE html><html><body></body></html>");
+        prepared.addressLater = true;
+        return review;
+    }
     review.audience = resolveAudience(snapshot, review.rule);
     review.validation.issues += review.audience.validation.issues;
     if (!source.contactId.isEmpty()) {

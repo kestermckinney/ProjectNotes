@@ -28,6 +28,7 @@ Page {
 
     FilterSheet { id: filterSheet }
     SortSheet   { id: sortSheet }
+    ContactCardDialog { id: cardDialog }
 
     header: ToolBar {
         RowLayout {
@@ -105,6 +106,11 @@ Page {
             required property int index
             required property var model
             width: listView.width
+
+            // Long press → contact card actions for this person (see
+            // ContactsPage.qml for why this is pressAndHold, not a TapHandler).
+            onPressAndHold: cardDialog.openFor((delegateRoot.model.people_id || "").toString(),
+                                               (delegateRoot.model.name || "").toString(), false)
 
             contentItem: RowLayout {
                 spacing: 8

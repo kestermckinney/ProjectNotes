@@ -208,6 +208,10 @@ public:
     Q_INVOKABLE bool prepareMeetingNotesReview(const QString& projectId, const QString& noteId);
     Q_INVOKABLE bool prepareProjectEmailReview(const QString &projectId, const QString &contactId = {});
     Q_INVOKABLE bool prepareContactEmailReview(const QString &contactId);
+    // Creates a draft with the contact's vCard attached and no recipients in
+    // the configured email client, without a review dialog; the user
+    // addresses it there. Failures are reported through errorOccurred().
+    Q_INVOKABLE bool emailContactCard(const QString &contactId);
     Q_INVOKABLE bool prepareLocationEmailReview(const QString &projectId, const QString &locationId, bool attachment);
     Q_INVOKABLE void cancelProjectEmailReview();
     // Starts a read-only review of the project's meeting-notes report.  The
@@ -299,6 +303,18 @@ public:
     Q_INVOKABLE bool importXmlFile(const QString& fileUrlOrPath);
     Q_INVOKABLE bool exportRecordXml(const QString& tableName, const QString& recordId,
                                      const QString& fileUrlOrPath);
+
+    // ── vCard export ─────────────────────────────────────────────────────────
+    // Suggested save name for a contact's card ("<name>.vcf"), or "" when the
+    // contact doesn't exist.
+    Q_INVOKABLE QString contactVCardFileName(const QString& contactId) const;
+    Q_INVOKABLE bool exportContactVCard(const QString& contactId, const QString& fileUrlOrPath);
+    // Drag.mimeData for dragging a contact out to another application: the
+    // card written to "<name>.vcf" in the transient cache (as text/uri-list,
+    // for file managers) plus the card itself (text/vcard, text/x-vcard, for
+    // mail and contacts apps). Empty when the contact doesn't exist or the
+    // file can't be written. The files are removed with the rest of the cache.
+    Q_INVOKABLE QVariantMap contactVCardDragData(const QString& contactId);
 
     // ── Preferences (managing company / project manager, by id) ──────────────
     bool viewReportAfterSave() const;
@@ -1009,6 +1025,9 @@ private:
     QUuid m_pendingMeetingNotesReportReview;
     QUuid m_pendingProjectReportReview;
     QUuid m_pendingProjectEmailReview;
+    // Set while emailContactCard() runs: the prepared review is handed off
+    // as soon as it is ready, and its outcome closes the flag.
+    bool m_autoDraftContactCard = false;
     std::optional<PN::Comm::EmailPreparation> m_projectEmailReview;
     std::unique_ptr<PN::Comm::LocationAttachmentDownloader> m_locationAttachmentDownloader;
     QUuid m_pendingHandoffRevalidation;
@@ -1041,7 +1060,7 @@ private:
                                     bool displayPdf = false,
                                     std::optional<PN::Comm::TrackerFilters> trackerFilters = std::nullopt);
     bool prepareProjectEmail(const QString &projectId, const QString &contactId,
-                             const QString &locationId, bool attachment);
+                             const QString &locationId, bool attachment, bool contactCard = false);
     bool stageRequestedGeneratedAttachment(PN::Comm::EmailPreparation *preparation,
                                            PN::Comm::ValidationResult *validation);
     void stageRequestedGeneratedAttachmentAsync(PN::Comm::EmailPreparation preparation,

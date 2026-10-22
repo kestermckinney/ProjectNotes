@@ -14,7 +14,9 @@
 #include "authmanager.h"
 #include "httpclient.h"
 #include "NativeUrlOpener.h"
+#include "ShareSheet.h"
 #include "officedeeplink.h"
+#include "personvcard.h"
 #include "rowencryption.h"
 
 #include <QCoreApplication>
@@ -27,7 +29,9 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QPointer>
+#include <QSaveFile>
 #include <QSet>
+#include <QStandardPaths>
 #include <QSqlQuery>
 #include <QTextDocument>
 #include <QThread>
@@ -1068,6 +1072,44 @@ void AppController::sendMeetingNotesEmail(const QString& commaSeparatedEmails,
         addresses.append(p.trimmed());
 
     MailComposer::present(addresses, subject, body);
+}
+
+bool AppController::emailContactCard(const QString& contactId)
+{
+    if (!MailComposer::isAvailable())
+        return shareContactCard(contactId);
+    QString name;
+    const QByteArray card = personVCard(global_DBObjects.getDb(), contactId, &name);
+    if (card.isEmpty()) {
+        emit errorOccurred(tr("Email Contact"), tr("The contact is no longer available."));
+        return false;
+    }
+    MailComposer::present({}, tr("Contact: %1").arg(name.simplified()), QString(),
+                          card, QStringLiteral("text/vcard"), personVCardFileName(name));
+    return true;
+}
+
+bool AppController::shareContactCard(const QString& contactId)
+{
+    QString name;
+    const QByteArray card = personVCard(global_DBObjects.getDb(), contactId, &name);
+    if (card.isEmpty()) {
+        emit errorOccurred(tr("Export Contact"), tr("The contact is no longer available."));
+        return false;
+    }
+    // The share sheet needs a file. Keep one card at a time in a folder of
+    // the temporary directory; the next share replaces it.
+    QDir dir(QStandardPaths::writableLocation(QStandardPaths::TempLocation));
+    const QString folder = QStringLiteral("ContactCards");
+    if (dir.exists(folder))
+        QDir(dir.filePath(folder)).removeRecursively();
+    QSaveFile file(dir.filePath(folder + u'/' + personVCardFileName(name)));
+    if (!dir.mkpath(folder) || !file.open(QIODevice::WriteOnly) || file.write(card) != card.size()
+        || !file.commit() || !ShareSheet::shareFile(file.fileName())) {
+        emit errorOccurred(tr("Export Contact"), tr("The contact card could not be shared."));
+        return false;
+    }
+    return true;
 }
 
 QString AppController::attendeeNameList() const

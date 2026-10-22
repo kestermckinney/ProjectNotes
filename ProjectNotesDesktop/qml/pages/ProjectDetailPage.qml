@@ -821,7 +821,10 @@ Item {
                 // DesktopAppController::addTeamMembersFromVCardDrop().
                 DropArea {
                     anchors.fill: parent
+                    // Ignore this app's own contact cards being dragged out (ContactDragArea).
+                    onEntered: (drag) => { if (drag.source && drag.source.isContactDrag) drag.accepted = false }
                     onDropped: (drop) => {
+                        if (drop.source && drop.source.isContactDrag) { drop.accepted = false; return }
                         var urls = []
                         if (drop.hasUrls)
                             for (var i = 0; i < drop.urls.length; i++)
@@ -934,9 +937,14 @@ Item {
                                 }
                                 RowDelete { onDel: { DesktopAppController.deleteTeamMember(teamCard.index); DesktopAppController.refreshTeamMembers(); page._refreshTeamContacts() } }
                             }
-                            TapHandler {
-                                acceptedButtons: Qt.RightButton
-                                onTapped: (ev) => teamCard._menu(ev.scenePosition.x, ev.scenePosition.y)
+                            // Right-click for the menu; drag the card's free space
+                            // (name, icon) out to export the member as a vCard. The
+                            // role field and checkbox above keep their own presses.
+                            ContactDragArea {
+                                anchors.fill: parent
+                                z: -1
+                                contactId: (teamCard.model.people_id || "").toString()
+                                onMenuRequested: (sx, sy) => teamCard._menu(sx, sy)
                             }
                     }
                 }

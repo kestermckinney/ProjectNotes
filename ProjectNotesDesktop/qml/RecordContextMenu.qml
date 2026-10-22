@@ -3,6 +3,8 @@
 
 import QtQuick
 import QtQuick.Controls.Basic
+import QtCore
+import QtQuick.Dialogs
 import QtQuick.Layouts
 import ProjectNotesDesktop
 
@@ -47,6 +49,11 @@ Popup {
     readonly property string projectEmailContext: emailTable === "projects" ? recordId : emailProjectId
     readonly property bool canProjectEmail: projectEmailContext !== "" && (emailTable === "projects" || contactId !== "")
     readonly property bool canContactEmail: !canProjectEmail && emailTable === "people" && recordId !== ""
+    // The person whose vCard Export/Email Contact Card use: the row itself on
+    // a contact, or the contact behind a team member or meeting attendee.
+    readonly property string contactCardId: emailTable === "people" ? recordId
+        : (emailTable === "project_people" || emailTable === "meeting_attendees") ? contactId : ""
+    readonly property bool canContactCard: contactCardId !== ""
     readonly property bool canShareLocation: projectEmailContext !== "" && emailTable === "project_locations"
     readonly property bool canShareLink: canShareLocation && /^https?:\/\//i.test(locationPath.trim())
     property bool   canExport: true
@@ -125,6 +132,26 @@ Popup {
             projectEmailReview.openContact(recordId)
     }
     ProjectEmailReviewDialog { id: projectEmailReview; parent: menu.parent }
+    signal contactCardEmailRequested()
+    signal contactCardExportRequested()
+    onContactCardEmailRequested: DesktopAppController.emailContactCard(contactCardId)
+    onContactCardExportRequested: {
+        var name = DesktopAppController.contactVCardFileName(contactCardId)
+        if (name === "") return
+        vCardSaveDialog.contactId = contactCardId
+        vCardSaveDialog.selectedFile = StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+                                       + "/" + encodeURIComponent(name)
+        vCardSaveDialog.open()
+    }
+    FileDialog {
+        id: vCardSaveDialog
+        property string contactId: ""
+        title: qsTr("Export Contact")
+        fileMode: FileDialog.SaveFile
+        nameFilters: [ qsTr("vCard files (*.vcf)") ]
+        defaultSuffix: "vcf"
+        onAccepted: DesktopAppController.exportContactVCard(contactId, selectedFile)
+    }
     signal exportRequested()
     signal filterRequested()
     // Carries the menu's own scene position (Overlay.overlay space, same as
@@ -447,6 +474,14 @@ Popup {
                   onHoveredChanged: menu._rowHover("", hovered) }
         MenuRow { icon: "email"; label: qsTr("Email…"); visible: menu.canContactEmail
                   onActivated: menu._fire(menu.contactEmailRequested)
+                  onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "contact_mail"; label: qsTr("Email Contact…"); visible: menu.canContactCard
+                  objectName: "emailContactCard"
+                  onActivated: menu._fire(menu.contactCardEmailRequested)
+                  onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "contact_page"; label: qsTr("Export Contact…"); visible: menu.canContactCard
+                  objectName: "exportContactCard"
+                  onActivated: menu._fire(menu.contactCardExportRequested)
                   onHoveredChanged: menu._rowHover("", hovered) }
         MenuRow { icon: "link"; label: qsTr("Share Link…"); visible: menu.canShareLink
                   onActivated: { menu.close(); menu.locationEmailRequested(false) }

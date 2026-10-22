@@ -239,6 +239,20 @@ private slots:
         menu->setProperty("contactId", "");
         QVERIFY(menu->property("canContactEmail").toBool());
         QVERIFY(!menu->property("canProjectEmail").toBool());
+        // Contact cards: the contact row itself, or the person behind a team
+        // member or attendee row; other tables never offer them.
+        QVERIFY(menu->property("canContactCard").toBool());
+        QCOMPARE(menu->property("contactCardId").toString(), projectId);
+        for (const char *table : {"project_people", "meeting_attendees"}) {
+            menu->setProperty("recordTable", table);
+            menu->setProperty("contactId", "");
+            QVERIFY(!menu->property("canContactCard").toBool());
+            menu->setProperty("contactId", "person-1");
+            QCOMPARE(menu->property("contactCardId").toString(), QString("person-1"));
+        }
+        menu->setProperty("recordTable", "item_tracker");
+        QVERIFY(!menu->property("canContactCard").toBool());
+        menu->setProperty("contactId", "");
         menu->setProperty("recordTable", "project_locations");
         menu->setProperty("emailProjectId", projectId);
         menu->setProperty("locationPath", "https://example.test/file.pdf");
@@ -485,6 +499,57 @@ private slots:
         QVERIFY(editor->property("text").toString().contains('x'));
         window->hide();
         assertClean("plain scrolling page and editor keys");
+    }
+
+    // The contact card's ContactDragArea (vCard drag-out) takes the card's
+    // presses, so it must still open the contact on click and its menu on
+    // right-click.
+    void test_01c2_contactCardClickAndRightClick()
+    {
+        clearWarnings();
+        auto* window = qobject_cast<QQuickWindow*>(root);
+        QVERIFY(window);
+        window->show();
+        window->requestActivate();
+        auto* stack = findVisualChild(window->contentItem(), "contentStack");
+        QVERIFY(stack);
+        nav("selectSection", "contacts");
+        QTRY_VERIFY(!stack->property("busy").toBool());
+        auto* page = qvariant_cast<QQuickItem*>(stack->property("currentItem"));
+        QVERIFY(page);
+        auto* area = findVisualChild(page, "contactDragArea");
+        QVERIFY(area);
+        auto* card = area->parentItem();
+        const QString id = card->property("pid").toString();
+        QVERIFY(!id.isEmpty());
+        QCOMPARE(area->property("contactId").toString(), id);
+        // Left of the card, on the avatar: away from the kebab button.
+        const QPoint point = card->mapToScene(QPointF(22, card->height() / 2)).toPoint();
+        QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier, point);
+        QTRY_COMPARE(stack->property("depth").toInt(), 2);
+        QTRY_VERIFY(!stack->property("busy").toBool());
+        auto* detail = qvariant_cast<QQuickItem*>(stack->property("currentItem"));
+        QVERIFY(detail);
+        QCOMPARE(detail->property("contactId").toString(), id);
+        QTest::keyClick(window, Qt::Key_Left, Qt::AltModifier);
+        QTRY_COMPARE(stack->property("depth").toInt(), 1);
+        QTRY_VERIFY(!stack->property("busy").toBool());
+        page->setProperty("_ctxId", QString());
+        QTest::mouseClick(window, Qt::RightButton, Qt::NoModifier, point);
+        QTRY_COMPARE(page->property("_ctxId").toString(), id);
+        bool menuClosed = false;
+        for (QObject* object : page->findChildren<QObject*>()) {
+            if (object->property("contactCardId").isValid() && object->property("visible").toBool()) {
+                QCOMPARE(object->property("contactCardId").toString(), id);
+                QVERIFY(object->property("canContactCard").toBool());
+                QMetaObject::invokeMethod(object, "close");
+                menuClosed = true;
+            }
+        }
+        QVERIFY(menuClosed);
+        QTest::qWait(50);
+        window->hide();
+        assertClean("contact card click and right-click");
     }
 
     void test_01d_enterOpensSelectedRecordsAndKeyboardBack()

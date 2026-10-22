@@ -7,6 +7,7 @@
 
 #include "databaseobjects.h"
 #include "vcardparser.h"
+#include "personvcard.h"
 #include "sortfilterproxymodel.h"
 #include "FolderManager.h"
 #include "SecurityScopedBookmarks.h"
@@ -138,6 +139,7 @@ PN::Comm::AudienceRule reviewPresetRule(PN::Comm::Workflow workflow,
 #include <QPointer>
 #include <QScreen>
 #include <QSet>
+#include <QSaveFile>
 #include <QSettings>
 #include <QSqlError>
 #include <QSqlQuery>
@@ -255,6 +257,19 @@ DesktopAppController::DesktopAppController(QObject* parent)
                  && m_communicationsController->preparation().backend == PN::Comm::BackendId::ICloud)
             emit infoOccurred(tr("iCloud Draft Created"),
                               tr("The email was saved in iCloud Mail Drafts. iCloud does not provide a link to the new draft, so open iCloud Mail to review and send it."));
+    });
+    // Email Contact has no review dialog to show its outcome.
+    connect(m_communicationsController.get(), &PN::Comm::CommunicationsController::stateChanged, this, [this] {
+        if (!m_autoDraftContactCard) return;
+        const PN::Comm::PreparationStage stage = m_communicationsController->stage();
+        if (stage == PN::Comm::PreparationStage::Completed) {
+            m_autoDraftContactCard = false;
+        } else if (stage == PN::Comm::PreparationStage::Failed) {
+            m_autoDraftContactCard = false;
+            const QString diagnostic = m_communicationsController->diagnostic();
+            emit errorOccurred(tr("Email Contact"), diagnostic.isEmpty()
+                ? tr("The email draft could not be created.") : diagnostic);
+        }
     });
     m_recipientSelectionModel = std::make_unique<PN::Comm::RecipientSelectionModel>();
     m_templateEditorModel = std::make_unique<PN::Comm::TemplateEditorModel>(
@@ -388,6 +403,9 @@ void DesktopAppController::cleanupTransientCache()
         PN::Comm::TransientCacheCleaner(PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile)).clean();
     for (const QString &path : failed)
         QLog_Warning(CONSOLELOG, QStringLiteral("Could not remove temporary file %1").arg(path));
+    // Contact cards dragged out to other applications (contactVCardDragData).
+    QDir(QDir(PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile)).filePath(QStringLiteral("vcard-drag")))
+        .removeRecursively();
 }
 
 void DesktopAppController::registerThunderbirdBackends(const QString &command)
@@ -817,6 +835,16 @@ bool DesktopAppController::prepareContactEmailReview(const QString &contactId)
     return prepareProjectEmail({}, contactId, {}, false);
 }
 
+bool DesktopAppController::emailContactCard(const QString &contactId)
+{
+    if (contactId.trimmed().isEmpty()) return false;
+    if (!prepareProjectEmail({}, contactId, {}, false, true)) {
+        emit errorOccurred(tr("Email Contact"), tr("Another email is still being prepared. Try again in a moment."));
+        return false;
+    }
+    return true;
+}
+
 bool DesktopAppController::prepareLocationEmailReview(const QString &projectId, const QString &locationId, bool attachment)
 {
     if (projectId.trimmed().isEmpty() || locationId.trimmed().isEmpty()) return false;
@@ -828,16 +856,18 @@ void DesktopAppController::cancelProjectEmailReview()
     const bool pending = !m_pendingProjectEmailReview.isNull();
     const QUuid operationId = m_pendingProjectEmailReview;
     m_pendingProjectEmailReview = {};
+    m_autoDraftContactCard = false;
     if (pending && m_communicationRepository) m_communicationRepository->cancel(operationId);
     if (m_locationAttachmentDownloader) m_locationAttachmentDownloader->cancel();
 }
 
 bool DesktopAppController::prepareProjectEmail(const QString &projectId, const QString &contactId,
-                                             const QString &locationId, bool attachment)
+                                             const QString &locationId, bool attachment, bool contactCard)
 {
     if (!m_databaseOpen || !m_communicationRepository
         || !m_communicationsController->beginReviewPreparation()) return false;
     cancelProjectEmailReview();
+    m_autoDraftContactCard = contactCard;
     // Invalidate callbacks belonging to another review sharing this controller.
     if (!m_pendingPdfRender.isNull()) {
         const QUuid operationId = m_pendingPdfRender;
@@ -866,7 +896,7 @@ bool DesktopAppController::prepareProjectEmail(const QString &projectId, const Q
     request.capturedAt = QDateTime::currentDateTimeUtc();
     m_pendingProjectEmailReview = request.operationId;
     QPointer<DesktopAppController> self(this);
-    m_communicationRepository->loadSnapshot(request, [self, request, attachment](PN::Comm::SnapshotResult result) {
+    m_communicationRepository->loadSnapshot(request, [self, request, attachment, contactCard](PN::Comm::SnapshotResult result) {
         if (!self || self->m_pendingProjectEmailReview != result.operationId) return;
         const auto fail = [self](QString code, QString message) {
             self->m_pendingProjectEmailReview = {};
@@ -882,16 +912,25 @@ bool DesktopAppController::prepareProjectEmail(const QString &projectId, const Q
         QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
         PN::Comm::EmailSettingsStore emailSettings(settings);
         auto review = PN::Comm::ProjectEmailPreparationFactory::create(result.snapshot, request.source,
-            emailSettings.preferredBackend(), *contentTemplate, attachment);
+            emailSettings.preferredBackend(), *contentTemplate, attachment, contactCard);
         if (!review.validation.ok()) {
             self->m_pendingProjectEmailReview = {};
             self->m_communicationsController->setReviewValidation(review.validation);
             return;
         }
         review.preparation.senderAddress = emailSettings.senderAddress();
+        // Read the card on this thread, like every other people lookup. It is
+        // staged below, once the operation's artifact store exists.
+        QString cardName;
+        const QByteArray card = contactCard
+            ? personVCard(global_DBObjects.getDb(), request.source.contactId, &cardName) : QByteArray();
+        if (contactCard && card.isEmpty()) {
+            fail(QStringLiteral("contact-not-found"), self->tr("The selected contact is no longer available."));
+            return;
+        }
         const QUrl attachmentUrl = review.attachmentUrl;
         self->stageRequestedGeneratedAttachmentAsync(review.preparation,
-            [self, request, review, snapshot = result.snapshot, attachmentUrl]
+            [self, request, review, snapshot = result.snapshot, attachmentUrl, card, cardName]
             (std::optional<PN::Comm::EmailPreparation> staged, PN::Comm::ValidationResult validation) mutable {
                 if (!self || self->m_pendingProjectEmailReview != request.operationId) return;
                 if (!staged) {
@@ -920,6 +959,10 @@ bool DesktopAppController::prepareProjectEmail(const QString &projectId, const Q
                     // never replace it automatically with the project default.
                     if (request.source.contactId.isEmpty())
                         self->applyDefaultReviewAudiencePreset();
+                    if (self->m_autoDraftContactCard && !self->handoffPreparedReview()) {
+                        self->m_autoDraftContactCard = false;
+                        emit self->errorOccurred(self->tr("Email Contact"), self->tr("The email draft could not be created."));
+                    }
                 };
                 const QString cache = PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile);
                 if (attachmentUrl.isLocalFile()) {
@@ -928,6 +971,9 @@ bool DesktopAppController::prepareProjectEmail(const QString &projectId, const Q
                     if (!self->m_locationAttachmentDownloader)
                         self->m_locationAttachmentDownloader = std::make_unique<PN::Comm::LocationAttachmentDownloader>();
                     self->m_locationAttachmentDownloader->download(attachmentUrl, cache, staged->operationId, std::move(finish));
+                } else if (!card.isEmpty()) {
+                    finish(PN::Comm::ArtifactStore(cache).stageGeneratedContent(staged->operationId,
+                        personVCardFileName(cardName), card, QStringLiteral("text/vcard")));
                 } else finish({});
             });
     });
@@ -1475,6 +1521,9 @@ bool DesktopAppController::handoffPreparedReview()
         if (request.source.workflow == PN::Comm::Workflow::ContactEmail) {
             recipients = {};
             recipients.recipients = (*review)->recipients;
+            // A shared contact card has no recipients until the user adds them
+            // in the email client.
+            recipients.addressLaterExplicitlyChosen = (*review)->addressLater;
         }
         if (!recipients.validation.ok()) {
             self->m_communicationsController->failSourceRevalidation(recipients.validation);
@@ -2008,6 +2057,50 @@ bool DesktopAppController::importXmlFile(const QString& fileUrlOrPath)
     global_DBObjects.allitemsmodel()->refresh();
     if (FolderManager* fm = FolderManager::instance())
         fm->reload();   // an import may carry updated folder defs/memberships
+    return true;
+}
+
+QString DesktopAppController::contactVCardFileName(const QString& contactId) const
+{
+    QString name;
+    if (!m_databaseOpen || personVCard(global_DBObjects.getDb(), contactId, &name).isEmpty())
+        return {};
+    return personVCardFileName(name);
+}
+
+QVariantMap DesktopAppController::contactVCardDragData(const QString& contactId)
+{
+    QString name;
+    const QByteArray card = m_databaseOpen ? personVCard(global_DBObjects.getDb(), contactId, &name) : QByteArray();
+    if (card.isEmpty())
+        return {};
+    // A folder per drag keeps the file named after the contact while two
+    // contacts with the same name, dragged one after the other, never share a
+    // path that a slow drop target is still reading.
+    const QString folder = QDir(PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile))
+        .filePath(QStringLiteral("vcard-drag/") + QUuid::createUuid().toString(QUuid::WithoutBraces));
+    QSaveFile file(QDir(folder).filePath(personVCardFileName(name)));
+    if (!QDir().mkpath(folder) || !file.open(QIODevice::WriteOnly) || file.write(card) != card.size()
+        || !file.commit())
+        return {};
+    const QString text = QString::fromUtf8(card);
+    return {{QStringLiteral("text/uri-list"), QUrl::fromLocalFile(file.fileName()).toString()},
+            {QStringLiteral("text/vcard"), text},
+            {QStringLiteral("text/x-vcard"), text}};
+}
+
+bool DesktopAppController::exportContactVCard(const QString& contactId, const QString& fileUrlOrPath)
+{
+    const QByteArray card = m_databaseOpen ? personVCard(global_DBObjects.getDb(), contactId) : QByteArray();
+    if (card.isEmpty()) {
+        emit errorOccurred(tr("Export Failed"), tr("The contact is no longer available."));
+        return false;
+    }
+    QSaveFile outfile(localPath(fileUrlOrPath));
+    if (!outfile.open(QIODevice::WriteOnly) || outfile.write(card) != card.size() || !outfile.commit()) {
+        emit errorOccurred(tr("Export Failed"), outfile.errorString());
+        return false;
+    }
     return true;
 }
 

@@ -30,6 +30,20 @@ To navigate to the Contacts List Page, click the **Contacts** icon in the icon r
 2. If the contact has a **Company** assigned, choose **Go To Company** from the menu.
 3. The application will automatically switch to the Companies page and open that company's record.
 
+**To share a contact card (vCard):**
+
+1. Right-click the contact's card (or click its **⋮** button). Team members on a project's **Team** tab and attendees on a meeting note offer the same choices for the person behind the row.
+2. Choose **Email Contact…** and a draft opens right away in your configured email integration, with the contact's `.vcf` file attached. The draft has no recipients and the subject `Contact: <name>`. Add the recipients in your email client.
+3. Or choose **Export Contact…** to save the `.vcf` file. Outlook, Apple Contacts, Thunderbird and phones can import it.
+
+You can also drag the contact's card out of Project Notes. Drop it on a folder or the desktop to save `<name>.vcf`, or on a mail message or contacts app to hand over the card.
+
+The card holds the name, company, role, email, office phone and cell phone. Fields left blank are left out.
+
+**To import contacts from vCards:**
+
+Drop one or more vCards on the contacts list: a `.vcf` file, or a contact dragged from Outlook or Apple Contacts. Each contact's company is matched to an existing company or created. A contact whose name is already in the list isn't added again.
+
 **To edit a contact:**
 
 1. Click the contact's card to open it.

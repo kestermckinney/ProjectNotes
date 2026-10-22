@@ -140,6 +140,13 @@ public:
     Q_INVOKABLE void    sendMeetingNotesEmail(const QString& commaSeparatedEmails,
                                              const QString& subject,
                                              const QString& body);
+    // Contact cards (vCard). emailContactCard opens a Mail draft with the card
+    // attached and no recipients; without a Mail account it falls back to the
+    // share sheet, which reaches other mail apps. shareContactCard opens the
+    // share sheet (Save to Files, AirDrop, Messages, ...). Both report a
+    // failure through errorOccurred().
+    Q_INVOKABLE bool    emailContactCard(const QString& contactId);
+    Q_INVOKABLE bool    shareContactCard(const QString& contactId);
     Q_INVOKABLE QString projectNumberForId(const QString& projectId) const;
     Q_INVOKABLE QString projectNameForId(const QString& projectId) const;
     // Stable {id,name} snapshot of a project's team, for the Primary Contact

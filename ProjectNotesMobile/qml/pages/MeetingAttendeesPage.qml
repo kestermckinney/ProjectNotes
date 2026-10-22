@@ -29,6 +29,8 @@ Page {
 
     StackView.onActivated: AppController.setNoteFilter(root.noteId, "")
 
+    ContactCardDialog { id: cardDialog }
+
     header: ToolBar {
         RowLayout {
             anchors { left: parent.left; right: parent.right; margins: 8 }
@@ -84,6 +86,11 @@ Page {
             required property int index
             required property var model
             width: listView.width
+
+            // Long press → contact card actions for this person (see
+            // ContactsPage.qml for why this is pressAndHold, not a TapHandler).
+            onPressAndHold: cardDialog.openFor((delegateRoot.model.person_id || "").toString(),
+                                               (delegateRoot.model.name || "").toString(), false)
 
             contentItem: RowLayout {
                 spacing: 8

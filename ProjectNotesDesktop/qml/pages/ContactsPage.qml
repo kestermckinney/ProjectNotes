@@ -57,7 +57,10 @@ Item {
     // contact is added. See DesktopAppController::addContactsFromVCardDrop().
     DropArea {
         anchors.fill: parent
+        // Ignore this app's own contact cards being dragged out (ContactDragArea).
+        onEntered: (drag) => { if (drag.source && drag.source.isContactDrag) drag.accepted = false }
         onDropped: (drop) => {
+            if (drop.source && drop.source.isContactDrag) { drop.accepted = false; return }
             var urls = []
             if (drop.hasUrls)
                 for (var i = 0; i < drop.urls.length; i++)
@@ -159,10 +162,15 @@ Item {
 
                     HoverHandler { id: hover }
                     function openRecord() { page.contactActivated(card.index, card.pid) }
-                    TapHandler { onTapped: card.openRecord() }
-                    TapHandler {
-                        acceptedButtons: Qt.RightButton
-                        onTapped: (ev) => card._openMenu(ev.scenePosition.x, ev.scenePosition.y)
+                    // Click to open, right-click for the menu, drag out to
+                    // export the contact as a vCard.
+                    ContactDragArea {
+                        objectName: "contactDragArea"
+                        anchors.fill: parent
+                        z: -1
+                        contactId: card.pid
+                        onActivated: card.openRecord()
+                        onMenuRequested: (sx, sy) => card._openMenu(sx, sy)
                     }
         }
     }

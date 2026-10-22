@@ -101,6 +101,7 @@ qt_add_qml_module(ProjectNotesMobile
         TextFormatter.cpp   TextFormatter.h
         MailComposer.mm     MailComposer.h
         NativeUrlOpener.mm  NativeUrlOpener.h
+        ShareSheet.mm       ShareSheet.h
     QML_FILES
         qml/Theme.qml
         qml/FormField.qml
@@ -142,6 +143,7 @@ qt_add_qml_module(ProjectNotesMobile
         qml/pages/FilterSheet.qml
         qml/pages/SortSheet.qml
         qml/pages/QuickFilterDialog.qml
+        qml/pages/ContactCardDialog.qml
 )
 
 # ── iOS bundle properties ─────────────────────────────────────────────────────

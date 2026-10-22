@@ -107,6 +107,7 @@ set(DESKTOP_QML_FILES
     qml/FolderEditDialog.qml
     qml/FindReplaceBar.qml
     qml/KebabButton.qml
+    qml/ContactDragArea.qml
     qml/ProjectChip.qml
     qml/KeyboardComboBox.qml
     qml/StyledComboBox.qml

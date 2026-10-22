@@ -861,6 +861,124 @@ private slots:
         QVERIFY(!c->prepareContactEmailReview({}));
     }
 
+    void test_11d_contactCardExportAndEmail()
+    {
+        const int row = c->addContact();
+        QVERIFY(row >= 0);
+        QVERIFY(c->saveContact(row, "Card; Person", "card@example.test", "555-0100", "555-0199", m_clientId, "Lead, QA"));
+        const QString contactId = idForColumnValue(c->contactsModel(), 1, "Card; Person");
+        QVERIFY(!contactId.isEmpty());
+        QCOMPARE(c->contactVCardFileName(contactId), "Card; Person.vcf");
+        QVERIFY(c->contactVCardFileName("missing").isEmpty());
+
+        QTemporaryDir dir;
+        const QString path = dir.filePath("card.vcf");
+        QVERIFY(c->exportContactVCard(contactId, QUrl::fromLocalFile(path).toString()));
+        QFile file(path);
+        QVERIFY(file.open(QIODevice::ReadOnly));
+        const QByteArray card = file.readAll();
+        QVERIFY(card.startsWith("BEGIN:VCARD\r\nVERSION:3.0\r\n"));
+        QVERIFY(card.contains("FN:Card\\; Person\r\n"));
+        QVERIFY(card.contains("EMAIL;TYPE=WORK:card@example.test\r\n"));
+        QVERIFY2(card.contains("TEL;TYPE=WORK:5550100\r\n"), card.constData());
+        QVERIFY(card.contains("TEL;TYPE=CELL:5550199\r\n"));
+        QVERIFY(card.contains("TITLE:Lead\\, QA\r\n"));
+        QVERIFY(card.contains("ORG:"));
+        QVERIFY(card.endsWith("END:VCARD\r\n"));
+        QVERIFY(!c->exportContactVCard("missing", path + ".2"));
+
+        // Email Contact skips the review dialog: the draft goes straight to
+        // the email integration with the card attached and no recipients.
+        QSignalSpy errors(c, &DesktopAppController::errorOccurred);
+        QVERIFY(c->emailContactCard(contactId));
+        auto *review = qobject_cast<PN::Comm::CommunicationsController *>(c->communicationsController());
+        QTRY_VERIFY_WITH_TIMEOUT(review->stageName() == "completed" || review->stageName() == "failed", 5000);
+        QCOMPARE(review->preparation().source.workflow, PN::Comm::Workflow::ContactEmail);
+        QVERIFY(review->preparation().recipients.isEmpty());
+        QVERIFY(review->preparation().addressLater);
+        QCOMPARE(review->subject(), "Contact: Card; Person");
+        QCOMPARE(review->attachmentNames(), QStringList{"Card; Person.vcf"});
+        QCOMPARE(review->preparation().attachments.first().mimeType, "text/vcard");
+        // The handoff reached the backend. Offscreen test runs can't open the
+        // .eml in a mail app, which is the only acceptable failure here.
+        if (review->stageName() == "failed") {
+            QCOMPARE(errors.count(), 1);
+            QVERIFY2(review->lastResult().certainty != PN::Comm::OutcomeCertainty::NotStarted
+                         || review->lastResult().error.code.contains("open"),
+                     qPrintable(review->diagnostic()));
+        } else {
+            QCOMPARE(errors.count(), 0);
+        }
+        QVERIFY(!c->emailContactCard({}));
+    }
+
+    void test_11e_vCardDragAndDropImport()
+    {
+        // An exported card dropped on the Contacts list creates the contact
+        // with every field the card carries.
+        const int row = c->addContact();
+        QVERIFY(row >= 0);
+        QVERIFY(c->saveContact(row, "Drop Source", "drop@example.test", "5550111", "5550122", m_clientId, "Engineer"));
+        const QString sourceId = idForColumnValue(c->contactsModel(), 1, "Drop Source");
+        QTemporaryDir dir;
+        const QString path = dir.filePath("Drop Source.vcf");
+        QVERIFY(c->exportContactVCard(sourceId, QUrl::fromLocalFile(path).toString()));
+        QFile file(path);
+        QVERIFY(file.open(QIODevice::ReadOnly));
+        QString card = QString::fromUtf8(file.readAll());
+        card.replace("Drop Source", "Dropped, Person");
+        card.replace("drop@example.test", "dropped@example.test");
+        QCOMPARE(c->addContactsFromVCardDrop({}, card), 1);
+        QSqlQuery q(global_DBObjects.getDb());
+        q.prepare("SELECT id, email, office_phone, cell_phone, client_id, role FROM people WHERE name = ? AND deleted = 0");
+        q.addBindValue("Dropped, Person");
+        QVERIFY(q.exec() && q.next());
+        const QString droppedId = q.value(0).toString();
+        QCOMPARE(q.value(1).toString(), "dropped@example.test");
+        QCOMPARE(q.value(2).toString(), "5550111");
+        QCOMPARE(q.value(3).toString(), "5550122");
+        QCOMPARE(q.value(4).toString(), m_clientId);
+        QCOMPARE(q.value(5).toString(), "Engineer");
+
+        // The exported file dropped on a project's Team list adds the
+        // existing contact to the team instead of creating a duplicate.
+        QCOMPARE(c->addTeamMembersFromVCardDrop(m_projectId, {QUrl::fromLocalFile(path).toString()}, {}), 1);
+        q.prepare("SELECT COUNT(*) FROM people WHERE name = 'Drop Source' AND deleted = 0");
+        QVERIFY(q.exec() && q.next());
+        QCOMPARE(q.value(0).toInt(), 1);
+        q.prepare("SELECT COUNT(*) FROM project_people WHERE project_id = ? AND people_id = ? AND deleted = 0");
+        q.addBindValue(m_projectId);
+        q.addBindValue(sourceId);
+        QVERIFY(q.exec() && q.next());
+        QCOMPARE(q.value(0).toInt(), 1);
+        QVERIFY(!droppedId.isEmpty());
+    }
+
+    void test_11f_vCardDragOutData()
+    {
+        const QString contactId = idForColumnValue(c->contactsModel(), 1, "Drop Source");
+        QVERIFY(!contactId.isEmpty());
+        const QVariantMap data = c->contactVCardDragData(contactId);
+        QCOMPARE(data.keys(), (QStringList{"text/uri-list", "text/vcard", "text/x-vcard"}));
+        const QUrl url(data.value("text/uri-list").toString());
+        QVERIFY(url.isLocalFile());
+        QCOMPARE(QFileInfo(url.toLocalFile()).fileName(), "Drop Source.vcf");
+        QFile file(url.toLocalFile());
+        QVERIFY(file.open(QIODevice::ReadOnly));
+        const QByteArray card = file.readAll();
+        file.close();
+        QCOMPARE(QString::fromUtf8(card), data.value("text/vcard").toString());
+        QCOMPARE(data.value("text/x-vcard"), data.value("text/vcard"));
+        // A second drag of the same contact gets its own file, so a drop
+        // target still reading the first one is never disturbed.
+        const QUrl second(c->contactVCardDragData(contactId).value("text/uri-list").toString());
+        QVERIFY(second != url);
+        QVERIFY(QFile::exists(url.toLocalFile()));
+        QVERIFY(c->contactVCardDragData("missing").isEmpty());
+        // Dragged-out cards live in the transient cache, which is cleared on quit.
+        QVERIFY(url.toLocalFile().contains("/vcard-drag/"));
+    }
+
     void test_12_statusItems()
     {
         c->setProjectFilter(m_projectId);

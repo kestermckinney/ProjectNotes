@@ -42,6 +42,7 @@ set(CORE_SOURCES
     ../databaseupgrade_v6_4_0.cpp ../databaseupgrade_v6_4_0.h
     ../databaseupgrade_v6_5_0.cpp ../databaseupgrade_v6_5_0.h
     ../officedeeplink.cpp   ../officedeeplink.h
+    ../personvcard.cpp      ../personvcard.h
 
     # Data models
     ../actionitemprojectnotesmodel.cpp  ../actionitemprojectnotesmodel.h

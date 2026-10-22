@@ -76,6 +76,7 @@ Displays the full content of a single meeting note.
 ### Meeting Attendees Page
 
 Lists all attendees for a specific meeting note. Tap an attendee to open the [Meeting Attendee Detail Page](#meeting-attendee-detail-page).
+Touch and hold an attendee to share their [contact card](#sharing-a-contact-card).
 
 ### Meeting Attendee Detail Page
 
@@ -146,6 +147,8 @@ When the path is a web link, an **Open** button appears. For a Word, Excel, Powe
 
 Lists all team members assigned to a specific project.
 
+Touch and hold a team member to share their [contact card](#sharing-a-contact-card).
+
 ### Team Member Detail Page
 
 Displays the relationship between a team member and a project, including their role on that project.
@@ -161,6 +164,16 @@ A unified view of tracker items across **all** projects. Useful for seeing all o
 Lists all team members in the database. A **Quick Search** bar filters the list as you type.
 
 - Tap a contact to open the [Contact Detail Page](#contact-detail-page).
+- Touch and hold a contact to share their [contact card](#sharing-a-contact-card). When the contact has a company, the same menu offers **Quick Filter…** to show only that company's contacts.
+
+### Sharing a Contact Card
+
+Touch and hold a contact, team member, or meeting attendee to open its contact card menu.
+
+- **Email Contact…** opens the iOS Mail compose sheet with the person's vCard (`.vcf`) attached and the subject `Contact: <name>`. Add the recipients before you send. If Mail has no account set up, the share sheet opens instead so you can pick another mail app.
+- **Export Contact…** opens the iOS share sheet. Save the card to Files, AirDrop it, send it in Messages, or open it in another app.
+
+The card holds the name, company, role, email, office phone and cell phone.
 
 ### Contact Detail Page
 
