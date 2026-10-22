@@ -1,6 +1,6 @@
 # IFS Cloud Integration
 
-The **IFS Cloud** plugin connects Project Notes to a customized IFS Cloud ERP system. It imports the projects you manage with their budgets and team members, keeps tracker items in step with IFS tasks, generates SSRS status reports, and adds menus that open IFS pages and reports.
+The **IFS Cloud** plugin connects Project Notes to a customized IFS Cloud ERP system. It imports the projects you manage with their budgets and team members, keeps tracker items in step with IFS tasks, generates SSRS status and tracker reports, and adds menus that open IFS pages and reports.
 
 The plugin is written for the custom fields of one IFS deployment (Cornerstone Controls) and will not work against an arbitrary IFS environment.
 
@@ -21,7 +21,8 @@ Open **Settings > IFS Cloud**.
 | **Keep tracker items in step with IFS ISSUES tasks** | off | Syncs tracker items with the tasks of each project's ISSUES activity. |
 | **Report server** | `indvifsbi05` | The SSRS report server's host name. |
 | **Domain user**, **Domain password** | none | The Windows account used for the report server. The password is moved to your system's credential store when you save. |
-| **Project subfolder for reports** | `Project Management/Status Reports` | Where status reports are saved in the project folder. |
+| **Project subfolder for status reports** | `Project Management/Status Reports` | Where status reports are saved in the project folder. |
+| **Project subfolder for tracker reports** | `Project Management/Issues List` | Where tracker reports are saved in the project folder. |
 
 The plugin may reach only the hosts listed in its manifest. If your IFS address or report server differs, the plugin's provider has to add it and rebuild the package; Project Notes then asks you to approve it again.
 
@@ -46,6 +47,12 @@ With tracker sync on, each active project's items are compared with the tasks of
 Right-click a project and choose **Generate Status Report**. Choose the report date and how to send it: in the message body (Windows, using Word), as a PDF, as a Word document, or not at all. The plugin downloads the report from the report server with the domain account, saves the PDF (and a Word copy, if you ask) in the project's report folder, prepares the email for your review, and records the date as the project's last status date.
 
 The email goes to the project's default status report audience, or to the team members marked to receive status reports when there is none.
+
+## Tracker reports
+
+Right-click a project and choose **Generate Tracker Report** to file and send the SSRS **Issues List** report. The choices match the status report, including the Windows-only option that puts the Word version of the report in the message body. The report date only names the file (`20261001 P4000 Tracker Report.pdf`) and dates the subject; it doesn't change the project's last status date.
+
+The PDF and the optional Word copy go in the tracker report subfolder. The email goes to the project's default Tracker Items Report audience, falling back to the team members marked to receive status reports.
 
 ## IFS shortcuts
 

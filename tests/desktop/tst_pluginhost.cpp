@@ -1107,7 +1107,7 @@ void PluginHostTest::ifsCloudPlugin()
             n += menu.toMap().value(QStringLiteral("pluginId")).toString() == id;
         return n;
     };
-    QTRY_COMPARE(shortcutMenus(), 6 + 7 + 1);   // IFS pages (one more is on contacts), reports, Generate Status Report
+    QTRY_COMPARE(shortcutMenus(), 6 + 7 + 2);   // IFS pages (one more is on contacts), reports, Generate Status/Tracker Report
 
     registry.runMenu(id, QStringLiteral("import"), {}, {});
     QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(id, QStringLiteral("ui.notify")).size(), 1, 15000);
@@ -1182,6 +1182,21 @@ void PluginHostTest::ifsCloudPlugin()
         if (r.target.startsWith(QLatin1String("/ReportServer/")))
             basicAuth = r.authorization == "Basic " + QByteArray("CORP\\pm:hunter2").toBase64();
     QVERIFY(basicAuth);
+
+    // SSRS tracker report: the Issues List report, filed and emailed the same way.
+    const int trackerRequestsBefore = ifs.requests.size();
+    registry.runMenu(id, QStringLiteral("tracker-report"), QStringLiteral("projects"), QStringLiteral("project-p4000"));
+    QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(id, QStringLiteral("ui.notify")).size(), 3, 15000);
+    QVERIFY2(registry.plugin(id).lastError.isEmpty(), qPrintable(registry.plugin(id).lastError));
+    const QList<QVariantList> trackerComposed = services.argsOf(id, QStringLiteral("email.compose"));
+    QCOMPARE(trackerComposed.size(), 2);
+    const QVariantMap trackerMessage = trackerComposed.last().value(0).toMap();
+    QCOMPARE(trackerMessage.value(QStringLiteral("subject")).toString(), QStringLiteral("P4000 IT New Server Install Tracker Report 10/01/2026"));
+    QVERIFY(trackerMessage.value(QStringLiteral("attachments")).toList().value(0).toString().endsWith(QLatin1String("20261001 P4000 Tracker Report.pdf")));
+    bool issuesList = false;
+    for (int i = trackerRequestsBefore; i < ifs.requests.size(); ++i)
+        issuesList |= ifs.requests.at(i).target.contains(QLatin1String("Issues+List&ProjectId=P4000"));
+    QVERIFY(issuesList);
     QVERIFY(errors.isEmpty());
 }
 
@@ -1219,7 +1234,7 @@ void PluginHostTest::ifsCloudDefaultShortcuts()
             n += menu.toMap().value(QStringLiteral("pluginId")).toString() == id;
         return n;
     };
-    QTRY_COMPARE(shortcutMenus(QStringLiteral("projects")), 6 + 7 + 1);   // IFS pages, reports, Generate Status Report
+    QTRY_COMPARE(shortcutMenus(QStringLiteral("projects")), 6 + 7 + 2);   // IFS pages, reports, Generate Status/Tracker Report
     QCOMPARE(shortcutMenus(QStringLiteral("contacts")), 1);                // Open Time Entry
 
     QSettings stored(organization, QStringLiteral("PluginSettings"));

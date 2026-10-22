@@ -1,12 +1,12 @@
-// IFS Cloud: project import, tracker item sync, SSRS status reports and IFS
-// shortcut menus. Replaces threads/ifssync_thread.py,
+// IFS Cloud: project import, tracker item sync, SSRS status and tracker reports,
+// and IFS shortcut menus. Replaces threads/ifssync_thread.py,
 // plugins/ifscloud_plugin_settings.py, plugins/ifs_ssrs_generate_plugin.py and
 // plugins/includes/ifs_tools.py. Ships separately from Project Notes.
 import { log, menus, secrets, settings, timers, ui } from "projectnotes";
 import { replaceVariables } from "projectnotes/common";
 import { hasSettings, importProjects, syncActivityTasks, syncTrackerItems } from "./ifs.mjs";
 import { ifsUrl, reset } from "./sso.mjs";
-import { generateStatusReport } from "./ssrs.mjs";
+import { generateStatusReport, generateTrackerReport } from "./ssrs.mjs";
 
 const SYNC_MINUTES = 3;
 
@@ -148,4 +148,5 @@ export function onStop() {
 export function* onMenu(menuId, context) {
     if (menuId === "import") yield importNow();
     else if (menuId === "status-report") yield generateStatusReport(context);
+    else if (menuId === "tracker-report") yield generateTrackerReport(context);
 }
