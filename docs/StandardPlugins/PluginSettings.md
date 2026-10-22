@@ -26,7 +26,7 @@ Settings saved by the Python plugins of earlier releases carry over: each plugin
 
 ## Backing up and moving plugin settings
 
-Plugin settings belong to one computer, so **Settings > Plugins** has a **Back Up Plugin Settings** section for copying them somewhere else. It lists each installed plugin that has saved settings. Tick the ones you want and click **Export Settings…** to save them in a JSON file. On the other computer, or after a reinstall, click **Import Settings…** and pick the file. Imported values replace the same settings on that computer. Settings the file doesn't mention stay as they are.
+Plugin settings belong to one computer. **File > Export Settings…** saves them together with the application settings (see [Backing Up Settings](<../InterfaceOverview/Preferences.md#backing-up-settings>)). For plugins alone, scroll to the bottom of **Settings > Plugins**, below the plugin list, to the **Back Up Plugin Settings** section. It lists each installed plugin that has saved settings. Tick the ones you want and click **Export Settings…** to save them in a JSON file. On the other computer, or after a reinstall, click **Import Settings…** and pick the file. Imported values replace the same settings on that computer. Settings the file doesn't mention stay as they are.
 
 Passwords are never written to the file. They stay in the operating system's credential store, so enter them again after an import.
 

@@ -49,6 +49,53 @@ QVariantMap describe(const PluginInfo& info)
 }
 
 const QString kSettingsBackupFormat = QStringLiteral("projectnotes-plugin-settings");
+const QString kAllSettingsFormat = QStringLiteral("projectnotes-settings");
+
+// Application settings a full settings backup leaves out: secrets, window and
+// sidebar layout that belongs to this screen, one-time migration flags, and
+// state tied to this computer's sign-ins. Sync stays off until the password
+// and encryption phrase are entered again.
+bool isPortableAppSettingKey(const QString& key)
+{
+    const QString name = key.section(QLatin1Char('/'), -1);
+    for (const char* secret : {"password", "secret", "token", "phrase"})
+        if (name.contains(QLatin1String(secret), Qt::CaseInsensitive))
+            return false;
+    for (const char* prefix : {"UI:", "ProjectFolders/Collapsed/", "FileFinder/v1/grantedScopes/", "_migrated/"})
+        if (key.startsWith(QLatin1String(prefix)))
+            return false;
+    static const QSet<QString> machineKeys {
+        QStringLiteral("Width"), QStringLiteral("Height"), QStringLiteral("X"), QStringLiteral("Y"),
+        QStringLiteral("Maximized"), QStringLiteral("UserPluginsMoved"), QStringLiteral("PythonPluginsNoticeShown"),
+        QStringLiteral("FileFinder/migrationComplete"), QStringLiteral("FileFinder/graphFolderState"),
+        QStringLiteral("Sync/Enabled")};
+    return !machineKeys.contains(key);
+}
+
+// Reads a settings backup file into `root`. Returns an error or "".
+QString readSettingsFile(const QUrl& file, QJsonObject* root)
+{
+    const QString local = file.isLocalFile() ? file.toLocalFile() : file.toString();
+    QFile in(local);
+    if (!in.open(QIODevice::ReadOnly))
+        return PluginUiController::tr("Could not open %1: %2").arg(QDir::toNativeSeparators(local), in.errorString());
+    QJsonParseError parseError;
+    const QJsonDocument doc = QJsonDocument::fromJson(in.readAll(), &parseError);
+    if (parseError.error != QJsonParseError::NoError || !doc.isObject())
+        return PluginUiController::tr("%1 is not a Project Notes settings file.").arg(QDir::toNativeSeparators(local));
+    *root = doc.object();
+    return {};
+}
+
+// Writes `root` to `file` as indented JSON. Returns an error or "".
+QString writeSettingsFile(const QUrl& file, const QJsonObject& root)
+{
+    const QString local = file.isLocalFile() ? file.toLocalFile() : file.toString();
+    QSaveFile out(local);
+    if (!out.open(QIODevice::WriteOnly) || out.write(QJsonDocument(root).toJson(QJsonDocument::Indented)) < 0 || !out.commit())
+        return PluginUiController::tr("Could not write %1: %2").arg(QDir::toNativeSeparators(local), out.errorString());
+    return {};
+}
 
 // Bookkeeping the runtime writes next to a plugin's settings (legacy copy flags).
 bool isInternalSettingKey(const QString& key)
@@ -388,65 +435,80 @@ QVariantList PluginUiController::settingsBackupCandidates() const
     return out;
 }
 
+QJsonObject PluginUiController::pluginSettingsJson(const QStringList& pluginIds) const
+{
+    QJsonObject plugins;
+    QSettings settings(m_organization, QStringLiteral("PluginSettings"));
+    settings.setFallbacksEnabled(false);
+    for (const QString& id : pluginIds) {
+        const QSet<QString> skip = m_registry ? passwordKeys(m_registry->plugin(id)) : QSet<QString>();
+        settings.beginGroup(id);
+        QJsonObject values;
+        for (const QString& key : settings.allKeys())
+            if (!isInternalSettingKey(key) && !skip.contains(key))
+                values.insert(key, QJsonValue::fromVariant(settings.value(key)));
+        settings.endGroup();
+        if (!values.isEmpty())
+            plugins.insert(id, values);
+    }
+    return plugins;
+}
+
+QJsonObject PluginUiController::appSettingsJson() const
+{
+    QJsonObject values;
+    QSettings settings(m_organization, QStringLiteral("AppSettings"));
+    settings.setFallbacksEnabled(false);
+    for (const QString& key : settings.allKeys()) {
+        const QVariant value = settings.value(key);
+        if (isPortableAppSettingKey(key) && value.isValid())
+            values.insert(key, QJsonValue::fromVariant(value));
+    }
+    return values;
+}
+
 QString PluginUiController::exportSettings(const QUrl& file, const QStringList& pluginIds)
 {
-    const QString local = file.isLocalFile() ? file.toLocalFile() : file.toString();
-    QJsonObject plugins;
-    {
-        QSettings settings(m_organization, QStringLiteral("PluginSettings"));
-        settings.setFallbacksEnabled(false);
-        for (const QString& id : pluginIds) {
-            const QSet<QString> skip = m_registry ? passwordKeys(m_registry->plugin(id)) : QSet<QString>();
-            settings.beginGroup(id);
-            QJsonObject values;
-            for (const QString& key : settings.allKeys())
-                if (!isInternalSettingKey(key) && !skip.contains(key))
-                    values.insert(key, QJsonValue::fromVariant(settings.value(key)));
-            settings.endGroup();
-            if (!values.isEmpty())
-                plugins.insert(id, values);
-        }
-    }
+    const QJsonObject plugins = pluginSettingsJson(pluginIds);
     if (plugins.isEmpty())
         return tr("The selected plugins have no saved settings.");
 
     const QJsonObject root {{QStringLiteral("format"), kSettingsBackupFormat}, {QStringLiteral("version"), 1},
                             {QStringLiteral("exported"), QDateTime::currentDateTime().toString(Qt::ISODate)},
                             {QStringLiteral("plugins"), plugins}};
-    QSaveFile out(local);
-    if (!out.open(QIODevice::WriteOnly) || out.write(QJsonDocument(root).toJson(QJsonDocument::Indented)) < 0 || !out.commit())
-        return tr("Could not write %1: %2").arg(QDir::toNativeSeparators(local), out.errorString());
-    QLog_Info(CONSOLELOG, QStringLiteral("Exported settings of %1 plugin(s) to %2.").arg(plugins.size()).arg(local));
+    if (const QString error = writeSettingsFile(file, root); !error.isEmpty())
+        return error;
+    QLog_Info(CONSOLELOG, QStringLiteral("Exported settings of %1 plugin(s) to %2.").arg(plugins.size()).arg(urlToPath(file)));
     return {};
 }
 
-QVariantMap PluginUiController::importSettings(const QUrl& file)
+QString PluginUiController::exportAllSettings(const QUrl& file)
 {
-    const auto fail = [](const QString& error) {
-        return QVariantMap {{QStringLiteral("ok"), false}, {QStringLiteral("error"), error}};
-    };
-    const QString local = file.isLocalFile() ? file.toLocalFile() : file.toString();
-    QFile in(local);
-    if (!in.open(QIODevice::ReadOnly))
-        return fail(tr("Could not open %1: %2").arg(QDir::toNativeSeparators(local), in.errorString()));
-    QJsonParseError parseError;
-    const QJsonDocument doc = QJsonDocument::fromJson(in.readAll(), &parseError);
-    if (parseError.error != QJsonParseError::NoError || !doc.isObject())
-        return fail(tr("%1 is not a plugin settings file.").arg(QDir::toNativeSeparators(local)));
+    // Every group, not only installed plugins: a plugin removed for now, or an
+    // old Python group still waiting for its successor, keeps its settings.
+    const QStringList pluginIds = QSettings(m_organization, QStringLiteral("PluginSettings")).childGroups();
+    const QJsonObject app = appSettingsJson();
+    const QJsonObject plugins = pluginSettingsJson(pluginIds);
+    if (app.isEmpty() && plugins.isEmpty())
+        return tr("There are no saved settings to export.");
 
-    // Files from exportSettings name their format. Any other object is an
-    // export from the Python plugins' Settings Migrator: {group: {key: value}}.
-    const QJsonObject root = doc.object();
-    const bool current = root.value(QStringLiteral("format")).toString() == kSettingsBackupFormat;
-    if (!current && root.contains(QStringLiteral("format")))
-        return fail(tr("%1 is not a plugin settings file.").arg(QDir::toNativeSeparators(local)));
-    const QJsonObject groups = current ? root.value(QStringLiteral("plugins")).toObject() : root;
+    const QJsonObject root {{QStringLiteral("format"), kAllSettingsFormat}, {QStringLiteral("version"), 1},
+                            {QStringLiteral("exported"), QDateTime::currentDateTime().toString(Qt::ISODate)},
+                            {QStringLiteral("app"), app}, {QStringLiteral("plugins"), plugins}};
+    if (const QString error = writeSettingsFile(file, root); !error.isEmpty())
+        return error;
+    QLog_Info(CONSOLELOG, QStringLiteral("Exported %1 application setting(s) and settings of %2 plugin(s) to %3.")
+                              .arg(app.size()).arg(plugins.size()).arg(urlToPath(file)));
+    return {};
+}
 
+QVariantMap PluginUiController::applyPluginSettings(const QJsonObject& groups, bool legacy)
+{
     // Python plugin groups a JavaScript plugin took over: group -> {plugin id, key prefix}.
     // A group with no installed successor is stored as is, where that plugin's
     // one-time legacy copy finds it once it is installed.
     QHash<QString, QPair<QString, QString>> successors;
-    if (m_registry)
+    if (legacy && m_registry)
         for (const PluginInfo& info : m_registry->plugins())
             for (const auto& [group, prefix] : info.manifest.legacySettings)
                 successors.insert(group, {info.manifest.id, prefix});
@@ -461,7 +523,7 @@ QVariantMap PluginUiController::importSettings(const QUrl& file)
                 continue;
             QString target = it.key();
             QString prefix;
-            if (!current && successors.contains(target)) {
+            if (successors.contains(target)) {
                 prefix = successors.value(target).second;
                 target = successors.value(target).first;
             }
@@ -477,8 +539,6 @@ QVariantMap PluginUiController::importSettings(const QUrl& file)
             settings.endGroup();
         }
     }
-    if (count == 0)
-        return fail(tr("The file has no plugin settings."));
 
     QStringList names;
     for (auto it = changed.constBegin(); it != changed.constEnd(); ++it) {
@@ -489,10 +549,74 @@ QVariantMap PluginUiController::importSettings(const QUrl& file)
     }
     names.removeDuplicates();
     names.sort(Qt::CaseInsensitive);
-    ++m_settingsRevision;
-    emit settingsRevisionChanged();
-    QLog_Info(CONSOLELOG, QStringLiteral("Imported %1 plugin setting(s) from %2.").arg(count).arg(local));
-    return {{QStringLiteral("ok"), true}, {QStringLiteral("plugins"), names}, {QStringLiteral("count"), count}};
+    if (count > 0) {
+        ++m_settingsRevision;
+        emit settingsRevisionChanged();
+    }
+    return {{QStringLiteral("plugins"), names}, {QStringLiteral("count"), count}};
+}
+
+QVariantMap PluginUiController::importSettings(const QUrl& file)
+{
+    const auto fail = [](const QString& error) {
+        return QVariantMap {{QStringLiteral("ok"), false}, {QStringLiteral("error"), error}};
+    };
+    QJsonObject root;
+    if (const QString error = readSettingsFile(file, &root); !error.isEmpty())
+        return fail(error);
+
+    // Files from exportSettings and exportAllSettings name their format; this
+    // reads only the plugin part of the second. Any other object is an export
+    // from the Python plugins' Settings Migrator: {group: {key: value}}.
+    const QString format = root.value(QStringLiteral("format")).toString();
+    const bool current = format == kSettingsBackupFormat || format == kAllSettingsFormat;
+    if (!current && root.contains(QStringLiteral("format")))
+        return fail(tr("%1 is not a plugin settings file.").arg(urlToPath(file)));
+    const QJsonObject groups = current ? root.value(QStringLiteral("plugins")).toObject() : root;
+
+    QVariantMap result = applyPluginSettings(groups, !current);
+    const int count = result.value(QStringLiteral("count")).toInt();
+    if (count == 0)
+        return fail(tr("The file has no plugin settings."));
+    QLog_Info(CONSOLELOG, QStringLiteral("Imported %1 plugin setting(s) from %2.").arg(count).arg(urlToPath(file)));
+    result.insert(QStringLiteral("ok"), true);
+    return result;
+}
+
+QVariantMap PluginUiController::importAllSettings(const QUrl& file)
+{
+    const auto fail = [](const QString& error) {
+        return QVariantMap {{QStringLiteral("ok"), false}, {QStringLiteral("error"), error}};
+    };
+    QJsonObject root;
+    if (const QString error = readSettingsFile(file, &root); !error.isEmpty())
+        return fail(error);
+
+    // A plugin settings backup imports here too; it just has no "app" part.
+    const QString format = root.value(QStringLiteral("format")).toString();
+    if (format != kAllSettingsFormat && format != kSettingsBackupFormat)
+        return fail(tr("%1 is not a Project Notes settings file.").arg(urlToPath(file)));
+
+    int appCount = 0;
+    {
+        QSettings settings(m_organization, QStringLiteral("AppSettings"));
+        const QJsonObject app = root.value(QStringLiteral("app")).toObject();
+        for (auto it = app.constBegin(); it != app.constEnd(); ++it) {
+            if (!isPortableAppSettingKey(it.key()) || it.value().isNull() || it.value().isUndefined())
+                continue;
+            settings.setValue(it.key(), it.value().toVariant());
+            ++appCount;
+        }
+    }
+    QVariantMap result = applyPluginSettings(root.value(QStringLiteral("plugins")).toObject(), false);
+    const int pluginCount = result.value(QStringLiteral("count")).toInt();
+    if (appCount == 0 && pluginCount == 0)
+        return fail(tr("The file has no settings."));
+    QLog_Info(CONSOLELOG, QStringLiteral("Imported %1 application setting(s) and %2 plugin setting(s) from %3.")
+                              .arg(appCount).arg(pluginCount).arg(urlToPath(file)));
+    result.insert(QStringLiteral("ok"), true);
+    result.insert(QStringLiteral("appCount"), appCount);
+    return result;
 }
 
 QJSValue PluginUiController::invokePlugin(QJSEngine* engine, const QString& pluginId, const QString& token,

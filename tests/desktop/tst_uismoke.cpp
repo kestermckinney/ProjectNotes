@@ -1726,6 +1726,74 @@ private slots:
         assertClean("plugin settings backup round trip");
     }
 
+    // File > Export / Import Settings: application settings and plugin settings
+    // in one file. Secrets and window layout stay out of the file.
+    void test_09e_allSettingsBackupRoundTrip()
+    {
+        clearWarnings();
+        PluginUiController* ui = PluginUiController::instance();
+        QVERIFY(ui);
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        const QString org = DesktopAppController::localSettingsOrganization();
+        const QString id = QStringLiteral("test.allsettings");
+        {
+            QSettings app(org, QStringLiteral("AppSettings"));
+            app.setValue(QStringLiteral("Email/v1/SenderAddress"), QStringLiteral("me@example.com"));
+            app.setValue(QStringLiteral("Sync/Password"), QStringLiteral("hunter2"));
+            app.setValue(QStringLiteral("Sync/EncryptionPhrase"), QStringLiteral("phrase"));
+            app.setValue(QStringLiteral("UI:QMLMainWindow:Width"), 1234);
+        }
+        ui->setSetting(id, QStringLiteral("folder"), QStringLiteral("Plans"));
+
+        const QUrl backup = QUrl::fromLocalFile(dir.filePath(QStringLiteral("all.json")));
+        QCOMPARE(ui->exportAllSettings(backup), QString());
+        QFile file(backup.toLocalFile());
+        QVERIFY(file.open(QIODevice::ReadOnly));
+        const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();
+        QCOMPARE(root.value(QStringLiteral("format")).toString(), QStringLiteral("projectnotes-settings"));
+        const QJsonObject appJson = root.value(QStringLiteral("app")).toObject();
+        QCOMPARE(appJson.value(QStringLiteral("Email/v1/SenderAddress")).toString(), QStringLiteral("me@example.com"));
+        QVERIFY(!appJson.contains(QStringLiteral("Sync/Password")));
+        QVERIFY(!appJson.contains(QStringLiteral("Sync/EncryptionPhrase")));
+        QVERIFY(!appJson.contains(QStringLiteral("UI:QMLMainWindow:Width")));
+        QCOMPARE(root.value(QStringLiteral("plugins")).toObject().value(id).toObject()
+                     .value(QStringLiteral("folder")).toString(), QStringLiteral("Plans"));
+
+        {
+            QSettings app(org, QStringLiteral("AppSettings"));
+            app.setValue(QStringLiteral("Email/v1/SenderAddress"), QStringLiteral("changed@example.com"));
+        }
+        ui->setSetting(id, QStringLiteral("folder"), QStringLiteral("Changed"));
+        const QVariantMap result = ui->importAllSettings(backup);
+        QVERIFY2(result.value(QStringLiteral("ok")).toBool(), qPrintable(result.value(QStringLiteral("error")).toString()));
+        QVERIFY(result.value(QStringLiteral("appCount")).toInt() > 0);
+        QCOMPARE(ui->settingValues(id).value(QStringLiteral("folder")).toString(), QStringLiteral("Plans"));
+        {
+            QSettings app(org, QStringLiteral("AppSettings"));
+            QCOMPARE(app.value(QStringLiteral("Email/v1/SenderAddress")).toString(), QStringLiteral("me@example.com"));
+            QCOMPARE(app.value(QStringLiteral("Sync/Password")).toString(), QStringLiteral("hunter2"));
+            app.remove(QStringLiteral("Email/v1/SenderAddress"));
+            app.remove(QStringLiteral("Sync/Password"));
+            app.remove(QStringLiteral("Sync/EncryptionPhrase"));
+            app.remove(QStringLiteral("UI:QMLMainWindow:Width"));
+        }
+
+        // The plugin-only import reads the plugin part of a full backup.
+        ui->setSetting(id, QStringLiteral("folder"), QStringLiteral("Changed"));
+        QVERIFY(ui->importSettings(backup).value(QStringLiteral("ok")).toBool());
+        QCOMPARE(ui->settingValues(id).value(QStringLiteral("folder")).toString(), QStringLiteral("Plans"));
+
+        QFile other(dir.filePath(QStringLiteral("other.json")));
+        QVERIFY(other.open(QIODevice::WriteOnly));
+        other.write("{\"group\": {\"key\": 1}}");
+        other.close();
+        QVERIFY(!ui->importAllSettings(QUrl::fromLocalFile(other.fileName())).value(QStringLiteral("ok")).toBool());
+
+        ui->setSetting(id, QStringLiteral("folder"), QVariant());
+        assertClean("all settings backup round trip");
+    }
+
     void cleanupTestCase()
     {
         delete engine;   // tear the window down before the app object goes away

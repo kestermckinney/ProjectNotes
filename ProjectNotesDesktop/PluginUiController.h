@@ -8,6 +8,7 @@
 
 #include <QHash>
 #include <QJSValue>
+#include <QJsonObject>
 #include <QObject>
 #include <QPointer>
 #include <QUrl>
@@ -87,6 +88,14 @@ public:
     // Settings Migrator, and writes its values over the current ones.
     // Returns {ok, error, plugins (names), count}.
     Q_INVOKABLE QVariantMap importSettings(const QUrl& file);
+    // File > Export Settings: application settings plus every plugin's settings
+    // in one file. Passwords, the sync encryption phrase, window layout and
+    // other per-computer state are left out. Returns an error or "".
+    Q_INVOKABLE QString exportAllSettings(const QUrl& file);
+    // Reads a file from exportAllSettings (or exportSettings) and writes its
+    // values over the current ones. Application settings take full effect
+    // after a restart. Returns {ok, error, plugins (names), count, appCount}.
+    Q_INVOKABLE QVariantMap importAllSettings(const QUrl& file);
     // Calls an exported plugin function from a Settings section or dialog.
     QJSValue invokePlugin(QJSEngine* engine, const QString& pluginId, const QString& token, const QString& name, const QJSValue& args);
 
@@ -108,6 +117,13 @@ private:
         QVariantMap params;
         PN::Plugins::Reply reply;
     };
+    QJsonObject pluginSettingsJson(const QStringList& pluginIds) const;
+    QJsonObject appSettingsJson() const;
+    // Writes {plugin id: {key: value}} groups to the plugin settings and tells
+    // running plugins. `legacy` maps Python groups through legacySettings.
+    // Returns {plugins (names), count}.
+    QVariantMap applyPluginSettings(const QJsonObject& groups, bool legacy);
+
     QPointer<PN::Plugins::PluginRegistry> m_registry;
     QHash<int, Request> m_requests;
     int m_nextRequest = 1;

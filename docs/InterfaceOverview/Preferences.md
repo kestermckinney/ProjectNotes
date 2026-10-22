@@ -189,6 +189,18 @@ The **Project Manager** and **Managing Company** settings are saved in the `appl
 
 The **Email, Contacts, and Calendar** choice and the Thunderbird path are stored in your local OS profile instead, so each machine can use a different mail application. See [Plugin Settings — Where Settings Are Stored](<../StandardPlugins/PluginSettings.md>) for the full breakdown.
 
+## Backing Up Settings
+
+Settings kept in your OS profile stay on one computer. To copy them, choose **File > Export Settings…** and save the JSON file. On the new computer, or after a reinstall, choose **File > Import Settings…** and pick that file. Values in the file replace the same settings, and anything the file doesn't mention is left alone. Restart Project Notes after an import so every application setting takes effect. Plugin settings apply right away.
+
+The file covers application settings (email backend, File Finder rules, report folders, sync server and email, view options) and the settings of every plugin. Some things stay out on purpose:
+
+- Passwords and the sync encryption phrase. Enter them again on the new computer, then turn sync back on.
+- Window size and position, sidebar width, and which project folders are collapsed.
+- Office 365 sign-in state. Sign in again where needed.
+
+To back up only plugin settings, use the **Back Up Plugin Settings** section at the bottom of **Settings > Plugins**. Its **Import Settings…** button also reads a full settings file and takes just the plugin part.
+
 ## Related Documentation
 
 - [Contacts List Page](ContactsListPage.md) — Manage contacts in your database

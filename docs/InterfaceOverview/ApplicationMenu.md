@@ -17,6 +17,8 @@ Most items also have a keyboard shortcut, shown beside the item's label. The tab
 | Search… | Switches to the [Search Page](<SearchPage.md>). | Ctrl+K |
 | Export XML… | Exports the record currently open (a project, note, item, contact, or company) to a [Project Notes XML](<../PluginsOverview/ProjectNotesXML.md>) file. Only enabled when a record is open — same action as the **Export** button in the top bar. | Ctrl+Shift+E |
 | Import XML… | Imports records from a Project Notes XML file — see [Getting Started](<../Introduction/GettingStarted.md>). | Ctrl+Shift+I |
+| Export Settings… | Saves your application settings and every plugin's settings in one JSON file. Passwords and the sync encryption phrase are left out. See [Backing Up Settings](<Preferences.md#backing-up-settings>). | — |
+| Import Settings… | Restores settings from a file saved with **Export Settings…**, on this computer or another one. Restart Project Notes afterward. | — |
 | Preferences | Opens the [Settings page](<Preferences.md>). | Ctrl+, |
 | Sync Now | Runs an immediate incremental sync cycle — see [Cloud Sync](<RemoteHost.md>). | — |
 | Sync All | Runs a full re-push and re-pull of the whole database — see [Cloud Sync](<RemoteHost.md>). | — |

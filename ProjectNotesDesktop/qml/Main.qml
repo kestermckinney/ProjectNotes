@@ -509,6 +509,8 @@ ApplicationWindow {
                 exportRecord(it.exportTable, it.exportId)
             break
         case "import":      importDialog.open(); break
+        case "export_settings": settingsExportPicker.open(); break
+        case "import_settings": settingsImportPicker.open(); break
         case "preferences": selectSection("settings"); break
         case "about":       aboutDialog.open(); break
         case "sync":        DesktopAppController.syncNow(); break
@@ -1753,6 +1755,67 @@ ApplicationWindow {
         fileMode: FileDialog.OpenFile
         nameFilters: [ qsTr("XML files (*.xml)") ]
         onAccepted: DesktopAppController.importXmlFile(selectedFile)
+    }
+
+    // File > Export / Import Settings: application and plugin settings in one
+    // JSON file, to restore here or move to another computer.
+    FileDialog {
+        id: settingsExportPicker
+        title: qsTr("Export Settings")
+        fileMode: FileDialog.SaveFile
+        defaultSuffix: "json"
+        nameFilters: [ qsTr("JSON files (*.json)") ]
+        onAccepted: {
+            var error = PluginUiController.exportAllSettings(selectedFile)
+            if (error !== "") {
+                errorDialog.title = qsTr("Export Settings")
+                errorLabel.text = error
+                errorDialog.open()
+                return
+            }
+            infoDialog.title = qsTr("Export Settings")
+            infoLabel.text = qsTr("Settings saved to %1.\n\nPasswords and the sync encryption phrase are not included.")
+                                 .arg(PluginUiController.urlToPath(selectedFile))
+            infoDialog.open()
+        }
+    }
+    FileDialog {
+        id: settingsImportPicker
+        title: qsTr("Import Settings")
+        fileMode: FileDialog.OpenFile
+        nameFilters: [ qsTr("JSON files (*.json)"), qsTr("All files (*)") ]
+        onAccepted: settingsImportConfirm.openFor(selectedFile)
+    }
+    ThemedMessageDialog {
+        id: settingsImportConfirm
+        property url source
+        iconName: "settings_backup_restore"
+        iconColor: Theme.accent
+        confirmText: qsTr("Import")
+        function openFor(url) {
+            source = url
+            title = qsTr("Import Settings")
+            message = qsTr("Settings in %1 replace the current values of the same settings. Other settings are kept.")
+                          .arg(PluginUiController.urlToPath(url))
+            open()
+        }
+        onConfirmed: {
+            var result = PluginUiController.importAllSettings(source)
+            if (!result.ok) {
+                errorDialog.title = qsTr("Import Settings")
+                errorLabel.text = result.error
+                errorDialog.open()
+                return
+            }
+            var lines = [qsTr("Imported %n application setting(s).", "", result.appCount)]
+            if (result.count > 0)
+                lines.push(qsTr("Imported %n plugin setting(s) for %1.", "", result.count).arg(result.plugins.join(", ")))
+            if (result.appCount > 0)
+                lines.push(qsTr("Restart Project Notes to use the imported application settings."))
+            infoDialog.title = qsTr("Import Settings")
+            infoLabel.text = lines.join("\n\n")
+            infoDialog.open()
+        }
     }
 
     // Filter editor (opened from the TopBar Filter button and the hamburger menu).

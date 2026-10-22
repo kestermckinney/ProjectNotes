@@ -65,6 +65,8 @@ Popup {
             { icon: "search",    label: qsTr("Search…"),     key: AppShortcuts.text("search"),      action: "search" },
             { icon: "ios_share", label: qsTr("Export XML…"), key: AppShortcuts.text("export"),      action: "export" },
             { icon: "download",  label: qsTr("Import XML…"), key: AppShortcuts.text("import"),      action: "import" },
+            { icon: "settings_backup_restore", label: qsTr("Export Settings…"), key: "", action: "export_settings" },
+            { icon: "restore_page", label: qsTr("Import Settings…"), key: "", action: "import_settings" },
             { icon: "settings",  label: qsTr("Preferences"), key: AppShortcuts.text("preferences"), action: "preferences" },
             { icon: "sync",      label: qsTr("Sync Now"),    key: "",   action: "sync" },
             { icon: "sync_alt",  label: qsTr("Sync All"),    key: "",   action: "sync_all" },
