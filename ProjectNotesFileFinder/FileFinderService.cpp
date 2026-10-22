@@ -226,8 +226,10 @@ void FileFinderService::initialize(const QString &databasePath, QReadWriteLock *
     m_initialized = true;
     applyConfiguration();
     QMetaObject::invokeMethod(m_worker, &FileFinderWorker::start, Qt::QueuedConnection);
-    if (m_office365Enabled)
-        m_office365Service->restoreSession();
+    // The Microsoft account is shared with email, calendar, contacts and
+    // plugins, which sign in without turning on File Finder's OneDrive search.
+    // Restore it whenever a refresh token was saved.
+    m_office365Service->restoreSession();
     m_status = m_enabled ? tr("File Finder is ready") : tr("File Finder is disabled");
     emit settingsChanged();
     emit statusChanged();
