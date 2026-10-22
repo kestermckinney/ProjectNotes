@@ -64,6 +64,14 @@ function registerShortcuts() {
     if (items.length) menus.register(items);
 }
 
+// The Python plugin filled in the IFS address and report server on first
+// load; without them none of the shortcut menus appear. A value the user
+// cleared stays cleared.
+function seedDefaults() {
+    if (settings.get("URL") === null) settings.set("URL", "https://ifs.cornerstonecontrols.com");
+    if (settings.get("ReportServer") === null) settings.set("ReportServer", "indvifsbi05");
+}
+
 // The domain password belongs in the credential store, not in settings.
 function* movePasswordToSecrets() {
     const password = settings.get("DomainPassword", "");
@@ -119,6 +127,7 @@ function* importNow() {
 
 export function* onStart() {
     stopped = false;
+    seedDefaults();
     yield movePasswordToSecrets();
     registerShortcuts();
     schedule();

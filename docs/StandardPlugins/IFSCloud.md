@@ -16,10 +16,10 @@ Open **Settings > IFS Cloud**.
 
 | Setting | Default | Description |
 | :--- | :--- | :--- |
-| **IFS Cloud address** | none | The base address of your IFS Cloud system, for example `https://ifs.cornerstonecontrols.com`. |
+| **IFS Cloud address** | `https://ifs.cornerstonecontrols.com` | The base address of your IFS Cloud system. |
 | **Sign-in realm** | `cciprod` | The Keycloak realm used for sign-in. |
 | **Keep tracker items in step with IFS ISSUES tasks** | off | Syncs tracker items with the tasks of each project's ISSUES activity. |
-| **Report server** | none | The SSRS report server's host name. |
+| **Report server** | `indvifsbi05` | The SSRS report server's host name. |
 | **Domain user**, **Domain password** | none | The Windows account used for the report server. The password is moved to your system's credential store when you save. |
 | **Project subfolder for reports** | `Project Management/Status Reports` | Where status reports are saved in the project folder. |
 
@@ -49,4 +49,4 @@ The email goes to the project's default status report audience, or to the team m
 
 ## IFS shortcuts
 
-The plugin adds **IFS Cloud** menus to projects and contacts (Open Project, Open Gantt, Invoicing Plan, Open Time Entry and others) and a **Reports** menu of SSRS reports to projects. They use the IFS address and report server from Settings.
+The plugin adds **IFS Cloud** menus to projects and contacts (Open Project, Open Gantt, Invoicing Plan, Open Time Entry and others) and a **Reports** menu of SSRS reports to projects. They use the IFS address and report server from Settings. Clear either one and its menus disappear.

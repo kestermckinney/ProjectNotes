@@ -206,6 +206,7 @@ private slots:
     void hotReload();
     void bundledPluginsRun();
     void ifsCloudPlugin();
+    void ifsCloudDefaultShortcuts();
 
 private:
     QJsonObject run(const QString& menuId, const QString& entity = {}, const QString& key = {}, int timeoutMs = 10000);
@@ -1182,6 +1183,48 @@ void PluginHostTest::ifsCloudPlugin()
             basicAuth = r.authorization == "Basic " + QByteArray("CORP\\pm:hunter2").toBase64();
     QVERIFY(basicAuth);
     QVERIFY(errors.isEmpty());
+}
+
+// A fresh install, with no settings from the Python plugin, still gets every
+// shortcut menu: the IFS address and report server start filled in.
+void PluginHostTest::ifsCloudDefaultShortcuts()
+{
+    const QString database = m_dir.filePath(QStringLiteral("ifs-defaults.db"));
+    QVERIFY(QFile::copy(m_pristine, database));
+    const QString organization = QStringLiteral("ProjectNotesIfsDefaultsTest");
+    QSettings(organization, QStringLiteral("PluginState")).clear();
+    QSettings(organization, QStringLiteral("PluginSettings")).clear();
+
+    const QString root = m_dir.filePath(QStringLiteral("ifs-defaults-root"));
+    const QString copy = root + QStringLiteral("/ifs-cloud");
+    QDir().mkpath(copy);
+    for (const QString& name : QDir(QStringLiteral(PN_REPO_ROOT) + QStringLiteral("/extras/ifs-cloud")).entryList(QDir::Files))
+        QVERIFY(QFile::copy(QStringLiteral(PN_REPO_ROOT) + QStringLiteral("/extras/ifs-cloud/") + name, copy + QLatin1Char('/') + name));
+
+    FakeServices services;
+    PluginRegistry registry(&services);
+    registry.setPaths({root, m_dir.filePath(QStringLiteral("ifs-defaults-user")), m_dir.filePath(QStringLiteral("ifs-defaults-data")),
+                       m_dir.filePath(QStringLiteral("ifs-defaults-temp"))});
+    registry.setDatabasePath(database);
+    registry.setSettingsOrganization(organization);
+    registry.setAppVersion(QStringLiteral("6.5.0"));
+    registry.setHotReload(false);
+    registry.loadAll();
+    const QString id = QStringLiteral("com.projectnotespro.ifs-cloud");
+    QTRY_VERIFY2_WITH_TIMEOUT(registry.isRunning(id), qPrintable(registry.plugin(id).loadError + registry.plugin(id).lastError), 10000);
+
+    auto shortcutMenus = [&registry, &id](const QString& entity) {
+        int n = 0;
+        for (const QVariant& menu : registry.menusForEntity(entity))
+            n += menu.toMap().value(QStringLiteral("pluginId")).toString() == id;
+        return n;
+    };
+    QTRY_COMPARE(shortcutMenus(QStringLiteral("projects")), 6 + 7 + 1);   // IFS pages, reports, Generate Status Report
+    QCOMPARE(shortcutMenus(QStringLiteral("contacts")), 1);                // Open Time Entry
+
+    QSettings stored(organization, QStringLiteral("PluginSettings"));
+    QCOMPARE(stored.value(id + QStringLiteral("/URL")).toString(), QStringLiteral("https://ifs.cornerstonecontrols.com"));
+    QCOMPARE(stored.value(id + QStringLiteral("/ReportServer")).toString(), QStringLiteral("indvifsbi05"));
 }
 
 int main(int argc, char** argv)
