@@ -10,66 +10,81 @@ import { generateStatusReport, generateTrackerReport } from "./ssrs.mjs";
 
 const SYNC_MINUTES = 3;
 
-// Pages in IFS Cloud and reports on the report server, opened for the
-// record you right-click. These were the default My Shortcuts entries.
-const IFS_PAGES = [
-    { title: "Open Time Entry", entity: "contacts",
-      path: "/main/ifsapplications/web/page/TimeRegistrationManager/TimeHeaderPage;$filter=%28startswith%28CompanyPersonRef%2FInternalDisplayName,'{{ contacts.name }}'%29%29" },
-    { title: "Open Project", entity: "projects",
-      path: "/main/ifsapplications/web/page/ProjectDefinition/Form;path=0.1731531774.1886945984.458817809;$filter=%28%20ProjectId%20eq%20'{{ projects.project_number }}'%20%29" },
-    { title: "Open Gantt", entity: "projects",
-      path: "/main/ifsapplications/web/page/ProjectGantt/Form;$filter=%28%20ProjectId%20eq%20'{{ projects.project_number }}'%20%29" },
-    { title: "Invoicing Plan", entity: "projects",
-      path: "/main/ifsapplications/web/page/InvoicingPlan/List;$filter=%28%20ProjectId%20eq%20'{{ projects.project_number }}'%20%29;usedefaultfilter=false" },
-    { title: "Open PC Distribution", entity: "projects",
-      path: "/main/ifsapplications/web/page/CPcDistribution/Form;$filter=%28%20DistributionId%20eq%20'{{ projects.project_number }}'%20%29" },
-    { title: "Open PO Table", entity: "projects",
-      path: "/main/ifsapplications/web/page/CCustomerPOs/List;$filter=%28%20ProjectId%20eq%20'{{ projects.project_number }}'%20%29" },
-    { title: "Open Standard Price", entity: "projects",
-      path: "/main/ifsapplications/web/page/StandardSalesPrice/Form;$filter=%28%20ProjectSalesPriceId%20eq%20'{{ projects.project_number }}'%20%29" },
-];
-const REPORT_VIEWER = "/ReportServer/Pages/ReportViewer.aspx?";
-const REPORTS = [
-    { title: "Customer Parts Tracking", query: "%2FProd%2FLead+Engineers%2FCustomer+Parts+Tracking&ProjectID={{ projects.project_number }}&rs:ClearSession=true&rc:Zoom=Page%20Width" },
-    { title: "Invalid Report Codes", query: "%2FProd%2FProjects%2FInvalid+Report+Code+Assignments&rs:ClearSession=true&rc:Zoom=Page%20Width" },
-    { title: "Parts Ordered", query: "%2FProd%2FProjects%2FProject+Parts+Ordered&ProjectID={{ projects.project_number }}&rs:ClearSession=true&rc:Zoom=Page%20Width" },
-    { title: "Project Report", query: "%2FProd%2FProjects%2FProject+Report&ProjectId={{ projects.project_number }}&rs:ClearSession=true&rc:Zoom=Page%20Width" },
-    { title: "Project Status", query: "%2FProd%2FLead+Engineers%2FProject+Status+Report&ProjectId={{ projects.project_number }}&ReportPeriod=30&rs:ClearSession=true&rc:Zoom=Page%20Width" },
-    { title: "Missing Time Entry", query: "%2fProd%2fProjects%2fMissing+Time+Entry&rs:Command=Render&rs:ClearSession=true&rc:Zoom=Page%20Width" },
-    { title: "Item Tracker", query: "%2FProd%2FLead+Engineers%2FIssues+List&ProjectId={{ projects.project_number }}&rs:ClearSession=true&rc:Zoom=Page%20Width" },
+// Shortcut menus that open IFS pages and SSRS reports for the record you
+// right-click. These were the default My Shortcuts entries; they start in the
+// IFS Cloud settings, where you can change, add or remove them. A URL can use
+// {{ ifs.address }} and {{ ifs.reportServer }} for those settings, so a new
+// address carries over to every shortcut.
+const IFS_PAGE = "{{ ifs.address }}/main/ifsapplications/web/page/";
+const REPORT_VIEWER = "http://{{ ifs.reportServer }}/ReportServer/Pages/ReportViewer.aspx?";
+const DEFAULT_SHORTCUTS = [
+    { menu: "Open Time Entry", submenu: "IFS Cloud", entity: "contacts",
+      url: IFS_PAGE + "TimeRegistrationManager/TimeHeaderPage;$filter=%28startswith%28CompanyPersonRef%2FInternalDisplayName,'{{ contacts.name }}'%29%29" },
+    { menu: "Open Project", submenu: "IFS Cloud", entity: "projects",
+      url: IFS_PAGE + "ProjectDefinition/Form;path=0.1731531774.1886945984.458817809;$filter=%28%20ProjectId%20eq%20'{{ projects.project_number }}'%20%29" },
+    { menu: "Open Gantt", submenu: "IFS Cloud", entity: "projects",
+      url: IFS_PAGE + "ProjectGantt/Form;$filter=%28%20ProjectId%20eq%20'{{ projects.project_number }}'%20%29" },
+    { menu: "Invoicing Plan", submenu: "IFS Cloud", entity: "projects",
+      url: IFS_PAGE + "InvoicingPlan/List;$filter=%28%20ProjectId%20eq%20'{{ projects.project_number }}'%20%29;usedefaultfilter=false" },
+    { menu: "Open PC Distribution", submenu: "IFS Cloud", entity: "projects",
+      url: IFS_PAGE + "CPcDistribution/Form;$filter=%28%20DistributionId%20eq%20'{{ projects.project_number }}'%20%29" },
+    { menu: "Open PO Table", submenu: "IFS Cloud", entity: "projects",
+      url: IFS_PAGE + "CCustomerPOs/List;$filter=%28%20ProjectId%20eq%20'{{ projects.project_number }}'%20%29" },
+    { menu: "Open Standard Price", submenu: "IFS Cloud", entity: "projects",
+      url: IFS_PAGE + "StandardSalesPrice/Form;$filter=%28%20ProjectSalesPriceId%20eq%20'{{ projects.project_number }}'%20%29" },
+    { menu: "Customer Parts Tracking", submenu: "Reports", entity: "projects",
+      url: REPORT_VIEWER + "%2FProd%2FLead+Engineers%2FCustomer+Parts+Tracking&ProjectID={{ projects.project_number }}&rs:ClearSession=true&rc:Zoom=Page%20Width" },
+    { menu: "Invalid Report Codes", submenu: "Reports", entity: "projects",
+      url: REPORT_VIEWER + "%2FProd%2FProjects%2FInvalid+Report+Code+Assignments&rs:ClearSession=true&rc:Zoom=Page%20Width" },
+    { menu: "Parts Ordered", submenu: "Reports", entity: "projects",
+      url: REPORT_VIEWER + "%2FProd%2FProjects%2FProject+Parts+Ordered&ProjectID={{ projects.project_number }}&rs:ClearSession=true&rc:Zoom=Page%20Width" },
+    { menu: "Project Report", submenu: "Reports", entity: "projects",
+      url: REPORT_VIEWER + "%2FProd%2FProjects%2FProject+Report&ProjectId={{ projects.project_number }}&rs:ClearSession=true&rc:Zoom=Page%20Width" },
+    { menu: "Project Status", submenu: "Reports", entity: "projects",
+      url: REPORT_VIEWER + "%2FProd%2FLead+Engineers%2FProject+Status+Report&ProjectId={{ projects.project_number }}&ReportPeriod=30&rs:ClearSession=true&rc:Zoom=Page%20Width" },
+    { menu: "Missing Time Entry", submenu: "Reports", entity: "projects",
+      url: REPORT_VIEWER + "%2fProd%2fProjects%2fMissing+Time+Entry&rs:Command=Render&rs:ClearSession=true&rc:Zoom=Page%20Width" },
+    { menu: "Item Tracker", submenu: "Reports", entity: "projects",
+      url: REPORT_VIEWER + "%2FProd%2FLead+Engineers%2FIssues+List&ProjectId={{ projects.project_number }}&rs:ClearSession=true&rc:Zoom=Page%20Width" },
 ];
 
 let timer = null;
 let stopped = false;
 
-function* openShortcut(context) {
-    yield ui.openUrl(replaceVariables(context.parameter, context.record || {}));
+function shortcutValues() {
+    return { "ifs.address": ifsUrl(), "ifs.reportServer": String(settings.get("ReportServer", "") || "").trim() };
 }
 
+function* openShortcut(context) {
+    yield ui.openUrl(replaceVariables(context.parameter, context.record || {}, shortcutValues()));
+}
+
+// A shortcut that needs the IFS address or report server stays hidden until
+// that setting has a value.
 function registerShortcuts() {
     menus.clear();
+    const values = shortcutValues();
     const items = [];
-    const site = ifsUrl();
-    if (site)
-        IFS_PAGES.forEach(function (page, i) {
-            items.push({ id: "ifs-page-" + i, title: page.title, context: "record", entity: page.entity, submenu: "IFS Cloud",
-                         parameter: site + page.path, handler: openShortcut });
-        });
-    const server = String(settings.get("ReportServer", "") || "").trim();
-    if (server)
-        REPORTS.forEach(function (report, i) {
-            items.push({ id: "report-" + i, title: report.title, context: "record", entity: "projects", submenu: "Reports",
-                         parameter: "http://" + server + REPORT_VIEWER + report.query, handler: openShortcut });
-        });
+    const rows = settings.get("Shortcuts", []) || [];
+    rows.forEach(function (row, i) {
+        if (!row || !row.menu || !row.url) return;
+        const missing = Object.keys(values).some(function (name) { return !values[name] && row.url.indexOf(name) >= 0; });
+        if (missing) return;
+        const entity = String(row.entity || "").trim();
+        items.push({ id: "shortcut-" + i, title: row.menu, submenu: row.submenu || "",
+                     context: entity ? "record" : "global", entity: entity || undefined,
+                     parameter: row.url, handler: openShortcut });
+    });
     if (items.length) menus.register(items);
 }
 
-// The Python plugin filled in the IFS address and report server on first
-// load; without them none of the shortcut menus appear. A value the user
-// cleared stays cleared.
+// The Python plugin filled in the IFS address, the report server and the
+// shortcuts on first load. A value the user cleared, or a shortcut list the
+// user emptied, stays that way.
 function seedDefaults() {
     if (settings.get("URL") === null) settings.set("URL", "https://ifs.cornerstonecontrols.com");
     if (settings.get("ReportServer") === null) settings.set("ReportServer", "indvifsbi05");
+    if (settings.get("Shortcuts") === null) settings.set("Shortcuts", DEFAULT_SHORTCUTS);
 }
 
 // The domain password belongs in the credential store, not in settings.

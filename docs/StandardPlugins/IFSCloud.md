@@ -56,4 +56,6 @@ The PDF and the optional Word copy go in the tracker report subfolder. The email
 
 ## IFS shortcuts
 
-The plugin adds **IFS Cloud** menus to projects and contacts (Open Project, Open Gantt, Invoicing Plan, Open Time Entry and others) and a **Reports** menu of SSRS reports to projects. They use the IFS address and report server from Settings. Clear either one and its menus disappear.
+The plugin adds **IFS Cloud** menus to projects and contacts (Open Project, Open Gantt, Invoicing Plan, Open Time Entry and others) and a **Reports** menu of SSRS reports to projects. They are listed in the **Shortcuts** table at the bottom of **Settings > IFS Cloud**, where you can rename, change, add or remove them. The table works like the one in My Shortcuts.
+
+A URL can use `{{ ifs.address }}` and `{{ ifs.reportServer }}` for the IFS address and report server, so changing either setting updates every shortcut that uses it. Clear one and its shortcuts disappear from the menus. Empty the table and it stays empty; the defaults come back only on a fresh install.

@@ -1240,6 +1240,18 @@ void PluginHostTest::ifsCloudDefaultShortcuts()
     QSettings stored(organization, QStringLiteral("PluginSettings"));
     QCOMPARE(stored.value(id + QStringLiteral("/URL")).toString(), QStringLiteral("https://ifs.cornerstonecontrols.com"));
     QCOMPARE(stored.value(id + QStringLiteral("/ReportServer")).toString(), QStringLiteral("indvifsbi05"));
+    // The shortcuts are saved to the plugin's settings, so its Settings
+    // section lists them for editing.
+    const QVariantList rows = stored.value(id + QStringLiteral("/Shortcuts")).toList();
+    QCOMPARE(rows.size(), 14);
+    QCOMPARE(rows.first().toMap().value(QStringLiteral("menu")).toString(), QStringLiteral("Open Time Entry"));
+
+    // Without a report server the Reports shortcuts are hidden; the IFS pages stay.
+    stored.setValue(id + QStringLiteral("/ReportServer"), QString());
+    stored.sync();
+    registry.notifySettingsChanged(id, {QStringLiteral("ReportServer")});
+    QTRY_COMPARE(shortcutMenus(QStringLiteral("projects")), 6 + 2);
+    QCOMPARE(shortcutMenus(QStringLiteral("contacts")), 1);
 }
 
 int main(int argc, char** argv)
