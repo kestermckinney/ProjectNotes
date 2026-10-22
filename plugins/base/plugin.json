@@ -8,7 +8,7 @@
     "main": "main.mjs",
     "permissions": [
         "data.read:contacts,project_team,meeting_attendees,project_locations",
-        "clipboard"
+        "clipboard", "process.launch"
     ],
     "legacySettings": ["Custom Editor"],
     "contributes": {

@@ -877,6 +877,9 @@ void PluginHostTest::bundledPluginsRun()
     for (const QVariant& menu : registry.globalMenus())
         editorMenu |= menu.toMap().value(QStringLiteral("pluginId")).toString() == base;
     QVERIFY(editorMenu);
+    registry.runMenu(base, QStringLiteral("script-editor"), {}, {});
+    QTRY_COMPARE(services.argsOf(base, QStringLiteral("process.launch")).size(), 1);
+    QVERIFY2(registry.plugin(base).lastError.isEmpty(), qPrintable(registry.plugin(base).lastError));
 
     // My Shortcuts: the legacy shortcut was migrated to contacts and opens
     // with the record's values.
