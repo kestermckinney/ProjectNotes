@@ -120,9 +120,16 @@ Your Microsoft 365 administrator creates an app registration that allows these d
 
 `Mail.ReadWrite` creates and updates drafts. Project Notes never requests `Mail.Send`, so it cannot send mail from your account even if something goes wrong.
 
-If you also use [File Finder](<FileFinder.md>) to discover Teams channels and their files, the same registration should allow `Team.ReadBasic.All`, `Channel.ReadBasic.All` and `Files.Read.All`.
+When Office 365 is your contact provider under **Contact Synchronization**, the same sign-in also asks for `Contacts.ReadWrite`. Add it to the registration, or sign-in will stop at the consent screen.
 
-Some organizations require administrator consent before anyone can sign in.
+If you also use [File Finder](<FileFinder.md>) to discover Teams channels and their files, the same registration should allow `Team.ReadBasic.All`, `Channel.ReadBasic.All` and `Files.Read.All`. Those three always need administrator consent.
+
+Two settings on the registration's **Authentication** page matter:
+
+- **Allow public client flows** must be **Yes**. Project Notes signs in with a device code and has no client secret, so sign-in fails without it.
+- **Supported account types** must fit the tenant ID you enter below. The default, `organizations`, needs a registration that accepts any organizational directory.
+
+Some organizations require administrator consent before anyone can sign in. [Office 365 Integration](<Office365Integration.md>) has the full permission list.
 
 ### Sign in
 
