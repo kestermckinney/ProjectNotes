@@ -120,6 +120,66 @@ private slots:
         for (const QString &key : retained) QCOMPARE(settings.value(key).toString(), QString("saved"));
     }
 
+    // A clear-text sync password or phrase left by an older version moves into
+    // the credential store on first read; a store that refuses it keeps the
+    // plain copy so the user isn't signed out. New values never reach AppSettings.
+    void test_syncSecretsLeaveAppSettings()
+    {
+        QSettings app(DesktopAppController::localSettingsOrganization(), QStringLiteral("AppSettings"));
+        QHash<QString, QString> store;
+        bool writable = false;
+        const auto install = [&] {
+            DesktopAppController::setSyncSecretStore({
+                [&](const QString& account, QString*) { return store.value(account); },
+                [&](const QString& account, const QString& secret, QString* error) {
+                    if (!writable) { *error = QStringLiteral("locked"); return false; }
+                    store.insert(account, secret);
+                    return true;
+                },
+                [&](const QString& account, QString*) { store.remove(account); return true; }});
+        };
+        auto restore = qScopeGuard([&] {
+            app.remove(QStringLiteral("Sync/Password"));
+            app.remove(QStringLiteral("Sync/EncryptionPhrase"));
+            // Back to an in-memory store that outlives this test.
+            static QHash<QString, QString> later;
+            DesktopAppController::setSyncSecretStore({
+                [](const QString& account, QString*) { return later.value(account); },
+                [](const QString& account, const QString& secret, QString*) { later.insert(account, secret); return true; },
+                [](const QString& account, QString*) { later.remove(account); return true; }});
+        });
+
+        app.setValue(QStringLiteral("Sync/Password"), QStringLiteral("hunter2"));
+        app.setValue(QStringLiteral("Sync/EncryptionPhrase"), QStringLiteral("phrase"));
+        app.sync();
+
+        install();
+        QCOMPARE(c->syncPassword(), QStringLiteral("hunter2"));
+        app.sync();
+        QVERIFY(store.isEmpty());
+        QCOMPARE(app.value(QStringLiteral("Sync/Password")).toString(), QStringLiteral("hunter2"));
+
+        writable = true;
+        install();
+        QCOMPARE(c->syncPassword(), QStringLiteral("hunter2"));
+        QCOMPARE(c->syncEncryptionPhrase(), QStringLiteral("phrase"));
+        app.sync();
+        QCOMPARE(store.value(QStringLiteral("Password")), QStringLiteral("hunter2"));
+        QCOMPARE(store.value(QStringLiteral("EncryptionPhrase")), QStringLiteral("phrase"));
+        QVERIFY(!app.contains(QStringLiteral("Sync/Password")));
+        QVERIFY(!app.contains(QStringLiteral("Sync/EncryptionPhrase")));
+
+        c->setSyncPassword(QStringLiteral("changed"));
+        app.sync();
+        QCOMPARE(store.value(QStringLiteral("Password")), QStringLiteral("changed"));
+        QVERIFY(!app.contains(QStringLiteral("Sync/Password")));
+        c->setSyncPassword(QString());
+        QVERIFY(!store.contains(QStringLiteral("Password")));
+        c->setSyncEncryptionPhrase(QString());
+        // setSync* marked the settings unverified; leave the controller as found.
+        c->verifySyncSettings();
+    }
+
     void test_settingsFailuresReleaseLockAndPreserveTombstones()
     {
         const QString connection = uniq("settings-test-");

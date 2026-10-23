@@ -3,6 +3,15 @@
 
 #include "MobileSettings.h"
 
+#include "credentialstore.h"
+#include "QLogger.h"
+
+using namespace QLogger;
+
+namespace {
+const QString kSyncCredentialService = QStringLiteral("ProjectNotes sync");
+}
+
 MobileSettings global_MobileSettings;
 bool MobileSettings::s_testSupabase = false;
 
@@ -87,14 +96,12 @@ void MobileSettings::setSyncEmail(const QString& email)
 
 QString MobileSettings::getSyncPassword() const
 {
-    ensureSettings();
-    return m_settings->value("Sync/Password").toString();
+    return syncSecret(QStringLiteral("Password"));
 }
 
 void MobileSettings::setSyncPassword(const QString& password)
 {
-    ensureSettings();
-    m_settings->setValue("Sync/Password", password);
+    setSyncSecret(QStringLiteral("Password"), password);
 }
 
 QString MobileSettings::getSyncSupabaseKey() const
@@ -111,14 +118,55 @@ void MobileSettings::setSyncSupabaseKey(const QString& key)
 
 QString MobileSettings::getSyncEncryptionPhrase() const
 {
-    ensureSettings();
-    return m_settings->value("Sync/EncryptionPhrase").toString();
+    return syncSecret(QStringLiteral("EncryptionPhrase"));
 }
 
 void MobileSettings::setSyncEncryptionPhrase(const QString& phrase)
 {
+    setSyncSecret(QStringLiteral("EncryptionPhrase"), phrase);
+}
+
+// Earlier versions kept the password and phrase in the settings plist in clear
+// text ("Sync/<account>"). The first read moves such a value into the Keychain,
+// and deletes the plain copy only once the Keychain holds it.
+QString MobileSettings::syncSecret(const QString& account) const
+{
+    const auto cached = m_syncSecrets.constFind(account);
+    if (cached != m_syncSecrets.constEnd())
+        return *cached;
+
     ensureSettings();
-    m_settings->setValue("Sync/EncryptionPhrase", phrase);
+    QString error;
+    QString value = CredentialStore::read(kSyncCredentialService, account, &error);
+    const QString legacyKey = QStringLiteral("Sync/") + account;
+    const QString legacy = m_settings->value(legacyKey).toString();
+    if (!legacy.isEmpty() && error.isEmpty()) {
+        if (value.isEmpty() && !CredentialStore::write(kSyncCredentialService, account, legacy, &error))
+            QLog_Error(ERRORLOG, QStringLiteral("Could not move the sync %1 to the Keychain: %2").arg(account, error));
+        else
+            m_settings->remove(legacyKey);
+    } else if (!error.isEmpty()) {
+        QLog_Error(ERRORLOG, QStringLiteral("Could not read the sync %1 from the Keychain: %2").arg(account, error));
+    }
+    if (value.isEmpty())
+        value = legacy;
+    // Before the first unlock after a restart the Keychain can't answer: ask again later.
+    if (error.isEmpty() || !value.isEmpty())
+        m_syncSecrets.insert(account, value);
+    return value;
+}
+
+void MobileSettings::setSyncSecret(const QString& account, const QString& value)
+{
+    ensureSettings();
+    QString error;
+    const bool stored = value.isEmpty() ? CredentialStore::remove(kSyncCredentialService, account, &error)
+                                        : CredentialStore::write(kSyncCredentialService, account, value, &error);
+    // Kept for this session even when the Keychain refused it, so sync still runs.
+    m_syncSecrets.insert(account, value);
+    m_settings->remove(QStringLiteral("Sync/") + account);
+    if (!stored)
+        QLog_Error(ERRORLOG, QStringLiteral("Could not save the sync %1 in the Keychain: %2").arg(account, error));
 }
 
 QVariant MobileSettings::getValue(const QString& key, const QVariant& defaultValue) const

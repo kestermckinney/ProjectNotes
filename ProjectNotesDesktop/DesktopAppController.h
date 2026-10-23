@@ -4,6 +4,7 @@
 #ifndef DESKTOPAPPCONTROLLER_H
 #define DESKTOPAPPCONTROLLER_H
 
+#include <QHash>
 #include <QObject>
 #include <QPointer>
 
@@ -181,6 +182,18 @@ public:
     // Disable the GitLab update check (used by the test runner so the suite makes
     // no network calls). Enabled by default.
     static void setUpdateChecksEnabled(bool enabled) { s_updateChecksEnabled = enabled; }
+
+    // Where the cloud sync password and encryption phrase are kept, by account
+    // ("Password", "EncryptionPhrase"). Defaults to the platform credential
+    // store; tests substitute an in-memory one so they never touch the keyring.
+    struct SyncSecretStore
+    {
+        std::function<QString(const QString& account, QString* error)> read;
+        std::function<bool(const QString& account, const QString& secret, QString* error)> write;
+        std::function<bool(const QString& account, QString* error)> remove;
+    };
+    // Also forgets the values the running controller has already read.
+    static void setSyncSecretStore(SyncSecretStore store);
 
     // Absolute app data directory (AppDataLocation + optional developer profile).
     // Matches AppSettings::dataLocation() so both frontends share one location.
@@ -1126,6 +1139,11 @@ private:
     void    finishSyncVerification(const QString& status, const QString& detail);
     QString syncSetting(const QString& key) const;
     void    setSyncSetting(const QString& key, const QVariant& value);
+    // The password and encryption phrase, read from s_syncSecretStore once per
+    // session (moving any clear-text copy out of AppSettings on the way).
+    QString syncSecret(const QString& account) const;
+    void    setSyncSecret(const QString& account, const QString& value);
+    mutable QHash<QString, QString> m_syncSecrets;
     // Sync host for the active environment (--test-supabase picks the TEST
     // instance). Shared by configureSyncApi() and verifySyncSettings() so the
     // engine and the settings check can't drift onto different servers.
@@ -1142,6 +1160,7 @@ private:
     static QString s_developerProfile;
     static bool    s_testSupabase;
     static bool    s_updateChecksEnabled;
+    static SyncSecretStore s_syncSecretStore;
 
     // ── Plugins ──────────────────────────────────────────────────────────────
     // JavaScript (QJSEngine) plugins; see docs/QJSEnginePluginsPlan.md.

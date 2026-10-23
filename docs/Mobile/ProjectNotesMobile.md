@@ -228,7 +228,7 @@ The mobile app synchronizes data with **Project Notes Pro** hosting using [Sqlit
 | :--- | :--- |
 | Enable Sync | Master on/off toggle for cloud synchronization. When off, the app operates in local-only mode and no network requests are made. |
 | Email | The email address for your Project Notes Pro account. |
-| Password | The password for your Project Notes Pro account. |
+| Password | The password for your Project Notes Pro account. It is kept in the iOS Keychain along with the encryption phrase. |
 | Encryption Phrase | An optional passphrase used to encrypt your data before it is sent to the server. If set, the same phrase must be configured on every device that syncs this account. Leave blank to disable encryption. |
 
 The page also shows your current **subscription status** and a link to [www.projectnotespro.com](https://www.projectnotespro.com), where you manage your subscription, along with the Project ID your data is associated with.

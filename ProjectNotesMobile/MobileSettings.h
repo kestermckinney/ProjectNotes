@@ -4,6 +4,7 @@
 #ifndef MOBILESETTINGS_H
 #define MOBILESETTINGS_H
 
+#include <QHash>
 #include <QSettings>
 #include <QStandardPaths>
 #include <QCoreApplication>
@@ -49,7 +50,12 @@ public:
 
 private:
     void ensureSettings() const;
+    // The sync password and encryption phrase live in the Keychain, read once
+    // per session (moving any clear-text copy out of the settings on the way).
+    QString syncSecret(const QString& account) const;
+    void setSyncSecret(const QString& account, const QString& value);
     mutable QSettings* m_settings = nullptr;
+    mutable QHash<QString, QString> m_syncSecrets;
     static bool s_testSupabase;
 };
 

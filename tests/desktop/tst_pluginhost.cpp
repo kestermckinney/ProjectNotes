@@ -1108,6 +1108,8 @@ void PluginHostTest::ifsCloudPlugin()
     // The password moved to the credential store; shortcut menus appeared.
     QTRY_COMPARE(secretStore.value(QStringLiteral("DomainPassword")), QStringLiteral("hunter2"));
     QVERIFY(!QSettings(organization, QStringLiteral("PluginSettings")).contains(id + QStringLiteral("/DomainPassword")));
+    // The Python plugin's group, with its clear-text copy, is gone too.
+    QVERIFY(!QSettings(organization, QStringLiteral("PluginSettings")).childGroups().contains(QStringLiteral("IFS Cloud")));
     auto shortcutMenus = [&registry, &id] {
         int n = 0;
         for (const QVariant& menu : registry.menusForEntity(QStringLiteral("projects")))

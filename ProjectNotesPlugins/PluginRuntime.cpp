@@ -204,23 +204,28 @@ bool PluginRuntime::start(QString* error)
 
     // One-time copy of the settings of the Python plugin this replaces.
     for (const auto& [group, prefix] : manifest.legacySettings) {
-        const QString flag = QStringLiteral("%1/_migrated/%2").arg(manifest.id, QString(group).replace(QLatin1Char('/'), QLatin1Char('_')));
-        if (group.isEmpty() || m_settings->value(flag).toBool())
+        if (group.isEmpty())
             continue;
-        m_settings->beginGroup(group);
-        const QStringList keys = m_settings->allKeys();
-        QVariantMap values;
-        for (const QString& key : keys)
-            values.insert(key, m_settings->value(key));
-        m_settings->endGroup();
-        m_settings->beginGroup(manifest.id);
-        for (auto it = values.constBegin(); it != values.constEnd(); ++it)
-            if (!m_settings->contains(prefix + it.key()))
-                m_settings->setValue(prefix + it.key(), it.value());
-        m_settings->endGroup();
-        m_settings->setValue(flag, true);
-        QLog_Info(CONSOLELOG, QStringLiteral("[%1] migrated %2 setting(s) from \"%3\".")
-                                  .arg(manifest.id).arg(values.size()).arg(group));
+        const QString flag = QStringLiteral("%1/_migrated/%2").arg(manifest.id, QString(group).replace(QLatin1Char('/'), QLatin1Char('_')));
+        if (!m_settings->value(flag).toBool()) {
+            m_settings->beginGroup(group);
+            const QStringList keys = m_settings->allKeys();
+            QVariantMap values;
+            for (const QString& key : keys)
+                values.insert(key, m_settings->value(key));
+            m_settings->endGroup();
+            m_settings->beginGroup(manifest.id);
+            for (auto it = values.constBegin(); it != values.constEnd(); ++it)
+                if (!m_settings->contains(prefix + it.key()))
+                    m_settings->setValue(prefix + it.key(), it.value());
+            m_settings->endGroup();
+            m_settings->setValue(flag, true);
+            QLog_Info(CONSOLELOG, QStringLiteral("[%1] migrated %2 setting(s) from \"%3\".")
+                                      .arg(manifest.id).arg(values.size()).arg(group));
+        }
+        // The copy is done, so the old group goes. Python plugins kept passwords
+        // there in clear text, which the plugin may since have moved to secrets.
+        m_settings->remove(group);
     }
     m_settings->sync();
 

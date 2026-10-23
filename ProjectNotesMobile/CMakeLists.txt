@@ -180,6 +180,15 @@ if(IOS OR (APPLE AND CMAKE_SYSTEM_NAME STREQUAL "iOS"))
     target_link_libraries(ProjectNotesMobile PRIVATE "-framework SafariServices")
 endif()
 
+# Keychain storage for the sync password and encryption phrase (MobileSettings).
+target_sources(ProjectNotesMobile PRIVATE ../credentialstore.cpp ../credentialstore.h)
+if(APPLE)
+    target_link_libraries(ProjectNotesMobile PRIVATE "-framework Security")
+elseif(UNIX)
+    find_package(Qt6 REQUIRED COMPONENTS DBus)
+    target_link_libraries(ProjectNotesMobile PRIVATE Qt6::DBus)
+endif()
+
 # ── Link libraries ────────────────────────────────────────────────────────────
 target_link_libraries(ProjectNotesMobile PRIVATE
     Qt6::Core

@@ -114,6 +114,7 @@ PN::Comm::AudienceRule reviewPresetRule(PN::Comm::Workflow workflow,
 #include "rowencryption.h"
 
 #include "QLogger.h"
+#include "credentialstore.h"
 #include "version.h"
 #include "updatemanager.h"
 
@@ -165,6 +166,26 @@ DesktopAppController* DesktopAppController::s_instance = nullptr;
 QString DesktopAppController::s_developerProfile;
 bool    DesktopAppController::s_testSupabase = false;
 bool    DesktopAppController::s_updateChecksEnabled = true;
+
+// One credential-store entry set per settings profile, so a developer profile
+// can never read or replace the real sync credentials.
+DesktopAppController::SyncSecretStore DesktopAppController::s_syncSecretStore {
+    [](const QString& account, QString* error) {
+        return CredentialStore::read(localSettingsOrganization() + QStringLiteral(" sync"), account, error);
+    },
+    [](const QString& account, const QString& secret, QString* error) {
+        return CredentialStore::write(localSettingsOrganization() + QStringLiteral(" sync"), account, secret, error);
+    },
+    [](const QString& account, QString* error) {
+        return CredentialStore::remove(localSettingsOrganization() + QStringLiteral(" sync"), account, error);
+    }};
+
+void DesktopAppController::setSyncSecretStore(SyncSecretStore store)
+{
+    s_syncSecretStore = std::move(store);
+    if (s_instance)
+        s_instance->m_syncSecrets.clear();
+}
 
 DesktopAppController* DesktopAppController::create(QQmlEngine* /*engine*/, QJSEngine* /*scriptEngine*/)
 {
@@ -4719,8 +4740,55 @@ void DesktopAppController::setSyncSetting(const QString& key, const QVariant& va
 
 bool    DesktopAppController::syncEnabled() const { return syncSetting("Sync/Enabled") == "true"; }
 QString DesktopAppController::syncEmail() const { return syncSetting("Sync/Email"); }
-QString DesktopAppController::syncPassword() const { return syncSetting("Sync/Password"); }
-QString DesktopAppController::syncEncryptionPhrase() const { return syncSetting("Sync/EncryptionPhrase"); }
+QString DesktopAppController::syncPassword() const { return syncSecret(QStringLiteral("Password")); }
+QString DesktopAppController::syncEncryptionPhrase() const { return syncSecret(QStringLiteral("EncryptionPhrase")); }
+
+// Earlier versions kept the password and phrase in AppSettings in clear text
+// ("Sync/<account>"). The first read moves such a value into the credential
+// store, and deletes the plain copy only once the store holds it.
+QString DesktopAppController::syncSecret(const QString& account) const
+{
+    const auto cached = m_syncSecrets.constFind(account);
+    if (cached != m_syncSecrets.constEnd())
+        return *cached;
+
+    QString error;
+    QString value = s_syncSecretStore.read(account, &error);
+    const QString legacyKey = QStringLiteral("Sync/") + account;
+    const QString legacy = syncSetting(legacyKey);
+    if (!legacy.isEmpty() && error.isEmpty()) {
+        if (value.isEmpty() && !s_syncSecretStore.write(account, legacy, &error))
+            QLog_Warning(SYNCERRORLOG, QStringLiteral("Could not move the cloud sync %1 to the credential store: %2")
+                                           .arg(account, error));
+        else
+            QSettings(localSettingsOrganization(), QStringLiteral("AppSettings")).remove(legacyKey);
+    } else if (!error.isEmpty()) {
+        QLog_Warning(SYNCERRORLOG, QStringLiteral("Could not read the cloud sync %1 from the credential store: %2")
+                                       .arg(account, error));
+    }
+    if (value.isEmpty())
+        value = legacy;
+    // A locked or missing keyring isn't a definitive answer: ask again next time.
+    if (error.isEmpty() || !value.isEmpty())
+        m_syncSecrets.insert(account, value);
+    return value;
+}
+
+void DesktopAppController::setSyncSecret(const QString& account, const QString& value)
+{
+    QString error;
+    const bool stored = value.isEmpty() ? s_syncSecretStore.remove(account, &error)
+                                        : s_syncSecretStore.write(account, value, &error);
+    // Kept for this session even when the store refused it, so sync still runs.
+    m_syncSecrets.insert(account, value);
+    QSettings(localSettingsOrganization(), QStringLiteral("AppSettings")).remove(QStringLiteral("Sync/") + account);
+    if (!stored)
+        emit errorOccurred(tr("Cloud Sync"),
+                           tr("Project Notes could not save the cloud sync %1 in the system credential store, "
+                              "so you will need to enter it again the next time Project Notes starts.\n\n%2")
+                               .arg(account == QLatin1String("Password") ? tr("password") : tr("encryption phrase"),
+                                    error));
+}
 
 // Each setter is a no-op when the value is unchanged: the Settings screen
 // commits every sync field whenever it loses focus (or the user navigates), so
@@ -4748,14 +4816,14 @@ void DesktopAppController::setSyncEmail(const QString& v)
 void DesktopAppController::setSyncPassword(const QString& v)
 {
     if (syncPassword() == v) return;
-    setSyncSetting("Sync/Password", v);
+    setSyncSecret(QStringLiteral("Password"), v);
     setSyncSettingsUnverified(true);
     emit syncSettingsChanged();
 }
 void DesktopAppController::setSyncEncryptionPhrase(const QString& v)
 {
     if (syncEncryptionPhrase() == v) return;
-    setSyncSetting("Sync/EncryptionPhrase", v);
+    setSyncSecret(QStringLiteral("EncryptionPhrase"), v);
     setSyncSettingsUnverified(true);
     emit syncSettingsChanged();
 }

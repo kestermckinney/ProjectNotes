@@ -51,6 +51,12 @@ int main(int argc, char* argv[])
 
     DesktopAppController::setDeveloperProfile("qmltest");
     DesktopAppController::setUpdateChecksEnabled(false);   // no network in tests
+    // Sync credentials stay in memory, never in the user's keyring.
+    static QHash<QString, QString> syncSecrets;
+    DesktopAppController::setSyncSecretStore({
+        [](const QString& account, QString*) { return syncSecrets.value(account); },
+        [](const QString& account, const QString& secret, QString*) { syncSecrets.insert(account, secret); return true; },
+        [](const QString& account, QString*) { syncSecrets.remove(account); return true; }});
 
     // Start every run from a clean database/settings.
     const QString dataDir = DesktopAppController::dataLocation();
