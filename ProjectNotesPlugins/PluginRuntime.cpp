@@ -238,6 +238,12 @@ bool PluginRuntime::start(QString* error)
     m_network = new QNetworkAccessManager(this);
     m_com = ComBridge::create();
 
+    // Qt 6.11's incremental garbage collector frees values a suspended
+    // generator still holds, and every plugin's async code is a generator
+    // (the app crashed mid-way through an IFS import). The engine reads this
+    // when it is created; 0 makes it collect all at once, as before Qt 6.8.
+    if (!qEnvironmentVariableIsSet("QV4_GC_TIMELIMIT"))
+        qputenv("QV4_GC_TIMELIMIT", "0");
     {
         QMutexLocker locker(&m_engineMutex);
         m_engine = new QJSEngine(this);

@@ -112,6 +112,20 @@ const scenarios = {
     *timer() {
         return yield new Promise(resolve => setTimeout(() => resolve("fired"), 30));
     },
+    // Builds strings and objects across many yields, as the IFS import does.
+    // Qt 6.11's incremental garbage collector freed them mid-generator once
+    // the host called back into the engine (here, a timer) between steps.
+    *heldAcrossYields() {
+        let rows = "", other = "";
+        for (let i = 0; i < 1500; ++i) {
+            const junk = [];
+            for (let j = 0; j < 200; ++j) junk.push({ x: "v" + j + "_" + i, y: [j, i] });
+            yield new Promise(resolve => setTimeout(resolve, 0));
+            rows += "<row><column name=\"n\">" + i + "</column><column>" + junk[i % 200].x + "</column></row>";
+            other += "<row>" + i + "</row>";
+        }
+        return (rows + other).length;
+    },
     *common() {
         const rec = { $entity: "projects", project_number: "P4000", company_id: { id: "c1", lookup: "Acme Corp" },
                       project_team: [{ $entity: "project_team", role: "Lead", email: "a@x.test" }, { $entity: "project_team", role: "", email: "b@x.test" }] };

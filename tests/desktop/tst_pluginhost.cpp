@@ -590,6 +590,10 @@ void PluginHostTest::timersAndCommonHelpers()
     QJsonObject r = run(QStringLiteral("timer"));
     QCOMPARE(r.value(QStringLiteral("result")).toString(), QStringLiteral("fired"));
 
+    r = run(QStringLiteral("heldAcrossYields"), {}, {}, 60000);
+    QVERIFY2(r.value(QStringLiteral("ok")).toBool(), qPrintable(QJsonDocument(r).toJson()));
+    QVERIFY(r.value(QStringLiteral("result")).toInt() > 0);
+
     r = run(QStringLiteral("common"));
     QVERIFY2(r.value(QStringLiteral("ok")).toBool(), qPrintable(QJsonDocument(r).toJson()));
     const QJsonObject result = r.value(QStringLiteral("result")).toObject();
