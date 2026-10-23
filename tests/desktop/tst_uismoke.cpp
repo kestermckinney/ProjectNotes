@@ -1934,12 +1934,15 @@ private slots:
 
             QFile legacy(dir.filePath(QStringLiteral("legacy.json")));
             QVERIFY(legacy.open(QIODevice::WriteOnly));
-            legacy.write(R"({ "UI Test Legacy": { "Folder": "from python" } })");
+            legacy.write(R"({ "UI Test Legacy": { "Folder": "from python", "Password": "python secret" } })");
             legacy.close();
             const QVariantMap result = ui->importSettings(QUrl::fromLocalFile(legacy.fileName()));
             QVERIFY2(result.value(QStringLiteral("ok")).toBool(), qPrintable(result.value(QStringLiteral("error")).toString()));
             QCOMPARE(result.value(QStringLiteral("plugins")).toStringList(), QStringList{QStringLiteral("UI Test Plugin")});
             QCOMPARE(ui->settingValues(id).value(QStringLiteral("OldFolder")).toString(), QStringLiteral("from python"));
+            // The export's clear-text password lands in the credential store only.
+            QCOMPARE(secrets.value(id + QStringLiteral("/OldPassword")), QStringLiteral("python secret"));
+            QVERIFY(!ui->settingValues(id).contains(QStringLiteral("OldPassword")));
             ui->setSetting(id, QStringLiteral("OldFolder"), QVariant());
         }
 
