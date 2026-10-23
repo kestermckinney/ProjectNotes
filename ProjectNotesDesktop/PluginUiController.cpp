@@ -3,6 +3,8 @@
 
 #include "PluginUiController.h"
 
+#include "DesktopPluginServices.h"
+#include "credentialstore.h"
 #include "ProjectNotesPlugins/JsConvert.h"
 #include "ProjectNotesPlugins/PluginRegistry.h"
 
@@ -127,6 +129,11 @@ QJSValue makeDeferred(QJSEngine* engine)
         "(function(){ var d = {}; d.promise = new Promise(function(res, rej){ d.resolve = res; d.reject = rej; }); return d; })()"));
 }
 } // namespace
+
+PluginUiController::SecretWriter PluginUiController::s_secretWriter =
+    [](const QString& pluginId, const QString& key, const QString& secret, QString* error) {
+        return CredentialStore::write(DesktopPluginServices::secretService(pluginId), key, secret, error);
+    };
 
 PluginUiController::PluginUiController(QObject* parent)
     : QObject(parent)
@@ -398,16 +405,36 @@ void PluginUiController::setSetting(const QString& pluginId, const QString& key,
     // QML passes a JavaScript value (an array of row objects, for a table) wrapped
     // in a QJSValue. QSettings cannot store that wrapper, so unwrap it first.
     const QVariant plain = value.typeId() == QMetaType::fromType<QJSValue>().id() ? value.value<QJSValue>().toVariant() : value;
-    {
+    const bool password = passwordFields(pluginId).contains(key);
+    if (!password || storePasswordField(pluginId, key, plain.toString())) {
         QSettings settings(m_organization, QStringLiteral("PluginSettings"));
         settings.beginGroup(pluginId);
-        if (plain.isValid() && !plain.isNull())
+        if (!password && plain.isValid() && !plain.isNull())
             settings.setValue(key, plain);
         else
             settings.remove(key);
     }
     if (m_registry)
         m_registry->notifySettingsChanged(pluginId, {key});
+}
+
+QSet<QString> PluginUiController::passwordFields(const QString& pluginId) const
+{
+    return m_registry ? passwordKeys(m_registry->plugin(pluginId)) : QSet<QString>();
+}
+
+bool PluginUiController::storePasswordField(const QString& pluginId, const QString& key, const QString& secret)
+{
+    if (secret.isEmpty())
+        return true;
+    QString error;
+    if (s_secretWriter(pluginId, key, secret, &error))
+        return true;
+    const PluginInfo info = m_registry ? m_registry->plugin(pluginId) : PluginInfo();
+    emit notificationRequested(tr("%1 could not save %2 in the system credential store: %3")
+                                   .arg(info.manifest.name.isEmpty() ? pluginId : info.manifest.name, key, error),
+                               QStringLiteral("error"), 10);
+    return false;
 }
 
 QVariantList PluginUiController::settingsBackupCandidates() const
@@ -528,11 +555,18 @@ QVariantMap PluginUiController::applyPluginSettings(const QJsonObject& groups, b
                 target = successors.value(target).first;
             }
             const QJsonObject values = it.value().toObject();
+            // A Python plugin's export can carry its passwords in clear text.
+            const QSet<QString> passwords = passwordFields(target);
             settings.beginGroup(target);
             for (auto v = values.constBegin(); v != values.constEnd(); ++v) {
                 if (isInternalSettingKey(v.key()))
                     continue;
-                settings.setValue(prefix + v.key(), v.value().toVariant());
+                if (passwords.contains(prefix + v.key())) {
+                    if (storePasswordField(target, prefix + v.key(), v.value().toVariant().toString()))
+                        settings.remove(prefix + v.key());
+                } else {
+                    settings.setValue(prefix + v.key(), v.value().toVariant());
+                }
                 changed[target].append(prefix + v.key());
                 ++count;
             }

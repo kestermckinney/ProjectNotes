@@ -222,7 +222,7 @@ menus.register({ id: "open-site", title: "Open Project Site", context: "record",
 
 ### Settings sections
 
-A `contributes.settings` entry adds a section to Settings. With a `schema`, Project Notes renders the form and saves each value as it changes; the plugin reads it with `settings.get()` and hears about changes in `onSettingsChanged()`. With `qml`, the section is the plugin's own QML file, which gets a `pluginSettings` object with `values`, `get(key)`, `set(key, value)` and `invoke(name, args)`.
+A `contributes.settings` entry adds a section to Settings. With a `schema`, Project Notes renders the form and saves each value as it changes; the plugin reads it with `settings.get()` and hears about changes in `onSettingsChanged()`. A `password` field is the exception: its value goes to the operating system's credential store, never to the settings, so read it with `secrets.get(key)`. Leaving a password field blank keeps the stored value. With `qml`, the section is the plugin's own QML file, which gets a `pluginSettings` object with `values`, `get(key)`, `set(key, value)` and `invoke(name, args)`.
 
 ## Integrations
 

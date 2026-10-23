@@ -57,6 +57,7 @@ int main(int argc, char* argv[])
         [](const QString& account, QString*) { return syncSecrets.value(account); },
         [](const QString& account, const QString& secret, QString*) { syncSecrets.insert(account, secret); return true; },
         [](const QString& account, QString*) { syncSecrets.remove(account); return true; }});
+    PluginUiController::setSecretWriter([](const QString&, const QString&, const QString&, QString*) { return true; });
 
     // Start every run from a clean database/settings.
     const QString dataDir = DesktopAppController::dataLocation();

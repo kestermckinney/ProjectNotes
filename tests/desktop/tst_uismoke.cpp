@@ -1903,7 +1903,21 @@ private slots:
         {
             QTemporaryDir dir;
             QVERIFY(dir.isValid());
+            // A password field goes to the plugin's credential-store namespace,
+            // never to the plugin settings; a blank one keeps what is stored.
+            QHash<QString, QString> secrets;
+            PluginUiController::setSecretWriter([&secrets](const QString& plugin, const QString& key, const QString& secret, QString*) {
+                secrets.insert(plugin + QLatin1Char('/') + key, secret);
+                return true;
+            });
+            auto restoreWriter = qScopeGuard([] {
+                PluginUiController::setSecretWriter([](const QString&, const QString&, const QString&, QString*) { return true; });
+            });
             ui->setSetting(id, QStringLiteral("token"), QStringLiteral("hunter2"));
+            QCOMPARE(secrets.value(id + QStringLiteral("/token")), QStringLiteral("hunter2"));
+            QVERIFY(!ui->settingValues(id).contains(QStringLiteral("token")));
+            ui->setSetting(id, QStringLiteral("token"), QString());
+            QCOMPARE(secrets.value(id + QStringLiteral("/token")), QStringLiteral("hunter2"));
             bool listed = false;
             for (const QVariant& candidate : ui->settingsBackupCandidates())
                 listed = listed || candidate.toMap().value(QStringLiteral("id")).toString() == id;

@@ -8,6 +8,7 @@
 
 #include <QHash>
 #include <QJSValue>
+#include <QSet>
 #include <QJsonObject>
 #include <QObject>
 #include <QPointer>
@@ -101,6 +102,13 @@ public:
 
     void setSettingsOrganization(const QString& organization) { m_organization = organization; }
 
+    // Where "password" form fields go instead of the plugin settings: the
+    // plugin's own credential-store namespace, which secrets.get(key) reads.
+    // Tests substitute an in-memory writer so they never touch the keyring.
+    using SecretWriter = std::function<bool(const QString& pluginId, const QString& key,
+                                            const QString& secret, QString* error)>;
+    static void setSecretWriter(SecretWriter writer) { s_secretWriter = std::move(writer); }
+
 signals:
     void requestOpened(int requestId, const QString& kind, const QVariantMap& params);
     void requestClosed(int requestId);
@@ -123,12 +131,18 @@ private:
     // running plugins. `legacy` maps Python groups through legacySettings.
     // Returns {plugins (names), count}.
     QVariantMap applyPluginSettings(const QJsonObject& groups, bool legacy);
+    // Saves a password field through s_secretWriter, reporting a failure to the
+    // user. A blank value keeps the stored one. True once nothing is left to keep
+    // in the plugin settings.
+    bool storePasswordField(const QString& pluginId, const QString& key, const QString& secret);
+    QSet<QString> passwordFields(const QString& pluginId) const;
 
     QPointer<PN::Plugins::PluginRegistry> m_registry;
     QHash<int, Request> m_requests;
     int m_nextRequest = 1;
     int m_settingsRevision = 0;
     QString m_organization = QStringLiteral("ProjectNotes");
+    static SecretWriter s_secretWriter;
 };
 
 // `pluginDialog` / `pluginSettings` in plugin QML.
