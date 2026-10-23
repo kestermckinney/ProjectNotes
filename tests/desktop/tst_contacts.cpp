@@ -180,7 +180,7 @@ private slots:
         c.emails={"different@example.test"};c.fields["email"]="different@example.test";
         QVERIFY(ContactMatcher::person(c,"client",{p}).review);
         c=incoming();c.emails.clear();c.phones.clear();c.fields.remove("role");
-        QVERIFY(ContactMatcher::person(c,"client",{p}).review);
+        QCOMPARE(ContactMatcher::person(c,"client",{p}).id,p.id);
     }
     void companyConjunctionNormalization(){
         const QString base="Consolidated Grain & Barge";
@@ -236,7 +236,27 @@ private slots:
         auto c=incoming("Smith, Jane");QCOMPARE(ContactMatcher::person(c,"client",{existing()}).id,QString("person"));
         c=incoming("José Martin");auto p=existing("p","Jose Martin");QCOMPARE(ContactMatcher::person(c,"client",{p}).id,QString("p"));
     }
-    void nameOnlyNeedsReview(){auto c=incoming();c.emails.clear();c.phones.clear();auto m=ContactMatcher::person(c,"client",{existing()});QVERIFY(m.review);QVERIFY(m.id.isEmpty());}
+    void sameNameWithoutConflictsMatches(){
+        auto c=incoming();c.emails.clear();c.phones.clear();
+        auto m=ContactMatcher::person(c,"client",{existing()});QCOMPARE(m.id,QString("person"));QVERIFY(!m.review);
+        // Neither side has a company.
+        c.company.clear();auto p=existing();p.clientId.clear();p.company.clear();
+        QCOMPARE(ContactMatcher::person(c,"",{p}).id,QString("person"));
+        // Same company confirms the person despite a new phone number.
+        c=incoming();c.emails.clear();c.phones={"212 555 9999"};
+        QCOMPARE(ContactMatcher::person(c,"client",{existing()}).id,QString("person"));
+    }
+    void sameNameWithConflictsNeedsReview(){
+        // A different phone with no company to confirm the person.
+        auto c=incoming();c.company.clear();c.emails.clear();c.phones={"212 555 9999"};
+        QVERIFY(ContactMatcher::person(c,"",{existing()}).review);
+        // Only similar, not the same.
+        c=incoming("Jacqueline Smyth");c.emails.clear();c.phones.clear();
+        QVERIFY(ContactMatcher::person(c,"client",{existing("person","Jacqueline Smith")}).review);
+        // A single name is too thin.
+        c=incoming("Jane");c.emails.clear();c.phones.clear();
+        QVERIFY(ContactMatcher::person(c,"client",{existing("person","Jane")}).id.isEmpty());
+    }
     void exactThunderbirdFieldsPreferExactPerson(){
         auto c=incoming(" Jane  Smith "," jane@example.test "," Acme Corporation ");
         c.fields={{"name",c.name},{"company",c.company},{"email"," jane@example.test "},
@@ -299,7 +319,8 @@ private slots:
     }
     void formattedSyncClearsReviewAndSurvivesRestart(){
         seed();QTemporaryDir state;FakeContacts provider;
-        auto c=incoming();c.emails.clear();c.phones.clear();provider.snapshot.contacts={c};
+        // Same name, but a different phone and no company to confirm it.
+        auto c=incoming("Jane Smith","","");c.phones={"212 555 9999"};c.fields["office_phone"]="212 555 9999";provider.snapshot.contacts={c};
         {
             ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);
             model.syncNow();QTRY_VERIFY(!model.busy());QCOMPARE(model.reviews().size(),1);
@@ -456,7 +477,7 @@ private slots:
         QCOMPARE(count("clients"),1);
     }
     void ignoredAndRejectedDecisionsPersist(){
-        seed();QTemporaryDir state;FakeContacts provider;auto c=incoming();c.emails.clear();c.phones.clear();provider.snapshot.contacts={c};
+        seed();QTemporaryDir state;FakeContacts provider;auto c=incoming("Jane Smith","","");c.phones={"212 555 9999"};c.fields["office_phone"]="212 555 9999";provider.snapshot.contacts={c};
         ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);model.syncNow();QTRY_VERIFY(!model.busy());
         auto key=model.reviews().first().toMap().value("key").toString();model.rejectCandidate(key,"person");model.syncNow();QTRY_VERIFY(!model.busy());
         QVERIFY(model.reviews().first().toMap().value("people").toList().isEmpty());
@@ -469,13 +490,17 @@ private slots:
         QSqlQuery q(global_DBObjects.getDb());QVERIFY(q.exec("SELECT name FROM people"));QVERIFY(q.next());QCOMPARE(q.value(0).toString(),QString("Jane Smithe"));
     }
     void staleReviewCannotRecreateRemovedPerson(){
-        seed();QTemporaryDir state;FakeContacts provider;auto c=incoming();c.emails.clear();c.phones.clear();provider.snapshot.contacts={c};
+        seed();QTemporaryDir state;FakeContacts provider;auto c=incoming("Jane Smith","","");c.phones={"212 555 9999"};c.fields["office_phone"]="212 555 9999";provider.snapshot.contacts={c};
         ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);model.syncNow();QTRY_VERIFY(!model.busy());
         auto key=model.reviews().first().toMap().value("key").toString();QSqlQuery q(global_DBObjects.getDb());QVERIFY(q.exec("DELETE FROM people WHERE id='person'"));
         model.resolve(key,"link","person","client","Jane Smith");QTRY_VERIFY(model.status().contains("no longer exists"));QCOMPARE(count("people"),0);QCOMPARE(model.reviews().size(),1);
     }
-    void ambiguousImportWaitsForReview(){
+    void sameNameImportLinksWithoutReview(){
         seed();QTemporaryDir state;FakeContacts provider;auto c=incoming();c.emails.clear();c.phones.clear();provider.snapshot.contacts={c};ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);model.syncNow();QTRY_VERIFY(!model.busy());
+        QCOMPARE(count("people"),1);QVERIFY(model.reviews().isEmpty());
+    }
+    void ambiguousImportWaitsForReview(){
+        seed();QTemporaryDir state;FakeContacts provider;auto c=incoming("Jane Smith","","");c.phones={"212 555 9999"};c.fields["office_phone"]="212 555 9999";provider.snapshot.contacts={c};ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);model.syncNow();QTRY_VERIFY(!model.busy());
         QCOMPARE(count("people"),1);QCOMPARE(model.reviews().size(),1);
         auto key=model.reviews().first().toMap().value("key").toString();model.resolve(key,"link","person","client","Jane Smith");QTRY_COMPARE(model.reviews().size(),0);model.syncNow();QTRY_VERIFY(!model.busy());QCOMPARE(count("people"),1);QCOMPARE(model.reviews().size(),0);
     }
