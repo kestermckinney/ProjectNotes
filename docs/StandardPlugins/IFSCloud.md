@@ -42,6 +42,37 @@ With tracker sync on, each active project's items are compared with the tasks of
 - An item created in Project Notes becomes a task named after the project and item number. Internal items stay out of IFS.
 - When both sides have the item, the one updated more recently wins.
 
+### How ISSUES sync works
+
+Every three minutes, after the project import, the plugin walks your active projects. For each one it looks up the activity numbered `ISSUES` in IFS. A project without that activity is skipped. Otherwise the plugin reads every task under it and matches them to the project's tracker items.
+
+Matching uses the task ID. A task whose ID starts with the project number came from Project Notes, and the rest of the ID is the item number, so task `P4000012` is item `012` of project `P4000`. Any other task is item `IFS` plus its task ID. If no item has that number but one has the same name, the plugin updates that item rather than create a duplicate.
+
+When a task and an item match, the plugin compares the item's **Updated** date with the task's date-updated field:
+
+| Comparison | Result |
+| :--- | :--- |
+| Project Notes is newer | The item is written to the IFS task. |
+| Both dates are the same | Nothing changes. |
+| IFS is newer, or either date is blank | The task overwrites the item. |
+
+Tasks with no matching item become new items. Items with no matching task become new IFS tasks, except internal items and items whose number starts with `IFS`. Those are tasks someone deleted in IFS, and the plugin leaves them alone instead of recreating them.
+
+Editing an item in Project Notes sets its **Updated** date to today. That date is what tells the plugin to send your change to IFS.
+
+### Why there is no sync timestamp
+
+The **Keep tracker items in step with IFS ISSUES tasks** setting is only a check box. Nothing records when it was turned on or when a sync last finished. Without that reference point the plugin can't tell what changed since the last sync. It only knows which side carries the later date. Expect these consequences:
+
+- **First sync pushes everything.** Turn the setting on for a project with existing items and every non-internal item that IFS lacks becomes a new IFS task at once, including items closed long ago. Mark items internal first if you don't want them in IFS.
+- **Same-day edits on both sides are lost.** Updated dates hold a day, not a time. If you edit an item on the day someone also edits its task in IFS, the dates match and neither change crosses over. The two stay different until one side is edited again on a later day.
+- **One side's change can overwrite the other's.** Whichever side has the later date wins the whole item. Someone who edits the task in IFS today replaces the status you set in Project Notes yesterday, even if they changed a different field.
+- **Deletions come back.** The plugin can't tell an item you deleted from an item that never existed. Delete an item in Project Notes while its task remains in IFS and the next sync brings it back. Delete a Project Notes task in IFS and the item is sent back as a new task. Delete the matching record on both sides, or close the item instead.
+- **Turning the setting off and on again catches up blindly.** Changes made on both sides while sync was off are settled by date alone, with the same-day and whole-item problems above.
+- **Blank dates favor IFS.** A task or item with no updated date is treated as older, so IFS overwrites the item.
+
+If you depend on IFS and Project Notes agreeing, pick one side as the place you edit tracker items and treat the other as a copy.
+
 ## Status reports
 
 Right-click a project and choose **Generate Status Report**. Choose the report date and how to send it: in the message body (Windows, using Word), as a PDF, as a Word document, or not at all. The plugin downloads the report from the report server with the domain account, saves the PDF (and a Word copy, if you ask) in the project's report folder, prepares the email for your review, and records the date as the project's last status date.
