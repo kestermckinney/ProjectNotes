@@ -771,7 +771,9 @@ void FileFinderTest::commitLocationsPrefersLocalOverRemoteOnDescriptionCollision
     }
     QSqlDatabase::removeDatabase(setupConnection);
 
-    const QString localPath = QStringLiteral("C:/Projects/1001/Quotes/Proposal.pdf");
+    // Absolute on every platform; "C:/..." is relative off Windows and
+    // normalizedPath() would prefix it with the working directory.
+    const QString localPath = temporary.filePath(QStringLiteral("Projects/1001/Quotes/Proposal.pdf"));
     const QString remotePath = QStringLiteral("https://example.test/Quotes/Proposal.pdf");
 
     auto verifyLocalWins = [&](const QList<DiscoveredLocation> &locations, const QString &label) {
