@@ -28,3 +28,6 @@ packaging/linux/.com.projectnotespro.ProjectNotes.resolved.yml
 .release-secrets/
 .flatpak-builder/
 packaging/linux/flatpak-build/
+# Packaged plugins (.pnplugin) from packaging/plugins/build-pnplugin.sh.
+/dist/
+packaging/plugins/dist/
