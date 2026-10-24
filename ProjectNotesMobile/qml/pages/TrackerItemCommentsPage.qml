@@ -96,7 +96,7 @@ Page {
 
                     Label {
                         text: AppController.contactNameForId(delegateRoot.model.updated_by || "")
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: Theme.mutedText
                     }
                 }
@@ -104,7 +104,7 @@ Page {
                 Label {
                     visible: (delegateRoot.model.update_note || "") !== ""
                     text: delegateRoot.model.update_note || ""
-                    font.pixelSize: 13
+                    font.pixelSize: Theme.footnote; font.letterSpacing: Theme.tracking(Theme.footnote)
                     wrapMode: Text.WordWrap
                     Layout.fillWidth: true
                 }

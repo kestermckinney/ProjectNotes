@@ -128,7 +128,7 @@ Page {
                 Layout.bottomMargin: 16
                 horizontalAlignment: Text.AlignHCenter
                 text: AppController.supabaseConnectionInfo
-                font.pixelSize: 11
+                font.pixelSize: Theme.caption2; font.letterSpacing: Theme.tracking(Theme.caption2)
                 color: Theme.mutedText
                 opacity: 0.6
             }
@@ -142,7 +142,7 @@ Page {
         Layout.topMargin: 20
         leftPadding: 16
         bottomPadding: 4
-        font.pixelSize: 13
+        font.pixelSize: Theme.footnote; font.letterSpacing: Theme.tracking(Theme.footnote)
         font.weight: 600
         color: Theme.navyMid
         background: Rectangle { color: Theme.sectionBg }

@@ -260,7 +260,7 @@ Page {
                 leftPadding: 16
                 rightPadding: 16
                 wrapMode: Text.WordWrap
-                font.pixelSize: 12
+                font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                 color: Theme.mutedText
                 text: qsTr("New project — give it a name to create it. The pages below become available once it is saved.")
             }
@@ -452,7 +452,7 @@ Page {
         Layout.topMargin: 20
         leftPadding: 16
         bottomPadding: 4
-        font.pixelSize: 13
+        font.pixelSize: Theme.footnote; font.letterSpacing: Theme.tracking(Theme.footnote)
         font.weight: 600
         color: Theme.navyMid
         background: Rectangle { color: Theme.sectionBg }

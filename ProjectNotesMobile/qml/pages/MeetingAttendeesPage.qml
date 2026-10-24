@@ -112,7 +112,7 @@ Page {
                         Label {
                             visible: (delegateRoot.model.client_name || "") !== ""
                             text: delegateRoot.model.client_name || ""
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                             color: Theme.mutedText
                             elide: Text.ElideRight
                             Layout.fillWidth: true
@@ -121,7 +121,7 @@ Page {
                         Label {
                             visible: (delegateRoot.model.email || "") !== ""
                             text: delegateRoot.model.email || ""
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                             color: Theme.mutedText
                             elide: Text.ElideRight
                         }

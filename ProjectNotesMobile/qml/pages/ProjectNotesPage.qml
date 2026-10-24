@@ -129,7 +129,7 @@ Page {
 
                     Label {
                         text: delegateRoot.model.note_date || ""
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: Theme.mutedText
                     }
                 }
@@ -137,7 +137,7 @@ Page {
                 Label {
                     visible: AppController.showInternalItems && (delegateRoot.model.internal_item || "0") !== "0"
                     text: qsTr("Internal")
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.caption2; font.letterSpacing: Theme.tracking(Theme.caption2)
                     color: palette.link
                 }
             }
@@ -171,14 +171,14 @@ Page {
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
             text: qsTr("No Notes")
-            font.pixelSize: 17
+            font.pixelSize: Theme.title2; font.letterSpacing: Theme.tracking(Theme.title2)
             font.bold: true
         }
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
             text: qsTr("Tap + to add a meeting note.")
             horizontalAlignment: Text.AlignHCenter
-            font.pixelSize: 14
+            font.pixelSize: Theme.subheadline; font.letterSpacing: Theme.tracking(Theme.subheadline)
             color: Theme.mutedText
         }
     }

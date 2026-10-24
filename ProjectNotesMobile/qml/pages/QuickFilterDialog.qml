@@ -123,7 +123,7 @@ Popup {
             Label {
                 anchors.centerIn: parent
                 text: qsTr("Quick Filter")
-                font.pixelSize: 17
+                font.pixelSize: Theme.headline; font.letterSpacing: Theme.tracking(Theme.headline)
                 font.weight: Font.DemiBold
             }
             ToolButton {

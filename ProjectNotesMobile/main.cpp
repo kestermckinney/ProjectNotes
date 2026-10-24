@@ -9,6 +9,7 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
+#include <QQuickWindow>
 
 int main(int argc, char *argv[])
 {
@@ -34,6 +35,11 @@ int main(int argc, char *argv[])
 
     // Use the iOS-native look by default
     QQuickStyle::setStyle("iOS");
+
+    // Rasterize text with Core Text instead of Qt's distance fields, so SF Pro
+    // gets the same stroke weight it has in UIKit apps such as the App Store.
+    // Safe here because the mobile UI never scales text after layout.
+    QQuickWindow::setTextRenderType(QQuickWindow::NativeTextRendering);
 
     // Register QML singletons — the create() factory is called by the engine on first use.
     qmlRegisterSingletonType<AppController>(

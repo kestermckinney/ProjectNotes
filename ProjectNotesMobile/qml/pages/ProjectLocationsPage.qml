@@ -116,7 +116,7 @@ Page {
 
                     Label {
                         text: delegateRoot.model.location_type || ""
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: Theme.mutedText
                     }
                 }
@@ -124,7 +124,7 @@ Page {
                 Label {
                     visible: (delegateRoot.model.full_path || "") !== "" && (delegateRoot.model.location_description || "") !== ""
                     text: delegateRoot.model.full_path || ""
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                     color: Theme.mutedText
                     elide: Text.ElideRight
                     Layout.fillWidth: true

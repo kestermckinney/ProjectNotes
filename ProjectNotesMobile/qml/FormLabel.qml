@@ -6,7 +6,7 @@ import QtQuick.Controls
 
 Label {
     color: Theme.mutedText
-    font.pixelSize: 16
+    font.pixelSize: Theme.callout; font.letterSpacing: Theme.tracking(Theme.callout)
     leftPadding: 16
     rightPadding: 16
     verticalAlignment: Text.AlignVCenter

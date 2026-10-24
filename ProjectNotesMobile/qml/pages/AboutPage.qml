@@ -17,21 +17,21 @@ Page {
         Label {
             Layout.alignment: Qt.AlignHCenter
             text: qsTr("Project Notes")
-            font.pixelSize: 26
+            font.pixelSize: Theme.title1; font.letterSpacing: Theme.tracking(Theme.title1)
             font.bold: true
         }
 
         Label {
             Layout.alignment: Qt.AlignHCenter
             text: qsTr("Version %1").arg(Qt.application.version)
-            font.pixelSize: 15
+            font.pixelSize: Theme.subheadline; font.letterSpacing: Theme.tracking(Theme.subheadline)
             color: Theme.mutedText
         }
 
         Label {
             Layout.alignment: Qt.AlignHCenter
             text: qsTr("© 2022–2026 Paul McKinney")
-            font.pixelSize: 13
+            font.pixelSize: Theme.footnote; font.letterSpacing: Theme.tracking(Theme.footnote)
             color: Theme.mutedText
         }
 
@@ -75,7 +75,7 @@ Page {
                 Label {
                     Layout.fillWidth: true
                     text: qsTr("Get the Full Experience")
-                    font.pixelSize: 15
+                    font.pixelSize: Theme.subheadline; font.letterSpacing: Theme.tracking(Theme.subheadline)
                     font.bold: true
                     horizontalAlignment: Text.AlignHCenter
                     wrapMode: Text.Wrap
@@ -84,7 +84,7 @@ Page {
                 Label {
                     Layout.fillWidth: true
                     text: qsTr("Download the Project Notes desktop application for Windows or macOS to unlock the full suite of project management features — plugins, Outlook integration and advanced reporting.")
-                    font.pixelSize: 13
+                    font.pixelSize: Theme.footnote; font.letterSpacing: Theme.tracking(Theme.footnote)
                     color: Theme.mutedText
                     wrapMode: Text.Wrap
                     horizontalAlignment: Text.AlignHCenter
@@ -96,7 +96,7 @@ Page {
             Layout.alignment: Qt.AlignHCenter
             text: "<a href=\"https://www.projectnotespro.com\">www.projectnotespro.com</a>"
             textFormat: Text.RichText
-            font.pixelSize: 15
+            font.pixelSize: Theme.subheadline; font.letterSpacing: Theme.tracking(Theme.subheadline)
             onLinkActivated: Qt.openUrlExternally(link)
         }
     }

@@ -192,7 +192,7 @@ Page {
                     Label {
                         visible: (model.status || "") !== ""
                         text: model.status || ""
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: root.statusColor(model.status || "")
                     }
 
@@ -202,7 +202,7 @@ Page {
                             var sep = (model.status || "") !== "" ? "  ·  " : ""
                             return sep + (model.priority || "")
                         }
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: model.priority_foreground || Theme.mutedText
                     }
 
@@ -212,7 +212,7 @@ Page {
                             var sep = (model.status || model.priority) ? "  ·  " : ""
                             return sep + AppController.contactNameForId(model.assigned_to || "")
                         }
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: Theme.mutedText
                         elide: Text.ElideRight
                         Layout.fillWidth: true
@@ -224,7 +224,7 @@ Page {
                             var sep = (model.status || model.priority || model.assigned_to) ? "  ·  " : ""
                             return sep + "Due: " + (model.date_due || "")
                         }
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: model.date_due_foreground || Theme.mutedText
                         elide: Text.ElideRight
                     }
@@ -276,14 +276,14 @@ Page {
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
             text: qsTr("No Tracker Items")
-            font.pixelSize: 17
+            font.pixelSize: Theme.title2; font.letterSpacing: Theme.tracking(Theme.title2)
             font.bold: true
         }
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
             text: qsTr("Tap + to log an issue, risk, or action item.")
             horizontalAlignment: Text.AlignHCenter
-            font.pixelSize: 14
+            font.pixelSize: Theme.subheadline; font.letterSpacing: Theme.tracking(Theme.subheadline)
             color: Theme.mutedText
         }
     }

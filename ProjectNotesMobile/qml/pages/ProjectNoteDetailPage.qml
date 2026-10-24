@@ -472,7 +472,7 @@ Page {
         Layout.topMargin: 20
         leftPadding: 16
         bottomPadding: 4
-        font.pixelSize: 13
+        font.pixelSize: Theme.footnote; font.letterSpacing: Theme.tracking(Theme.footnote)
         font.weight: 600
         color: Theme.navyMid
         background: Rectangle { color: Theme.sectionBg }

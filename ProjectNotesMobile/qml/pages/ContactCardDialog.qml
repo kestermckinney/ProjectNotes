@@ -78,7 +78,7 @@ Popup {
                 anchors { left: parent.left; right: closeBtn.left; leftMargin: 44; verticalCenter: parent.verticalCenter }
                 horizontalAlignment: Text.AlignHCenter
                 text: root._name !== "" ? root._name : qsTr("Contact")
-                font.pixelSize: 17
+                font.pixelSize: Theme.headline; font.letterSpacing: Theme.tracking(Theme.headline)
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
             }

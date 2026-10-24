@@ -51,12 +51,12 @@ Rectangle {
             text: root.text !== "" ? root.text : root.placeholderText
             color: root.text !== "" ? palette.text : Theme.mutedText
             verticalAlignment: Text.AlignVCenter
-            font.pixelSize: 16
+            font.pixelSize: Theme.callout; font.letterSpacing: Theme.tracking(Theme.callout)
         }
 
         Button {
             text: qsTr("Clear")
-            font.pixelSize: 12
+            font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
             flat: true
             visible: root.text !== ""
             onClicked: { root.text = "" }
@@ -64,7 +64,7 @@ Rectangle {
 
         Button {
             text: qsTr("Today")
-            font.pixelSize: 12
+            font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
             flat: true
             onClicked: root.text = Qt.formatDate(new Date(), "MM/dd/yyyy")
         }

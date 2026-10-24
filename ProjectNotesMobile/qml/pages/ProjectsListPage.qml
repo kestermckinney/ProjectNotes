@@ -12,6 +12,9 @@ import ProjectNotesMobile
 // Column indices are based on ProjectsListModel's SELECT order — see projectslistmodel.cpp.
 
 Page {
+    // Space below the last row for Main.qml's floating tab bar.
+    property real listBottomInset: 0
+
     id: root
     title: qsTr("Projects")
 
@@ -134,6 +137,7 @@ Page {
     ListView {
         id: listView
         anchors.fill: parent
+        bottomMargin: listBottomInset
         model: AppController.projectsListModel
         clip: true
         reuseItems: true
@@ -176,7 +180,7 @@ Page {
                     Label {
                         visible: delegateRoot._companyName !== ""
                         text: delegateRoot._companyName
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: Theme.mutedText
                         elide: Text.ElideRight
                     }
@@ -198,7 +202,7 @@ Page {
                     Label {
                         visible: (delegateRoot.model.project_status || "") !== ""
                         text: delegateRoot.model.project_status || ""
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: {
                             var s = delegateRoot.model.project_status || ""
                             if (s === "Active")                      return Theme.accentGreenDark
@@ -256,14 +260,14 @@ Page {
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
             text: qsTr("No Projects")
-            font.pixelSize: 17
+            font.pixelSize: Theme.title2; font.letterSpacing: Theme.tracking(Theme.title2)
             font.bold: true
         }
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
             text: qsTr("Tap + to add one or sync to load your data.")
             horizontalAlignment: Text.AlignHCenter
-            font.pixelSize: 14
+            font.pixelSize: Theme.subheadline; font.letterSpacing: Theme.tracking(Theme.subheadline)
             color: Theme.mutedText
         }
     }

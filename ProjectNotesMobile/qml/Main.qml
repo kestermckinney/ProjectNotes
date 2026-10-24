@@ -4,6 +4,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.iOS
+import QtQuick.Effects
 import QtQuick.Layouts
 import ProjectNotesMobile
 
@@ -13,6 +14,21 @@ ApplicationWindow {
     width: 390
     height: 844
     title: qsTr("Project Notes")
+
+    // Since Qt 6.9 the window pads its content by the safe-area margins, which
+    // left a band of window background under the lists. Drop the bottom
+    // padding so the tab lists run to the screen edge under the floating tab
+    // bar; pageStack re-applies the inset for detail pages, whose footer
+    // toolbars must stay clear of the home indicator.
+    bottomPadding: 0
+    readonly property real safeBottom: SafeArea.margins.bottom
+
+    // Apply SF Pro's native tracking to the default font, which every control
+    // inherits (most list rows show text at this size). Controls that set
+    // their own font.pixelSize also set a matching font.letterSpacing.
+    font.letterSpacing: Theme.tracking(Qt.application.font.pixelSize > 0
+                                       ? Qt.application.font.pixelSize
+                                       : Qt.application.font.pointSize)
 
     // Save current page data before app closes
     function saveCurrentPage() {
@@ -281,7 +297,7 @@ ApplicationWindow {
                 Label {
                     anchors.centerIn: parent
                     text: qsTr("Main Menu")
-                    font.pixelSize: 20
+                    font.pixelSize: Theme.title3; font.letterSpacing: Theme.tracking(Theme.title3)
                     font.bold: true
                     color: "white"
                 }
@@ -399,8 +415,8 @@ ApplicationWindow {
                 text: pageStack.depth > 1
                     ? (pageStack.currentItem ? (pageStack.currentItem.title || "") : "")
                     : (root.tabTitles[root.currentTabIndex] || "")
-                font.pixelSize: 17
-                font.bold: true
+                font.pixelSize: Theme.headline; font.letterSpacing: Theme.tracking(Theme.headline)
+                font.weight: Font.DemiBold
                 horizontalAlignment: Text.AlignHCenter
                 elide: Text.ElideRight
                 color: "white"
@@ -437,6 +453,7 @@ ApplicationWindow {
     StackView {
         id: pageStack
         anchors { top: syncStrip.bottom; left: parent.left; right: parent.right; bottom: parent.bottom }
+        anchors.bottomMargin: depth > 1 ? root.safeBottom : 0
         initialItem: mainTabsComponent
     }
 
@@ -469,26 +486,129 @@ ApplicationWindow {
                 }
             }
 
-            ProjectsListPage { stackView: pageStack }
-            ContactsPage      { stackView: pageStack }
-            CompaniesPage     { stackView: pageStack }
-            AllItemsPage      { stackView: pageStack }
+            ProjectsListPage { stackView: pageStack; listBottomInset: root.tabDockInset }
+            ContactsPage      { stackView: pageStack; listBottomInset: root.tabDockInset }
+            CompaniesPage     { stackView: pageStack; listBottomInset: root.tabDockInset }
+            AllItemsPage      { stackView: pageStack; listBottomInset: root.tabDockInset }
         }
     }
 
     // ── Bottom tab bar ────────────────────────────────────────────────────────
-    footer: TabBar {
-        id: tabBar
-        // Collapse when a detail page is open so StackView fills the full window.
-        visible: pageStack.depth <= 1
-        height: visible ? implicitHeight : 0
-        currentIndex: root.currentTabIndex
-        onCurrentIndexChanged: root.currentTabIndex = currentIndex
+    // A floating glass capsule over the list, in the style of iOS 26 tab bars.
+    // The lists run full height underneath it; each tab page pads its list by
+    // tabDockInset so the last row can still scroll clear of the capsule.
+    readonly property real tabDockInset: tabDock.height + tabDock.anchors.bottomMargin
 
-        TabButton { text: qsTr("Projects"); icon.name: "folder"    }
-        TabButton { text: qsTr("Contacts"); icon.name: "person"    }
-        TabButton { text: qsTr("Companies"); icon.name: "building"  }
-        TabButton { text: qsTr("Items");    icon.name: "list.bullet" }
+    Item {
+        id: tabDock
+        z: 10
+        // Hidden while a detail page is open, as the old footer was.
+        visible: pageStack.depth <= 1
+        height: 62
+        anchors {
+            left: parent.left; right: parent.right; bottom: parent.bottom
+            leftMargin: 16; rightMargin: 16
+            // Sit just above the home indicator, or a fixed gap without one.
+            bottomMargin: Math.max(12, root.safeBottom - 10)
+        }
+
+        readonly property real radius: height / 2
+
+        // Soft drop shadow so the capsule reads as floating above the rows.
+        RectangularShadow {
+            anchors.fill: parent
+            radius: tabDock.radius
+            offset.y: 6
+            blur: 24
+            spread: -2
+            color: Theme.isDarkMode ? Qt.rgba(0, 0, 0, 0.45) : Qt.rgba(0, 0, 0, 0.14)
+        }
+
+        // Frosted backdrop: a live copy of the list behind the capsule,
+        // blurred and clipped to the capsule's rounded shape.
+        ShaderEffectSource {
+            id: backdrop
+            anchors.fill: parent
+            sourceItem: pageStack
+            sourceRect: Qt.rect(tabDock.x - pageStack.x, tabDock.y - pageStack.y,
+                                tabDock.width, tabDock.height)
+            live: true
+            visible: false
+        }
+        Rectangle {
+            id: capsuleMask
+            anchors.fill: parent
+            radius: tabDock.radius
+            visible: false
+            layer.enabled: true
+        }
+        Item {
+            anchors.fill: parent
+            // Mask the blurred layer as a whole; masking inside the blur
+            // effect itself leaves its padded edges unclipped.
+            layer.enabled: true
+            layer.effect: MultiEffect {
+                maskEnabled: true
+                maskSource: capsuleMask
+                maskThresholdMin: 0.5
+                maskSpreadAtMin: 1.0
+            }
+            MultiEffect {
+                anchors.fill: parent
+                source: backdrop
+                // Keep the output inside the capsule; auto padding spreads
+                // the blur past its bounds and thins it out.
+                autoPaddingEnabled: false
+                blurEnabled: true
+                blur: 1.0
+                blurMax: 40
+                saturation: 0.35
+            }
+        }
+
+        // Translucent tint, hairline edge, and a faint top sheen for the glass.
+        Rectangle {
+            anchors.fill: parent
+            radius: tabDock.radius
+            color: Theme.isDarkMode ? Qt.rgba(0.11, 0.11, 0.12, 0.55) : Qt.rgba(1, 1, 1, 0.55)
+            border.width: 1
+            border.color: Theme.isDarkMode ? Qt.rgba(1, 1, 1, 0.14) : Qt.rgba(1, 1, 1, 0.7)
+        }
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 1
+            radius: tabDock.radius - 1
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, Theme.isDarkMode ? 0.10 : 0.35) }
+                GradientStop { position: 0.5; color: Qt.rgba(1, 1, 1, 0.0) }
+            }
+        }
+
+        TabBar {
+            id: tabBar
+            anchors.fill: parent
+            anchors.margins: 5
+            position: TabBar.Footer
+            currentIndex: root.currentTabIndex
+            onCurrentIndexChanged: root.currentTabIndex = currentIndex
+
+            // No bar background; just a pill that slides behind the current tab.
+            background: Item {
+                Rectangle {
+                    width: tabBar.count > 0 ? tabBar.width / tabBar.count : 0
+                    height: tabBar.height
+                    x: tabBar.currentIndex * width
+                    radius: height / 2
+                    color: Theme.isDarkMode ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(0, 0, 0, 0.06)
+                    Behavior on x { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+                }
+            }
+
+            TabButton { text: qsTr("Projects"); icon.name: "folder"    }
+            TabButton { text: qsTr("Contacts"); icon.name: "person"    }
+            TabButton { text: qsTr("Companies"); icon.name: "building"  }
+            TabButton { text: qsTr("Items");    icon.name: "list.bullet" }
+        }
     }
 
     // ── Startup ───────────────────────────────────────────────────────────────

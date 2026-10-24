@@ -126,7 +126,7 @@ Popup {
             Label {
                 anchors.centerIn: parent
                 text: qsTr("Sort") + " · " + root._sectionLabel
-                font.pixelSize: 17
+                font.pixelSize: Theme.headline; font.letterSpacing: Theme.tracking(Theme.headline)
                 font.weight: Font.DemiBold
             }
             ToolButton {
@@ -153,7 +153,7 @@ Popup {
             header: Label {
                 width: ListView.view.width
                 text: qsTr("SORT BY")
-                font.pixelSize: 11
+                font.pixelSize: Theme.caption2; font.letterSpacing: Theme.tracking(Theme.caption2)
                 font.bold: true
                 color: Theme.mutedText
                 leftPadding: 16

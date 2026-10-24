@@ -133,7 +133,7 @@ Page {
                             if (delegateRoot.model.role        || "") parts.push(delegateRoot.model.role)
                             return parts.join("  ·  ")
                         }
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: Theme.mutedText
                         elide: Text.ElideRight
                         Layout.fillWidth: true
@@ -142,7 +142,7 @@ Page {
                     Label {
                         visible: (delegateRoot.model.receive_status_report || "0") !== "0"
                         text: qsTr("Receives Status Report")
-                        font.pixelSize: 11
+                        font.pixelSize: Theme.caption2; font.letterSpacing: Theme.tracking(Theme.caption2)
                         color: palette.link
                     }
                 }

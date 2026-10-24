@@ -119,7 +119,7 @@ Page {
                     Label {
                         text: delegateRoot.model.task_category || ""
                         font.bold: true
-                        font.pixelSize: 13
+                        font.pixelSize: Theme.footnote; font.letterSpacing: Theme.tracking(Theme.footnote)
                         color: root.categoryColor(delegateRoot.model.task_category || "")
                         Layout.fillWidth: true
                     }
@@ -128,7 +128,7 @@ Page {
                 Label {
                     visible: (delegateRoot.model.task_description || "") !== ""
                     text: delegateRoot.model.task_description || ""
-                    font.pixelSize: 13
+                    font.pixelSize: Theme.footnote; font.letterSpacing: Theme.tracking(Theme.footnote)
                     wrapMode: Text.WordWrap
                     Layout.fillWidth: true
                 }
@@ -160,14 +160,14 @@ Page {
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
             text: qsTr("No Status Items")
-            font.pixelSize: 17
+            font.pixelSize: Theme.title2; font.letterSpacing: Theme.tracking(Theme.title2)
             font.bold: true
         }
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
             text: qsTr("Tap + to add a status item.")
             horizontalAlignment: Text.AlignHCenter
-            font.pixelSize: 14
+            font.pixelSize: Theme.subheadline; font.letterSpacing: Theme.tracking(Theme.subheadline)
             color: Theme.mutedText
         }
     }

@@ -118,8 +118,8 @@ Popup {
 
                 Label {
                     text: qsTr("Select Date")
-                    font.pixelSize: 16
-                    font.bold: true
+                    font.pixelSize: Theme.headline; font.letterSpacing: Theme.tracking(Theme.headline)
+                    font.weight: Font.DemiBold
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignHCenter
                 }
@@ -164,7 +164,7 @@ Popup {
                 Layout.fillWidth: true
                 text: root._monthLabel
                 horizontalAlignment: Text.AlignHCenter
-                font.pixelSize: 16
+                font.pixelSize: Theme.callout; font.letterSpacing: Theme.tracking(Theme.callout)
                 font.bold: true
             }
 
@@ -194,7 +194,7 @@ Popup {
                         Label {
                             anchors.centerIn: parent
                             text: modelData
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                             font.bold: true
                             color: Theme.mutedText
                         }
@@ -263,7 +263,7 @@ Popup {
                         Label {
                             anchors.centerIn: parent
                             text: dayNum
-                            font.pixelSize: 15
+                            font.pixelSize: Theme.subheadline; font.letterSpacing: Theme.tracking(Theme.subheadline)
                             font.bold: isSelected || isToday
                             color: isSelected   ? "white"
                                  : isToday      ? Theme.navyMid

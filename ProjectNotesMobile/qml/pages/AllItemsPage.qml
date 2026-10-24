@@ -16,6 +16,9 @@ import ProjectNotesMobile
 //   17=project_status, 18=client_id, 19=project_name, 20=project_number
 
 Page {
+    // Space below the last row for Main.qml's floating tab bar.
+    property real listBottomInset: 0
+
     id: root
     title: qsTr("Items")
 
@@ -122,6 +125,7 @@ Page {
     ListView {
         id: listView
         anchors.fill: parent
+        bottomMargin: listBottomInset
         model: AppController.allItemsModel
         clip: true
         reuseItems: true
@@ -163,7 +167,7 @@ Page {
                         var name = delegateRoot.model.item_name   || ""
                         return num ? num + "  " + name : name
                     }
-                    font.pixelSize: 13
+                    font.pixelSize: Theme.footnote; font.letterSpacing: Theme.tracking(Theme.footnote)
                     elide: Text.ElideRight
                     Layout.fillWidth: true
                 }
@@ -176,7 +180,7 @@ Page {
                     Label {
                         visible: (delegateRoot.model.status || "") !== ""
                         text: delegateRoot.model.status || ""
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: root.statusColor(delegateRoot.model.status || "")
                     }
 
@@ -186,7 +190,7 @@ Page {
                             var sep = (delegateRoot.model.status || "") !== "" ? "  ·  " : ""
                             return sep + (delegateRoot.model.priority || "")
                         }
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: delegateRoot.model.priority_foreground || Theme.mutedText
                     }
 
@@ -196,7 +200,7 @@ Page {
                             var sep = (delegateRoot.model.status || delegateRoot.model.priority) ? "  ·  " : ""
                             return sep + AppController.contactNameForId(delegateRoot.model.assigned_to || "")
                         }
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: Theme.mutedText
                         elide: Text.ElideRight
                         Layout.fillWidth: true
@@ -208,7 +212,7 @@ Page {
                             var sep = (delegateRoot.model.status || delegateRoot.model.priority || delegateRoot.model.assigned_to) ? "  ·  " : ""
                             return sep + "Due: " + (delegateRoot.model.date_due || "")
                         }
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: delegateRoot.model.date_due_foreground || Theme.mutedText
                         elide: Text.ElideRight
                     }
@@ -261,14 +265,14 @@ Page {
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
             text: qsTr("No Items")
-            font.pixelSize: 17
+            font.pixelSize: Theme.title2; font.letterSpacing: Theme.tracking(Theme.title2)
             font.bold: true
         }
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
             text: qsTr("Tracker items from all projects appear here.")
             horizontalAlignment: Text.AlignHCenter
-            font.pixelSize: 14
+            font.pixelSize: Theme.subheadline; font.letterSpacing: Theme.tracking(Theme.subheadline)
             color: Theme.mutedText
         }
     }

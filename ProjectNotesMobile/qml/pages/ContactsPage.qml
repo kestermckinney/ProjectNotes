@@ -7,6 +7,9 @@ import QtQuick.Layouts
 import ProjectNotesMobile
 
 Page {
+    // Space below the last row for Main.qml's floating tab bar.
+    property real listBottomInset: 0
+
     id: root
     title: qsTr("Contacts")
 
@@ -105,6 +108,7 @@ Page {
     ListView {
         id: listView
         anchors.fill: parent
+        bottomMargin: listBottomInset
         model: AppController.contactsModel
         clip: true
         reuseItems: true
@@ -140,7 +144,7 @@ Page {
                     Label {
                         anchors.centerIn: parent
                         text: (delegateRoot.model.name || "?").charAt(0).toUpperCase()
-                        font.pixelSize: 16
+                        font.pixelSize: Theme.callout; font.letterSpacing: Theme.tracking(Theme.callout)
                         font.bold: true
                         color: "white"
                     }
@@ -163,7 +167,7 @@ Page {
                             if (email && role) return email + "  ·  " + role
                             return email || role
                         }
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: Theme.mutedText
                         elide: Text.ElideRight
                         Layout.fillWidth: true
@@ -226,14 +230,14 @@ Page {
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
             text: qsTr("No Contacts")
-            font.pixelSize: 17
+            font.pixelSize: Theme.title2; font.letterSpacing: Theme.tracking(Theme.title2)
             font.bold: true
         }
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
             text: qsTr("Tap + to add a contact.")
             horizontalAlignment: Text.AlignHCenter
-            font.pixelSize: 14
+            font.pixelSize: Theme.subheadline; font.letterSpacing: Theme.tracking(Theme.subheadline)
             color: Theme.mutedText
         }
     }

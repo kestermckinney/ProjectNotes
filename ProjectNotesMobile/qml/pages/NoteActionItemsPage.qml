@@ -126,7 +126,7 @@ Page {
                     Label {
                         visible: (model.assigned_to || "") !== ""
                         text: AppController.contactNameForId(model.assigned_to || "")
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: Theme.mutedText
                         elide: Text.ElideRight
                         Layout.fillWidth: true
@@ -138,7 +138,7 @@ Page {
                             var sep = (model.assigned_to || "") !== "" ? "  ·  " : ""
                             return sep + (model.status || "")
                         }
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: root.statusColor(model.status || "")
                     }
 
@@ -148,7 +148,7 @@ Page {
                             var sep = (model.assigned_to || model.status) ? "  ·  " : ""
                             return sep + "Due: " + (model.date_due || "")
                         }
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: model.date_due_foreground || Theme.mutedText
                     }
                 }

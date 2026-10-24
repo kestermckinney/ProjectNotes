@@ -27,4 +27,39 @@ QtObject {
     // the primary text color so the second line in a list cell stays readable.
     readonly property bool  isDarkMode:      Qt.styleHints.colorScheme === Qt.Dark
     readonly property color mutedText:       isDarkMode ? "#e8e8eb" : "#1c1c1e"
+
+    // ── Type scale ────────────────────────────────────────────────────────────
+    // Apple's iOS text styles (Large size, the default Dynamic Type setting),
+    // so the app reads like the App Store and other system apps. Sizes are
+    // logical pixels, which equal points on iOS.
+    readonly property int largeTitle:  34   // bold
+    readonly property int title1:      28   // bold for display text
+    readonly property int title2:      22   // bold for empty-state headings
+    readonly property int title3:      20   // semibold
+    readonly property int headline:    17   // semibold
+    readonly property int body:        17
+    readonly property int callout:     16
+    readonly property int subheadline: 15
+    readonly property int footnote:    13
+    readonly property int caption1:    12
+    readonly property int caption2:    11
+
+    // SF Pro tracking in points per size, from Apple's iOS tracking table.
+    // UIKit applies it automatically; Qt lays text out with the font's raw
+    // advances, so without this, body text sits looser than native text and
+    // titles sit tighter. Use as:
+    //     font.letterSpacing: Theme.tracking(font.pixelSize)
+    readonly property var _trackingTable: ({
+        10: 0.12, 11: 0.06, 12: 0.0, 13: -0.08, 14: -0.15, 15: -0.23,
+        16: -0.31, 17: -0.43, 18: -0.44, 19: -0.45, 20: -0.45, 21: -0.36,
+        22: -0.26, 23: -0.17, 24: -0.07, 25: 0.0, 26: 0.07, 27: 0.14,
+        28: 0.36, 29: 0.37, 30: 0.37, 31: 0.38, 32: 0.39, 33: 0.40, 34: 0.40
+    })
+    function tracking(size) {
+        var s = Math.round(size)
+        if (s <= 0)  return 0
+        if (s < 10)  return 0.12
+        if (s > 34)  return 0.37
+        return _trackingTable[s]
+    }
 }

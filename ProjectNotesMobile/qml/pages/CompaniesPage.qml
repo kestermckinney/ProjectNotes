@@ -7,6 +7,9 @@ import QtQuick.Layouts
 import ProjectNotesMobile
 
 Page {
+    // Space below the last row for Main.qml's floating tab bar.
+    property real listBottomInset: 0
+
     id: root
     title: qsTr("Companies")
 
@@ -83,6 +86,7 @@ Page {
     ListView {
         id: listView
         anchors.fill: parent
+        bottomMargin: listBottomInset
         model: AppController.companiesModel
         clip: true
         reuseItems: true
@@ -104,7 +108,7 @@ Page {
                     Label {
                         anchors.centerIn: parent
                         text: (delegateRoot.model.client_name || "?").charAt(0).toUpperCase()
-                        font.pixelSize: 16
+                        font.pixelSize: Theme.callout; font.letterSpacing: Theme.tracking(Theme.callout)
                         font.bold: true
                         color: "white"
                     }
@@ -143,14 +147,14 @@ Page {
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
             text: qsTr("No Companies")
-            font.pixelSize: 17
+            font.pixelSize: Theme.title2; font.letterSpacing: Theme.tracking(Theme.title2)
             font.bold: true
         }
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
             text: qsTr("Tap + to add a company.")
             horizontalAlignment: Text.AlignHCenter
-            font.pixelSize: 14
+            font.pixelSize: Theme.subheadline; font.letterSpacing: Theme.tracking(Theme.subheadline)
             color: Theme.mutedText
         }
     }
