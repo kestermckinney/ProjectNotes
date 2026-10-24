@@ -23,9 +23,17 @@ endif()
 set(_VCPKG_IOS_ROOT "/Users/paulmckinney/Documents/Projects/vcpkg/installed")
 
 if(CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
-    # x86_64 simulator — runs via Rosetta on Apple Silicon.
-    # Qt's ios package only provides x86_64 for simulator (arm64 slice is device-only).
+    # x86_64 simulator — runs via Rosetta on Apple Silicon. Qt's ios package
+    # ships a fat x86_64+arm64 simulator slice for its *frameworks*, but its
+    # bundled default static *plugins* (qmltooling, networkinformation,
+    # multimedia, iconengines, etc. — verified across several) only have an
+    # arm64 slice tagged for the device platform, with the simulator-tagged
+    # slice being x86_64-only. Building the Simulator target as arm64 fails
+    # at link time ("building for 'iOS-simulator', but linking in object
+    # file ... built for 'iOS'"), so this has to stay x86_64 to match what
+    # Qt actually shipped.
     set(_OPENSSL_TRIPLET "${_VCPKG_IOS_ROOT}/x64-ios-simulator")
+    set(CMAKE_OSX_ARCHITECTURES "x86_64")
 else()
     set(_OPENSSL_TRIPLET "${_VCPKG_IOS_ROOT}/arm64-ios")
     set(CMAKE_OSX_ARCHITECTURES            "arm64")
