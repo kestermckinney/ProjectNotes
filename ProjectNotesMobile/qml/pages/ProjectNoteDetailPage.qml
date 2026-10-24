@@ -79,16 +79,29 @@ Page {
     }
 
     // ── Header: utility buttons only ─────────────────────────────────────────
-    header: ToolBar {
-        implicitHeight: 44
+    // ── Actions ──────────────────────────────────────────────────────────────
+    // Glass pill floating at the top right, over the form as it scrolls.
+    NavButton {
+        id: navButton
+        anchors { left: parent.left; leftMargin: 12; verticalCenter: topBar.verticalCenter }
+    }
+
+    GlassBar {
+        id: topBar
+        z: 2
+        anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 12 }
+        height: 44
+        width: topBarRow.implicitWidth + 2 * contentPadding
+        contentPadding: 6
+        blurSource: scrollView
+        blurRect: Qt.rect(topBar.x - scrollView.x, topBar.y - scrollView.y,
+                          topBar.width, topBar.height)
 
         RowLayout {
-            anchors.fill: parent
+            id: topBarRow
+            anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter }
             spacing: 0
-
-            Item { Layout.fillWidth: true }
-
-            ToolButton {
+            BarButton {
                 icon.name: "envelope"
                 focusPolicy: Qt.NoFocus
                 onClicked: {
@@ -113,7 +126,7 @@ Page {
                 }
             }
 
-            ToolButton {
+            BarButton {
                 icon.name: "doc.on.doc"
                 focusPolicy: Qt.NoFocus
                 onClicked: {
@@ -134,7 +147,7 @@ Page {
                 }
             }
 
-            ToolButton {
+            BarButton {
                 icon.name: "trash"
                 focusPolicy: Qt.NoFocus
                 onClicked: {
@@ -149,12 +162,22 @@ Page {
     }
 
     // ── Footer: Attendees + Action Items ─────────────────────────────────────
-    footer: ToolBar {
+    // ── Bottom bar ───────────────────────────────────────────────────────────
+    // Glass capsule floating over the bottom of the form, like the tab bar.
+    GlassBar {
+        id: bottomBar
+        z: 2
+        anchors { bottom: parent.bottom; left: parent.left; right: parent.right; bottomMargin: 8; leftMargin: 16; rightMargin: 16 }
+        height: 60
+        blurSource: scrollView
+        blurRect: Qt.rect(bottomBar.x - scrollView.x, bottomBar.y - scrollView.y,
+                          bottomBar.width, bottomBar.height)
+
         RowLayout {
             anchors.centerIn: parent
             spacing: 32
 
-            ToolButton {
+            BarButton {
                 icon.name: "person.2"
                 // text: qsTr("Attendees")
                 display: AbstractButton.TextUnderIcon
@@ -170,7 +193,7 @@ Page {
                 }
             }
 
-            ToolButton {
+            BarButton {
                 icon.name: "checklist"
                 // text: qsTr("Action Items")
                 display: AbstractButton.TextUnderIcon
@@ -196,6 +219,9 @@ Page {
         ColumnLayout {
             width: parent.width
             spacing: 0
+            // Room for the floating action pill above the first field.
+            Item { Layout.preferredHeight: topBar.height + 6 }
+
 
             SectionHeader { text: qsTr("Title") }
             FieldRow {
@@ -264,6 +290,8 @@ Page {
                                         ? Qt.inputMethod.keyboardRectangle.height + 44 + 24
                                         : 24
             }
+            // Room for the floating bottom bar below the last field.
+            Item { Layout.preferredHeight: bottomBar.visible ? bottomBar.height + 16 : 0 }
         }
     }
 
@@ -313,7 +341,7 @@ Page {
             spacing: 4
 
             // Aa — open the Format sheet
-            ToolButton {
+            BarButton {
                 text: "Aa"
                 font.pixelSize: 18
                 font.weight: Font.DemiBold
@@ -333,7 +361,7 @@ Page {
             }
 
             // Font — open advanced font picker
-            ToolButton {
+            BarButton {
                 text: "ƒ"
                 font.pixelSize: 18
                 focusPolicy: Qt.NoFocus
@@ -353,7 +381,7 @@ Page {
             Rectangle { width: 1; height: 22; color: palette.mid; opacity: 0.4; Layout.alignment: Qt.AlignVCenter }
 
             // Font size bump controls
-            ToolButton {
+            BarButton {
                 text: "A+"; font.pixelSize: 18; font.weight: Font.DemiBold; focusPolicy: Qt.NoFocus
                 onClicked: {
                     var ss = noteEdit.selectionStart
@@ -363,7 +391,7 @@ Page {
                     noteEdit.select(ss, se)
                 }
             }
-            ToolButton {
+            BarButton {
                 text: "A-"; font.pixelSize: 18; font.weight: Font.DemiBold; focusPolicy: Qt.NoFocus
                 onClicked: {
                     var ss = noteEdit.selectionStart
@@ -376,14 +404,14 @@ Page {
 
             Rectangle { width: 1; height: 22; color: palette.mid; opacity: 0.4; Layout.alignment: Qt.AlignVCenter }
 
-            ToolButton {
+            BarButton {
                 icon.name: "list.bullet"; focusPolicy: Qt.NoFocus
                 onClicked: {
                     TextFormatter.applyStyle(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 1)
                     noteEdit.forceActiveFocus()
                 }
             }
-            ToolButton {
+            BarButton {
                 icon.name: "list.number"; focusPolicy: Qt.NoFocus
                 onClicked: {
                     TextFormatter.applyStyle(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 4)
@@ -393,14 +421,14 @@ Page {
 
             Rectangle { width: 1; height: 22; color: palette.mid; opacity: 0.4; Layout.alignment: Qt.AlignVCenter }
 
-            ToolButton {
+            BarButton {
                 text: "⇥"; font.pixelSize: 18; focusPolicy: Qt.NoFocus
                 onClicked: {
                     TextFormatter.indentText(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd)
                     noteEdit.forceActiveFocus()
                 }
             }
-            ToolButton {
+            BarButton {
                 text: "⇤"; font.pixelSize: 18; focusPolicy: Qt.NoFocus
                 onClicked: {
                     TextFormatter.unindentText(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd)
@@ -411,7 +439,7 @@ Page {
             Item { Layout.fillWidth: true }
 
             // Dismiss keyboard
-            ToolButton {
+            BarButton {
                 icon.name: "keyboard.chevron.compact.down"
                 focusPolicy: Qt.NoFocus
                 onClicked: Qt.inputMethod.hide()

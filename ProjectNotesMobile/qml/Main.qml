@@ -25,6 +25,16 @@ ApplicationWindow {
     // Pages, forms and lists share one background; see Theme.pageBackground.
     palette.window: Theme.pageBackground
 
+    // Monochrome buttons in place of the iOS style's system blue. Flat buttons
+    // draw their text in palette.button; filled ones fill with it and draw
+    // their text in buttonText, so that is the page color. Each group is set
+    // on its own so disabled buttons keep a dimmed tint. palette.highlight is
+    // left alone: text selection and the sheets' checkmarks use it too.
+    palette.active.button:       Theme.iconColor
+    palette.inactive.button:     Theme.iconColor
+    palette.disabled.button:     Theme.iconColorDisabled
+    palette.buttonText:          Theme.pageBackground
+
     // Apply SF Pro's native tracking to the default font, which every control
     // inherits (most list rows show text at this size). Controls that set
     // their own font.pixelSize also set a matching font.letterSpacing.
@@ -104,6 +114,11 @@ ApplicationWindow {
             next()
     }
 
+    // Called by NavButton on the tab pages.
+    function openMainMenu() {
+        pageStack.push(Qt.resolvedUrl("pages/MainMenuPage.qml"), { stackView: pageStack })
+    }
+
     // Attempt to save the current detail page and pop.  If the C++ layer
     // rejects the data (lastSaveError is non-empty), stay on the page so the
     // user can fix their input — the errorOccurred signal opens the dialog,
@@ -175,6 +190,7 @@ ApplicationWindow {
         modal: true
         anchors.centerIn: Overlay.overlay
         standardButtons: Dialog.Ok
+        palette.highlight: Theme.iconColorPressed   // monochrome pressed OK button
         Label { text: errorDialog.message; wrapMode: Text.Wrap; width: 260 }
     }
 
@@ -184,6 +200,7 @@ ApplicationWindow {
         modal: true
         anchors.centerIn: Overlay.overlay
         standardButtons: Dialog.Ok
+        palette.highlight: Theme.iconColorPressed   // monochrome pressed OK button
 
         Label {
             width: 260
@@ -257,14 +274,14 @@ ApplicationWindow {
                 Item { Layout.fillWidth: true }
 
                 // Leave with the settings as typed — they stay saved either way.
-                Button {
+                MonoButton {
                     text: qsTr("Leave Anyway")
                     visible: syncCheckDialog.fixable
                     flat: true
                     onClicked: { root._resumeNavigation(); syncCheckDialog.close() }
                 }
 
-                Button {
+                MonoButton {
                     text: syncCheckDialog.checking ? qsTr("Skip")
                           : (syncCheckDialog.fixable ? qsTr("Back to Settings") : qsTr("OK"))
                     flat: true
@@ -280,113 +297,6 @@ ApplicationWindow {
         }
     }
 
-    // ── Hamburger drawer ──────────────────────────────────────────────────────
-    Drawer {
-        id: hamburgerDrawer
-        width: Math.min(280, root.width * 0.78)
-        height: root.height
-        edge: Qt.LeftEdge
-
-        ColumnLayout {
-            anchors.fill: parent
-            spacing: 0
-
-            Rectangle {
-                Layout.fillWidth: true
-                height: 32
-                color: "transparent"   // show the drawer's own surface
-
-                Label {
-                    anchors.centerIn: parent
-                    text: qsTr("Main Menu")
-                    font.pixelSize: Theme.title3; font.letterSpacing: Theme.tracking(Theme.title3)
-                    font.bold: true
-                    color: palette.windowText
-                }
-            }
-
-            ScrollView {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                contentWidth: availableWidth
-
-                Column {
-                    width: parent.width
-
-                    ItemDelegate {
-                        width: parent.width
-                        text: qsTr("Cloud Sync Settings")
-                        onClicked: {
-                            hamburgerDrawer.close()
-                            pageStack.push(Qt.resolvedUrl("pages/SyncSettingsPage.qml"))
-                        }
-                    }
-
-                    MenuSeparator { width: parent.width }
-
-                    ItemDelegate {
-                        width: parent.width
-                        text: qsTr("View")
-                        onClicked: {
-                            hamburgerDrawer.close()
-                            pageStack.push(Qt.resolvedUrl("pages/ViewOptionsPage.qml"))
-                        }
-                    }
-
-                    ItemDelegate {
-                        width: parent.width
-                        text: qsTr("Sync All…")
-                        enabled: AppController.syncEnabled
-                        onClicked: {
-                            hamburgerDrawer.close()
-                            AppController.syncAll()
-                        }
-                    }
-
-                    MenuSeparator { width: parent.width }
-
-                    ItemDelegate {
-                        width: parent.width
-                        text: qsTr("Preferences…")
-                        onClicked: {
-                            hamburgerDrawer.close()
-                            pageStack.push(Qt.resolvedUrl("pages/PreferencesPage.qml"))
-                        }
-                    }
-
-                    MenuSeparator { width: parent.width }
-
-                    ItemDelegate {
-                        width: parent.width
-                        text: qsTr("Help")
-                        onClicked: {
-                            hamburgerDrawer.close()
-                            Qt.openUrlExternally("https://projectnotes.readthedocs.io/en/latest/Mobile/ProjectNotesMobile/")
-                        }
-                    }
-
-                    ItemDelegate {
-                        width: parent.width
-                        text: qsTr("What's New")
-                        onClicked: {
-                            hamburgerDrawer.close()
-                            Qt.openUrlExternally("https://gitlab.com/kestermckinney/ProjectNotes/-/releases")
-                        }
-                    }
-
-                    ItemDelegate {
-                        width: parent.width
-                        text: qsTr("About")
-                        onClicked: {
-                            hamburgerDrawer.close()
-                            pageStack.push(Qt.resolvedUrl("pages/AboutPage.qml"))
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     // ── Persistent header toolbar ─────────────────────────────────────────────
     header: ToolBar {
         // Same color as the page below it, like a native iOS navigation bar,
@@ -395,37 +305,19 @@ ApplicationWindow {
         background: Rectangle { color: Theme.pageBackground }
         height: 100
 
-        RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 4
-            anchors.rightMargin: 8
-
-            ToolButton {
-                id: navButton
-                // depth 1 = initial SwipeView item; depth > 1 = a detail page is open
-                icon.name: pageStack.depth > 1 ? "chevron.left" : "line.3.horizontal"
-                icon.color: Theme.focusRing   // iOS system blue, as native bar buttons
-                onClicked: {
-                    if (pageStack.depth > 1)
-                        trySaveAndPop()
-                    else
-                        hamburgerDrawer.open()
-                }
-            }
-
-            Label {
-                Layout.fillWidth: true
-                text: pageStack.depth > 1
-                    ? (pageStack.currentItem ? (pageStack.currentItem.title || "") : "")
-                    : (root.tabTitles[root.currentTabIndex] || "")
-                font.pixelSize: Theme.headline; font.letterSpacing: Theme.tracking(Theme.headline)
-                font.weight: Font.DemiBold
-                horizontalAlignment: Text.AlignHCenter
-                elide: Text.ElideRight
-                color: palette.windowText
-            }
-
-            Item { width: navButton.width }
+        // Title only: every page puts its own NavButton (≡ or back) in its
+        // top row, below the header.
+        Label {
+            anchors { fill: parent; leftMargin: 16; rightMargin: 16 }
+            text: pageStack.depth > 1
+                ? (pageStack.currentItem ? (pageStack.currentItem.title || "") : "")
+                : (root.tabTitles[root.currentTabIndex] || "")
+            font.pixelSize: Theme.headline; font.letterSpacing: Theme.tracking(Theme.headline)
+            font.weight: Font.DemiBold
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            elide: Text.ElideRight
+            color: palette.windowText
         }
     }
 
@@ -451,7 +343,7 @@ ApplicationWindow {
 
     // ── Main content ──────────────────────────────────────────────────────────
     // The StackView's initialItem is the tab content (SwipeView).  Pages pushed
-    // from the drawer land on top at depth 2+.  pop() back to depth 1 is always
+    // from the main menu land on top at depth 2+.  pop() back to depth 1 is always
     // valid — Qt forbids pop() that would empty the stack entirely.
     StackView {
         id: pageStack
@@ -525,6 +417,10 @@ ApplicationWindow {
             position: TabBar.Footer
             currentIndex: root.currentTabIndex
             onCurrentIndexChanged: root.currentTabIndex = currentIndex
+
+            // The iOS style tints the selected tab with palette.button (system
+            // blue); use the monochrome icon color instead. TabButtons inherit it.
+            palette.button: Theme.iconColor
 
             // No bar background; just a pill that slides behind the current tab.
             background: Item {

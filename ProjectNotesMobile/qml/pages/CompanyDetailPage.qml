@@ -51,13 +51,29 @@ Page {
     }
 
     // ── Toolbar: copy + delete ────────────────────────────────────────────────
-    header: ToolBar {
-        RowLayout {
-            anchors { left: parent.left; right: parent.right; margins: 8 }
-            height: parent.height
-            Item { Layout.fillWidth: true }
+    // ── Actions ──────────────────────────────────────────────────────────────
+    // Glass pill floating at the top right, over the form as it scrolls.
+    NavButton {
+        id: navButton
+        anchors { left: parent.left; leftMargin: 12; verticalCenter: topBar.verticalCenter }
+    }
 
-            ToolButton {
+    GlassBar {
+        id: topBar
+        z: 2
+        anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 12 }
+        height: 44
+        width: topBarRow.implicitWidth + 2 * contentPadding
+        contentPadding: 6
+        blurSource: scrollView
+        blurRect: Qt.rect(topBar.x - scrollView.x, topBar.y - scrollView.y,
+                          topBar.width, topBar.height)
+
+        RowLayout {
+            id: topBarRow
+            anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter }
+            spacing: 0
+            BarButton {
                 icon.name: "doc.on.doc"
                 onClicked: {
                     if (!root._saveNow()) return
@@ -73,7 +89,7 @@ Page {
                 }
             }
 
-            ToolButton {
+            BarButton {
                 icon.name: "trash"
                 onClicked: {
                     var row = AppController.rowForId(AppController.companiesModel, root.companyId)
@@ -87,12 +103,16 @@ Page {
     }
 
     ScrollView {
+        id: scrollView
         anchors.fill: parent
         contentWidth: availableWidth
 
         ColumnLayout {
             width: parent.width
             spacing: 0
+            // Room for the floating action pill above the first field.
+            Item { Layout.preferredHeight: topBar.height + 6 }
+
 
             SectionHeader { text: qsTr("Company Name") }
 

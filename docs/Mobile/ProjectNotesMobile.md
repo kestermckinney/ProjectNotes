@@ -4,7 +4,7 @@ Project Notes Mobile is an iOS companion app for Project Notes. It gives project
 
 ## Navigation
 
-The app uses a bottom tab bar with four top-level tabs and a side drawer (hamburger menu) for settings and utilities.
+The app uses a bottom tab bar with four top-level tabs. Settings and utilities live in the Main Menu, a full-screen page opened from the ≡ button at the top left.
 
 **Bottom Tabs:**
 
@@ -15,7 +15,9 @@ The app uses a bottom tab bar with four top-level tabs and a side drawer (hambur
 | Companies | List of all companies |
 | Items | Unified list of all tracker items across all projects |
 
-**Hamburger Menu (top-left ≡ button):**
+**Main Menu (top-left ≡ button):**
+
+The menu fills the screen. Tap the back button at the top left to return to the tabs. Pages opened from the menu return to it when you go back. Sync All closes the menu so you can watch the sync progress bar over your lists.
 
 | Item | Description |
 | :--- | :--- |

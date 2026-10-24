@@ -65,6 +65,13 @@ Item {
                     maskThresholdMin: 0.5
                     maskSpreadAtMin: 1.0
                 }
+                // Solid base under the blur. Content with no background of
+                // its own (form fields on the page) gives a see-through
+                // blurred copy, and the sharp original would show through.
+                Rectangle {
+                    anchors.fill: parent
+                    color: Theme.pageBackground
+                }
                 MultiEffect {
                     anchors.fill: parent
                     source: backdrop
@@ -80,18 +87,14 @@ Item {
         }
     }
 
-    // Translucent tint and hairline edge. Without a blur behind it the tint
-    // is a little stronger so the capsule still stands off the page.
+    // Translucent tint and hairline edge, the same on every bar so they all
+    // match the tab bar.
     Rectangle {
         anchors.fill: parent
         radius: root.radius
-        color: root._dark ? Qt.rgba(0.11, 0.11, 0.12, root.blurSource ? 0.55 : 0.85)
-                          : Qt.rgba(1, 1, 1, root.blurSource ? 0.55 : 0.80)
+        color: root._dark ? Qt.rgba(0.11, 0.11, 0.12, 0.55) : Qt.rgba(1, 1, 1, 0.55)
         border.width: 1
-        // A white edge vanishes on a white page with nothing blurred behind
-        // it, so the plain capsule gets a faint gray hairline in light mode.
-        border.color: root._dark ? Qt.rgba(1, 1, 1, 0.14)
-                                 : (root.blurSource ? Qt.rgba(1, 1, 1, 0.7) : Qt.rgba(0, 0, 0, 0.08))
+        border.color: root._dark ? Qt.rgba(1, 1, 1, 0.14) : Qt.rgba(1, 1, 1, 0.7)
     }
     // Sheen: light catching the top edge of the glass.
     Rectangle {

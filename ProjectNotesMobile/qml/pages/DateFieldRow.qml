@@ -63,7 +63,7 @@ Rectangle {
             }
         }
 
-        Button {
+        MonoButton {
             text: qsTr("Clear")
             font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
             flat: true
@@ -71,7 +71,7 @@ Rectangle {
             onClicked: { root.text = "" }
         }
 
-        Button {
+        MonoButton {
             text: qsTr("Today")
             font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
             flat: true

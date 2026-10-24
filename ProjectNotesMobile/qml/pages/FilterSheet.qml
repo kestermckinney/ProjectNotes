@@ -161,7 +161,7 @@ Popup {
             Layout.fillWidth: true
             Layout.preferredHeight: 50
 
-            ToolButton {
+            BarButton {
                 anchors { left: parent.left; leftMargin: 4; verticalCenter: parent.verticalCenter }
                 visible: root._curIndex >= 0
                 icon.name: "chevron.left"
@@ -181,14 +181,14 @@ Popup {
                 elide: Text.ElideRight
             }
 
-            ToolButton {
+            BarButton {
                 anchors { right: parent.right; rightMargin: 4; verticalCenter: parent.verticalCenter }
                 visible: root._curIndex < 0
                 icon.name: "xmark"
                 focusPolicy: Qt.NoFocus
                 onClicked: root.close()
             }
-            ToolButton {
+            BarButton {
                 anchors { right: parent.right; rightMargin: 4; verticalCenter: parent.verticalCenter }
                 visible: root._curIndex >= 0 && root._active(root._curField)
                 text: qsTr("Clear")
@@ -361,7 +361,7 @@ Popup {
             Layout.margins: 10
             spacing: 10
 
-            Button {
+            MonoButton {
                 text: qsTr("Reset All")
                 flat: true
                 onClicked: {
@@ -380,7 +380,7 @@ Popup {
                 }
             }
             Item { Layout.fillWidth: true }
-            Button {
+            MonoButton {
                 text: qsTr("Apply")
                 highlighted: true
                 onClicked: root._apply()

@@ -154,13 +154,29 @@ Page {
     }
 
     // ── Toolbar: email + copy + delete ───────────────────────────────────────
-    header: ToolBar {
-        RowLayout {
-            anchors { left: parent.left; right: parent.right; margins: 8 }
-            height: parent.height
-            Item { Layout.fillWidth: true }
+    // ── Actions ──────────────────────────────────────────────────────────────
+    // Glass pill floating at the top right, over the form as it scrolls.
+    NavButton {
+        id: navButton
+        anchors { left: parent.left; leftMargin: 12; verticalCenter: topBar.verticalCenter }
+    }
 
-            ToolButton {
+    GlassBar {
+        id: topBar
+        z: 2
+        anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 12 }
+        height: 44
+        width: topBarRow.implicitWidth + 2 * contentPadding
+        contentPadding: 6
+        blurSource: scrollView
+        blurRect: Qt.rect(topBar.x - scrollView.x, topBar.y - scrollView.y,
+                          topBar.width, topBar.height)
+
+        RowLayout {
+            id: topBarRow
+            anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter }
+            spacing: 0
+            BarButton {
                 icon.name: "envelope"
                 onClicked: {
                     var emails  = AppController.teamMemberEmailList()
@@ -170,7 +186,7 @@ Page {
                 }
             }
 
-            ToolButton {
+            BarButton {
                 icon.name: "doc.on.doc"
                 // Nothing to duplicate until the project exists.
                 enabled: root.projectId !== ""
@@ -207,7 +223,7 @@ Page {
                 }
             }
 
-            ToolButton {
+            BarButton {
                 icon.name: "trash"
                 // A project that was never written is discarded by leaving the
                 // page, not deleted (see _discardNew).
@@ -224,12 +240,16 @@ Page {
     }
 
     ScrollView {
+        id: scrollView
         anchors.fill: parent
         contentWidth: availableWidth
 
         ColumnLayout {
             width: parent.width
             spacing: 0
+            // Room for the floating action pill above the first field.
+            Item { Layout.preferredHeight: topBar.height + 6 }
+
 
             // ── Identity ──────────────────────────────────────────────────────
 
@@ -408,11 +428,23 @@ Page {
             }
 
             Item { Layout.preferredHeight: 24 }
+            // Room for the floating bottom bar below the last field.
+            Item { Layout.preferredHeight: bottomBar.visible ? bottomBar.height + 16 : 0 }
         }
     }
 
     // ── Bottom navigation to project sub-pages ───────────────────────────────
-    footer: ToolBar {
+    // ── Bottom bar ───────────────────────────────────────────────────────────
+    // Glass capsule floating over the bottom of the form, like the tab bar.
+    GlassBar {
+        id: bottomBar
+        z: 2
+        anchors { bottom: parent.bottom; left: parent.left; right: parent.right; bottomMargin: 8; leftMargin: 16; rightMargin: 16 }
+        height: 60
+        blurSource: scrollView
+        blurRect: Qt.rect(bottomBar.x - scrollView.x, bottomBar.y - scrollView.y,
+                          bottomBar.width, bottomBar.height)
+
         RowLayout {
             anchors.fill: parent
             spacing: 0
@@ -426,7 +458,7 @@ Page {
                     { label: qsTr("Notes"),   icon: "square.and.pencil",         page: "ProjectNotesPage.qml"   }
                 ]
 
-                ToolButton {
+                BarButton {
                     Layout.fillWidth: true
                     icon.name: modelData.icon
                     ToolTip.text: modelData.label

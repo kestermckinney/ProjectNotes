@@ -90,7 +90,7 @@ Popup {
 
     // Reusable button shape. `active` highlights the button to indicate the
     // formatting it controls is currently applied at the cursor/selection.
-    component FormatBtn: ToolButton {
+    component FormatBtn: BarButton {
         property bool active: false
         focusPolicy: Qt.NoFocus
         Layout.preferredWidth:  44
@@ -119,7 +119,7 @@ Popup {
                 font.pixelSize: Theme.headline; font.letterSpacing: Theme.tracking(Theme.headline)
                 font.weight: Font.DemiBold
             }
-            ToolButton {
+            BarButton {
                 anchors { right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
                 icon.name: "xmark"
                 focusPolicy: Qt.NoFocus

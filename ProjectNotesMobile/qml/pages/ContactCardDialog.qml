@@ -82,7 +82,7 @@ Popup {
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
             }
-            ToolButton {
+            BarButton {
                 id: closeBtn
                 anchors { right: parent.right; rightMargin: 4; verticalCenter: parent.verticalCenter }
                 icon.name: "xmark"

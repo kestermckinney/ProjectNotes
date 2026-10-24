@@ -39,10 +39,20 @@ QtObject {
     // mode so it stays readable on the page background.
     readonly property color sectionText:     isDarkMode ? "#9db4e6" : navyMid
 
-    // Focus ring and glow for GlassField inputs (iOS system blue).
-    readonly property color focusRing:       isDarkMode ? "#0a84ff" : "#007aff"
-    readonly property color focusGlow:       isDarkMode ? Qt.rgba(10/255, 132/255, 1, 0.30)
-                                                        : Qt.rgba(0, 122/255, 1, 0.22)
+    // Button tint: monochrome, black in light mode and white in dark mode, in
+    // place of the iOS style's system blue. Main.qml sets it as the window's
+    // palette.button, which the style reads for flat button text, filled
+    // button backgrounds, and ToolButton glyphs; BarButton also sets it.
+    readonly property color iconColor:         isDarkMode ? "#ffffff" : "#000000"
+    // The same tint while a button is held down or disabled.
+    readonly property color iconColorPressed:  isDarkMode ? "#8e8e93" : "#636366"
+    readonly property color iconColorDisabled: isDarkMode ? "#48484a" : "#c7c7cc"
+
+    // Focus ring and glow for GlassField inputs: monochrome to match the
+    // buttons, white in dark mode and black in light mode.
+    readonly property color focusRing:       iconColor
+    readonly property color focusGlow:       isDarkMode ? Qt.rgba(1, 1, 1, 0.22)
+                                                        : Qt.rgba(0, 0, 0, 0.14)
 
     // ── Type scale ────────────────────────────────────────────────────────────
     // Apple's iOS text styles (Large size, the default Dynamic Type setting),

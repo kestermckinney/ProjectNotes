@@ -10,8 +10,14 @@ Page {
     id: root
     title: qsTr("View")
 
+    // Same spot as on the list pages; see MainMenuPage.qml.
+    NavButton {
+        id: navButton
+        anchors { top: parent.top; left: parent.left; topMargin: 8; leftMargin: 12 }
+    }
+
     ScrollView {
-        anchors.fill: parent
+        anchors { fill: parent; topMargin: navButton.y + navButton.height + 4 }
         contentWidth: availableWidth
 
         ColumnLayout {

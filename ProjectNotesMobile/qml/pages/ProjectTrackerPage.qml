@@ -78,91 +78,97 @@ Page {
     SortSheet       { id: sortSheet }
     QuickFilterDialog { id: qfDialog }
 
-    header: ToolBar {
-        // Glass search capsule, matching the floating tab bar. The bar
-        // itself takes the page color so no band shows above the list.
-        background: Rectangle { color: Theme.pageBackground }
-        z: 1   // let the capsule's shadow fall over the list
-        implicitHeight: 60
+    // ── Search bar ─────────────────────────────────────────────────────────
+    // A glass capsule floating over the top of the list. The rows scroll
+    // beneath it and show through frosted, as they do under the tab bar.
+    NavButton {
+        id: navButton
+        anchors { left: parent.left; leftMargin: 12; verticalCenter: searchBar.verticalCenter }
+    }
 
-        GlassBar {
-            anchors { fill: parent; leftMargin: 12; rightMargin: 12; topMargin: 6; bottomMargin: 6 }
-            contentPadding: 0
+    GlassBar {
+        id: searchBar
+        z: 2
+        anchors { top: parent.top; left: navButton.right; right: parent.right; topMargin: 6; leftMargin: 8; rightMargin: 12 }
+        height: 48
+        contentPadding: 0
+        blurSource: listView
+        blurRect: Qt.rect(searchBar.x - listView.x, searchBar.y - listView.y,
+                          searchBar.width, searchBar.height)
 
-            RowLayout {
-                anchors { fill: parent; leftMargin: 4; rightMargin: 2 }
-                TextField {
-                    id: searchField
-                    Layout.fillWidth: true
-                    placeholderText: qsTr("Search items…")
-                    onTextChanged: AppController.setQuickSearch(AppController.trackerItemsModel, text)
-                    inputMethodHints: Qt.ImhNoPredictiveText
-                    leftPadding: 10
-                    rightPadding: clearBtn.visible ? clearBtn.width + 12 : 10
-                    implicitHeight: 36
-                    background: Item {}
+        RowLayout {
+            anchors { fill: parent; leftMargin: 4; rightMargin: 2 }
+            TextField {
+                id: searchField
+                Layout.fillWidth: true
+                placeholderText: qsTr("Search items…")
+                onTextChanged: AppController.setQuickSearch(AppController.trackerItemsModel, text)
+                inputMethodHints: Qt.ImhNoPredictiveText
+                leftPadding: 10
+                rightPadding: clearBtn.visible ? clearBtn.width + 12 : 10
+                implicitHeight: 36
+                background: Item {}
 
-                    Label {
-                        id: clearBtn
-                        visible: searchField.text.length > 0
-                        anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 10 }
-                        text: "✕"
-                        font.pixelSize: 18
-                        color: palette.text
-                        MouseArea {
-                            anchors.fill: parent
-                            anchors.margins: -6
-                            onClicked: searchField.clear()
-                        }
+                Label {
+                    id: clearBtn
+                    visible: searchField.text.length > 0
+                    anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 10 }
+                    text: "✕"
+                    font.pixelSize: 18
+                    color: palette.text
+                    MouseArea {
+                        anchors.fill: parent
+                        anchors.margins: -6
+                        onClicked: searchField.clear()
                     }
                 }
-                ToolButton {
-                    icon.name: "line.3.horizontal.decrease.circle"
-                    icon.color: filterBadge.iconColor
-                    onClicked: filterSheet.openFor("trackeritems", qsTr("Tracker Items"))
-                    ActiveIndicator {
-                        id: filterBadge
-                        active: AppController.filterRev >= 0 && AppController.hasActiveColumnFilters(AppController.trackerItemsModel)
-                    }
+            }
+            BarButton {
+                icon.name: "line.3.horizontal.decrease.circle"
+                icon.color: filterBadge.iconColor
+                onClicked: filterSheet.openFor("trackeritems", qsTr("Tracker Items"))
+                ActiveIndicator {
+                    id: filterBadge
+                    active: AppController.filterRev >= 0 && AppController.hasActiveColumnFilters(AppController.trackerItemsModel)
                 }
-                ToolButton {
-                    icon.name: "arrow.up.arrow.down"
-                    icon.color: sortBadge.iconColor
-                    onClicked: sortSheet.openFor("trackeritems", qsTr("Tracker Items"))
-                    ActiveIndicator {
-                        id: sortBadge
-                        active: AppController.sortRev >= 0 && (AppController.activeSort(AppController.trackerItemsModel).field || "") !== ""
-                    }
+            }
+            BarButton {
+                icon.name: "arrow.up.arrow.down"
+                icon.color: sortBadge.iconColor
+                onClicked: sortSheet.openFor("trackeritems", qsTr("Tracker Items"))
+                ActiveIndicator {
+                    id: sortBadge
+                    active: AppController.sortRev >= 0 && (AppController.activeSort(AppController.trackerItemsModel).field || "") !== ""
                 }
-                ToolButton {
-                    icon.name: "plus"
-                    onClicked: {
-                        var newRow = AppController.addTrackerItem(root.projectId)
-                        if (newRow < 0) return
-                        var newId = AppController.trackerItemIdAtRow(0)
-                        var d = AppController.getTrackerItemDetailData(0)
-                        root.StackView.view.push(Qt.resolvedUrl("TrackerItemDetailPage.qml"), {
-                            itemRow:              0,
-                            isNewRecord:          true,
-                            itemId:               newId,
-                            initialItemNumber:    (d.item_number        || "").toString(),
-                            initialProjectNumber: (d.project_number     || "").toString(),
-                            initialProjectName:   (d.project_name       || "").toString(),
-                            initialType:          (d.item_type         || "").toString(),
-                            initialName:          (d.item_name         || "").toString(),
-                            initialDescription:   (d.description       || "").toString(),
-                            initialIdentifiedBy:  (d.identified_by     || "").toString(),
-                            initialAssignedTo:    (d.assigned_to       || "").toString(),
-                            initialPriority:      (d.priority          || "").toString(),
-                            initialStatus:        (d.status            || "").toString(),
-                            initialDateIdentified:(d.date_identified    || "").toString(),
-                            initialDateDue:       (d.date_due          || "").toString(),
-                            initialLastUpdate:    (d.last_update       || "").toString(),
-                            initialDateResolved:  (d.date_resolved     || "").toString(),
-                            initialNoteId:        (d.note_id           || "").toString(),
-                            initialInternal:      (d.internal_item     || "0") !== "0"
-                        })
-                    }
+            }
+            BarButton {
+                icon.name: "plus"
+                onClicked: {
+                    var newRow = AppController.addTrackerItem(root.projectId)
+                    if (newRow < 0) return
+                    var newId = AppController.trackerItemIdAtRow(0)
+                    var d = AppController.getTrackerItemDetailData(0)
+                    root.StackView.view.push(Qt.resolvedUrl("TrackerItemDetailPage.qml"), {
+                        itemRow:              0,
+                        isNewRecord:          true,
+                        itemId:               newId,
+                        initialItemNumber:    (d.item_number        || "").toString(),
+                        initialProjectNumber: (d.project_number     || "").toString(),
+                        initialProjectName:   (d.project_name       || "").toString(),
+                        initialType:          (d.item_type         || "").toString(),
+                        initialName:          (d.item_name         || "").toString(),
+                        initialDescription:   (d.description       || "").toString(),
+                        initialIdentifiedBy:  (d.identified_by     || "").toString(),
+                        initialAssignedTo:    (d.assigned_to       || "").toString(),
+                        initialPriority:      (d.priority          || "").toString(),
+                        initialStatus:        (d.status            || "").toString(),
+                        initialDateIdentified:(d.date_identified    || "").toString(),
+                        initialDateDue:       (d.date_due          || "").toString(),
+                        initialLastUpdate:    (d.last_update       || "").toString(),
+                        initialDateResolved:  (d.date_resolved     || "").toString(),
+                        initialNoteId:        (d.note_id           || "").toString(),
+                        initialInternal:      (d.internal_item     || "0") !== "0"
+                    })
                 }
             }
         }
@@ -170,6 +176,7 @@ Page {
 
     ListView {
         id: listView
+        topMargin: searchBar.height + 12   // first row clear of the search capsule
         anchors.fill: parent
         model: AppController.trackerItemsModel
         clip: true

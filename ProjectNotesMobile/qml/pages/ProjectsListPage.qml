@@ -42,113 +42,121 @@ Page {
     QuickFilterDialog { id: qfDialog }
 
     // ── Toolbar: filter toggle + search ──────────────────────────────────────
-    header: ToolBar {
-        // Glass search capsule, matching the floating tab bar. The bar
-        // itself takes the page color so no band shows above the list.
-        background: Rectangle { color: Theme.pageBackground }
-        z: 1   // let the capsule's shadow fall over the list
-        implicitHeight: 60
+    // ── Search bar ─────────────────────────────────────────────────────────
+    // A glass capsule floating over the top of the list. The rows scroll
+    // beneath it and show through frosted, as they do under the tab bar.
+    NavButton {
+        id: navButton
+        atRoot: true
+        anchors { left: parent.left; leftMargin: 12; verticalCenter: searchBar.verticalCenter }
+    }
 
-        GlassBar {
-            anchors { fill: parent; leftMargin: 12; rightMargin: 12; topMargin: 6; bottomMargin: 6 }
-            contentPadding: 0
+    GlassBar {
+        id: searchBar
+        z: 2
+        anchors { top: parent.top; left: navButton.right; right: parent.right; topMargin: 6; leftMargin: 8; rightMargin: 12 }
+        height: 48
+        contentPadding: 0
+        blurSource: listView
+        blurRect: Qt.rect(searchBar.x - listView.x, searchBar.y - listView.y,
+                          searchBar.width, searchBar.height)
 
-            RowLayout {
-                anchors { fill: parent; leftMargin: 4; rightMargin: 2 }
+        RowLayout {
+            anchors { fill: parent; leftMargin: 4; rightMargin: 2 }
 
-                TextField {
-                    id: searchField
-                    Layout.fillWidth: true
-                    placeholderText: qsTr("Search projects…")
-                    onTextChanged: AppController.setQuickSearch(AppController.projectsListModel, text)
-                    inputMethodHints: Qt.ImhNoPredictiveText
-                    leftPadding: 10
-                    rightPadding: clearBtn.visible ? clearBtn.width + 12 : 10
-                    implicitHeight: 36
-                    background: Item {}
+            TextField {
+                id: searchField
+                Layout.fillWidth: true
+                placeholderText: qsTr("Search projects…")
+                onTextChanged: AppController.setQuickSearch(AppController.projectsListModel, text)
+                inputMethodHints: Qt.ImhNoPredictiveText
+                leftPadding: 10
+                rightPadding: clearBtn.visible ? clearBtn.width + 12 : 10
+                implicitHeight: 36
+                background: Item {}
 
-                    Label {
-                        id: clearBtn
-                        visible: searchField.text.length > 0
-                        anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 10 }
-                        text: "✕"
-                        font.pixelSize: 18
-                        color: palette.text
-                        MouseArea {
-                            anchors.fill: parent
-                            anchors.margins: -6
-                            onClicked: searchField.clear()
-                        }
+                Label {
+                    id: clearBtn
+                    visible: searchField.text.length > 0
+                    anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 10 }
+                    text: "✕"
+                    font.pixelSize: 18
+                    color: palette.text
+                    MouseArea {
+                        anchors.fill: parent
+                        anchors.margins: -6
+                        onClicked: searchField.clear()
                     }
                 }
-
-                ToolButton {
-                    icon.name: "line.3.horizontal.decrease.circle"
-                    icon.color: filterBadge.iconColor
-                    onClicked: filterSheet.openFor("projects", qsTr("Projects"))
-                    ActiveIndicator {
-                        id: filterBadge
-                        active: AppController.filterRev >= 0 && AppController.hasActiveColumnFilters(AppController.projectsListModel)
-                    }
-                }
-
-                ToolButton {
-                    icon.name: "arrow.up.arrow.down"
-                    icon.color: sortBadge.iconColor
-                    onClicked: sortSheet.openFor("projects", qsTr("Projects"))
-                    ActiveIndicator {
-                        id: sortBadge
-                        active: AppController.sortRev >= 0 && (AppController.activeSort(AppController.projectsListModel).field || "") !== ""
-                    }
-                }
-
-                ToolButton {
-                    icon.name: "plus"
-                    onClicked: {
-                        var newRow = AppController.addProject()
-                        if (newRow < 0) return
-                        var d = AppController.getProjectData(newRow)
-                        root.stackView.push(Qt.resolvedUrl("ProjectDetailsPage.qml"), {
-                            projectRow:               newRow,
-                            isNewRecord:              true,
-                            // Staged, so there is no id yet — the page writes the row
-                            // once it has a number and name (both required). The
-                            // number starts at the next free one so naming the
-                            // project is all it takes to create it.
-                            projectId:                (d.id                   || "").toString(),
-                            initialProjectNumber:     ((d.project_number || "").toString() !== "")
-                                                          ? (d.project_number || "").toString()
-                                                          : AppController.nextProjectNumber(),
-                            initialProjectName:       (d.project_name         || "").toString(),
-                            initialProjectStatus:     (d.project_status       || "").toString(),
-                            initialPrimaryContact:    (d.primary_contact      || "").toString(),
-                            initialCompanyId:         (d.client_id            || "").toString(),
-                            initialLastStatusDate:    (d.last_status_date     || "").toString(),
-                            initialLastInvoiceDate:   (d.last_invoice_date    || "").toString(),
-                            initialInvoicingPeriod:   (d.invoicing_period     || "").toString(),
-                            initialStatusReportPeriod:(d.status_report_period || "").toString(),
-                            initialBudget:            (d.budget               || "").toString(),
-                            initialActual:            (d.actual               || "").toString(),
-                            initialBcwp:              (d.bcwp                 || "").toString(),
-                            initialBcws:              (d.bcws                 || "").toString(),
-                            initialBac:               (d.bac                  || "").toString(),
-                            initialPctConsumed:       (d.pct_consumed         || "").toString(),
-                            initialEac:               (d.eac                  || "").toString(),
-                            initialCv:                (d.cv                   || "").toString(),
-                            initialSv:                (d.sv                   || "").toString(),
-                            initialPctComplete:       (d.pct_complete         || "").toString(),
-                            initialCpi:               (d.cpi                  || "").toString()
-                        })
-                    }
-                }
-
             }
+
+            BarButton {
+                icon.name: "line.3.horizontal.decrease.circle"
+                icon.color: filterBadge.iconColor
+                onClicked: filterSheet.openFor("projects", qsTr("Projects"))
+                ActiveIndicator {
+                    id: filterBadge
+                    active: AppController.filterRev >= 0 && AppController.hasActiveColumnFilters(AppController.projectsListModel)
+                }
+            }
+
+            BarButton {
+                icon.name: "arrow.up.arrow.down"
+                icon.color: sortBadge.iconColor
+                onClicked: sortSheet.openFor("projects", qsTr("Projects"))
+                ActiveIndicator {
+                    id: sortBadge
+                    active: AppController.sortRev >= 0 && (AppController.activeSort(AppController.projectsListModel).field || "") !== ""
+                }
+            }
+
+            BarButton {
+                icon.name: "plus"
+                onClicked: {
+                    var newRow = AppController.addProject()
+                    if (newRow < 0) return
+                    var d = AppController.getProjectData(newRow)
+                    root.stackView.push(Qt.resolvedUrl("ProjectDetailsPage.qml"), {
+                        projectRow:               newRow,
+                        isNewRecord:              true,
+                        // Staged, so there is no id yet — the page writes the row
+                        // once it has a number and name (both required). The
+                        // number starts at the next free one so naming the
+                        // project is all it takes to create it.
+                        projectId:                (d.id                   || "").toString(),
+                        initialProjectNumber:     ((d.project_number || "").toString() !== "")
+                                                      ? (d.project_number || "").toString()
+                                                      : AppController.nextProjectNumber(),
+                        initialProjectName:       (d.project_name         || "").toString(),
+                        initialProjectStatus:     (d.project_status       || "").toString(),
+                        initialPrimaryContact:    (d.primary_contact      || "").toString(),
+                        initialCompanyId:         (d.client_id            || "").toString(),
+                        initialLastStatusDate:    (d.last_status_date     || "").toString(),
+                        initialLastInvoiceDate:   (d.last_invoice_date    || "").toString(),
+                        initialInvoicingPeriod:   (d.invoicing_period     || "").toString(),
+                        initialStatusReportPeriod:(d.status_report_period || "").toString(),
+                        initialBudget:            (d.budget               || "").toString(),
+                        initialActual:            (d.actual               || "").toString(),
+                        initialBcwp:              (d.bcwp                 || "").toString(),
+                        initialBcws:              (d.bcws                 || "").toString(),
+                        initialBac:               (d.bac                  || "").toString(),
+                        initialPctConsumed:       (d.pct_consumed         || "").toString(),
+                        initialEac:               (d.eac                  || "").toString(),
+                        initialCv:                (d.cv                   || "").toString(),
+                        initialSv:                (d.sv                   || "").toString(),
+                        initialPctComplete:       (d.pct_complete         || "").toString(),
+                        initialCpi:               (d.cpi                  || "").toString()
+                    })
+                }
+            }
+
         }
     }
 
     // ── Project list ─────────────────────────────────────────────────────────
     ListView {
         id: listView
+        topMargin: searchBar.height + 12   // first row clear of the search capsule
         anchors.fill: parent
         bottomMargin: listBottomInset
         model: AppController.projectsListModel

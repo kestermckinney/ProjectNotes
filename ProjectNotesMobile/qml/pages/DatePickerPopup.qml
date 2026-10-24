@@ -71,6 +71,13 @@ Popup {
     // ── Popup geometry — slides up from screen bottom ─────────────────────────
     modal: true
     dim: true
+    // Take focus from whatever text field had it, so the on-screen keyboard
+    // goes away instead of covering the calendar.
+    focus: true
+    onAboutToShow: {
+        Qt.inputMethod.commit()
+        Qt.inputMethod.hide()
+    }
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
     x: 0
@@ -110,7 +117,7 @@ Popup {
             RowLayout {
                 anchors { fill: parent; leftMargin: 8; rightMargin: 8 }
 
-                Button {
+                MonoButton {
                     text: qsTr("Cancel")
                     flat: true
                     onClicked: root.close()
@@ -124,7 +131,7 @@ Popup {
                     horizontalAlignment: Text.AlignHCenter
                 }
 
-                Button {
+                MonoButton {
                     text: qsTr("Done")
                     flat: true
                     font.bold: true
@@ -150,7 +157,7 @@ Popup {
             Layout.leftMargin: 4
             Layout.rightMargin: 4
 
-            Button {
+            MonoButton {
                 text: "‹"
                 flat: true
                 font.pixelSize: 24
@@ -168,7 +175,7 @@ Popup {
                 font.bold: true
             }
 
-            Button {
+            MonoButton {
                 text: "›"
                 flat: true
                 font.pixelSize: 24
@@ -290,7 +297,7 @@ Popup {
             Layout.leftMargin: 8
             Layout.rightMargin: 8
 
-            Button {
+            MonoButton {
                 text: qsTr("Today")
                 flat: true
                 onClicked: {
@@ -305,7 +312,7 @@ Popup {
 
             Item { Layout.fillWidth: true }
 
-            Button {
+            MonoButton {
                 text: qsTr("Clear")
                 flat: true
                 onClicked: {

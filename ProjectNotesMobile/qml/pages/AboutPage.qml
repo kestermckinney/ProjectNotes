@@ -10,6 +10,12 @@ Page {
     id: root
     title: qsTr("About")
 
+    // Same spot as on the list pages; see MainMenuPage.qml.
+    NavButton {
+        id: navButton
+        anchors { top: parent.top; left: parent.left; topMargin: 8; leftMargin: 12 }
+    }
+
     ColumnLayout {
         anchors.centerIn: parent
         spacing: 12
@@ -37,20 +43,20 @@ Page {
 
         Item { height: 16 }
 
-        Button {
+        MonoButton {
             Layout.alignment: Qt.AlignHCenter
             highlighted: true
             text: qsTr("Documentation")
             onClicked: Qt.openUrlExternally("https://projectnotes.readthedocs.io/")
         }
 
-        Button {
+        MonoButton {
             Layout.alignment: Qt.AlignHCenter
             text: qsTr("Release Notes")
             onClicked: Qt.openUrlExternally("https://gitlab.com/kestermckinney/ProjectNotes/-/releases")
         }
 
-        Button {
+        MonoButton {
             Layout.alignment: Qt.AlignHCenter
             text: qsTr("Source Code")
             onClicked: Qt.openUrlExternally("https://gitlab.com/kestermckinney/ProjectNotes")

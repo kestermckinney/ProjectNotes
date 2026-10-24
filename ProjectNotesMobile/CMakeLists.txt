@@ -118,6 +118,9 @@ qt_add_qml_module(ProjectNotesMobile
         qml/FormCombo.qml
         qml/GlassField.qml
         qml/GlassBar.qml
+        qml/BarButton.qml
+        qml/NavButton.qml
+        qml/MonoButton.qml
         qml/ActiveIndicator.qml
         qml/Main.qml
         qml/pages/ProjectsListPage.qml
@@ -127,6 +130,7 @@ qt_add_qml_module(ProjectNotesMobile
         qml/pages/ViewOptionsPage.qml
         qml/pages/PreferencesPage.qml
         qml/pages/AboutPage.qml
+        qml/pages/MainMenuPage.qml
         qml/pages/ContactDetailPage.qml
         qml/pages/CompanyDetailPage.qml
         qml/pages/AllItemsPage.qml

@@ -133,14 +133,14 @@ Popup {
 
             RowLayout {
                 anchors { fill: parent; leftMargin: 16; rightMargin: 16 }
-                Button { text: qsTr("Cancel"); flat: true; onClicked: root.close() }
+                MonoButton { text: qsTr("Cancel"); flat: true; onClicked: root.close() }
                 Label {
                     text: qsTr("Font")
                     font.pixelSize: Theme.headline; font.letterSpacing: Theme.tracking(Theme.headline); font.weight: Font.DemiBold
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignHCenter
                 }
-                Button {
+                MonoButton {
                     text: qsTr("Done"); flat: true; font.bold: true
                     onClicked: {
                         root.fontApplied(familyCombo.currentText,
@@ -205,14 +205,18 @@ Popup {
                         delegate: Rectangle {
                             width: 44; height: 34
                             radius: 6
-                            color: (modelData === root._selectedSize) ? palette.highlight : palette.button
+                            // Monochrome like the buttons: filled with the tint
+                            // when selected, the glass field gray otherwise.
+                            color: (modelData === root._selectedSize)
+                                   ? Theme.iconColor
+                                   : Qt.rgba(118/255, 118/255, 128/255, Theme.isDarkMode ? 0.24 : 0.12)
 
                             Label {
                                 anchors.centerIn: parent
                                 text: modelData
                                 font.pixelSize: Theme.subheadline; font.letterSpacing: Theme.tracking(Theme.subheadline)
                                 color: (modelData === root._selectedSize)
-                                       ? palette.highlightedText : palette.buttonText
+                                       ? Theme.pageBackground : palette.text
                             }
                             MouseArea {
                                 anchors.fill: parent
