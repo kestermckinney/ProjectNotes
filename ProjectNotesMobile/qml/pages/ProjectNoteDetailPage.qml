@@ -282,24 +282,30 @@ Page {
         // usable height of the button row.
         padding: 0
         topPadding: 0
-        leftPadding: 4
-        rightPadding: 4
+        leftPadding: 10
+        rightPadding: 10
 
-        x: 0
+        // A glass capsule inset from the screen edges, floating just above
+        // the keyboard like the tab bar floats above the lists.
+        x: 8
         y: Qt.inputMethod.visible
-           ? Qt.inputMethod.keyboardRectangle.y - height
-           : (parent ? parent.height - height : 0)
-        width:  parent ? parent.width : 390
-        height: 48
+           ? Qt.inputMethod.keyboardRectangle.y - height - 8
+           : (parent ? parent.height - height - 8 : 0)
+        width:  parent ? parent.width - 16 : 374
+        height: 52
 
         visible: !_formatSheetOpen && !_fontPickerOpen && (Qt.inputMethod.visible || noteEdit.selectionStart !== noteEdit.selectionEnd)
 
-        background: Rectangle {
-            radius: 16
-            color: Qt.rgba(palette.window.r, palette.window.g, palette.window.b, 0.97)
-            Rectangle {
-                anchors { top: parent.top; left: parent.left; right: parent.right }
-                height: 1; color: palette.mid; opacity: 0.4
+        // Frosts the note text scrolling behind the bar. blurRect is the
+        // bar's area in page coordinates (the popup lives in the overlay).
+        // mapFromItem() isn't tracked by the binding, so it also re-runs on
+        // open and on page resize: its first run comes before layout settles.
+        background: GlassBar {
+            blurSource: root
+            blurRect: {
+                keyboardAccessory.opened; root.width; root.height
+                var p = root.mapFromItem(Overlay.overlay, keyboardAccessory.x, keyboardAccessory.y)
+                return Qt.rect(p.x, p.y, keyboardAccessory.width, keyboardAccessory.height)
             }
         }
 

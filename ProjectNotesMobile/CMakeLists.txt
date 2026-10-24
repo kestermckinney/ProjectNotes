@@ -117,6 +117,7 @@ qt_add_qml_module(ProjectNotesMobile
         qml/FieldRow.qml
         qml/FormCombo.qml
         qml/GlassField.qml
+        qml/GlassBar.qml
         qml/ActiveIndicator.qml
         qml/Main.qml
         qml/pages/ProjectsListPage.qml

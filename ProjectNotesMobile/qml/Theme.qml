@@ -28,6 +28,13 @@ QtObject {
     readonly property bool  isDarkMode:      Qt.styleHints.colorScheme === Qt.Dark
     readonly property color mutedText:       isDarkMode ? "#e8e8eb" : "#1c1c1e"
 
+    // One background behind lists, forms and the bars above them: the color
+    // the iOS style paints list rows (its palette.base). Main.qml sets it as
+    // the window's palette.window so pages and forms use it too, and the
+    // header and search bars set it explicitly, so no band of a different
+    // shade shows between them.
+    readonly property color pageBackground:  isDarkMode ? "#1c1c1e" : "#ffffff"
+
     // Section label text above form fields. Navy in light mode; lifted in dark
     // mode so it stays readable on the page background.
     readonly property color sectionText:     isDarkMode ? "#9db4e6" : navyMid

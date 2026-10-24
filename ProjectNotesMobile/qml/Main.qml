@@ -4,7 +4,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.iOS
-import QtQuick.Effects
 import QtQuick.Layouts
 import ProjectNotesMobile
 
@@ -22,6 +21,9 @@ ApplicationWindow {
     // toolbars must stay clear of the home indicator.
     bottomPadding: 0
     readonly property real safeBottom: SafeArea.margins.bottom
+
+    // Pages, forms and lists share one background; see Theme.pageBackground.
+    palette.window: Theme.pageBackground
 
     // Apply SF Pro's native tracking to the default font, which every control
     // inherits (most list rows show text at this size). Controls that set
@@ -390,7 +392,7 @@ ApplicationWindow {
         // Same color as the page below it, like a native iOS navigation bar,
         // so it follows the light or dark setting. Uses the window's palette:
         // the iOS style gives ToolBar a palette of its own.
-        background: Rectangle { color: root.palette.window }
+        background: Rectangle { color: Theme.pageBackground }
         height: 100
 
         RowLayout {
@@ -500,7 +502,7 @@ ApplicationWindow {
     // tabDockInset so the last row can still scroll clear of the capsule.
     readonly property real tabDockInset: tabDock.height + tabDock.anchors.bottomMargin
 
-    Item {
+    GlassBar {
         id: tabDock
         z: 10
         // Hidden while a detail page is open, as the old footer was.
@@ -513,82 +515,13 @@ ApplicationWindow {
             bottomMargin: Math.max(12, root.safeBottom - 10)
         }
 
-        readonly property real radius: height / 2
-
-        // Soft drop shadow so the capsule reads as floating above the rows.
-        RectangularShadow {
-            anchors.fill: parent
-            radius: tabDock.radius
-            offset.y: 6
-            blur: 24
-            spread: -2
-            color: Theme.isDarkMode ? Qt.rgba(0, 0, 0, 0.45) : Qt.rgba(0, 0, 0, 0.14)
-        }
-
-        // Frosted backdrop: a live copy of the list behind the capsule,
-        // blurred and clipped to the capsule's rounded shape.
-        ShaderEffectSource {
-            id: backdrop
-            anchors.fill: parent
-            sourceItem: pageStack
-            sourceRect: Qt.rect(tabDock.x - pageStack.x, tabDock.y - pageStack.y,
-                                tabDock.width, tabDock.height)
-            live: true
-            visible: false
-        }
-        Rectangle {
-            id: capsuleMask
-            anchors.fill: parent
-            radius: tabDock.radius
-            visible: false
-            layer.enabled: true
-        }
-        Item {
-            anchors.fill: parent
-            // Mask the blurred layer as a whole; masking inside the blur
-            // effect itself leaves its padded edges unclipped.
-            layer.enabled: true
-            layer.effect: MultiEffect {
-                maskEnabled: true
-                maskSource: capsuleMask
-                maskThresholdMin: 0.5
-                maskSpreadAtMin: 1.0
-            }
-            MultiEffect {
-                anchors.fill: parent
-                source: backdrop
-                // Keep the output inside the capsule; auto padding spreads
-                // the blur past its bounds and thins it out.
-                autoPaddingEnabled: false
-                blurEnabled: true
-                blur: 1.0
-                blurMax: 40
-                saturation: 0.35
-            }
-        }
-
-        // Translucent tint, hairline edge, and a faint top sheen for the glass.
-        Rectangle {
-            anchors.fill: parent
-            radius: tabDock.radius
-            color: Theme.isDarkMode ? Qt.rgba(0.11, 0.11, 0.12, 0.55) : Qt.rgba(1, 1, 1, 0.55)
-            border.width: 1
-            border.color: Theme.isDarkMode ? Qt.rgba(1, 1, 1, 0.14) : Qt.rgba(1, 1, 1, 0.7)
-        }
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: 1
-            radius: tabDock.radius - 1
-            gradient: Gradient {
-                GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, Theme.isDarkMode ? 0.10 : 0.35) }
-                GradientStop { position: 0.5; color: Qt.rgba(1, 1, 1, 0.0) }
-            }
-        }
+        blurSource: pageStack
+        blurRect: Qt.rect(tabDock.x - pageStack.x, tabDock.y - pageStack.y,
+                          tabDock.width, tabDock.height)
 
         TabBar {
             id: tabBar
             anchors.fill: parent
-            anchors.margins: 5
             position: TabBar.Footer
             currentIndex: root.currentTabIndex
             onCurrentIndexChanged: root.currentTabIndex = currentIndex

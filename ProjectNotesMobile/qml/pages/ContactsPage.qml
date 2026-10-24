@@ -36,73 +36,83 @@ Page {
     }
 
     header: ToolBar {
-        RowLayout {
-            anchors { left: parent.left; right: parent.right; margins: 8 }
-            height: parent.height
+        // Glass search capsule, matching the floating tab bar. The bar
+        // itself takes the page color so no band shows above the list.
+        background: Rectangle { color: Theme.pageBackground }
+        z: 1   // let the capsule's shadow fall over the list
+        implicitHeight: 60
 
-            TextField {
-                id: searchField
-                Layout.fillWidth: true
-                placeholderText: qsTr("Search contacts…")
-                onTextChanged: AppController.setQuickSearch(AppController.contactsModel, text)
-                inputMethodHints: Qt.ImhNoPredictiveText
-                leftPadding: 10
-                rightPadding: clearBtn.visible ? clearBtn.width + 12 : 10
-                implicitHeight: 36
-                background: GlassField { focused: searchField.activeFocus }
+        GlassBar {
+            anchors { fill: parent; leftMargin: 12; rightMargin: 12; topMargin: 6; bottomMargin: 6 }
+            contentPadding: 0
 
-                Label {
-                    id: clearBtn
-                    visible: searchField.text.length > 0
-                    anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 10 }
-                    text: "✕"
-                    font.pixelSize: 18
-                    color: palette.text
-                    MouseArea {
-                        anchors.fill: parent
-                        anchors.margins: -6
-                        onClicked: searchField.clear()
+            RowLayout {
+                anchors { fill: parent; leftMargin: 4; rightMargin: 2 }
+
+                TextField {
+                    id: searchField
+                    Layout.fillWidth: true
+                    placeholderText: qsTr("Search contacts…")
+                    onTextChanged: AppController.setQuickSearch(AppController.contactsModel, text)
+                    inputMethodHints: Qt.ImhNoPredictiveText
+                    leftPadding: 10
+                    rightPadding: clearBtn.visible ? clearBtn.width + 12 : 10
+                    implicitHeight: 36
+                    background: Item {}
+
+                    Label {
+                        id: clearBtn
+                        visible: searchField.text.length > 0
+                        anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 10 }
+                        text: "✕"
+                        font.pixelSize: 18
+                        color: palette.text
+                        MouseArea {
+                            anchors.fill: parent
+                            anchors.margins: -6
+                            onClicked: searchField.clear()
+                        }
                     }
                 }
-            }
 
-            ToolButton {
-                icon.name: "line.3.horizontal.decrease.circle"
-                icon.color: filterBadge.iconColor
-                onClicked: filterSheet.openFor("contacts", qsTr("Contacts"))
-                ActiveIndicator {
-                    id: filterBadge
-                    active: AppController.filterRev >= 0 && AppController.hasActiveColumnFilters(AppController.contactsModel)
+                ToolButton {
+                    icon.name: "line.3.horizontal.decrease.circle"
+                    icon.color: filterBadge.iconColor
+                    onClicked: filterSheet.openFor("contacts", qsTr("Contacts"))
+                    ActiveIndicator {
+                        id: filterBadge
+                        active: AppController.filterRev >= 0 && AppController.hasActiveColumnFilters(AppController.contactsModel)
+                    }
                 }
-            }
 
-            ToolButton {
-                icon.name: "arrow.up.arrow.down"
-                icon.color: sortBadge.iconColor
-                onClicked: sortSheet.openFor("contacts", qsTr("Contacts"))
-                ActiveIndicator {
-                    id: sortBadge
-                    active: AppController.sortRev >= 0 && (AppController.activeSort(AppController.contactsModel).field || "") !== ""
+                ToolButton {
+                    icon.name: "arrow.up.arrow.down"
+                    icon.color: sortBadge.iconColor
+                    onClicked: sortSheet.openFor("contacts", qsTr("Contacts"))
+                    ActiveIndicator {
+                        id: sortBadge
+                        active: AppController.sortRev >= 0 && (AppController.activeSort(AppController.contactsModel).field || "") !== ""
+                    }
                 }
-            }
 
-            ToolButton {
-                icon.name: "plus"
-                onClicked: {
-                    var newRow = AppController.addContact()
-                    if (newRow < 0) return
-                    var d = AppController.getContactData(newRow)
-                    root.stackView.push(Qt.resolvedUrl("ContactDetailPage.qml"), {
-                        contactRow:         newRow,
-                        contactId:          (d.id           || "").toString(),
-                        isNewRecord:        true,
-                        initialName:        (d.name         || "").toString(),
-                        initialEmail:       (d.email        || "").toString(),
-                        initialOfficePhone: (d.office_phone || "").toString(),
-                        initialCellPhone:   (d.cell_phone   || "").toString(),
-                        initialCompanyId:   (d.client_id    || "").toString(),
-                        initialRole:        (d.role         || "").toString()
-                    })
+                ToolButton {
+                    icon.name: "plus"
+                    onClicked: {
+                        var newRow = AppController.addContact()
+                        if (newRow < 0) return
+                        var d = AppController.getContactData(newRow)
+                        root.stackView.push(Qt.resolvedUrl("ContactDetailPage.qml"), {
+                            contactRow:         newRow,
+                            contactId:          (d.id           || "").toString(),
+                            isNewRecord:        true,
+                            initialName:        (d.name         || "").toString(),
+                            initialEmail:       (d.email        || "").toString(),
+                            initialOfficePhone: (d.office_phone || "").toString(),
+                            initialCellPhone:   (d.cell_phone   || "").toString(),
+                            initialCompanyId:   (d.client_id    || "").toString(),
+                            initialRole:        (d.role         || "").toString()
+                        })
+                    }
                 }
             }
         }

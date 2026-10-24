@@ -26,47 +26,57 @@ Page {
     StackView.onActivated: AppController.openTrackerItem(root.itemId)
 
     header: ToolBar {
-        RowLayout {
-            anchors { left: parent.left; right: parent.right; margins: 8 }
-            height: parent.height
-            TextField {
-                id: searchField
-                Layout.fillWidth: true
-                placeholderText: qsTr("Search comments…")
-                onTextChanged: AppController.setQuickSearch(AppController.trackerItemCommentsModel, text)
-                inputMethodHints: Qt.ImhNoPredictiveText
-                leftPadding: 10
-                rightPadding: clearBtn.visible ? clearBtn.width + 12 : 10
-                implicitHeight: 36
-                background: GlassField { focused: searchField.activeFocus }
+        // Glass search capsule, matching the floating tab bar. The bar
+        // itself takes the page color so no band shows above the list.
+        background: Rectangle { color: Theme.pageBackground }
+        z: 1   // let the capsule's shadow fall over the list
+        implicitHeight: 60
 
-                Label {
-                    id: clearBtn
-                    visible: searchField.text.length > 0
-                    anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 10 }
-                    text: "✕"
-                    font.pixelSize: 18
-                    color: palette.text
-                    MouseArea {
-                        anchors.fill: parent
-                        anchors.margins: -6
-                        onClicked: searchField.clear()
+        GlassBar {
+            anchors { fill: parent; leftMargin: 12; rightMargin: 12; topMargin: 6; bottomMargin: 6 }
+            contentPadding: 0
+
+            RowLayout {
+                anchors { fill: parent; leftMargin: 4; rightMargin: 2 }
+                TextField {
+                    id: searchField
+                    Layout.fillWidth: true
+                    placeholderText: qsTr("Search comments…")
+                    onTextChanged: AppController.setQuickSearch(AppController.trackerItemCommentsModel, text)
+                    inputMethodHints: Qt.ImhNoPredictiveText
+                    leftPadding: 10
+                    rightPadding: clearBtn.visible ? clearBtn.width + 12 : 10
+                    implicitHeight: 36
+                    background: Item {}
+
+                    Label {
+                        id: clearBtn
+                        visible: searchField.text.length > 0
+                        anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 10 }
+                        text: "✕"
+                        font.pixelSize: 18
+                        color: palette.text
+                        MouseArea {
+                            anchors.fill: parent
+                            anchors.margins: -6
+                            onClicked: searchField.clear()
+                        }
                     }
                 }
-            }
-            ToolButton {
-                icon.name: "plus"
-                onClicked: {
-                    var newRow = AppController.addComment(root.itemId)
-                    if (newRow < 0) return
-                    var d = AppController.getCommentData(newRow)
-                    root.StackView.view.push(Qt.resolvedUrl("TrackerItemCommentDetailPage.qml"), {
-                        commentRow:    newRow,
-                        isNewRecord:   true,
-                        initialDate:   (d.lastupdated_date || "").toString(),
-                        initialNote:   (d.update_note      || "").toString(),
-                        initialBy:     (d.updated_by       || "").toString()
-                    })
+                ToolButton {
+                    icon.name: "plus"
+                    onClicked: {
+                        var newRow = AppController.addComment(root.itemId)
+                        if (newRow < 0) return
+                        var d = AppController.getCommentData(newRow)
+                        root.StackView.view.push(Qt.resolvedUrl("TrackerItemCommentDetailPage.qml"), {
+                            commentRow:    newRow,
+                            isNewRecord:   true,
+                            initialDate:   (d.lastupdated_date || "").toString(),
+                            initialNote:   (d.update_note      || "").toString(),
+                            initialBy:     (d.updated_by       || "").toString()
+                        })
+                    }
                 }
             }
         }
