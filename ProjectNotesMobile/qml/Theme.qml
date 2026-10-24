@@ -28,6 +28,15 @@ QtObject {
     readonly property bool  isDarkMode:      Qt.styleHints.colorScheme === Qt.Dark
     readonly property color mutedText:       isDarkMode ? "#e8e8eb" : "#1c1c1e"
 
+    // Section label text above form fields. Navy in light mode; lifted in dark
+    // mode so it stays readable on the page background.
+    readonly property color sectionText:     isDarkMode ? "#9db4e6" : navyMid
+
+    // Focus ring and glow for GlassField inputs (iOS system blue).
+    readonly property color focusRing:       isDarkMode ? "#0a84ff" : "#007aff"
+    readonly property color focusGlow:       isDarkMode ? Qt.rgba(10/255, 132/255, 1, 0.30)
+                                                        : Qt.rgba(0, 122/255, 1, 0.22)
+
     // ── Type scale ────────────────────────────────────────────────────────────
     // Apple's iOS text styles (Large size, the default Dynamic Type setting),
     // so the app reads like the App Store and other system apps. Sizes are

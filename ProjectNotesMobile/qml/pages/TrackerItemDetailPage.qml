@@ -335,21 +335,22 @@ Page {
             SectionHeader { text: qsTr("Description") }
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: Math.max(120, descEdit.contentHeight + 24)
-                color: palette.base
+                Layout.preferredHeight: Math.max(120, descEdit.contentHeight + 40)
+                color: "transparent"
+
+                GlassField {
+                    anchors { fill: parent; leftMargin: 12; rightMargin: 12; topMargin: 6; bottomMargin: 6 }
+                    focused: descEdit.activeFocus
+                }
 
                 TextEdit {
                     id: descEdit
-                    anchors { fill: parent; margins: 8 }
+                    anchors { fill: parent; leftMargin: 22; rightMargin: 22; topMargin: 14; bottomMargin: 14 }
                     text: root.initialDescription
                     wrapMode: TextEdit.Wrap
                     color: palette.text
                     selectByMouse: true
                     onTextChanged: root._touch()
-                }
-                Rectangle {
-                    anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-                    height: 1; color: Theme.mutedText; opacity: 0.3
                 }
             }
 
@@ -450,13 +451,12 @@ Page {
 
     component SectionHeader: Label {
         Layout.fillWidth: true
-        Layout.topMargin: 20
+        Layout.topMargin: 10
         leftPadding: 16
         bottomPadding: 4
         font.pixelSize: Theme.footnote; font.letterSpacing: Theme.tracking(Theme.footnote)
         font.weight: 600
-        color: Theme.navyMid
-        background: Rectangle { color: Theme.sectionBg }
+        color: Theme.sectionText
     }
 
     Dialog {

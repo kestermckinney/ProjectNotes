@@ -98,24 +98,20 @@ Page {
 
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 44
-                color: palette.base
+                Layout.preferredHeight: 40
+                color: "transparent"
 
                 TextField {
                     id: companyNameField
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 12; rightMargin: 12 }
+                    height: 36
+                    leftPadding: 12; rightPadding: 12
                     text: root.initialCompanyName
                     horizontalAlignment: TextInput.AlignLeft
                     inputMethodHints: Qt.ImhNoPredictiveText
-                    background: Item {}
+                    background: GlassField { focused: companyNameField.activeFocus }
                 }
 
-                Rectangle {
-                    anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-                    height: 1
-                    color: Theme.mutedText
-                    opacity: 0.3
-                }
             }
 
             Item { Layout.preferredHeight: 24 }
@@ -126,13 +122,12 @@ Page {
 
     component SectionHeader: Label {
         Layout.fillWidth: true
-        Layout.topMargin: 20
+        Layout.topMargin: 10
         leftPadding: 16
         bottomPadding: 4
         font.pixelSize: Theme.footnote; font.letterSpacing: Theme.tracking(Theme.footnote)
         font.weight: 600
-        color: Theme.navyMid
-        background: Rectangle { color: Theme.sectionBg }
+        color: Theme.sectionText
     }
 
 

@@ -291,6 +291,9 @@ Popup {
                     id: searchInput
                     Layout.fillWidth: true
                     placeholderText: qsTr("Contains…")
+                    leftPadding: 10; rightPadding: 10
+                    implicitHeight: 36
+                    background: GlassField { focused: searchInput.activeFocus }
                     onTextEdited: root._setSearch(root._curField, text)
                 }
             }
@@ -395,6 +398,5 @@ Popup {
         font.pixelSize: Theme.footnote; font.letterSpacing: Theme.tracking(Theme.footnote)
         font.weight: 600
         color: Theme.navyMid
-        background: Rectangle { color: Theme.sectionBg }
     }
 }

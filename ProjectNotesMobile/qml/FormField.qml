@@ -5,11 +5,13 @@ import QtQuick
 import QtQuick.Controls
 
 TextField {
+    id: control
     horizontalAlignment: TextInput.AlignLeft
-    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter }
-    leftPadding: 16
-    rightPadding: 16
-    background: Item {}
+    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 12; rightMargin: 12 }
+    height: 36
+    leftPadding: 12
+    rightPadding: 12
+    background: GlassField { focused: control.activeFocus }
 
     Component.onCompleted: {
         cursorPosition = 0

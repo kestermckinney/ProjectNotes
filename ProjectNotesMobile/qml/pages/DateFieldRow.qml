@@ -32,26 +32,35 @@ Rectangle {
     }
 
     Layout.fillWidth: true
-    Layout.preferredHeight: 44
-    color: palette.base
+    Layout.preferredHeight: 40
+    color: "transparent"
 
     // Tap anywhere on the row to open the picker
     MouseArea {
+        id: rowTap
         anchors.fill: parent
         onClicked: picker.openWithDate(root.text)
     }
 
     RowLayout {
-        anchors { fill: parent; leftMargin: 16; rightMargin: 8 }
-        spacing: 0
+        anchors { fill: parent; leftMargin: 12; rightMargin: 8 }
+        spacing: 4
 
-        Label {
-            id: dateLabel
+        // The date itself, boxed like the text fields around it.
+        GlassField {
             Layout.fillWidth: true
-            text: root.text !== "" ? root.text : root.placeholderText
-            color: root.text !== "" ? palette.text : Theme.mutedText
-            verticalAlignment: Text.AlignVCenter
-            font.pixelSize: Theme.callout; font.letterSpacing: Theme.tracking(Theme.callout)
+            Layout.preferredHeight: 36
+            focused: picker.opened
+            pressed: rowTap.pressed
+
+            Label {
+                id: dateLabel
+                anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
+                text: root.text !== "" ? root.text : root.placeholderText
+                color: root.text !== "" ? palette.text : Theme.mutedText
+                verticalAlignment: Text.AlignVCenter
+                font.pixelSize: Theme.callout; font.letterSpacing: Theme.tracking(Theme.callout)
+            }
         }
 
         Button {
@@ -70,10 +79,6 @@ Rectangle {
         }
     }
 
-        Rectangle {
-            anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-            height: 1; color: Theme.mutedText; opacity: 0.3
-        }
 
     DatePickerPopup {
         id: picker

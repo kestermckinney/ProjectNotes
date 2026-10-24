@@ -34,7 +34,13 @@ ComboBox {
     readonly property string selection:
         (optionIndex >= 0 && optionIndex < options.length) ? options[optionIndex] : ""
 
-    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
+    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 12; rightMargin: 12 }
+    height: 36
+    leftPadding: 6   // the iOS combo adds its own inset; 6 lines its text up with the fields
+    background: GlassField {
+        focused: control.activeFocus || control.popup.visible
+        pressed: control.pressed
+    }
 
     model: includeNone ? [noneLabel].concat(options) : options
     editable: searchable

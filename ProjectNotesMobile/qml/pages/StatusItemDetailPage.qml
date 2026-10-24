@@ -107,14 +107,15 @@ Page {
 
             SectionHeader { text: qsTr("Description") }
             FieldRow {
-                Layout.preferredHeight: Math.max(100, descField.contentHeight + 24)
+                Layout.preferredHeight: Math.max(100, descField.contentHeight + 32)
                 TextArea {
                     id: descField
-                    anchors { left: parent.left; right: parent.right; top: parent.top; bottom: parent.bottom; margins: 8 }
+                    anchors { fill: parent; leftMargin: 12; rightMargin: 12; topMargin: 6; bottomMargin: 6 }
+                    padding: 10
                     text: root.initialDescription
                     wrapMode: TextArea.Wrap
                     color: palette.text
-                    background: Item {}
+                    background: GlassField { focused: descField.activeFocus }
                     onTextChanged: root._hasChanges = true
                 }
             }
@@ -125,12 +126,11 @@ Page {
 
     component SectionHeader: Label {
         Layout.fillWidth: true
-        Layout.topMargin: 20
+        Layout.topMargin: 10
         leftPadding: 16
         bottomPadding: 4
         font.pixelSize: Theme.footnote; font.letterSpacing: Theme.tracking(Theme.footnote)
         font.weight: 600
-        color: Theme.navyMid
-        background: Rectangle { color: Theme.sectionBg }
+        color: Theme.sectionText
     }
 }

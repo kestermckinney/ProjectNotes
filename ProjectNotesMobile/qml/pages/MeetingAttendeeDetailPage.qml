@@ -114,12 +114,11 @@ Page {
 
     component SectionHeader: Label {
         Layout.fillWidth: true
-        Layout.topMargin: 20
+        Layout.topMargin: 10
         leftPadding: 16
         bottomPadding: 4
         font.pixelSize: Theme.footnote; font.letterSpacing: Theme.tracking(Theme.footnote)
         font.weight: 600
-        color: Theme.navyMid
-        background: Rectangle { color: Theme.sectionBg }
+        color: Theme.sectionText
     }
 }

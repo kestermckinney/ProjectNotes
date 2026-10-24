@@ -178,6 +178,12 @@ Popup {
                     id: familyCombo
                     Layout.fillWidth: true
                     Layout.leftMargin: 16; Layout.rightMargin: 16
+                    Layout.preferredHeight: 36
+                    leftPadding: 6   // the iOS combo adds its own inset; 6 lines its text up with the fields
+                    background: GlassField {
+                        focused: familyCombo.activeFocus || familyCombo.popup.visible
+                        pressed: familyCombo.pressed
+                    }
                     model: root._familyModel
                 }
 

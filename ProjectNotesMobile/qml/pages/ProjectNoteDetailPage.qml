@@ -222,11 +222,15 @@ Page {
             // // the outer ScrollView handles all vertical scrolling.
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: Math.max(120, noteEdit.contentHeight + 24)
-                color: palette.base
+                Layout.preferredHeight: Math.max(120, noteEdit.contentHeight + 40)
+                color: "transparent"
+                GlassField {
+                    anchors { fill: parent; leftMargin: 12; rightMargin: 12; topMargin: 6; bottomMargin: 6 }
+                    focused: noteEdit.activeFocus
+                }
                 TextEdit {
                     id: noteEdit
-                    anchors { fill: parent; margins: 8 }
+                    anchors { fill: parent; leftMargin: 22; rightMargin: 22; topMargin: 14; bottomMargin: 14 }
                     color: palette.text
                     selectByMouse: true
 
@@ -235,10 +239,6 @@ Page {
                     wrapMode: TextEdit.WordWrap
                     font.family: "Arial"
                     onTextChanged: root._hasChanges = true
-                }
-                Rectangle {
-                    anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-                    height: 1; color: Theme.mutedText; opacity: 0.3
                 }
             }
 
@@ -469,12 +469,11 @@ Page {
 
     component SectionHeader: Label {
         Layout.fillWidth: true
-        Layout.topMargin: 20
+        Layout.topMargin: 10
         leftPadding: 16
         bottomPadding: 4
         font.pixelSize: Theme.footnote; font.letterSpacing: Theme.tracking(Theme.footnote)
         font.weight: 600
-        color: Theme.navyMid
-        background: Rectangle { color: Theme.sectionBg }
+        color: Theme.sectionText
     }
 }

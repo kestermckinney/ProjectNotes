@@ -40,12 +40,15 @@ Page {
                 placeholderText: qsTr("Search team…")
                 onTextChanged: AppController.setQuickSearch(AppController.projectTeamMembersModel, text)
                 inputMethodHints: Qt.ImhNoPredictiveText
-                rightPadding: clearBtn.visible ? clearBtn.width + 4 : 0
+                leftPadding: 10
+                rightPadding: clearBtn.visible ? clearBtn.width + 12 : 10
+                implicitHeight: 36
+                background: GlassField { focused: searchField.activeFocus }
 
                 Label {
                     id: clearBtn
                     visible: searchField.text.length > 0
-                    anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 6 }
+                    anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 10 }
                     text: "✕"
                     font.pixelSize: 18
                     color: palette.text

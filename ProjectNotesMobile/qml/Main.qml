@@ -292,14 +292,14 @@ ApplicationWindow {
             Rectangle {
                 Layout.fillWidth: true
                 height: 32
-                color: Theme.navyDark
+                color: "transparent"   // show the drawer's own surface
 
                 Label {
                     anchors.centerIn: parent
                     text: qsTr("Main Menu")
                     font.pixelSize: Theme.title3; font.letterSpacing: Theme.tracking(Theme.title3)
                     font.bold: true
-                    color: "white"
+                    color: palette.windowText
                 }
             }
 
@@ -387,9 +387,10 @@ ApplicationWindow {
 
     // ── Persistent header toolbar ─────────────────────────────────────────────
     header: ToolBar {
-        // palette.window drives the iOS-style ToolBar tint; background overrides the QML layer
-        palette.window: Theme.navyDark
-        background: Rectangle { color: Theme.navyDark }
+        // Same color as the page below it, like a native iOS navigation bar,
+        // so it follows the light or dark setting. Uses the window's palette:
+        // the iOS style gives ToolBar a palette of its own.
+        background: Rectangle { color: root.palette.window }
         height: 100
 
         RowLayout {
@@ -401,7 +402,7 @@ ApplicationWindow {
                 id: navButton
                 // depth 1 = initial SwipeView item; depth > 1 = a detail page is open
                 icon.name: pageStack.depth > 1 ? "chevron.left" : "line.3.horizontal"
-                icon.color: "white"
+                icon.color: Theme.focusRing   // iOS system blue, as native bar buttons
                 onClicked: {
                     if (pageStack.depth > 1)
                         trySaveAndPop()
@@ -419,7 +420,7 @@ ApplicationWindow {
                 font.weight: Font.DemiBold
                 horizontalAlignment: Text.AlignHCenter
                 elide: Text.ElideRight
-                color: "white"
+                color: palette.windowText
             }
 
             Item { width: navButton.width }

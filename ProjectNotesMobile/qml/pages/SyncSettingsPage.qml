@@ -80,7 +80,7 @@ Page {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: subscriptionLabel.implicitHeight + 24
-                color: palette.base
+                color: "transparent"
 
                 Label {
                     id: subscriptionLabel
@@ -93,18 +93,12 @@ Page {
                     horizontalAlignment: Text.AlignHCenter
                 }
 
-                Rectangle {
-                    anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-                    height: 1
-                    color: Theme.mutedText
-                    opacity: 0.3
-                }
             }
 
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 44
-                color: palette.base
+                color: "transparent"
 
                 Label {
                     anchors.centerIn: parent
@@ -114,12 +108,6 @@ Page {
                     onLinkActivated: Qt.openUrlExternally(link)
                 }
 
-                Rectangle {
-                    anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-                    height: 1
-                    color: Theme.mutedText
-                    opacity: 0.3
-                }
             }
 
             Label {
@@ -139,13 +127,12 @@ Page {
 
     component SectionHeader: Label {
         Layout.fillWidth: true
-        Layout.topMargin: 20
+        Layout.topMargin: 10
         leftPadding: 16
         bottomPadding: 4
         font.pixelSize: Theme.footnote; font.letterSpacing: Theme.tracking(Theme.footnote)
         font.weight: 600
-        color: Theme.navyMid
-        background: Rectangle { color: Theme.sectionBg }
+        color: Theme.sectionText
     }
 
     component SettingsRow: RowLayout {
@@ -159,7 +146,7 @@ Page {
         Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            color: palette.base
+            color: "transparent"
 
             RowLayout {
                 anchors { fill: parent; leftMargin: 16; rightMargin: 16 }
@@ -177,12 +164,6 @@ Page {
                 }
             }
 
-            Rectangle {
-                anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-                height: 1
-                color: Theme.mutedText
-                opacity: 0.3
-            }
         }
     }
 }
