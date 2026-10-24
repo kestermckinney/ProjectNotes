@@ -31,6 +31,7 @@ ToolButton {
             active: control.glass
             sourceComponent: GlassBar {
                 contentPadding: 0
+                solid: true
                 scale: control.down ? 0.92 : 1
                 Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
             }

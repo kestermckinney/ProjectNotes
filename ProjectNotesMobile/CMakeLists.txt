@@ -117,9 +117,15 @@ qt_add_qml_module(ProjectNotesMobile
         qml/FieldRow.qml
         qml/FormCombo.qml
         qml/GlassField.qml
+        qml/SectionHeader.qml
         qml/GlassBar.qml
         qml/BarButton.qml
         qml/NavButton.qml
+        qml/MonoSwitch.qml
+        qml/SettingsSection.qml
+        qml/SettingsItem.qml
+        qml/SettingsField.qml
+        qml/SettingsCombo.qml
         qml/MonoButton.qml
         qml/ActiveIndicator.qml
         qml/Main.qml
@@ -131,6 +137,7 @@ qt_add_qml_module(ProjectNotesMobile
         qml/pages/PreferencesPage.qml
         qml/pages/AboutPage.qml
         qml/pages/MainMenuPage.qml
+        qml/pages/AppearancePage.qml
         qml/pages/ContactDetailPage.qml
         qml/pages/CompanyDetailPage.qml
         qml/pages/AllItemsPage.qml
@@ -158,6 +165,8 @@ qt_add_qml_module(ProjectNotesMobile
         qml/pages/SortSheet.qml
         qml/pages/QuickFilterDialog.qml
         qml/pages/ContactCardDialog.qml
+    RESOURCES
+        qml/images/app-icon.png
 )
 
 # ── iOS bundle properties ─────────────────────────────────────────────────────

@@ -4,6 +4,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.iOS
+import QtQuick.Effects
 import QtQuick.Layouts
 import ProjectNotesMobile
 
@@ -21,6 +22,9 @@ ApplicationWindow {
     // toolbars must stay clear of the home indicator.
     bottomPadding: 0
     readonly property real safeBottom: SafeArea.margins.bottom
+    // Likewise at the top: the pages run up under the status bar and the
+    // frosted title bar, which pads for the safe area itself.
+    topPadding: 0
 
     // Pages, forms and lists share one background; see Theme.pageBackground.
     palette.window: Theme.pageBackground
@@ -35,12 +39,20 @@ ApplicationWindow {
     palette.disabled.button:     Theme.iconColorDisabled
     palette.buttonText:          Theme.pageBackground
 
-    // Apply SF Pro's native tracking to the default font, which every control
-    // inherits (most list rows show text at this size). Controls that set
-    // their own font.pixelSize also set a matching font.letterSpacing.
-    font.letterSpacing: Theme.tracking(Qt.application.font.pixelSize > 0
-                                       ? Qt.application.font.pixelSize
-                                       : Qt.application.font.pointSize)
+    // The default font every control inherits (most list rows show text at
+    // this size), scaled by the Text Size setting, with SF Pro's native
+    // tracking. Controls that set their own font.pixelSize use Theme's sizes,
+    // which scale the same way, and set a matching font.letterSpacing.
+    readonly property int _baseFontSize: Qt.application.font.pixelSize > 0
+                                         ? Qt.application.font.pixelSize
+                                         : Qt.application.font.pointSize
+    font.pixelSize: Theme.scaled(_baseFontSize)
+    font.letterSpacing: Theme.tracking(Theme.scaled(_baseFontSize))
+
+    // Text Size steps (Appearance page) as a multiple of the default body
+    // size: iOS Dynamic Type's body sizes 14-23pt over its 17pt default.
+    readonly property var _textScales: [14/17, 15/17, 16/17, 1.0, 19/17, 21/17, 23/17]
+    Binding { target: Theme; property: "textScale"; value: root._textScales[AppController.textSize] || 1.0 }
 
     // Save current page data before app closes
     function saveCurrentPage() {
@@ -297,18 +309,54 @@ ApplicationWindow {
         }
     }
 
-    // ── Persistent header toolbar ─────────────────────────────────────────────
-    header: ToolBar {
-        // Same color as the page below it, like a native iOS navigation bar,
-        // so it follows the light or dark setting. Uses the window's palette:
-        // the iOS style gives ToolBar a palette of its own.
-        background: Rectangle { color: Theme.pageBackground }
-        height: 100
+    // ── Title bar ─────────────────────────────────────────────────────────────
+    // Frosted glass over the top of the page: the pages run up underneath it
+    // (they start their own rows Theme.topInset down) and show through
+    // blurred as they scroll, as in iOS. Covers the status bar too.
+    Item {
+        id: titleBar
+        z: 15
+        anchors { top: parent.top; left: parent.left; right: parent.right }
+        height: SafeArea.margins.top + 52
 
-        // Title only: every page puts its own NavButton (≡ or back) in its
-        // top row, below the header.
+        // A live copy of whatever is behind the bar, blurred. The opaque base
+        // keeps the sharp original from showing through the blur.
+        Rectangle {
+            anchors.fill: parent
+            color: Theme.pageBackground
+        }
+        ShaderEffectSource {
+            id: titleBackdrop
+            anchors.fill: parent
+            sourceItem: pageStack
+            sourceRect: Qt.rect(0, titleBar.y - pageStack.y, titleBar.width, titleBar.height)
+            live: true
+            visible: false
+        }
+        MultiEffect {
+            anchors.fill: parent
+            source: titleBackdrop
+            autoPaddingEnabled: false
+            blurEnabled: true
+            blur: 1.0
+            blurMax: 48
+            saturation: 0.3
+        }
+        // Tint, so the title reads over anything, and a hairline underneath.
+        Rectangle {
+            anchors.fill: parent
+            color: Qt.rgba(Theme.pageBackground.r, Theme.pageBackground.g, Theme.pageBackground.b, 0.72)
+        }
+        Rectangle {
+            anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+            height: 1
+            color: Theme.separator
+        }
+
         Label {
-            anchors { fill: parent; leftMargin: 16; rightMargin: 16 }
+            anchors { left: parent.left; right: parent.right; bottom: parent.bottom
+                      leftMargin: 16; rightMargin: 16 }
+            height: 52
             text: pageStack.depth > 1
                 ? (pageStack.currentItem ? (pageStack.currentItem.title || "") : "")
                 : (root.tabTitles[root.currentTabIndex] || "")
@@ -321,13 +369,16 @@ ApplicationWindow {
         }
     }
 
+    // Pages offset their top row by this much to clear the title bar.
+    Binding { target: Theme; property: "topInset"; value: titleBar.height }
+
     // ── Sync progress strip ───────────────────────────────────────────────────
-    // Sits at the very top of the content area (below the header toolbar).
+    // Sits just under the title bar, over the page.
     // Green while syncing, red on error; auto-hides 2 s after successful completion.
     Rectangle {
         id: syncStrip
-        z: 10
-        anchors { top: parent.top; left: parent.left; right: parent.right }
+        z: 16
+        anchors { top: titleBar.bottom; left: parent.left; right: parent.right }
         height: AppController.syncProgress >= 0.0 ? 5 : 0
         color: palette.window        // strip background (shows when bar < 100%)
 
@@ -347,7 +398,7 @@ ApplicationWindow {
     // valid — Qt forbids pop() that would empty the stack entirely.
     StackView {
         id: pageStack
-        anchors { top: syncStrip.bottom; left: parent.left; right: parent.right; bottom: parent.bottom }
+        anchors { top: parent.top; left: parent.left; right: parent.right; bottom: parent.bottom }
         anchors.bottomMargin: depth > 1 ? root.safeBottom : 0
         initialItem: mainTabsComponent
     }

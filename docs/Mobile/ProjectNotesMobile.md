@@ -19,15 +19,18 @@ The app uses a bottom tab bar with four top-level tabs. Settings and utilities l
 
 The menu fills the screen. Tap the back button at the top left to return to the tabs. Pages opened from the menu return to it when you go back. Sync All closes the menu so you can watch the sync progress bar over your lists.
 
-| Item | Description |
-| :--- | :--- |
-| Cloud Sync Settings | Open the [Sync Settings](#sync-settings) page |
-| View | Open the [View Options](#view-options) page |
-| Sync All… | Manually trigger a full sync with the cloud server |
-| Preferences… | Open the [Preferences](#preferences) page |
-| Help | Open this documentation |
-| What's New | Open the release notes |
-| About | Display the About screen with version information |
+The items are grouped on rounded cards under three headings.
+
+| Section | Item | Description |
+| :--- | :--- | :--- |
+| App | Appearance | Open the [Appearance](#appearance) page for light/dark mode and text size. The current mode shows beside it |
+| App | View | Open the [View Options](#view-options) page |
+| App | Preferences | Open the [Preferences](#preferences) page |
+| Sync | Cloud Sync Settings | Open the [Sync Settings](#sync-settings) page |
+| Sync | Sync All | Manually trigger a full sync with the cloud server |
+| Support | Help | Open this documentation |
+| Support | What's New | Open the release notes |
+| Support | About | Display the About screen with version information |
 
 ---
 
@@ -248,9 +251,25 @@ Tap **Back to Settings** to stay and fix the field, or **Leave Anyway** to conti
 **Sync behavior:**
 
 - The app syncs automatically in the background on a 30-second interval when **Enable Sync** is on.
-- Use **≡ → Sync All…** to trigger an immediate full sync at any time.
+- Use **≡ → Sync All** to trigger an immediate full sync at any time.
 - A thin progress bar below the navigation bar indicates sync activity: green while syncing, red if an error occurs.
 - Sync errors are written to `error.log` in the app's data container.
+
+---
+
+## Appearance
+
+Choose how the app picks between light and dark colors. Tap one of the three tiles:
+
+| Tile | Effect |
+| :--- | :--- |
+| System | Follow the light or dark setting of your iPhone or iPad |
+| Day | Always use light colors |
+| Night | Always use dark colors |
+
+The change applies right away and is remembered the next time you open the app.
+
+**Text Size:** drag the slider between the small and large **A** to make the text throughout the app smaller or larger. It has seven steps, matching the iOS text sizes, with the middle step as the default. The preview below the slider shows a list row and a field at the chosen size, and the rest of the app changes along with it.
 
 ---
 

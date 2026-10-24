@@ -32,7 +32,7 @@ Rectangle {
     }
 
     Layout.fillWidth: true
-    Layout.preferredHeight: 40
+    Layout.preferredHeight: 50
     color: "transparent"
 
     // Tap anywhere on the row to open the picker
@@ -43,29 +43,29 @@ Rectangle {
     }
 
     RowLayout {
-        anchors { fill: parent; leftMargin: 12; rightMargin: 8 }
+        anchors { fill: parent; leftMargin: 16; rightMargin: 8 }
         spacing: 4
 
         // The date itself, boxed like the text fields around it.
         GlassField {
             Layout.fillWidth: true
-            Layout.preferredHeight: 36
+            Layout.preferredHeight: 50
             focused: picker.opened
             pressed: rowTap.pressed
 
             Label {
                 id: dateLabel
-                anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
+                anchors { fill: parent; leftMargin: 18; rightMargin: 18 }
                 text: root.text !== "" ? root.text : root.placeholderText
                 color: root.text !== "" ? palette.text : Theme.mutedText
                 verticalAlignment: Text.AlignVCenter
-                font.pixelSize: Theme.callout; font.letterSpacing: Theme.tracking(Theme.callout)
+                font.pixelSize: Theme.body; font.letterSpacing: Theme.tracking(Theme.body)
             }
         }
 
         MonoButton {
             text: qsTr("Clear")
-            font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
+            font.pixelSize: Theme.subheadline; font.letterSpacing: Theme.tracking(Theme.subheadline)
             flat: true
             visible: root.text !== ""
             onClicked: { root.text = "" }
@@ -73,7 +73,7 @@ Rectangle {
 
         MonoButton {
             text: qsTr("Today")
-            font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
+            font.pixelSize: Theme.subheadline; font.letterSpacing: Theme.tracking(Theme.subheadline)
             flat: true
             onClicked: root.text = Qt.formatDate(new Date(), "MM/dd/yyyy")
         }

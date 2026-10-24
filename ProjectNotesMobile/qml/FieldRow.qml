@@ -11,7 +11,7 @@ Rectangle {
     default property alias content: innerItem.data
 
     Layout.fillWidth: true
-    Layout.preferredHeight: 40
+    Layout.preferredHeight: 50
     color: "transparent"
 
     Item {

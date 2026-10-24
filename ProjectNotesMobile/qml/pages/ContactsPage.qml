@@ -47,7 +47,7 @@ Page {
     GlassBar {
         id: searchBar
         z: 2
-        anchors { top: parent.top; left: navButton.right; right: parent.right; topMargin: 6; leftMargin: 8; rightMargin: 12 }
+        anchors { top: parent.top; left: navButton.right; right: parent.right; topMargin: Theme.topInset + 6; leftMargin: 8; rightMargin: 12 }
         height: 48
         contentPadding: 0
         blurSource: listView
@@ -127,7 +127,10 @@ Page {
 
     ListView {
         id: listView
-        topMargin: searchBar.height + 12   // first row clear of the search capsule
+        topMargin: searchBar.y + searchBar.height + 6   // first row clear of the title bar and search capsule
+        // The lists exist before the title bar is measured; start them at the top
+        // once the margin settles rather than with the first row underneath it.
+        onTopMarginChanged: contentY = -topMargin
         anchors.fill: parent
         bottomMargin: listBottomInset
         model: AppController.contactsModel

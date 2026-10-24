@@ -3,6 +3,7 @@
 
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Effects
 import QtQuick.Layouts
 import ProjectNotesMobile
 
@@ -13,12 +14,56 @@ Page {
     // Same spot as on the list pages; see MainMenuPage.qml.
     NavButton {
         id: navButton
-        anchors { top: parent.top; left: parent.left; topMargin: 8; leftMargin: 12 }
+        anchors { top: parent.top; left: parent.left; topMargin: Theme.topInset + 8; leftMargin: 12 }
     }
 
     ColumnLayout {
         anchors.centerIn: parent
         spacing: 12
+
+        // The app icon, rounded like it is on the home screen (a 22.5% corner
+        // radius) and lifted off the page by a soft shadow.
+        Item {
+            Layout.alignment: Qt.AlignHCenter
+            Layout.bottomMargin: 8
+            implicitWidth: 112
+            implicitHeight: 112
+
+            RectangularShadow {
+                anchors.fill: parent
+                radius: iconMask.radius
+                offset.y: 4
+                blur: 16
+                color: Qt.rgba(0, 0, 0, Theme.isDarkMode ? 0.5 : 0.18)
+            }
+
+            Image {
+                id: appIcon
+                anchors.fill: parent
+                source: Qt.resolvedUrl("../images/app-icon.png")
+                sourceSize: Qt.size(336, 336)
+                smooth: true
+                mipmap: true
+                visible: false
+            }
+
+            Rectangle {
+                id: iconMask
+                anchors.fill: parent
+                radius: width * 0.225
+                visible: false
+                layer.enabled: true
+            }
+
+            MultiEffect {
+                anchors.fill: parent
+                source: appIcon
+                maskEnabled: true
+                maskSource: iconMask
+                maskThresholdMin: 0.5
+                maskSpreadAtMin: 1.0
+            }
+        }
 
         Label {
             Layout.alignment: Qt.AlignHCenter

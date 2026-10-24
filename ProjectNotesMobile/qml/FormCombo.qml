@@ -34,9 +34,10 @@ ComboBox {
     readonly property string selection:
         (optionIndex >= 0 && optionIndex < options.length) ? options[optionIndex] : ""
 
-    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 12; rightMargin: 12 }
-    height: 36
-    leftPadding: 6   // the iOS combo adds its own inset; 6 lines its text up with the fields
+    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+    height: 50
+    leftPadding: 12  // the iOS combo adds its own 6px inset; 12 lines its text up with the fields
+    font.pixelSize: Theme.body; font.letterSpacing: Theme.tracking(Theme.body)
     background: GlassField {
         focused: control.activeFocus || control.popup.visible
         pressed: control.pressed

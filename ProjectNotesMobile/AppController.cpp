@@ -24,6 +24,8 @@
 #include <QDesktopServices>
 #include <QDir>
 #include <QFileInfo>
+#include <QGuiApplication>
+#include <QStyleHints>
 #include <QHash>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -94,6 +96,54 @@ AppController::AppController(QObject* parent)
     // Auto-start sync whenever sync settings change and are now complete
     connect(this, &AppController::syncSettingsChanged,
             this, &AppController::onSyncSettingsChanged);
+
+    // Apply the saved Day/Night choice before any QML is loaded, so the first
+    // frame already has the right colors.
+    applyAppearance(appearance());
+}
+
+// ── Appearance ───────────────────────────────────────────────────────────────
+// Stored as "Appearance" in the mobile settings: 0 = System, 1 = Day, 2 = Night.
+// QStyleHints::setColorScheme overrides the system setting for the whole app;
+// Unknown hands control back to the system. Theme.qml and the iOS style both
+// read Application.styleHints.colorScheme, so everything restyles at once.
+
+int AppController::appearance() const
+{
+    const int mode = global_MobileSettings.getValue("Appearance", 0).toInt();
+    return (mode >= 0 && mode <= 2) ? mode : 0;
+}
+
+void AppController::setAppearance(int mode)
+{
+    if (mode < 0 || mode > 2 || mode == appearance()) return;
+    global_MobileSettings.setValue("Appearance", mode);
+    applyAppearance(mode);
+    emit appearanceChanged();
+}
+
+// ── Text size ────────────────────────────────────────────────────────────────
+// Stored as "TextSize"; Main.qml turns the step into Theme.textScale.
+
+int AppController::textSize() const
+{
+    const int step = global_MobileSettings.getValue("TextSize", 3).toInt();
+    return (step >= 0 && step <= 6) ? step : 3;
+}
+
+void AppController::setTextSize(int step)
+{
+    if (step < 0 || step > 6 || step == textSize()) return;
+    global_MobileSettings.setValue("TextSize", step);
+    emit textSizeChanged();
+}
+
+void AppController::applyAppearance(int mode)
+{
+    const Qt::ColorScheme scheme = mode == 1 ? Qt::ColorScheme::Light
+                                 : mode == 2 ? Qt::ColorScheme::Dark
+                                             : Qt::ColorScheme::Unknown;
+    QGuiApplication::styleHints()->setColorScheme(scheme);
 }
 
 AppController::~AppController()

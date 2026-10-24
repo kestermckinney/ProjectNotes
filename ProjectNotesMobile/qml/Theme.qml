@@ -35,6 +35,10 @@ QtObject {
     // shade shows between them.
     readonly property color pageBackground:  isDarkMode ? "#1c1c1e" : "#ffffff"
 
+    // Height of Main.qml's frosted title bar, which pages run up underneath.
+    // Main.qml keeps it current; pages start their top row this far down.
+    property real topInset: 0
+
     // Section label text above form fields. Navy in light mode; lifted in dark
     // mode so it stays readable on the page background.
     readonly property color sectionText:     isDarkMode ? "#9db4e6" : navyMid
@@ -48,6 +52,18 @@ QtObject {
     readonly property color iconColorPressed:  isDarkMode ? "#8e8e93" : "#636366"
     readonly property color iconColorDisabled: isDarkMode ? "#48484a" : "#c7c7cc"
 
+    // Grouped settings: rounded cards on the page background, a hairline
+    // between rows, gray section titles and values (iOS grouped-table colors).
+    readonly property color cardBackground:   isDarkMode ? "#2c2c2e" : "#f2f2f7"
+    readonly property color separator:        isDarkMode ? Qt.rgba(84/255, 84/255, 88/255, 0.65)
+                                                         : Qt.rgba(60/255, 60/255, 67/255, 0.18)
+    readonly property color secondaryText:    isDarkMode ? "#98989f" : "#6c6c70"
+
+    // MonoSwitch track: gray while off, iOS system green while on.
+    readonly property color switchOnTrack:    isDarkMode ? "#30d158" : "#34c759"
+    readonly property color switchOffTrack:   isDarkMode ? Qt.rgba(120/255, 120/255, 128/255, 0.40)
+                                                         : Qt.rgba(120/255, 120/255, 128/255, 0.20)
+
     // Focus ring and glow for GlassField inputs: monochrome to match the
     // buttons, white in dark mode and black in light mode.
     readonly property color focusRing:       iconColor
@@ -58,17 +74,22 @@ QtObject {
     // Apple's iOS text styles (Large size, the default Dynamic Type setting),
     // so the app reads like the App Store and other system apps. Sizes are
     // logical pixels, which equal points on iOS.
-    readonly property int largeTitle:  34   // bold
-    readonly property int title1:      28   // bold for display text
-    readonly property int title2:      22   // bold for empty-state headings
-    readonly property int title3:      20   // semibold
-    readonly property int headline:    17   // semibold
-    readonly property int body:        17
-    readonly property int callout:     16
-    readonly property int subheadline: 15
-    readonly property int footnote:    13
-    readonly property int caption1:    12
-    readonly property int caption2:    11
+    // Every size scales with the Appearance page's Text Size setting; Main.qml
+    // keeps textScale current (1.0 is the iOS default, Large).
+    property real textScale: 1.0
+    function scaled(size) { return Math.round(size * textScale) }
+
+    readonly property int largeTitle:  scaled(34)   // bold
+    readonly property int title1:      scaled(28)   // bold for display text
+    readonly property int title2:      scaled(22)   // bold for empty-state headings
+    readonly property int title3:      scaled(20)   // semibold
+    readonly property int headline:    scaled(17)   // semibold
+    readonly property int body:        scaled(17)
+    readonly property int callout:     scaled(16)
+    readonly property int subheadline: scaled(15)
+    readonly property int footnote:    scaled(13)
+    readonly property int caption1:    scaled(12)
+    readonly property int caption2:    scaled(11)
 
     // SF Pro tracking in points per size, from Apple's iOS tracking table.
     // UIKit applies it automatically; Qt lays text out with the font's raw

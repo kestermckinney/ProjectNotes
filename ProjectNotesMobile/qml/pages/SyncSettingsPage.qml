@@ -25,151 +25,104 @@ Page {
     // Same spot as on the list pages; see MainMenuPage.qml.
     NavButton {
         id: navButton
-        anchors { top: parent.top; left: parent.left; topMargin: 8; leftMargin: 12 }
+        anchors { top: parent.top; left: parent.left; topMargin: Theme.topInset + 8; leftMargin: 12 }
     }
 
     ScrollView {
-        anchors { fill: parent; topMargin: navButton.y + navButton.height + 4 }
+        anchors.fill: parent    // content scrolls up under the title bar
         contentWidth: availableWidth
 
         ColumnLayout {
             width: parent.width
             spacing: 0
+            Item { Layout.preferredHeight: navButton.y + navButton.height + 4 }
 
             // ── Sync toggle ───────────────────────────────────────────────────
-            SectionHeader { text: qsTr("Sync") }
+            SettingsSection {
+                title: qsTr("Sync")
 
-            SettingsRow {
-                label: qsTr("Enable Sync")
-                control: Switch {
-                    checked: AppController.syncEnabled
-                    onToggled: AppController.syncEnabled = checked
+                SettingsItem {
+                    text: qsTr("Enable Sync")
+                    showChevron: false
+                    control: MonoSwitch {
+                        checked: AppController.syncEnabled
+                        onToggled: AppController.syncEnabled = checked
+                    }
                 }
             }
 
             // ── Credentials ───────────────────────────────────────────────────
-            SectionHeader { text: qsTr("Email") }
-            FieldRow {
-                FormField {
-                    id: emailField
-                    text: AppController.syncEmail
-                    placeholderText: qsTr("user@example.com")
-                    inputMethodHints: Qt.ImhEmailCharactersOnly | Qt.ImhNoPredictiveText
-                    onEditingFinished: AppController.syncEmail = text
-                }
-            }
+            SettingsSection {
+                title: qsTr("Account")
 
-            SectionHeader { text: qsTr("Password") }
-            FieldRow {
-                FormField {
-                    id: passwordField
-                    text: AppController.syncPassword
-                    placeholderText: qsTr("password")
-                    echoMode: TextInput.Password
-                    onEditingFinished: AppController.syncPassword = text
+                SettingsItem {
+                    text: qsTr("Email")
+                    showChevron: false
+                    fillControl: true
+                    control: SettingsField {
+                        id: emailField
+                        text: AppController.syncEmail
+                        placeholderText: qsTr("user@example.com")
+                        inputMethodHints: Qt.ImhEmailCharactersOnly | Qt.ImhNoPredictiveText
+                        onEditingFinished: AppController.syncEmail = text
+                    }
                 }
-            }
 
-            SectionHeader { text: qsTr("Encryption Phrase") }
-            FieldRow {
-                FormField {
-                    id: phraseField
-                    text: AppController.syncEncryptionPhrase
-                    placeholderText: qsTr("optional passphrase")
-                    onEditingFinished: AppController.syncEncryptionPhrase = text
+                SettingsItem {
+                    text: qsTr("Password")
+                    showChevron: false
+                    fillControl: true
+                    control: SettingsField {
+                        id: passwordField
+                        text: AppController.syncPassword
+                        placeholderText: qsTr("password")
+                        echoMode: TextInput.Password
+                        onEditingFinished: AppController.syncPassword = text
+                    }
+                }
+
+                SettingsItem {
+                    text: qsTr("Encryption Phrase")
+                    showChevron: false
+                    fillControl: true
+                    control: SettingsField {
+                        id: phraseField
+                        text: AppController.syncEncryptionPhrase
+                        placeholderText: qsTr("optional")
+                        onEditingFinished: AppController.syncEncryptionPhrase = text
+                    }
                 }
             }
 
             // ── Subscription status ───────────────────────────────────────────
-            SectionHeader { text: qsTr("Subscription") }
+            SettingsSection {
+                title: qsTr("Subscription")
 
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: subscriptionLabel.implicitHeight + 24
-                color: "transparent"
-
-                Label {
-                    id: subscriptionLabel
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                SettingsItem {
                     text: AppController.subscriptionStatusText.length > 0
                           ? AppController.subscriptionStatusText
                           : qsTr("Not connected — enable sync to view subscription status")
-                    textFormat: Text.RichText
-                    wrapMode: Text.Wrap
-                    horizontalAlignment: Text.AlignHCenter
+                    showChevron: false
+                    down: false        // information only, not a button
                 }
 
-            }
-
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 44
-                color: "transparent"
-
-                Label {
-                    anchors.centerIn: parent
-                    text: "<a href=\"https://www.projectnotespro.com\">www.projectnotespro.com</a>"
-                    textFormat: Text.RichText
-                    horizontalAlignment: Text.AlignHCenter
-                    onLinkActivated: Qt.openUrlExternally(link)
+                SettingsItem {
+                    text: qsTr("www.projectnotespro.com")
+                    iconName: "safari"
+                    showChevron: false
+                    onClicked: Qt.openUrlExternally("https://www.projectnotespro.com")
                 }
-
             }
 
             Label {
                 Layout.fillWidth: true
-                Layout.topMargin: 8
-                Layout.bottomMargin: 16
+                Layout.topMargin: 12
+                Layout.bottomMargin: 24
                 horizontalAlignment: Text.AlignHCenter
                 text: AppController.supabaseConnectionInfo
                 font.pixelSize: Theme.caption2; font.letterSpacing: Theme.tracking(Theme.caption2)
-                color: Theme.mutedText
-                opacity: 0.6
+                color: Theme.secondaryText
             }
-        }
-    }
-
-    // ── Helper components ─────────────────────────────────────────────────────
-
-    component SectionHeader: Label {
-        Layout.fillWidth: true
-        Layout.topMargin: 10
-        leftPadding: 16
-        bottomPadding: 4
-        font.pixelSize: Theme.footnote; font.letterSpacing: Theme.tracking(Theme.footnote)
-        font.weight: 600
-        color: Theme.sectionText
-    }
-
-    component SettingsRow: RowLayout {
-        property string label: ""
-        property alias control: controlSlot.children
-
-        Layout.fillWidth: true
-        Layout.preferredHeight: 44
-        spacing: 0
-
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            color: "transparent"
-
-            RowLayout {
-                anchors { fill: parent; leftMargin: 16; rightMargin: 16 }
-
-                Label {
-                    text: parent.parent.parent.label
-                    Layout.fillWidth: true
-                }
-
-                Item {
-                    id: controlSlot
-                    Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
-                    implicitWidth: children.length > 0 ? children[0].implicitWidth : 0
-                    implicitHeight: children.length > 0 ? children[0].implicitHeight : 0
-                }
-            }
-
         }
     }
 }

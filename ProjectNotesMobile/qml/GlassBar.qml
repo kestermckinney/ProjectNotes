@@ -20,6 +20,9 @@ Item {
     property real contentPadding: 5
     property Item blurSource: null
     property rect blurRect: Qt.rect(0, 0, width, height)
+    // With no blur source, put an opaque page-colored base under the tint, so
+    // content scrolling beneath doesn't show through sharp (round buttons).
+    property bool solid: false
 
     readonly property bool _dark: Theme.isDarkMode
 
@@ -85,6 +88,13 @@ Item {
                 }
             }
         }
+    }
+
+    Rectangle {
+        visible: root.solid && root.blurSource === null
+        anchors.fill: parent
+        radius: root.radius
+        color: Theme.pageBackground
     }
 
     // Translucent tint and hairline edge, the same on every bar so they all

@@ -1,9 +1,10 @@
 // Copyright (C) 2026 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
-// Full-screen main menu, opened from the header's ≡ button. It sits on the
-// page stack like any other page, so the header shows the back chevron and
-// the menu's own settings pages push on top of it and come back to it.
+// Full-screen main menu, opened from the ≡ button on the tab pages. It sits
+// on the page stack like any other page, so its settings pages push on top
+// of it and come back to it. Rows are grouped on rounded cards, as in the
+// iOS Settings app (see SettingsSection / SettingsItem).
 
 import QtQuick
 import QtQuick.Controls
@@ -16,6 +17,8 @@ Page {
 
     property StackView stackView: null
 
+    readonly property var _appearanceNames: [qsTr("System"), qsTr("Day"), qsTr("Night")]
+
     function _push(file) {
         if (root.stackView)
             root.stackView.push(Qt.resolvedUrl(file))
@@ -25,81 +28,84 @@ Page {
     // capsule that sits 6px from the top.
     NavButton {
         id: navButton
-        anchors { top: parent.top; left: parent.left; topMargin: 8; leftMargin: 12 }
+        anchors { top: parent.top; left: parent.left; topMargin: Theme.topInset + 8; leftMargin: 12 }
     }
 
     ScrollView {
-        anchors.fill: parent
+        anchors.fill: parent    // content scrolls up under the title bar
         contentWidth: availableWidth
 
-        Column {
+        ColumnLayout {
             width: parent.width
-            // The rows start below the back button, as list rows start below
-            // the search capsule.
-            topPadding: navButton.y + navButton.height + 12
+            spacing: 0
+            Item { Layout.preferredHeight: navButton.y + navButton.height + 4 }
 
-            MenuRow {
-                text: qsTr("Cloud Sync Settings")
-                onClicked: root._push("SyncSettingsPage.qml")
-            }
+            SettingsSection {
+                title: qsTr("App")
 
-            MenuRow {
-                text: qsTr("View")
-                onClicked: root._push("ViewOptionsPage.qml")
-            }
-
-            // Back to the lists so the sync strip shows over what is syncing.
-            MenuRow {
-                text: qsTr("Sync All…")
-                showChevron: false
-                enabled: AppController.syncEnabled
-                onClicked: {
-                    if (root.stackView)
-                        root.stackView.pop()
-                    AppController.syncAll()
+                SettingsItem {
+                    text: qsTr("Appearance")
+                    iconName: "circle.lefthalf.filled"
+                    value: root._appearanceNames[AppController.appearance] || ""
+                    onClicked: root._push("AppearancePage.qml")
+                }
+                SettingsItem {
+                    text: qsTr("View")
+                    iconName: "eye"
+                    onClicked: root._push("ViewOptionsPage.qml")
+                }
+                SettingsItem {
+                    text: qsTr("Preferences")
+                    iconName: "gearshape"
+                    onClicked: root._push("PreferencesPage.qml")
                 }
             }
 
-            MenuRow {
-                text: qsTr("Preferences…")
-                onClicked: root._push("PreferencesPage.qml")
+            SettingsSection {
+                title: qsTr("Sync")
+
+                SettingsItem {
+                    text: qsTr("Cloud Sync Settings")
+                    iconName: "icloud"
+                    onClicked: root._push("SyncSettingsPage.qml")
+                }
+                // Back to the lists so the sync strip shows over what is syncing.
+                SettingsItem {
+                    text: qsTr("Sync All")
+                    iconName: "arrow.triangle.2.circlepath"
+                    showChevron: false
+                    enabled: AppController.syncEnabled
+                    onClicked: {
+                        if (root.stackView)
+                            root.stackView.pop()
+                        AppController.syncAll()
+                    }
+                }
             }
 
-            MenuRow {
-                text: qsTr("Help")
-                showChevron: false
-                onClicked: Qt.openUrlExternally("https://projectnotes.readthedocs.io/en/latest/Mobile/ProjectNotesMobile/")
+            SettingsSection {
+                title: qsTr("Support")
+
+                SettingsItem {
+                    text: qsTr("Help")
+                    iconName: "questionmark.circle"
+                    showChevron: false
+                    onClicked: Qt.openUrlExternally("https://projectnotes.readthedocs.io/en/latest/Mobile/ProjectNotesMobile/")
+                }
+                SettingsItem {
+                    text: qsTr("What's New")
+                    iconName: "sparkles"
+                    showChevron: false
+                    onClicked: Qt.openUrlExternally("https://gitlab.com/kestermckinney/ProjectNotes/-/releases")
+                }
+                SettingsItem {
+                    text: qsTr("About")
+                    iconName: "info.circle"
+                    onClicked: root._push("AboutPage.qml")
+                }
             }
 
-            MenuRow {
-                text: qsTr("What's New")
-                showChevron: false
-                onClicked: Qt.openUrlExternally("https://gitlab.com/kestermckinney/ProjectNotes/-/releases")
-            }
-
-            MenuRow {
-                text: qsTr("About")
-                onClicked: root._push("AboutPage.qml")
-            }
-        }
-    }
-
-    // A full-width row; rows that open another page show a chevron, as in
-    // the iOS Settings app.
-    component MenuRow: ItemDelegate {
-        property bool showChevron: true
-
-        width: parent ? parent.width : implicitWidth
-        font.pixelSize: Theme.body; font.letterSpacing: Theme.tracking(Theme.body)
-        rightPadding: showChevron ? 40 : 16
-
-        Label {
-            visible: parent.showChevron
-            anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
-            text: "›"
-            font.pixelSize: Theme.title3
-            color: Theme.mutedText
-            opacity: 0.5
+            Item { Layout.preferredHeight: 24 }
         }
     }
 }

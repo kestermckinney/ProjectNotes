@@ -78,7 +78,7 @@ Page {
     GlassBar {
         id: topBar
         z: 2
-        anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 12 }
+        anchors { top: parent.top; right: parent.right; topMargin: Theme.topInset + 6; rightMargin: 12 }
         height: 44
         width: topBarRow.implicitWidth + 2 * contentPadding
         contentPadding: 6
@@ -112,7 +112,7 @@ Page {
             width: parent.width
             spacing: 0
             // Room for the floating action pill above the first field.
-            Item { Layout.preferredHeight: topBar.height + 6 }
+            Item { Layout.preferredHeight: topBar.y + topBar.height + 6 }
 
 
             SectionHeader { text: qsTr("Contact") }
@@ -130,15 +130,5 @@ Page {
 
             Item { Layout.preferredHeight: 24 }
         }
-    }
-
-    component SectionHeader: Label {
-        Layout.fillWidth: true
-        Layout.topMargin: 10
-        leftPadding: 16
-        bottomPadding: 4
-        font.pixelSize: Theme.footnote; font.letterSpacing: Theme.tracking(Theme.footnote)
-        font.weight: 600
-        color: Theme.sectionText
     }
 }
