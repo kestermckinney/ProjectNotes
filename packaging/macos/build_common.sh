@@ -106,6 +106,9 @@ pn_prune_bundle() {
     local app="$1"
     # Windows-only plugins never belong in a Mac bundle.
     rm -rf "${app}/Contents/Resources/plugins/office-tools"
+    # Bytecode caches left in a working tree by the removed Python plugins.
+    find "${app}/Contents/Resources/plugins" -name "__pycache__" -type d -prune -exec rm -rf {} + 2>/dev/null || true
+    find "${app}/Contents/Resources/plugins" -type d -empty -delete 2>/dev/null || true
     # Build-system artifacts cannot be signed and are not needed at runtime.
     find "${app}/Contents" \( -name "*.a" -o -name "*.o" -o -name "*.pc" -o -name "*.prl" \) -delete 2>/dev/null || true
     # The app only uses SQLite. macdeployqt copies every SQL driver, and the
