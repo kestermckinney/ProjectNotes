@@ -201,6 +201,13 @@ pn_check_bundle "${STAGED}"
 
 cp "${PN_PROVISIONING_PROFILE}" "${STAGED}/Contents/embedded.provisionprofile"
 
+# App Store Connect rejects any file carrying com.apple.quarantine (ITMS-91109).
+# A profile downloaded through a browser has it, and cp keeps it.
+xattr -r -d com.apple.quarantine "${STAGED}" 2>/dev/null || true
+if xattr -r "${STAGED}" 2>/dev/null | grep -q "com.apple.quarantine"; then
+    die "Could not remove com.apple.quarantine from ${STAGED}."
+fi
+
 # ── Step 5: sign and package ──────────────────────────────────────────────────
 log "==> [5/6] Signing..."
 # TestFlight and the App Store check that the signature carries the same
