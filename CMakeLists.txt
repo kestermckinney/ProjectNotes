@@ -105,6 +105,13 @@ option(BUILD_QML_DESKTOP "Build the new QML (Qt Quick) desktop frontend" ON)
 option(PN_APP_STORE "Build the Mac App Store flavor of the desktop app" OFF)
 # Lets App Review's objection to user plugins be met without a code change.
 option(PN_APP_STORE_USER_PLUGINS "Let the App Store flavor load plugins from the user's plugins folder" ON)
+# Every macOS build, direct download and App Store alike, uses the iOS app's
+# bundle identifier: the Mac app ships in the same App Store Connect record
+# ("Project Notes Pro"). Releases before 6.5.0 used
+# com.projectnotespro.ProjectNotes. Override only to test the sandboxed build
+# without creating the real app's container.
+set(PN_MACOS_BUNDLE_ID "com.projectnotespro.projectnotesmobile" CACHE STRING
+    "Bundle identifier of the macOS app")
 if(PN_APP_STORE AND NOT APPLE)
     message(FATAL_ERROR "PN_APP_STORE is for macOS builds only.")
 endif()

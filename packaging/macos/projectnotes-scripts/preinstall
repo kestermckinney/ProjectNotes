@@ -11,6 +11,18 @@
 target_volume="${3:-/}"
 application_root="${target_volume%/}/Applications/Project Notes.app"
 
+# Releases before 6.5.0 identified the app as com.projectnotespro.ProjectNotes.
+# This one uses the iOS app's bundle ID, which it shares with the Mac App Store
+# version, and so does its installer package, so macOS does not treat this as
+# an upgrade. Remove a bundle with the old identifier so the new one is
+# installed fresh rather than merged into it. Nothing of the user's lives in the bundle:
+# data, settings and the user's plugins are all kept outside it.
+old_identifier=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" \
+    "${application_root}/Contents/Info.plist" 2>/dev/null || true)
+if [ "${old_identifier}" = "com.projectnotespro.ProjectNotes" ]; then
+    rm -rf "${application_root}"
+fi
+
 # Scripts, listed without .py so their cached bytecode goes too.
 retired_scripts="
 plugins/archivenotes_plugin

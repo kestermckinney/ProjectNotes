@@ -9,6 +9,7 @@
 #include "LogViewerController.h"
 #include "runguard.h"
 #include "SecurityScopedBookmarks.h"
+#include "DirectDownloadMigration.h"
 #include "SpellCheck.h"
 #include "TextFormatter.h"
 #include "ProjectNotesIntegrations/CommunicationTypes.h"
@@ -157,6 +158,9 @@ int main(int argc, char* argv[])
 #ifdef PN_APP_STORE
     // The App Store updates the app; the in-app updater must stay off.
     DesktopAppController::setUpdateChecksEnabled(false);
+    // First start: offer to copy the direct download's data into the container.
+    if (!parser.isSet(devProfileOption))
+        DirectDownloadMigration::run();
     // Reopen the folders the user granted in earlier sessions (sandbox).
     SecurityScopedBookmarks::setSettingsOrganization(
         QStringLiteral("ProjectNotes") + (parser.isSet(devProfileOption) ? parser.value(devProfileOption) : QString()));

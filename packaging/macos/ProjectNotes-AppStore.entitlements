@@ -27,6 +27,16 @@
     <key>com.apple.security.files.bookmarks.app-scope</key>
     <true/>
 
+    <!-- First start only: read the direct download's data folder and settings
+         so DirectDownloadMigration can copy them into the container. Read
+         only, and limited to these three paths. -->
+    <key>com.apple.security.temporary-exception.files.home-relative-path.read-only</key>
+    <array>
+        <string>/Library/Application Support/Project Notes/</string>
+        <string>/Library/Preferences/com.projectnotes.AppSettings.plist</string>
+        <string>/Library/Preferences/com.projectnotes.PluginSettings.plist</string>
+    </array>
+
     <!-- "MacOS Email and Calendar": draft messages in Mail and events in
          Calendar for the user to review -->
     <key>com.apple.security.automation.apple-events</key>

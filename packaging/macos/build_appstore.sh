@@ -5,9 +5,10 @@
 # build_appstore.sh
 #
 # Builds, signs, packages and (optionally) uploads the Mac App Store flavor of
-# Project Notes (cmake -DPN_APP_STORE=ON). Targets the App ID
-# com.projectnotespro.ProjectNotes under Apple Team 2PY624KHXH. The direct
-# download (GitLab) build is unaffected; it still comes from build_installer.sh.
+# Project Notes (cmake -DPN_APP_STORE=ON). It ships in the same App Store
+# Connect record as the iOS app ("Project Notes Pro"), so it uses that app's
+# App ID, com.projectnotespro.projectnotesmobile, under Apple Team 2PY624KHXH.
+# The direct download (GitLab, build_installer.sh) uses the same bundle ID.
 #
 # Usage:
 #   ./build_appstore.sh [BUILD_NUMBER] [options]
@@ -46,7 +47,7 @@
 
 set -euo pipefail
 
-usage() { sed -n '12,45p' "$0" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '/^# Usage:/,/^$/p' "$0" | sed 's/^# \{0,1\}//'; }
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -63,7 +64,8 @@ PN_PROVISIONING_PROFILE="${PN_PROVISIONING_PROFILE:-}"
 ASC_API_KEY_ID="${ASC_API_KEY_ID:-}"
 ASC_API_ISSUER="${ASC_API_ISSUER:-}"
 
-BUNDLE_ID="com.projectnotespro.ProjectNotes"
+# Must match PN_MACOS_BUNDLE_ID in the top-level CMakeLists.txt.
+BUNDLE_ID="com.projectnotespro.projectnotesmobile"
 PN_APP="${PN_BUILD_DIR}/ProjectNotesDesktop/Project Notes.app"
 BASE_ENTITLEMENTS="${SCRIPT_DIR}/ProjectNotes-AppStore.entitlements"
 STAGING_DIR="${SCRIPT_DIR}/staging-appstore"
@@ -166,7 +168,8 @@ if ${DO_BUILD}; then
     log "==> [2/6] Configuring and [3/6] building..."
     pn_configure_and_build "${PN_BUILD_DIR}" \
         -DPN_APP_STORE=ON \
-        -DPN_APP_STORE_USER_PLUGINS="${USER_PLUGINS}"
+        -DPN_APP_STORE_USER_PLUGINS="${USER_PLUGINS}" \
+        -DPN_MACOS_BUNDLE_ID="${BUNDLE_ID}"
 else
     log "==> [1-3/6] Skipped (--skip-build)"
 fi
@@ -176,6 +179,9 @@ fi
 # leaves out. Refuse a bundle built without the flavor.
 [[ ! -e "${PN_APP}/Contents/MacOS/ProjectNotesThunderbirdContacts" ]] || \
     die "${PN_APP} is a standard build (it contains the Thunderbird helper). Configure with -DPN_APP_STORE=ON."
+BUILT_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "${PN_APP}/Contents/Info.plist")"
+[[ "${BUILT_ID}" == "${BUNDLE_ID}" ]] || \
+    die "${PN_APP} has bundle ID ${BUILT_ID}, expected ${BUNDLE_ID}. Rebuild without --skip-build."
 
 # ── Step 4: stage and check the bundle ────────────────────────────────────────
 log "==> [4/6] Staging..."

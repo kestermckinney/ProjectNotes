@@ -15,6 +15,7 @@ Plugins are now written in JavaScript and run inside Project Notes. Python is no
 - Adds a Folder filter to the project list on desktop and mobile, and exposes `folder_id` on projects to plugins.
 - Each project now stores its primary project folder. File Finder sets it when it finds the project's folder, and the **⋮** menu on a folder location sets or clears it. Plugins and reports save into this folder, and a project can have none.
 - The macOS download runs on macOS 13 (Ventura) and later again, on both Apple silicon and Intel Macs.
+- On macOS, Project Notes now shares its app identity with the iPhone and iPad app, ready for the Mac App Store. After updating, macOS asks once more for access to Calendar, Contacts and Automation, and may ask whether Project Notes can use its saved cloud sync password. Choose **Always Allow**.
 - The Windows and macOS installers remove the embedded Python runtime, its packages, and the retired Python plugins left behind by earlier versions.
 
 ### Install on Linux

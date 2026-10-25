@@ -52,10 +52,16 @@ See [Email and Meeting Setup](<../InterfaceOverview/EmailAndMeetingSetup.md>) fo
 The App Store version stores its data in its own sandbox folder:
 
 ```
-~/Library/Containers/com.projectnotespro.ProjectNotes/Data/
+~/Library/Containers/com.projectnotespro.projectnotesmobile/Data/
 ```
 
-The direct-download version uses a different folder, and the App Store version cannot read it on its own. To move your data from one version to the other, use one of these methods:
+The first time you open the App Store version, it looks for data from the direct-download version. If it finds some, it asks whether to copy it over. Click **Copy My Data** to bring across your database, plugins, and settings. If the downloaded version is open, Project Notes asks you to quit it first so nothing changes during the copy.
+
+Both versions install as **Project Notes** in your Applications folder, so you keep one or the other. Your data is copied, not moved: the downloaded version's data stays where it was, and you can go back to it by installing the download again. The two copies don't update each other, so keep working in one version.
+
+After the copy, choose your project folders and File Finder locations again, because the App Store version can open only folders you pick. If cloud sync asks you to sign in, sign in again.
+
+If you clicked **Start Empty**, or you're moving data the other way, use one of these methods:
 
 - **Cloud sync:** Sync from the old version with [Cloud Sync](<../InterfaceOverview/RemoteHost.md>) (Project Notes Pro), then sync in the new version.
 - **XML export and import:** In the old version, choose **Export XML…** from the application menu. In the new version, choose **Import XML…** from the same menu.

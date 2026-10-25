@@ -23,26 +23,28 @@
     <welcome file="welcome.html" mime-type="text/html"/>
     <license file="license.rtf" mime-type="text/rtf"/>
 
-    <!-- ── Package declarations ── -->
-    <pkg-ref id="com.projectnotespro.ProjectNotes"/>
+    <!-- ── Package declarations ──
+         The package identifier is the app's bundle ID (BUNDLE_ID in
+         build_installer.sh). -->
+    <pkg-ref id="com.projectnotespro.projectnotesmobile"/>
 
     <!-- ── Install choices ── -->
     <choices-outline>
-        <line choice="com.projectnotespro.ProjectNotes"/>
+        <line choice="com.projectnotespro.projectnotesmobile"/>
     </choices-outline>
 
     <!-- ProjectNotes is required (not optional) -->
-    <choice id="com.projectnotespro.ProjectNotes"
+    <choice id="com.projectnotespro.projectnotesmobile"
             visible="false"
             enabled="false"
             selected="true"
             title="Project Notes"
             description="Project management application — tracks notes, meetings, issues, action items, contacts, and clients. Visit www.projectnotespro.com to download the companion mobile application and to manage your online data storage subscription.">
-        <pkg-ref id="com.projectnotespro.ProjectNotes"/>
+        <pkg-ref id="com.projectnotespro.projectnotesmobile"/>
     </choice>
 
     <!-- ── pkg-ref payloads (resolved relative to the distribution file) ── -->
-    <pkg-ref id="com.projectnotespro.ProjectNotes"
+    <pkg-ref id="com.projectnotespro.projectnotesmobile"
              version="@VERSION@"
              onConclusion="none">ProjectNotes.pkg</pkg-ref>
 

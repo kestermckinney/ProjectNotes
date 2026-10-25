@@ -1,6 +1,8 @@
 # Releasing on the Mac App Store
 
-Project Notes for macOS ships two ways. The direct download (`build_installer.sh`, published on GitLab) is a notarized, Developer ID signed installer with its own updater. The Mac App Store build is sandboxed, has no updater, and is built from the same source with `-DPN_APP_STORE=ON`. Both use the bundle ID `com.projectnotespro.ProjectNotes`.
+Project Notes for macOS ships two ways. The direct download (`build_installer.sh`, published on GitLab) is a notarized, Developer ID signed installer with its own updater. The Mac App Store build is sandboxed, has no updater, and is built from the same source with `-DPN_APP_STORE=ON`. Both use `com.projectnotespro.projectnotesmobile`, the iOS app's bundle ID (`PN_MACOS_BUNDLE_ID` in the top-level `CMakeLists.txt`), because the Mac app ships in the iOS app's App Store Connect record ("Project Notes Pro"). One listing and one purchase cover iPhone, iPad and Mac. Releases before 6.5.0 used `com.projectnotespro.ProjectNotes` for the app and its installer package. The installer package now uses the new ID too, so macOS records it as a new package rather than an upgrade, and the direct download's `preinstall` script removes the old app before installing.
+
+The store build is sandboxed, so its data lives in a container and doesn't share the direct download's. On its first start it offers to copy that data (`ProjectNotesDesktop/DirectDownloadMigration.mm`).
 
 Both builds run on macOS 13 or later, on Apple silicon and Intel. `build_common.sh` holds the build steps they share.
 
@@ -22,11 +24,11 @@ Two scripts handle the store build:
 
 Create both in Xcode > Settings > Accounts > Manage Certificates (the + button). The iOS build doesn't need them on disk because Xcode signs it in the cloud. The Mac build signs with `codesign` directly, so the private keys must be local.
 
-**App ID.** In the developer portal, under Identifiers, make sure `com.projectnotespro.ProjectNotes` exists as an App ID. It needs no extra capabilities: the sandbox entitlements don't need portal switches.
+**App ID.** The iOS app's App ID, `com.projectnotespro.projectnotesmobile`, already exists in the developer portal under Identifiers. Open it and check that macOS is among its platforms. Xcode-created IDs usually cover all platforms. No extra capabilities are needed, because the sandbox entitlements don't need portal switches.
 
 **Provisioning profile.** Under Profiles, create a *Mac App Store Connect* distribution profile for that App ID and the Apple Distribution certificate. Then use Xcode > Settings > Accounts > Download Manual Profiles. The script picks the newest unexpired matching profile from Xcode's profile folder on its own. Set `PN_PROVISIONING_PROFILE` to use a specific file instead.
 
-**App Store Connect record.** Create a macOS app with bundle ID `com.projectnotespro.ProjectNotes`. If the iOS app already has a record, add macOS to it only if the two should share one listing. They have different bundle IDs, so they normally get separate records.
+**App Store Connect record.** Use the existing "Project Notes Pro" record. It already has a macOS platform, and Mac builds appear under its TestFlight tab. Don't create a new record.
 
 **API key.** The iOS upload uses the same key. It lives in App Store Connect > Users and Access > Integrations, with at least the App Manager role, and its file is saved as `~/.appstoreconnect/private_keys/AuthKey_<KEYID>.p8`.
 

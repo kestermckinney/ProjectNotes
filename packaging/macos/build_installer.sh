@@ -60,6 +60,9 @@ source "${SCRIPT_DIR}/build_common.sh"
 PN_BUILD_DIR="${PN_BUILD_DIR:-${PROJECT_ROOT}/build/release}"
 
 PN_APP="${PN_BUILD_DIR}/ProjectNotesDesktop/Project Notes.app"
+# The iOS app's bundle ID, shared with the App Store build. Must match
+# PN_MACOS_BUNDLE_ID in the top-level CMakeLists.txt.
+BUNDLE_ID="com.projectnotespro.projectnotesmobile"
 
 INSTALLER_VERSION="${PN_VERSION}"
 
@@ -94,6 +97,10 @@ Run without --skip-build, or set PN_BUILD_DIR."
     # Thunderbird helper; it must not ship as the direct download.
     [[ -e "$1/Contents/MacOS/ProjectNotesThunderbirdContacts" ]] || \
         die "$1 is the Mac App Store flavor. Build without -DPN_APP_STORE."
+    local id
+    id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$1/Contents/Info.plist")"
+    [[ "${id}" == "${BUNDLE_ID}" ]] || \
+        die "$1 has bundle ID ${id}, expected ${BUNDLE_ID}. Run without --skip-build."
 }
 
 # Deep-sign an app bundle with hardened runtime.
@@ -197,7 +204,7 @@ if [[ "${DO_BUILD}" == true ]]; then
     pn_build_static_deps
     log "=== Building Project Notes (macOS ${MIN_MACOS}+, ${PN_ARCHS[*]}) ==="
     # PN_APP_STORE=OFF in case the build directory was ever configured with it.
-    pn_configure_and_build "${PN_BUILD_DIR}" -DPN_APP_STORE=OFF
+    pn_configure_and_build "${PN_BUILD_DIR}" -DPN_APP_STORE=OFF -DPN_MACOS_BUNDLE_ID="${BUNDLE_ID}"
 else
     log "Skipping build (--skip-build)"
 fi
@@ -253,11 +260,15 @@ fi
 
 log "=== Building Component Packages ==="
 
+# The package identifier matches the bundle ID. Releases before 6.5.0 used
+# com.projectnotespro.ProjectNotes for both, so macOS records this as a new
+# package rather than an upgrade; the preinstall script removes the old app.
+# distribution.xml names the same identifier.
 pkgbuild \
     --root "${STAGING_DIR}/projectnotes" \
     --scripts "${SCRIPT_DIR}/projectnotes-scripts" \
     --component-plist "${SCRIPT_DIR}/ProjectNotes-component.plist" \
-    --identifier "com.projectnotespro.ProjectNotes" \
+    --identifier "${BUNDLE_ID}" \
     --version "${PN_VERSION}" \
     --install-location "/Applications" \
     "${OUTPUT_DIR}/ProjectNotes.pkg"

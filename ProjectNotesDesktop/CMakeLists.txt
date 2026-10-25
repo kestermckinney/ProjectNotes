@@ -214,8 +214,8 @@ target_link_libraries(ProjectNotes PRIVATE
 # Mac App Store flavor: sandbox bookmarks and the gates in main.cpp,
 # DesktopAppController and DesktopPluginServices.
 if(PN_APP_STORE)
-    target_sources(ProjectNotes PRIVATE SecurityScopedBookmarks.mm)
-    target_link_libraries(ProjectNotes PRIVATE "-framework Foundation")
+    target_sources(ProjectNotes PRIVATE SecurityScopedBookmarks.mm DirectDownloadMigration.mm)
+    target_link_libraries(ProjectNotes PRIVATE "-framework Foundation" "-framework AppKit")
     target_compile_definitions(ProjectNotes PRIVATE PN_APP_STORE)
     if(NOT PN_APP_STORE_USER_PLUGINS)
         target_compile_definitions(ProjectNotes PRIVATE PN_APP_STORE_DISABLE_USER_PLUGINS)
@@ -380,11 +380,12 @@ if(WIN32)
 endif()
 
 # ── macOS bundle identity ─────────────────────────────────────────────────────
-# Keeps the bundle identifier/name earlier releases used so this build replaces
-# them in place: same /Applications/Project Notes.app, same LaunchServices
-# identity, so packaging/macos/build_installer.sh (which pkgbuilds with the
-# identifier below) upgrades existing installs cleanly instead of installing a
-# second app. The icon is the QML app's own — icons/projectnotes.icns
+# The bundle identifier is PN_MACOS_BUNDLE_ID (top-level CMakeLists.txt), the
+# iOS app's, for the direct download and the App Store build alike. The bundle
+# name stays "Project Notes", so both install as /Applications/Project
+# Notes.app and replace each other in place. Releases before 6.5.0 used
+# com.projectnotespro.ProjectNotes; the installer's preinstall script removes
+# such a bundle before installing. The icon is the QML app's own — icons/projectnotes.icns
 # is generated from icons/projectnotes.ico (the QML app's own redesigned icon,
 # added in 5c72ee5 and already used for the Windows build via appicon.rc). The
 # .ico's largest embedded frame is 256x256, so the .icns's 512/1024 sizes are
@@ -411,7 +412,7 @@ if(APPLE)
     # no stable app identity to register an Automation permission against, so
     # the "MacOS Email and Calendar" integration's Calendar access silently
     # never works).
-    set(MACOSX_BUNDLE_GUI_IDENTIFIER "com.projectnotespro.ProjectNotes")
+    set(MACOSX_BUNDLE_GUI_IDENTIFIER "${PN_MACOS_BUNDLE_ID}")
     set(MACOSX_BUNDLE_BUNDLE_NAME "Project Notes")
     set(MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION})
     set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
@@ -428,7 +429,7 @@ if(APPLE)
     endif()
 
     set_target_properties(ProjectNotes PROPERTIES
-        MACOSX_BUNDLE_GUI_IDENTIFIER "com.projectnotespro.ProjectNotes"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "${MACOSX_BUNDLE_GUI_IDENTIFIER}"
         MACOSX_BUNDLE_BUNDLE_NAME "Project Notes"
         MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
         MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"

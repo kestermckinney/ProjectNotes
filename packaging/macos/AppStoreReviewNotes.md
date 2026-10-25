@@ -24,12 +24,14 @@ If review asks for user plugins to be removed, the build option `PN_APP_STORE_US
 | `automation.apple-events`, `temporary-exception.apple-events` (Calendar, Mail, System Events) | The "MacOS Email and Calendar" integration creates draft messages in Mail and draft events in Calendar, which the user reviews and sends. Nothing is sent without the user. |
 | `personal-information.calendars` | Calendar requires calendar access from any app that scripts it. |
 | `personal-information.addressbook` | Optional contact synchronization with the Contacts app. |
+| `temporary-exception.files.home-relative-path.read-only` (`~/Library/Application Support/Project Notes/` and two preference files) | Read only, on the first start. Project Notes is also sold as a direct download, which keeps its data in these locations. The App Store version offers once to copy that data into its container, and copies only if the user agrees. It never writes to these paths. |
 
 The usage descriptions for Apple Events, Calendars and Contacts are in `Info.plist`.
 
 ## Before submitting
 
-- The data folder moves into the sandbox container (`~/Library/Containers/com.projectnotespro.ProjectNotes/Data/`), and the app cannot read the direct-download version's data folder on its own. A user switching versions brings their data across with cloud sync, or with Export XML in the old version and Import XML in the new one.
+- The Mac build ships in the iOS app's record ("Project Notes Pro") under its bundle ID, `com.projectnotespro.projectnotesmobile`, so one listing and one purchase cover both. The direct download uses the same bundle ID; it is not sandboxed and keeps its data in `~/Library`.
+- The data lives in the sandbox container (`~/Library/Containers/com.projectnotespro.projectnotesmobile/Data/`). On the first start, `DirectDownloadMigration` offers to copy the direct download's database, plugins and settings into it. If review rejects the read-only exception, remove it and the app falls back to cloud sync or Export XML / Import XML.
 - Paths typed by hand, or stored in a database copied from another computer, are not reachable until the user picks the folder once (Files & Folders > Browse Folder, or Settings > File Finder).
 - Export compliance: the app uses HTTPS and the operating system's TLS. Cloud sync also encrypts data with the user's passphrase before upload; answer the encryption questions in App Store Connect accordingly.
 - Licensing: the project is GPL-3.0 and the maintainer holds the copyright. Check any contributed GPL code and third-party libraries (Qt is used under the LGPL) before submitting.
