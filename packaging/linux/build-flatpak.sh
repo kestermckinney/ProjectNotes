@@ -120,7 +120,7 @@ METAINFO_FILE="$SCRIPT_DIR/${APP_ID}.metainfo.xml"
 DESKTOP_FILE="$SCRIPT_DIR/${APP_ID}.desktop"
 
 usage() {
-    echo "Usage: $0 [setup|build|lint|verify-webengine|run|install|repo|bundle|regen-pip|clean]"
+    echo "Usage: $0 [setup|build|lint|run|install|repo|bundle|clean]"
     echo ""
     echo "  NOTE: build/install/repo clone ProjectNotes + SqliteSyncPro from GitLab."
     echo "        By default they build the newest v* tag (with SqliteSyncPro HEAD)."
@@ -131,12 +131,10 @@ usage() {
     echo "  build      Build the Flatpak (runs setup check first)"
     echo "  lint       Run Flathub-style validation (manifest, metainfo, desktop)"
     echo "             Add --strict (or STRICT=1) to fail on any issue."
-    echo "  verify-webengine  Verify native Qt WebEngine files in a completed build"
     echo "  run        Test-run the built Flatpak"
     echo "  install    Install the Flatpak for the current user"
     echo "  repo       Export to a local Flatpak repository (lint runs first)"
     echo "  bundle     Create a standalone .flatpak bundle file"
-    echo "  regen-pip  Regenerate Python dependency sources"
     echo "  clean      Remove build and repo directories"
     exit 1
 }
@@ -155,9 +153,6 @@ cmd_setup() {
 
     echo "==> Installing KDE runtime and SDK ${RUNTIME_VERSION}..."
     flatpak install -y --noninteractive flathub org.kde.Platform//${RUNTIME_VERSION} org.kde.Sdk//${RUNTIME_VERSION} || true
-
-    echo "==> Installing Qt WebEngine BaseApp ${RUNTIME_VERSION} (PDF-export plugins)..."
-    flatpak install -y --noninteractive flathub io.qt.qtwebengine.BaseApp//${RUNTIME_VERSION} || true
 
     echo "==> Installing Flathub lint tooling (${LINTER_APP} + appstream + desktop-file-utils)..."
     flatpak install -y --noninteractive flathub "$LINTER_APP" || true
@@ -235,27 +230,7 @@ cmd_build() {
     echo "     ensure those commits are pushed to origin first)"
     resolve_manifest
     "${FLATPAK_BUILDER[@]}" "${BUILDER_FLAGS[@]}" --force-clean "$BUILD_DIR" "$MANIFEST"
-    cmd_verify_webengine
     echo "==> Build complete. Output in $BUILD_DIR"
-}
-
-# The QML executable uses Qt WebEngine directly. Keep this check inside the
-# Flatpak build root so a retained PyQt wheel cannot satisfy it accidentally.
-cmd_verify_webengine() {
-    if [ ! -d "$BUILD_DIR" ]; then
-        echo "Error: Build directory not found. Run '$0 build' first."
-        return 1
-    fi
-    echo "==> Verifying native Qt WebEngine payload..."
-    flatpak build "$BUILD_DIR" sh -c '
-        set -eu
-        test -x /app/lib/libexec/QtWebEngineProcess
-        test -f /app/resources/qtwebengine_resources.pak
-        test -f /app/resources/qtwebengine_resources_100p.pak
-        test -f /app/resources/v8_context_snapshot.bin
-        test -f /app/translations/qtwebengine_locales/en-US.pak
-    '
-    echo "==> Native Qt WebEngine payload verified."
 }
 
 cmd_run() {
@@ -324,18 +299,6 @@ cmd_bundle() {
     echo "    Install with: flatpak install $BUNDLE_FILE"
 }
 
-cmd_regen_pip() {
-    echo "==> Regenerating Python dependency sources..."
-    python3 -m flatpak_pip_generator requests msal requests_oauthlib urllib3 \
-        --yaml --runtime="org.kde.Sdk//${RUNTIME_VERSION}" --output "$SCRIPT_DIR/python-deps"
-    echo "    NOTE: Check python-deps.yaml for .tar.gz entries and replace with .whl URLs from PyPI"
-    echo "==> Updated $SCRIPT_DIR/python-deps.yaml"
-    echo ""
-    echo "    PyQt6 / PyQt6-WebEngine sources are hand-pinned in python-pyqt6.yaml"
-    echo "    and python-pyqt6-webengine.yaml (built from source, not generated here)."
-    echo "    Versions must track the runtime Qt (currently Qt 6.9.x -> PyQt6 6.9.x)."
-}
-
 cmd_clean() {
     echo "==> Cleaning build artifacts..."
     rm -rf "$BUILD_DIR" "$REPO_DIR"
@@ -347,12 +310,10 @@ case "${1:-}" in
     setup)     cmd_setup ;;
     build)     cmd_build ;;
     lint)      cmd_lint "${2:-}" ;;
-    verify-webengine) cmd_verify_webengine ;;
     run)       cmd_run ;;
     install)   cmd_install ;;
     repo)      cmd_repo ;;
     bundle)    cmd_bundle ;;
-    regen-pip) cmd_regen_pip ;;
     clean)     cmd_clean ;;
     *)         usage ;;
 esac

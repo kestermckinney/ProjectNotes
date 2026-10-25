@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectnotes managing_company_id="" managing_company_name="" managing_manager_name="" project_manager_id="">
+ <table name="project_email_audiences">
+  <row>
+   <column name="id">audience-team</column>
+   <column lookupvalue="P4000" name="project_id">project-p4000</column>
+   <column name="workflow">project</column>
+   <column name="audience_name">Project team</column>
+   <column name="people_source">project-team</column>
+   <column name="company_filter">all</column>
+   <column name="selected_company_ids_json">[]</column>
+   <column name="selected_person_ids_json">[]</column>
+   <column name="recipient_distribution_json">[]</column>
+   <column name="is_default">0</column>
+   <column name="default_workflows_json">["status-report"]</column>
+   <column name="settings_version">1</column>
+  </row>
+ </table>
+</projectnotes>

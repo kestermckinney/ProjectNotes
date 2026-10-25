@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectnotes managing_company_id="" managing_company_name="" managing_manager_name="" project_manager_id="">
+ <table name="meeting_attendees">
+  <row>
+   <column name="id">att-ann</column>
+   <column lookupvalue="09/01/2026 Kickoff" name="note_id">note-kickoff</column>
+   <column lookupvalue="Ann O'Neil" name="person_id">person-ann</column>
+   <column name="name">Ann O'Neil</column>
+   <column name="project_name">IT New Server Install</column>
+   <column name="email">ann@acme.example</column>
+   <column name="client_name">Acme Corp</column>
+   <column name="project_id">project-p4000</column>
+   <column name="project_number">P4000</column>
+   <column name="office_phone"></column>
+   <column name="cell_phone">5550199</column>
+  </row>
+  <row>
+   <column name="id">att-jim</column>
+   <column lookupvalue="09/01/2026 Kickoff" name="note_id">note-kickoff</column>
+   <column lookupvalue="Jim Smith" name="person_id">person-jim</column>
+   <column name="name">Jim Smith</column>
+   <column name="project_name">IT New Server Install</column>
+   <column name="email">jim@acme.example</column>
+   <column name="client_name">Acme Corp</column>
+   <column name="project_id">project-p4000</column>
+   <column name="project_number">P4000</column>
+   <column name="office_phone">5550100</column>
+   <column name="cell_phone"></column>
+  </row>
+ </table>
+</projectnotes>

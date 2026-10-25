@@ -35,7 +35,7 @@ PY
 version="$(sed -n 's/.*project(ProjectNotes VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)"
 [ "$CI_COMMIT_TAG" = "v$version" ] || { echo 'Tag does not match application version'; exit 1; }
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-flatpak install -y --noninteractive flathub org.kde.Platform//6.9 org.kde.Sdk//6.9 io.qt.qtwebengine.BaseApp//6.9
+flatpak install -y --noninteractive flathub org.kde.Platform//6.9 org.kde.Sdk//6.9
 mkdir -p /var/lib/dbus
 dbus-uuidgen --ensure=/etc/machine-id
 export GPG_KEY_ID="$FLATPAK_GPG_KEY_ID" GPG_HOMEDIR="$GNUPGHOME"
@@ -44,7 +44,6 @@ export APP_REPO_URL="$FLATPAK_REPO_URL" PN_REF="$CI_COMMIT_SHA"
 # cmd_repo needs the build directory to exist before invoking flatpak-builder.
 mkdir -p packaging/linux/flatpak-build
 bash packaging/linux/build-flatpak.sh repo
-bash packaging/linux/build-flatpak.sh verify-webengine
 flatpak build-update-repo --gpg-sign="$GPG_KEY_ID" --gpg-homedir="$GPG_HOMEDIR" \
   --generate-static-deltas packaging/linux/flatpak-repo
 bash packaging/linux/build-flatpak.sh bundle

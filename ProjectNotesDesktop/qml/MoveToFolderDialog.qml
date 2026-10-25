@@ -8,11 +8,8 @@ import ProjectNotesDesktop
 
 // "Move To Folder" picker for a project: every user folder plus "Not
 // Categorized" listed as a single clickable row. Tapping one immediately
-// replaces the project's folder memberships with that single choice (or
-// clears them, for "Not Categorized") and closes — no separate confirm step.
-// Multi-folder membership is still available by dragging a project onto a
-// second folder in the sidebar; this dialog is the one-click "put this
-// project in exactly one folder" affordance requested from the row menu.
+// moves the project there and closes — no separate confirm step. A project
+// is in one folder at a time.
 Dialog {
     id: dlg
     // Popups auto-parent to the window overlay only when explicitly told to
@@ -39,12 +36,10 @@ Dialog {
         open()
     }
 
-    // folderId === "" moves the project to Not Categorized (clears every
-    // membership); otherwise it becomes the project's sole folder.
+    // folderId === "" moves the project to Not Categorized; otherwise it
+    // becomes the project's folder.
     function _pick(folderId) {
-        FolderManager.removeProjectFromAllFolders(dlg._projectId)
-        if (folderId !== "")
-            FolderManager.addProjectToFolder(dlg._projectId, folderId)
+        FolderManager.setProjectFolder(dlg._projectId, folderId)
         dlg.close()
     }
 

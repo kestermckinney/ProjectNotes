@@ -4,6 +4,7 @@
 #include "FileFinderService.h"
 #include "FileFinderWorker.h"
 #include "ProjectNotesIntegrations/Office365Service.h"
+#include "../appidentity.h"
 #include "../credentialstore.h"
 
 #include <QDir>
@@ -163,7 +164,7 @@ void FileFinderService::initialize(const QString &databasePath, QReadWriteLock *
     m_settingsOrganization = settingsOrganization;
     // Existing production credentials used only tenant/client. Keep that exact
     // key while ensuring any developer profile cannot read or delete them.
-    m_office365Service->setSecretNamespace(settingsOrganization == QLatin1String("ProjectNotes")
+    m_office365Service->setSecretNamespace(settingsOrganization == PN::Identity::settingsOrganization()
         ? QString() : settingsOrganization);
     loadAndMigrateSettings();
     m_office365Service->configureIdentity(m_settingsOrganization, m_tenantId, m_clientId);
@@ -226,8 +227,10 @@ void FileFinderService::initialize(const QString &databasePath, QReadWriteLock *
     m_initialized = true;
     applyConfiguration();
     QMetaObject::invokeMethod(m_worker, &FileFinderWorker::start, Qt::QueuedConnection);
-    if (m_office365Enabled)
-        m_office365Service->restoreSession();
+    // The Microsoft account is shared with email, calendar, contacts and
+    // plugins, which sign in without turning on File Finder's OneDrive search.
+    // Restore it whenever a refresh token was saved.
+    m_office365Service->restoreSession();
     m_status = m_enabled ? tr("File Finder is ready") : tr("File Finder is disabled");
     emit settingsChanged();
     emit statusChanged();

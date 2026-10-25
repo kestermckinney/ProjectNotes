@@ -84,6 +84,7 @@ private slots:
     void commitLocationsUpdatesExistingRemoteRowToNewUrl();
     void reconcilesOnlyActiveProjectsAndAdoptsLegacyRows();
     void scanSurvivesDescriptionCollisionWithoutAbortingScan();
+    void primaryProjectFolderRespectsTheUsersChoice();
     void commitLocationsPrefersLocalOverRemoteOnDescriptionCollision();
     void commitLocationsKeepsExistingLocalRowWhenFileStillExists();
     void commitLocationsReplacesExistingLocalRowWhenFileNoLongerExists();
@@ -463,7 +464,8 @@ void FileFinderTest::reconcilesOnlyActiveProjectsAndAdoptsLegacyRows()
         QSqlQuery query(database);
         QVERIFY(query.exec(QStringLiteral(
             "CREATE TABLE projects (id TEXT PRIMARY KEY, project_number TEXT, "
-            "project_status TEXT, deleted INTEGER DEFAULT 0)")));
+            "project_status TEXT, deleted INTEGER DEFAULT 0, "
+            "primary_location_id TEXT, primary_location_manual INTEGER DEFAULT 0)")));
         QVERIFY(query.exec(QStringLiteral(
             "CREATE TABLE project_locations (id TEXT PRIMARY KEY, project_id TEXT, "
             "location_type TEXT, location_description TEXT, full_path TEXT, "
@@ -472,9 +474,9 @@ void FileFinderTest::reconcilesOnlyActiveProjectsAndAdoptsLegacyRows()
             "CREATE INDEX project_location_desc ON project_locations "
             "(project_id, location_description) WHERE deleted = 0")));
         QVERIFY(query.exec(QStringLiteral(
-            "INSERT INTO projects VALUES ('active-id', '1001', 'Active', 0)")));
+            "INSERT INTO projects (id, project_number, project_status, deleted) VALUES ('active-id', '1001', 'Active', 0)")));
         QVERIFY(query.exec(QStringLiteral(
-            "INSERT INTO projects VALUES ('closed-id', '2002', 'Closed', 0)")));
+            "INSERT INTO projects (id, project_number, project_status, deleted) VALUES ('closed-id', '2002', 'Closed', 0)")));
 
         query.prepare(QStringLiteral(
             "INSERT INTO project_locations VALUES "
@@ -511,6 +513,7 @@ void FileFinderTest::reconcilesOnlyActiveProjectsAndAdoptsLegacyRows()
     QCOMPARE(first.matched, 1);
     QCOMPARE(first.inserted, 0);
     QCOMPARE(first.updated, 2);  // legacy file and source-qualified folder were adopted
+    QCOMPARE(first.primaryFolders, 1);  // the adopted folder became the primary
     QVERIFY(first.error.isEmpty());
 
     worker.scanNow();
@@ -519,6 +522,7 @@ void FileFinderTest::reconcilesOnlyActiveProjectsAndAdoptsLegacyRows()
     QCOMPARE(second.inserted, 0);
     QCOMPARE(second.updated, 0);
     QCOMPARE(second.unchanged, 2);
+    QCOMPARE(second.primaryFolders, 0);
 
     worker.closeDatabase();
     const QString verifyConnection = QStringLiteral("FileFinderTestVerify");
@@ -542,9 +546,95 @@ void FileFinderTest::reconcilesOnlyActiveProjectsAndAdoptsLegacyRows()
             "SELECT count(*) FROM project_locations WHERE project_id = 'closed-id'")));
         QVERIFY(query.next());
         QCOMPARE(query.value(0).toInt(), 0);
+        QVERIFY(query.exec(QStringLiteral(
+            "SELECT primary_location_id FROM projects WHERE id = 'active-id'")));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toString(), QStringLiteral("legacy-folder-id"));
         database.close();
     }
     QSqlDatabase::removeDatabase(verifyConnection);
+}
+
+void FileFinderTest::primaryProjectFolderRespectsTheUsersChoice()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+    const QString searchRoot = temporary.filePath(QStringLiteral("Projects"));
+    QVERIFY(QDir().mkpath(searchRoot + QStringLiteral("/1001 - Active Project")));
+    QVERIFY(QDir().mkpath(searchRoot + QStringLiteral("/1002 - Second Project")));
+
+    const QString databasePath = temporary.filePath(QStringLiteral("ProjectNotes.db"));
+    auto exec = [&](const QString& connection, const QStringList& statements) {
+        {
+            QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), connection);
+            database.setDatabaseName(databasePath);
+            QVERIFY(database.open());
+            QSqlQuery query(database);
+            for (const QString& sql : statements)
+                QVERIFY2(query.exec(sql), qPrintable(query.lastError().text()));
+            database.close();
+        }
+        QSqlDatabase::removeDatabase(connection);
+    };
+    exec(QStringLiteral("PrimarySetup"), {
+        QStringLiteral("CREATE TABLE projects (id TEXT PRIMARY KEY, project_number TEXT, project_status TEXT, "
+                       "deleted INTEGER DEFAULT 0, primary_location_id TEXT, primary_location_manual INTEGER DEFAULT 0)"),
+        QStringLiteral("CREATE TABLE project_locations (id TEXT PRIMARY KEY, project_id TEXT, location_type TEXT, "
+                       "location_description TEXT, full_path TEXT, updateddate INTEGER, syncdate INTEGER, deleted INTEGER DEFAULT 0)"),
+        // 1001: the user cleared its project folder. 1002: the user picked another folder.
+        QStringLiteral("INSERT INTO projects VALUES ('cleared-id', '1001', 'Active', 0, NULL, 1)"),
+        QStringLiteral("INSERT INTO projects VALUES ('chosen-id', '1002', 'Active', 0, 'mine', 1)"),
+        QStringLiteral("INSERT INTO project_locations VALUES ('mine', 'chosen-id', 'File Folder', 'Contracts', '/elsewhere', 1, NULL, 0)"),
+    });
+
+    QReadWriteLock sharedLock;
+    FileFinderWorker worker;
+    worker.initializeDatabase(databasePath, &sharedLock);
+    FileFinderConfiguration configuration;
+    configuration.enabled = true;
+    configuration.roots = {searchRoot};
+    worker.configure(configuration);
+    QSignalSpy scans(&worker, &FileFinderWorker::scanFinished);
+
+    worker.scanNow();
+    QCOMPARE(scans.count(), 1);
+    FileFinderScanSummary summary = qvariant_cast<FileFinderScanSummary>(scans.takeFirst().at(0));
+    QCOMPARE(summary.inserted, 2);       // both project folders are still listed
+    QCOMPARE(summary.primaryFolders, 0); // but neither choice is overridden
+    worker.closeDatabase();
+
+    auto primaries = [&]() {
+        QHash<QString, QVariant> out;
+        {
+            QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), QStringLiteral("PrimaryVerify"));
+            database.setDatabaseName(databasePath);
+            if (database.open()) {
+                QSqlQuery query(database);
+                query.exec(QStringLiteral("SELECT id, primary_location_id FROM projects"));
+                while (query.next())
+                    out.insert(query.value(0).toString(), query.value(1));
+                database.close();
+            }
+        }
+        QSqlDatabase::removeDatabase(QStringLiteral("PrimaryVerify"));
+        return out;
+    };
+    QHash<QString, QVariant> found = primaries();
+    QVERIFY(found.value(QStringLiteral("cleared-id")).isNull());
+    QCOMPARE(found.value(QStringLiteral("chosen-id")).toString(), QStringLiteral("mine"));
+
+    // Handing the choice back lets the next scan fill it in.
+    exec(QStringLiteral("PrimaryHandBack"), {
+        QStringLiteral("UPDATE projects SET primary_location_manual = 0 WHERE id = 'cleared-id'")});
+    worker.initializeDatabase(databasePath, &sharedLock);
+    worker.scanNow();
+    QCOMPARE(scans.count(), 1);
+    summary = qvariant_cast<FileFinderScanSummary>(scans.takeFirst().at(0));
+    QCOMPARE(summary.primaryFolders, 1);
+    worker.closeDatabase();
+    found = primaries();
+    QVERIFY(!found.value(QStringLiteral("cleared-id")).toString().isEmpty());
+    QCOMPARE(found.value(QStringLiteral("chosen-id")).toString(), QStringLiteral("mine"));
 }
 
 void FileFinderTest::scanSurvivesDescriptionCollisionWithoutAbortingScan()
@@ -572,7 +662,8 @@ void FileFinderTest::scanSurvivesDescriptionCollisionWithoutAbortingScan()
         QSqlQuery query(database);
         QVERIFY(query.exec(QStringLiteral(
             "CREATE TABLE projects (id TEXT PRIMARY KEY, project_number TEXT, "
-            "project_status TEXT, deleted INTEGER DEFAULT 0)")));
+            "project_status TEXT, deleted INTEGER DEFAULT 0, "
+            "primary_location_id TEXT, primary_location_manual INTEGER DEFAULT 0)")));
         QVERIFY(query.exec(QStringLiteral(
             "CREATE TABLE project_locations (id TEXT PRIMARY KEY, project_id TEXT, "
             "location_type TEXT, location_description TEXT, full_path TEXT, "
@@ -581,7 +672,7 @@ void FileFinderTest::scanSurvivesDescriptionCollisionWithoutAbortingScan()
             "CREATE INDEX project_location_desc ON project_locations "
             "(project_id, location_description) WHERE deleted = 0")));
         QVERIFY(query.exec(QStringLiteral(
-            "INSERT INTO projects VALUES ('active-id', '1001', 'Active', 0)")));
+            "INSERT INTO projects (id, project_number, project_status, deleted) VALUES ('active-id', '1001', 'Active', 0)")));
 
         // Row A: matches the scan by PATH (it already points at quotePath) but
         // its stored description is stale, so the scan will try to rewrite it
@@ -665,7 +756,8 @@ void FileFinderTest::commitLocationsPrefersLocalOverRemoteOnDescriptionCollision
         QSqlQuery query(database);
         QVERIFY(query.exec(QStringLiteral(
             "CREATE TABLE projects (id TEXT PRIMARY KEY, project_number TEXT, "
-            "project_status TEXT, deleted INTEGER DEFAULT 0)")));
+            "project_status TEXT, deleted INTEGER DEFAULT 0, "
+            "primary_location_id TEXT, primary_location_manual INTEGER DEFAULT 0)")));
         QVERIFY(query.exec(QStringLiteral(
             "CREATE TABLE project_locations (id TEXT PRIMARY KEY, project_id TEXT, "
             "location_type TEXT, location_description TEXT, full_path TEXT, "
@@ -674,12 +766,14 @@ void FileFinderTest::commitLocationsPrefersLocalOverRemoteOnDescriptionCollision
             "CREATE INDEX project_location_desc ON project_locations "
             "(project_id, location_description) WHERE deleted = 0")));
         QVERIFY(query.exec(QStringLiteral(
-            "INSERT INTO projects VALUES ('active-id', '1001', 'Active', 0)")));
+            "INSERT INTO projects (id, project_number, project_status, deleted) VALUES ('active-id', '1001', 'Active', 0)")));
         database.close();
     }
     QSqlDatabase::removeDatabase(setupConnection);
 
-    const QString localPath = QStringLiteral("C:/Projects/1001/Quotes/Proposal.pdf");
+    // Absolute on every platform; "C:/..." is relative off Windows and
+    // normalizedPath() would prefix it with the working directory.
+    const QString localPath = temporary.filePath(QStringLiteral("Projects/1001/Quotes/Proposal.pdf"));
     const QString remotePath = QStringLiteral("https://example.test/Quotes/Proposal.pdf");
 
     auto verifyLocalWins = [&](const QList<DiscoveredLocation> &locations, const QString &label) {
@@ -761,13 +855,14 @@ void FileFinderTest::commitLocationsUpdatesExistingRemoteRowToNewUrl()
         QSqlQuery query(database);
         QVERIFY(query.exec(QStringLiteral(
             "CREATE TABLE projects (id TEXT PRIMARY KEY, project_number TEXT, "
-            "project_status TEXT, deleted INTEGER DEFAULT 0)")));
+            "project_status TEXT, deleted INTEGER DEFAULT 0, "
+            "primary_location_id TEXT, primary_location_manual INTEGER DEFAULT 0)")));
         QVERIFY(query.exec(QStringLiteral(
             "CREATE TABLE project_locations (id TEXT PRIMARY KEY, project_id TEXT, "
             "location_type TEXT, location_description TEXT, full_path TEXT, "
             "updateddate INTEGER, syncdate INTEGER, deleted INTEGER DEFAULT 0)")));
         QVERIFY(query.exec(QStringLiteral(
-            "INSERT INTO projects VALUES ('active-id', '1001', 'Active', 0)")));
+            "INSERT INTO projects (id, project_number, project_status, deleted) VALUES ('active-id', '1001', 'Active', 0)")));
         query.prepare(QStringLiteral(
             "INSERT INTO project_locations VALUES "
             "('remote-row-id', 'active-id', 'Excel Document', 'Estimate : Report.xlsx', "
@@ -834,13 +929,14 @@ void FileFinderTest::commitLocationsKeepsExistingLocalRowWhenFileStillExists()
         QSqlQuery query(database);
         QVERIFY(query.exec(QStringLiteral(
             "CREATE TABLE projects (id TEXT PRIMARY KEY, project_number TEXT, "
-            "project_status TEXT, deleted INTEGER DEFAULT 0)")));
+            "project_status TEXT, deleted INTEGER DEFAULT 0, "
+            "primary_location_id TEXT, primary_location_manual INTEGER DEFAULT 0)")));
         QVERIFY(query.exec(QStringLiteral(
             "CREATE TABLE project_locations (id TEXT PRIMARY KEY, project_id TEXT, "
             "location_type TEXT, location_description TEXT, full_path TEXT, "
             "updateddate INTEGER, syncdate INTEGER, deleted INTEGER DEFAULT 0)")));
         QVERIFY(query.exec(QStringLiteral(
-            "INSERT INTO projects VALUES ('active-id', '1001', 'Active', 0)")));
+            "INSERT INTO projects (id, project_number, project_status, deleted) VALUES ('active-id', '1001', 'Active', 0)")));
         query.prepare(QStringLiteral(
             "INSERT INTO project_locations VALUES "
             "('local-row-id', 'active-id', 'File Folder', 'Project Folder', ?, 1, NULL, 0)"));
@@ -903,13 +999,14 @@ void FileFinderTest::commitLocationsReplacesExistingLocalRowWhenFileNoLongerExis
         QSqlQuery query(database);
         QVERIFY(query.exec(QStringLiteral(
             "CREATE TABLE projects (id TEXT PRIMARY KEY, project_number TEXT, "
-            "project_status TEXT, deleted INTEGER DEFAULT 0)")));
+            "project_status TEXT, deleted INTEGER DEFAULT 0, "
+            "primary_location_id TEXT, primary_location_manual INTEGER DEFAULT 0)")));
         QVERIFY(query.exec(QStringLiteral(
             "CREATE TABLE project_locations (id TEXT PRIMARY KEY, project_id TEXT, "
             "location_type TEXT, location_description TEXT, full_path TEXT, "
             "updateddate INTEGER, syncdate INTEGER, deleted INTEGER DEFAULT 0)")));
         QVERIFY(query.exec(QStringLiteral(
-            "INSERT INTO projects VALUES ('active-id', '1001', 'Active', 0)")));
+            "INSERT INTO projects (id, project_number, project_status, deleted) VALUES ('active-id', '1001', 'Active', 0)")));
         query.prepare(QStringLiteral(
             "INSERT INTO project_locations VALUES "
             "('local-row-id', 'active-id', 'File Folder', 'Project Folder', ?, 1, NULL, 0)"));

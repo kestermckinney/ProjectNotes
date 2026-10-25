@@ -16,6 +16,11 @@ Item {
 
     property int    projectRow: -1
     property string projectId:  ""
+    // The location shown with the primary project folder badge ("" = none).
+    readonly property string _primaryLocationId: {
+        var _rev = DesktopAppController.projectFolderRev
+        return page.projectId !== "" ? DesktopAppController.primaryProjectLocationId(page.projectId) : ""
+    }
     property bool   isNewRecord: false
     property bool   _changed: false
 
@@ -816,7 +821,10 @@ Item {
                 // DesktopAppController::addTeamMembersFromVCardDrop().
                 DropArea {
                     anchors.fill: parent
+                    // Ignore this app's own contact cards being dragged out (ContactDragArea).
+                    onEntered: (drag) => { if (drag.source && drag.source.isContactDrag) drag.accepted = false }
                     onDropped: (drop) => {
+                        if (drop.source && drop.source.isContactDrag) { drop.accepted = false; return }
                         var urls = []
                         if (drop.hasUrls)
                             for (var i = 0; i < drop.urls.length; i++)
@@ -929,9 +937,14 @@ Item {
                                 }
                                 RowDelete { onDel: { DesktopAppController.deleteTeamMember(teamCard.index); DesktopAppController.refreshTeamMembers(); page._refreshTeamContacts() } }
                             }
-                            TapHandler {
-                                acceptedButtons: Qt.RightButton
-                                onTapped: (ev) => teamCard._menu(ev.scenePosition.x, ev.scenePosition.y)
+                            // Right-click for the menu; drag the card's free space
+                            // (name, icon) out to export the member as a vCard. The
+                            // role field and checkbox above keep their own presses.
+                            ContactDragArea {
+                                anchors.fill: parent
+                                z: -1
+                                contactId: (teamCard.model.people_id || "").toString()
+                                onMenuRequested: (sx, sy) => teamCard._menu(sx, sy)
                             }
                     }
                 }
@@ -975,6 +988,12 @@ Item {
                         else
                             DesktopAppController.setProjectLocationPath(targetRow, selectedFile)
                     }
+                }
+                // Folders (a project folder, a shared drive) are added the same way.
+                FolderDialog {
+                    id: locationFolderDialog
+                    title: qsTr("Select a folder")
+                    onAccepted: DesktopAppController.addProjectLocationFromUrl(page.projectId, selectedFolder)
                 }
 
                 KeyboardListView {
@@ -1027,6 +1046,26 @@ Item {
                                 HoverHandler { id: browseHover }
                                 TapHandler { onTapped: { locationFileDialog.targetRow = -1; locationFileDialog.open() } }
                             }
+                            // Browse for a folder and add it as a new location.
+                            Rectangle {
+                                objectName: "browseFolderButton"
+                                implicitHeight: 26; implicitWidth: browseFolderRow.implicitWidth + 14
+                                radius: Theme.radiusSm
+                                color: browseFolderHover.hovered ? Theme.surface2 : "transparent"
+                                border.color: Theme.border
+                                Layout.alignment: Qt.AlignVCenter
+                                RowLayout {
+                                    id: browseFolderRow; anchors.centerIn: parent; spacing: 4
+                                    MaterialIcon { name: "create_new_folder"; size: 13; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
+                                    Text {
+                                        text: qsTr("Browse Folder"); color: Theme.text2
+                                        font.pixelSize: Theme.fontSm; font.weight: Font.DemiBold
+                                        verticalAlignment: Text.AlignVCenter
+                                    }
+                                }
+                                HoverHandler { id: browseFolderHover }
+                                TapHandler { onTapped: locationFolderDialog.open() }
+                            }
                         }
                         // Drop hint — only while a drag is hovering over the tab.
                         Rectangle {
@@ -1054,7 +1093,8 @@ Item {
                                     rowMenu.openFor(DesktopAppController.projectLocationsModel,
                                         (locCard.model.id || "").toString(), qsTr("Location"),
                                         (locCard.model.location_description || locCard.model.full_path || "").toString(),
-                                        sx, sy, false, "", "", (locCard.model.full_path || "").toString())
+                                        sx, sy, false, "", "", (locCard.model.full_path || "").toString(),
+                                        (locCard.model.location_type || "").toString())
                                 }
                                 // Icon that reflects the location's file type.
                                 readonly property var _typeIcons: ({
@@ -1080,6 +1120,17 @@ Item {
                                         Layout.fillWidth: true
                                         spacing: 6
                                         MaterialIcon { name: locCard._typeIcon; size: 14; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
+                                        // The project's primary project folder.
+                                        MaterialIcon {
+                                            objectName: "primaryProjectFolderBadge"
+                                            visible: (locCard.model.id || "").toString() !== ""
+                                                     && (locCard.model.id || "").toString() === page._primaryLocationId
+                                            name: "star"; size: 13; color: Theme.amber
+                                            Layout.alignment: Qt.AlignVCenter
+                                            ToolTip.visible: primaryHover.hovered
+                                            ToolTip.text: qsTr("Primary project folder")
+                                            HoverHandler { id: primaryHover }
+                                        }
                                         Text {
                                             text: (locCard.model.location_description || locCard.model.full_path
                                                    || qsTr("(unnamed location)")).toString()

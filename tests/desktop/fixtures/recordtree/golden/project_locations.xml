@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectnotes managing_company_id="" managing_company_name="" managing_manager_name="" project_manager_id="">
+ <table name="project_locations">
+  <row>
+   <column name="id">loc-folder</column>
+   <column lookupvalue="P4000" name="project_id">project-p4000</column>
+   <column name="location_type">File Folder</column>
+   <column name="location_description">Project Folder</column>
+   <column name="full_path">/projects/P4000</column>
+   <column name="project_number">P4000</column>
+   <column name="project_name">IT New Server Install</column>
+  </row>
+  <row>
+   <column name="id">loc-quote</column>
+   <column lookupvalue="P4000" name="project_id">project-p4000</column>
+   <column name="location_type">PDF File</column>
+   <column name="location_description">Quote : Project Quote.pdf</column>
+   <column name="full_path">/projects/P4000/Quotes/Quote.pdf</column>
+   <column name="project_number">P4000</column>
+   <column name="project_name">IT New Server Install</column>
+  </row>
+ </table>
+</projectnotes>

@@ -13,6 +13,7 @@ nav:
     - 'Getting Started': Introduction/GettingStarted.md
     - 'System Requirements': Introduction/SystemRequirements.md
     - 'Installing on Linux': Introduction/InstallLinux.md
+    - 'Mac App Store Version': Introduction/MacAppStore.md
     - 'Command-Line Options': Introduction/DeveloperProfile.md
   - 'Interface Overview':
     - 'Application Menu': InterfaceOverview/ApplicationMenu.md
@@ -46,16 +47,15 @@ nav:
     - 'Earned Value Terms': InterfaceOverview/EarnedValueTerms.md
     - 'Presenting to Companies': InterfaceOverview/PresentingToCompanies.md
   - 'Plugins Overview':
-    - 'Adding Functionality': PluginsOverview/AddingFunctionality.md
-    - 'Data Types': PluginsOverview/DataTypes.md
+    - 'JavaScript Plugins': PluginsOverview/JavaScriptPlugins.md
+    - 'Data Types and Entity Names': PluginsOverview/DataTypes.md
     - 'Project Notes XML': PluginsOverview/ProjectNotesXML.md
   - 'Standard Plugins':
     - 'Plugin Settings': StandardPlugins/PluginSettings.md
-    - 'Outlook Integration': StandardPlugins/OutlookIntegration.md
-    - 'iCloud Contacts': StandardPlugins/iCloudContacts.md
+    - 'Archive Mail': StandardPlugins/ArchiveMail.md
     - 'My Shortcuts': StandardPlugins/MyShortcuts.md
     - 'Team Member Quick Add': StandardPlugins/TeamMemberQuickAdd.md
-    - 'New Document Templates': StandardPlugins/NewDocumentTemplates.md
+    - 'Office Document Templates': StandardPlugins/NewDocumentTemplates.md
     - 'IFS Cloud Integration': StandardPlugins/IFSCloud.md
     - 'Editor': StandardPlugins/Editor.md
   - 'Project Notes Mobile':

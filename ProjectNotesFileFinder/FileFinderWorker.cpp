@@ -424,6 +424,15 @@ bool FileFinderWorker::commitLocations(const QList<DiscoveredLocation> &location
     // wins. Process all local entries first (in reverse, so later local
     // entries win among themselves), then remote entries, skipping any whose
     // key a local entry already claimed.
+    // The row each project's local folder landed in; it can become the
+    // project's primary project folder once every row is written.
+    QHash<QString, QString> projectFolderRows;
+    auto noteProjectFolder = [&](const DiscoveredLocation &location, const QString &locationId) {
+        if (!location.isRemote && location.locationType == QLatin1String("File Folder")
+            && location.description == QLatin1String("Project Folder"))
+            projectFolderRows.insert(location.projectId, locationId);
+    };
+
     QSet<QString> seen;
     QList<const DiscoveredLocation *> ordered;
     ordered.reserve(locations.size());
@@ -464,6 +473,7 @@ bool FileFinderWorker::commitLocations(const QList<DiscoveredLocation> &location
                 ++summary->unchanged;
                 continue;
             }
+            noteProjectFolder(location, old.id);
             if (old.type == location.locationType && old.description == location.description
                 && normalizedPath(old.path) == path) {
                 ++summary->unchanged;
@@ -483,7 +493,9 @@ bool FileFinderWorker::commitLocations(const QList<DiscoveredLocation> &location
             continue;
         }
 
-        insert.bindValue(0, QUuid::createUuid().toString());
+        const QString newId = QUuid::createUuid().toString();
+        noteProjectFolder(location, newId);
+        insert.bindValue(0, newId);
         insert.bindValue(1, location.projectId);
         insert.bindValue(2, location.locationType);
         insert.bindValue(3, location.description);
@@ -498,13 +510,33 @@ bool FileFinderWorker::commitLocations(const QList<DiscoveredLocation> &location
         ++summary->inserted;
     }
 
+    // Fill in the primary project folder only where the user hasn't set or
+    // cleared it, and only when the project has no live folder as primary.
+    QSqlQuery primary(m_database);
+    primary.prepare(QStringLiteral(
+        "UPDATE projects SET primary_location_id = ? "
+        "WHERE id = ? AND COALESCE(primary_location_manual, 0) = 0 "
+        "AND (primary_location_id IS NULL OR primary_location_id NOT IN ("
+        "SELECT id FROM project_locations WHERE deleted = 0 AND location_type = 'File Folder'))"));
+    for (auto it = projectFolderRows.constBegin(); it != projectFolderRows.constEnd(); ++it) {
+        primary.bindValue(0, it.value());
+        primary.bindValue(1, it.key());
+        if (!primary.exec()) {
+            m_database.rollback();
+            if (error)
+                *error = primary.lastError().text();
+            return false;
+        }
+        summary->primaryFolders += primary.numRowsAffected();
+    }
+
     if (!m_database.commit()) {
         if (error)
             *error = m_database.lastError().text();
         return false;
     }
-    if (summary->inserted || summary->updated)
-        emit locationsCommitted(summary->inserted, summary->updated);
+    if (summary->inserted || summary->updated || summary->primaryFolders)
+        emit locationsCommitted(summary->inserted, summary->updated, summary->primaryFolders);
     return true;
 }
 

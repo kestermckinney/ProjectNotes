@@ -32,48 +32,53 @@ Rectangle {
     }
 
     Layout.fillWidth: true
-    Layout.preferredHeight: 44
-    color: palette.base
+    Layout.preferredHeight: 50
+    color: "transparent"
 
     // Tap anywhere on the row to open the picker
     MouseArea {
+        id: rowTap
         anchors.fill: parent
         onClicked: picker.openWithDate(root.text)
     }
 
     RowLayout {
         anchors { fill: parent; leftMargin: 16; rightMargin: 8 }
-        spacing: 0
+        spacing: 4
 
-        Label {
-            id: dateLabel
+        // The date itself, boxed like the text fields around it.
+        GlassField {
             Layout.fillWidth: true
-            text: root.text !== "" ? root.text : root.placeholderText
-            color: root.text !== "" ? palette.text : Theme.mutedText
-            verticalAlignment: Text.AlignVCenter
-            font.pixelSize: 16
+            Layout.preferredHeight: 50
+            focused: picker.opened
+            pressed: rowTap.pressed
+
+            Label {
+                id: dateLabel
+                anchors { fill: parent; leftMargin: 18; rightMargin: 18 }
+                text: root.text !== "" ? root.text : root.placeholderText
+                color: root.text !== "" ? palette.text : Theme.mutedText
+                verticalAlignment: Text.AlignVCenter
+                font.pixelSize: Theme.body; font.letterSpacing: Theme.tracking(Theme.body)
+            }
         }
 
-        Button {
+        MonoButton {
             text: qsTr("Clear")
-            font.pixelSize: 12
+            font.pixelSize: Theme.subheadline; font.letterSpacing: Theme.tracking(Theme.subheadline)
             flat: true
             visible: root.text !== ""
             onClicked: { root.text = "" }
         }
 
-        Button {
+        MonoButton {
             text: qsTr("Today")
-            font.pixelSize: 12
+            font.pixelSize: Theme.subheadline; font.letterSpacing: Theme.tracking(Theme.subheadline)
             flat: true
             onClicked: root.text = Qt.formatDate(new Date(), "MM/dd/yyyy")
         }
     }
 
-        Rectangle {
-            anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-            height: 1; color: Theme.mutedText; opacity: 0.3
-        }
 
     DatePickerPopup {
         id: picker

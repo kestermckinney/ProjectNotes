@@ -111,11 +111,14 @@ Match ContactMatcher::person(const Contact &c,const QString&clientId,const QList
             const auto trimmed=e.trimmed();if(trimmed.isEmpty())continue;hasEmail=true;
             if(!pe.isEmpty() && equivalent("email",trimmed,pe))email=true;
         }
+        bool hasPhone=false;
+        const bool personHasPhone=!phone(p.fields.value("office_phone").toString()).isEmpty() || !phone(p.fields.value("cell_phone").toString()).isEmpty();
         for(const auto &v:c.phones) {
-            auto ph=phone(v); if(ph.isEmpty()) continue;
+            auto ph=phone(v); if(ph.isEmpty()) continue; hasPhone=true;
             if(ph==phone(p.fields.value("office_phone").toString()) || ph==phone(p.fields.value("cell_phone").toString())) telephone=true;
         }
         bool differentEmail=!pe.isEmpty() && hasEmail && !email;
+        bool differentPhone=personHasPhone && hasPhone && !telephone;
         bool differentCompany=(!clientId.isEmpty() && !p.clientId.isEmpty() && clientId!=p.clientId) ||
             (clientId.isEmpty() && !c.company.trimmed().isEmpty() && !p.company.trimmed().isEmpty() && normalize(c.company,true)!=normalize(p.company,true));
         bool shortName=normalize(c.name).size()<6 || normalize(p.name).split(' ').size()<2;
@@ -129,15 +132,20 @@ Match ContactMatcher::person(const Contact &c,const QString&clientId,const QList
             equivalent("office_phone",c.fields.value("office_phone").toString(),p.fields.value("office_phone").toString()) &&
             equivalent("cell_phone",c.fields.value("cell_phone").toString(),p.fields.value("cell_phone").toString()) &&
             equivalent("role",c.fields.value("role").toString(),p.fields.value("role").toString());
+        // People names are unique in the database, so the same full name with
+        // nothing contradicting it is the same person. A different phone is
+        // only a contradiction when the company doesn't confirm the match.
+        const bool sameClient=!clientId.isEmpty() && clientId==p.clientId;
+        bool sameName=score>=.999 && !differentEmail && (sameClient || !differentPhone);
         bool strong=!differentCompany && !shortName && ((email && score>=.80) ||
-                    (!differentEmail && score>=.92 && telephone && !clientId.isEmpty() && clientId==p.clientId) || exactProfile);
+                    (!differentEmail && score>=.92 && telephone && sameClient) || exactProfile || sameName);
         // Shared inboxes and office numbers are common. An identifier supports
         // a match only when the visible names are also reasonably close; name-
         // only candidates require an even closer match.
         const bool plausibleName=score>=.92;
         const bool plausibleIdentifier=(email||telephone) && score>=.85;
         if(plausibleName || plausibleIdentifier) {
-            QString reason=exactProfile?"Exact contact fields":email?"Exact email":telephone?"Exact phone":"Name similarity";
+            QString reason=exactProfile?"Exact contact fields":email?"Exact email":telephone?"Exact phone":sameName&&strong?"Same name":"Name similarity";
             if(differentCompany || differentEmail) reason+="; conflicting identity fields";
             cs.append({p.id,p.name+" — "+p.company+" — "+pe,reason,exactProfile?1.1:(strong?1.0:score),strong});
         }

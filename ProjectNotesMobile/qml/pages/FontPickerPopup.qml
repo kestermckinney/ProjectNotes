@@ -133,14 +133,14 @@ Popup {
 
             RowLayout {
                 anchors { fill: parent; leftMargin: 16; rightMargin: 16 }
-                Button { text: qsTr("Cancel"); flat: true; onClicked: root.close() }
+                MonoButton { text: qsTr("Cancel"); flat: true; onClicked: root.close() }
                 Label {
                     text: qsTr("Font")
-                    font.pixelSize: 16; font.bold: true
+                    font.pixelSize: Theme.headline; font.letterSpacing: Theme.tracking(Theme.headline); font.weight: Font.DemiBold
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignHCenter
                 }
-                Button {
+                MonoButton {
                     text: qsTr("Done"); flat: true; font.bold: true
                     onClicked: {
                         root.fontApplied(familyCombo.currentText,
@@ -171,13 +171,19 @@ Popup {
                     Layout.fillWidth: true
                     leftPadding: 16; topPadding: 14; bottomPadding: 4
                     text: qsTr("FONT FAMILY")
-                    font.pixelSize: 12; font.weight: 500
+                    font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1); font.weight: 500
                     color: Theme.mutedText
                 }
                 ComboBox {
                     id: familyCombo
                     Layout.fillWidth: true
                     Layout.leftMargin: 16; Layout.rightMargin: 16
+                    Layout.preferredHeight: 36
+                    leftPadding: 6   // the iOS combo adds its own inset; 6 lines its text up with the fields
+                    background: GlassField {
+                        focused: familyCombo.activeFocus || familyCombo.popup.visible
+                        pressed: familyCombo.pressed
+                    }
                     model: root._familyModel
                 }
 
@@ -186,7 +192,7 @@ Popup {
                     Layout.fillWidth: true
                     leftPadding: 16; topPadding: 16; bottomPadding: 6
                     text: qsTr("SIZE")
-                    font.pixelSize: 12; font.weight: 500
+                    font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1); font.weight: 500
                     color: Theme.mutedText
                 }
                 Flow {
@@ -199,14 +205,18 @@ Popup {
                         delegate: Rectangle {
                             width: 44; height: 34
                             radius: 6
-                            color: (modelData === root._selectedSize) ? palette.highlight : palette.button
+                            // Monochrome like the buttons: filled with the tint
+                            // when selected, the glass field gray otherwise.
+                            color: (modelData === root._selectedSize)
+                                   ? Theme.iconColor
+                                   : Qt.rgba(118/255, 118/255, 128/255, Theme.isDarkMode ? 0.24 : 0.12)
 
                             Label {
                                 anchors.centerIn: parent
                                 text: modelData
-                                font.pixelSize: 14
+                                font.pixelSize: Theme.subheadline; font.letterSpacing: Theme.tracking(Theme.subheadline)
                                 color: (modelData === root._selectedSize)
-                                       ? palette.highlightedText : palette.buttonText
+                                       ? Theme.pageBackground : palette.text
                             }
                             MouseArea {
                                 anchors.fill: parent
@@ -221,7 +231,7 @@ Popup {
                     Layout.fillWidth: true
                     leftPadding: 16; topPadding: 16; bottomPadding: 8
                     text: qsTr("COLOR")
-                    font.pixelSize: 12; font.weight: 500
+                    font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1); font.weight: 500
                     color: Theme.mutedText
                 }
                 Flow {

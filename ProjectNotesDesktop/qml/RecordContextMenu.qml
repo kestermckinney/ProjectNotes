@@ -3,6 +3,8 @@
 
 import QtQuick
 import QtQuick.Controls.Basic
+import QtCore
+import QtQuick.Dialogs
 import QtQuick.Layouts
 import ProjectNotesDesktop
 
@@ -29,11 +31,29 @@ Popup {
     property string emailProjectId: ""
     property var saveEmailSource: null
     property string locationPath: ""
+    // A project location's type; "File Folder" rows offer the primary project
+    // folder actions for emailProjectId's project.
+    property string locationType: ""
+    readonly property bool canProjectFolder: emailTable === "project_locations" && emailProjectId !== ""
+                                             && recordId !== "" && locationType === "File Folder"
+    readonly property bool _isProjectFolder: {
+        var _rev = DesktopAppController.projectFolderRev
+        return canProjectFolder && DesktopAppController.primaryProjectLocationId(emailProjectId) === recordId
+    }
+    readonly property bool _projectFolderChosen: {
+        var _rev = DesktopAppController.projectFolderRev
+        return canProjectFolder && DesktopAppController.projectFolderChosenByUser(emailProjectId)
+    }
     readonly property string emailTable: recordTable !== "" ? recordTable
         : model ? DesktopAppController.tableNameForModel(model) : ""
     readonly property string projectEmailContext: emailTable === "projects" ? recordId : emailProjectId
     readonly property bool canProjectEmail: projectEmailContext !== "" && (emailTable === "projects" || contactId !== "")
     readonly property bool canContactEmail: !canProjectEmail && emailTable === "people" && recordId !== ""
+    // The person whose vCard Export/Email Contact Card use: the row itself on
+    // a contact, or the contact behind a team member or meeting attendee.
+    readonly property string contactCardId: emailTable === "people" ? recordId
+        : (emailTable === "project_people" || emailTable === "meeting_attendees") ? contactId : ""
+    readonly property bool canContactCard: contactCardId !== ""
     readonly property bool canShareLocation: projectEmailContext !== "" && emailTable === "project_locations"
     readonly property bool canShareLink: canShareLocation && /^https?:\/\//i.test(locationPath.trim())
     property bool   canExport: true
@@ -112,6 +132,26 @@ Popup {
             projectEmailReview.openContact(recordId)
     }
     ProjectEmailReviewDialog { id: projectEmailReview; parent: menu.parent }
+    signal contactCardEmailRequested()
+    signal contactCardExportRequested()
+    onContactCardEmailRequested: DesktopAppController.emailContactCard(contactCardId)
+    onContactCardExportRequested: {
+        var name = DesktopAppController.contactVCardFileName(contactCardId)
+        if (name === "") return
+        vCardSaveDialog.contactId = contactCardId
+        vCardSaveDialog.selectedFile = StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+                                       + "/" + encodeURIComponent(name)
+        vCardSaveDialog.open()
+    }
+    FileDialog {
+        id: vCardSaveDialog
+        property string contactId: ""
+        title: qsTr("Export Contact")
+        fileMode: FileDialog.SaveFile
+        nameFilters: [ qsTr("vCard files (*.vcf)") ]
+        defaultSuffix: "vcf"
+        onAccepted: DesktopAppController.exportContactVCard(contactId, selectedFile)
+    }
     signal exportRequested()
     signal filterRequested()
     // Carries the menu's own scene position (Overlay.overlay space, same as
@@ -435,11 +475,34 @@ Popup {
         MenuRow { icon: "email"; label: qsTr("Email…"); visible: menu.canContactEmail
                   onActivated: menu._fire(menu.contactEmailRequested)
                   onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "contact_mail"; label: qsTr("Email Contact…"); visible: menu.canContactCard
+                  objectName: "emailContactCard"
+                  onActivated: menu._fire(menu.contactCardEmailRequested)
+                  onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "contact_page"; label: qsTr("Export Contact…"); visible: menu.canContactCard
+                  objectName: "exportContactCard"
+                  onActivated: menu._fire(menu.contactCardExportRequested)
+                  onHoveredChanged: menu._rowHover("", hovered) }
         MenuRow { icon: "link"; label: qsTr("Share Link…"); visible: menu.canShareLink
                   onActivated: { menu.close(); menu.locationEmailRequested(false) }
                   onHoveredChanged: menu._rowHover("", hovered) }
         MenuRow { icon: "attach_file"; label: qsTr("Share as Attachment…"); visible: menu.canShareLocation
                   onActivated: { menu.close(); menu.locationEmailRequested(true) }
+                  onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "star"; label: qsTr("Set as Primary Project Folder")
+                  objectName: "setPrimaryProjectFolder"
+                  visible: menu.canProjectFolder && !menu._isProjectFolder
+                  onActivated: { menu.close(); DesktopAppController.setPrimaryProjectLocation(menu.emailProjectId, menu.recordId) }
+                  onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "folder_off"; label: qsTr("Clear Primary Project Folder")
+                  objectName: "clearPrimaryProjectFolder"
+                  visible: menu.canProjectFolder && menu._isProjectFolder
+                  onActivated: { menu.close(); DesktopAppController.setPrimaryProjectLocation(menu.emailProjectId, "") }
+                  onHoveredChanged: menu._rowHover("", hovered) }
+        MenuRow { icon: "manage_search"; label: qsTr("Let File Finder Choose Project Folder")
+                  objectName: "fileFinderChoosesProjectFolder"
+                  visible: menu.canProjectFolder && menu._projectFolderChosen
+                  onActivated: { menu.close(); DesktopAppController.letFileFinderChooseProjectFolder(menu.emailProjectId) }
                   onHoveredChanged: menu._rowHover("", hovered) }
         MenuRow { icon: "delete";       label: qsTr("Delete");      visible: menu.canDelete;    danger: true; onActivated: menu._fire(menu.deleteRequested)
                    onHoveredChanged: menu._rowHover("", hovered) }

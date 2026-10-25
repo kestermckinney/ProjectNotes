@@ -26,7 +26,13 @@ public:
     void setSourceModel(QAbstractItemModel* sourceModel) override;
 
     void setQuickSearch(const QString& text);
+    // Same, without the keystroke debounce.
+    void setQuickSearchNow(const QString& text);
     QString quickSearch() const { return m_quickSearch; }
+
+    // The column and order last passed to sort(), applied or still pending.
+    int appliedSortColumn() const { return m_sortColumn; }
+    Qt::SortOrder appliedSortOrder() const { return m_sortOrder; }
 
     void setPinnedRow(int sourceRow);
     void releasePinnedRow();

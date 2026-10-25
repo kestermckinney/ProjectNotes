@@ -192,13 +192,29 @@ Page {
     }
 
     // ── Header: copy + delete ─────────────────────────────────────────────────
-    header: ToolBar {
-        RowLayout {
-            anchors { left: parent.left; right: parent.right; margins: 8 }
-            height: parent.height
-            Item { Layout.fillWidth: true }
+    // ── Actions ──────────────────────────────────────────────────────────────
+    // Glass pill floating at the top right, over the form as it scrolls.
+    NavButton {
+        id: navButton
+        anchors { left: parent.left; leftMargin: 12; verticalCenter: topBar.verticalCenter }
+    }
 
-            ToolButton {
+    GlassBar {
+        id: topBar
+        z: 2
+        anchors { top: parent.top; right: parent.right; topMargin: Theme.topInset + 6; rightMargin: 12 }
+        height: 44
+        width: topBarRow.implicitWidth + 2 * contentPadding
+        contentPadding: 6
+        blurSource: scrollView
+        blurRect: Qt.rect(topBar.x - scrollView.x, topBar.y - scrollView.y,
+                          topBar.width, topBar.height)
+
+        RowLayout {
+            id: topBarRow
+            anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter }
+            spacing: 0
+            BarButton {
                 icon.name: "doc.on.doc"
                 onClicked: {
                     if (!root._saveNow()) return
@@ -231,7 +247,7 @@ Page {
                 }
             }
 
-            ToolButton {
+            BarButton {
                 icon.name: "trash"
                 onClicked: {
                     if (AppController.deleteTrackerItemDetail(root.itemRow)) {
@@ -244,12 +260,22 @@ Page {
     }
 
     // ── Footer: Comments icon ─────────────────────────────────────────────────
-    footer: ToolBar {
+    // ── Bottom bar ───────────────────────────────────────────────────────────
+    // Glass capsule floating over the bottom of the form, like the tab bar.
+    GlassBar {
+        id: bottomBar
+        z: 2
+        anchors { bottom: parent.bottom; left: parent.left; right: parent.right; bottomMargin: 8; leftMargin: 16; rightMargin: 16 }
+        height: 60
+        blurSource: scrollView
+        blurRect: Qt.rect(bottomBar.x - scrollView.x, bottomBar.y - scrollView.y,
+                          bottomBar.width, bottomBar.height)
+
         RowLayout {
             anchors.centerIn: parent
             spacing: 32
 
-            ToolButton {
+            BarButton {
                 icon.name: "text.bubble"
                 display: AbstractButton.TextUnderIcon
                 onClicked: {
@@ -266,12 +292,16 @@ Page {
 
     // ── Body ──────────────────────────────────────────────────────────────────
     ScrollView {
+        id: scrollView
         anchors.fill: parent
         contentWidth: availableWidth
 
         ColumnLayout {
             width: parent.width
             spacing: 0
+            // Room for the floating action pill above the first field.
+            Item { Layout.preferredHeight: topBar.y + topBar.height + 6 }
+
 
             SectionHeader { text: qsTr("Project Number") }
             FieldRow {
@@ -335,21 +365,22 @@ Page {
             SectionHeader { text: qsTr("Description") }
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: Math.max(120, descEdit.contentHeight + 24)
-                color: palette.base
+                Layout.preferredHeight: Math.max(120, descEdit.contentHeight + 40)
+                color: "transparent"
+
+                GlassField {
+                    anchors { fill: parent; leftMargin: 16; rightMargin: 16; topMargin: 2; bottomMargin: 2 }
+                    focused: descEdit.activeFocus
+                }
 
                 TextEdit {
                     id: descEdit
-                    anchors { fill: parent; margins: 8 }
+                    anchors { fill: parent; leftMargin: 34; rightMargin: 34; topMargin: 16; bottomMargin: 16 }
                     text: root.initialDescription
                     wrapMode: TextEdit.Wrap
                     color: palette.text
                     selectByMouse: true
                     onTextChanged: root._touch()
-                }
-                Rectangle {
-                    anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-                    height: 1; color: Theme.mutedText; opacity: 0.3
                 }
             }
 
@@ -435,9 +466,9 @@ Page {
             }
             FieldRow {
                 visible: AppController.showInternalItems
-                Switch {
+                MonoSwitch {
                     id: internalSwitch
-                    anchors { left: parent.left; verticalCenter: parent.verticalCenter; leftMargin: 12 }
+                    anchors { left: parent.left; verticalCenter: parent.verticalCenter; leftMargin: 16 }
                     checked: root.initialInternal
                     text: qsTr("Internal Item")
                     onToggled: root._touch()
@@ -445,19 +476,11 @@ Page {
             }
 
             Item { Layout.preferredHeight: 24 }
+            // Room for the floating bottom bar below the last field.
+            Item { Layout.preferredHeight: bottomBar.visible ? bottomBar.height + 16 : 0 }
         }
     }
 
-    component SectionHeader: Label {
-        Layout.fillWidth: true
-        Layout.topMargin: 20
-        leftPadding: 16
-        bottomPadding: 4
-        font.pixelSize: 13
-        font.weight: 600
-        color: Theme.navyMid
-        background: Rectangle { color: Theme.sectionBg }
-    }
 
     Dialog {
         id: duplicateNumberDialog
@@ -466,6 +489,7 @@ Page {
         title: qsTr("Duplicate Item Number")
         modal: true
         standardButtons: Dialog.Ok
+        palette.highlight: Theme.iconColorPressed   // monochrome pressed OK button
         Label {
             text: qsTr("This item number is already used by another item in this project. Please enter a unique number.")
             wrapMode: Text.Wrap

@@ -20,6 +20,10 @@
           "path": "Introduction/InstallLinux.md"
         },
         {
+          "title": "Mac App Store Version",
+          "path": "Introduction/MacAppStore.md"
+        },
+        {
           "title": "Command-Line Options",
           "path": "Introduction/DeveloperProfile.md"
         }
@@ -159,11 +163,11 @@
       "title": "Plugins Overview",
       "items": [
         {
-          "title": "Adding Functionality",
-          "path": "PluginsOverview/AddingFunctionality.md"
+          "title": "JavaScript Plugins",
+          "path": "PluginsOverview/JavaScriptPlugins.md"
         },
         {
-          "title": "Data Types",
+          "title": "Data Types and Entity Names",
           "path": "PluginsOverview/DataTypes.md"
         },
         {
@@ -180,12 +184,8 @@
           "path": "StandardPlugins/PluginSettings.md"
         },
         {
-          "title": "Outlook Integration",
-          "path": "StandardPlugins/OutlookIntegration.md"
-        },
-        {
-          "title": "iCloud Contacts",
-          "path": "StandardPlugins/iCloudContacts.md"
+          "title": "Archive Mail",
+          "path": "StandardPlugins/ArchiveMail.md"
         },
         {
           "title": "My Shortcuts",
@@ -196,7 +196,7 @@
           "path": "StandardPlugins/TeamMemberQuickAdd.md"
         },
         {
-          "title": "New Document Templates",
+          "title": "Office Document Templates",
           "path": "StandardPlugins/NewDocumentTemplates.md"
         },
         {

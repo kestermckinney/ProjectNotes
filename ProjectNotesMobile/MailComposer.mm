@@ -30,6 +30,16 @@ void MailComposer::present(const QStringList& toAddresses,
                            const QString&     subject,
                            const QString&     body)
 {
+    present(toAddresses, subject, body, {}, {}, {});
+}
+
+void MailComposer::present(const QStringList& toAddresses,
+                           const QString&     subject,
+                           const QString&     body,
+                           const QByteArray&  attachment,
+                           const QString&     mimeType,
+                           const QString&     fileName)
+{
     if (![MFMailComposeViewController canSendMail])
         return;
 
@@ -44,6 +54,10 @@ void MailComposer::present(const QStringList& toAddresses,
     [vc setToRecipients:recipients];
     [vc setSubject:subject.toNSString()];
     [vc setMessageBody:body.toNSString() isHTML:NO];
+    if (!attachment.isEmpty())
+        [vc addAttachmentData:attachment.toNSData()
+                     mimeType:mimeType.toNSString()
+                     fileName:fileName.toNSString()];
 
     // Walk connected scenes to find a window, then walk to the topmost presented VC
     UIViewController *rootVC = nil;
@@ -67,5 +81,7 @@ void MailComposer::present(const QStringList& toAddresses,
 
 bool MailComposer::isAvailable() { return false; }
 void MailComposer::present(const QStringList&, const QString&, const QString&) {}
+void MailComposer::present(const QStringList&, const QString&, const QString&,
+                           const QByteArray&, const QString&, const QString&) {}
 
 #endif

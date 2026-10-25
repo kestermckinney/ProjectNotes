@@ -2,9 +2,9 @@
 # Copyright (C) 2026 Paul McKinney
 # sync_plugins.sh
 #
-# Syncs only changed Python plugins and threads into the built app bundle.
+# Syncs only changed bundled plugins into the built app bundle.
 # Uses rsync --checksum so only files whose content actually changed are copied.
-# Run this instead of a full build when only .py files have been edited.
+# Run this instead of a full build when only plugin files have been edited.
 #
 # Usage:
 #   ./sync_plugins.sh                    # auto-detects Debug then Release bundle
@@ -64,16 +64,12 @@ if [[ ! -d "$RESOURCES" ]]; then
 fi
 
 echo "Bundle : ${BUNDLE}"
-echo "Syncing plugins and threads (changed files only)..."
+echo "Syncing plugins (changed files only)..."
 
 # --checksum compares file content, not just timestamp, so IDE-touch side-effects
 # don't cause unnecessary copies. -v lists each file that is actually updated.
-rsync -rv --checksum \
+rsync -rv --checksum --delete --exclude office-tools \
     "${SCRIPT_DIR}/plugins/" \
     "${RESOURCES}/plugins/"
-
-rsync -rv --checksum \
-    "${SCRIPT_DIR}/threads/" \
-    "${RESOURCES}/threads/"
 
 echo "Done."

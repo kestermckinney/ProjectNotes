@@ -34,7 +34,7 @@ signals:
     void scanStarted();
     void scanningLocation(const QString &description);
     void scanFinished(const FileFinderScanSummary &summary);
-    void locationsCommitted(int inserted, int updated);
+    void locationsCommitted(int inserted, int updated, int primaryFolders);
     void graphFolderStateChanged(const QHash<QString, QString> &state);
 
 private:

@@ -1,0 +1,8 @@
+{ "fields": [
+    { "key": "IntegrationType", "label": "Integration", "type": "choice",
+      "choices": ["Office 365 Application", "Outlook Application"],
+      "help": "Office 365 uses your Microsoft 365 sign-in from Settings > Office 365 Integration. Outlook (classic) archiving is available on Windows." },
+    { "key": "_email", "label": "Email archive", "type": "section" },
+    { "key": "BackupInBoxFolder", "label": "Inbox subfolder", "type": "text", "placeholder": "Correspondence/Received" },
+    { "key": "BackupSentFolder", "label": "Sent items subfolder", "type": "text", "placeholder": "Correspondence/Sent" }
+] }

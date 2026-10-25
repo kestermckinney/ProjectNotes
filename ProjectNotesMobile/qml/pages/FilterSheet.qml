@@ -161,7 +161,7 @@ Popup {
             Layout.fillWidth: true
             Layout.preferredHeight: 50
 
-            ToolButton {
+            BarButton {
                 anchors { left: parent.left; leftMargin: 4; verticalCenter: parent.verticalCenter }
                 visible: root._curIndex >= 0
                 icon.name: "chevron.left"
@@ -176,19 +176,19 @@ Popup {
                 horizontalAlignment: Text.AlignHCenter
                 text: root._curIndex < 0 ? qsTr("Filter") + " · " + root._sectionLabel
                                          : (root._curCol ? root._curCol.label : "")
-                font.pixelSize: 17
+                font.pixelSize: Theme.headline; font.letterSpacing: Theme.tracking(Theme.headline)
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
             }
 
-            ToolButton {
+            BarButton {
                 anchors { right: parent.right; rightMargin: 4; verticalCenter: parent.verticalCenter }
                 visible: root._curIndex < 0
                 icon.name: "xmark"
                 focusPolicy: Qt.NoFocus
                 onClicked: root.close()
             }
-            ToolButton {
+            BarButton {
                 anchors { right: parent.right; rightMargin: 4; verticalCenter: parent.verticalCenter }
                 visible: root._curIndex >= 0 && root._active(root._curField)
                 text: qsTr("Clear")
@@ -237,13 +237,13 @@ Popup {
                         visible: root._count(modelData.field) > 0
                         text: root._count(modelData.field)
                         color: palette.highlight
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         font.bold: true
                     }
                     Label {
                         text: "›"
                         color: Theme.mutedText
-                        font.pixelSize: 16
+                        font.pixelSize: Theme.callout; font.letterSpacing: Theme.tracking(Theme.callout)
                     }
                 }
                 onClicked: root._openColumn(index)
@@ -291,6 +291,9 @@ Popup {
                     id: searchInput
                     Layout.fillWidth: true
                     placeholderText: qsTr("Contains…")
+                    leftPadding: 10; rightPadding: 10
+                    implicitHeight: 36
+                    background: GlassField { focused: searchInput.activeFocus }
                     onTextEdited: root._setSearch(root._curField, text)
                 }
             }
@@ -319,7 +322,7 @@ Popup {
                                 visible: root._isChecked(root._curField, modelData.value)
                                 text: "✓"
                                 color: "white"
-                                font.pixelSize: 12
+                                font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                                 font.bold: true
                             }
                         }
@@ -344,7 +347,7 @@ Popup {
                 wrapMode: Text.WordWrap
                 text: qsTr("No values to list — use Contains above.")
                 color: Theme.mutedText
-                font.pixelSize: 13
+                font.pixelSize: Theme.footnote; font.letterSpacing: Theme.tracking(Theme.footnote)
             }
 
             Item { visible: root._curIsDate; Layout.fillHeight: true }
@@ -358,7 +361,7 @@ Popup {
             Layout.margins: 10
             spacing: 10
 
-            Button {
+            MonoButton {
                 text: qsTr("Reset All")
                 flat: true
                 onClicked: {
@@ -377,7 +380,7 @@ Popup {
                 }
             }
             Item { Layout.fillWidth: true }
-            Button {
+            MonoButton {
                 text: qsTr("Apply")
                 highlighted: true
                 onClicked: root._apply()
@@ -392,9 +395,8 @@ Popup {
         Layout.topMargin: 14
         leftPadding: 16
         bottomPadding: 4
-        font.pixelSize: 13
+        font.pixelSize: Theme.footnote; font.letterSpacing: Theme.tracking(Theme.footnote)
         font.weight: 600
         color: Theme.navyMid
-        background: Rectangle { color: Theme.sectionBg }
     }
 }

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "AppController.h"
+#include "appidentity.h"
 #include "MobileSettings.h"
 #include "TextFormatter.h"
 
@@ -9,6 +10,7 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
+#include <QQuickWindow>
 
 int main(int argc, char *argv[])
 {
@@ -17,9 +19,12 @@ int main(int argc, char *argv[])
 #endif
 
     QGuiApplication app(argc, argv);
-    app.setOrganizationName("ProjectNotes");
+    // The organization name makes the data folder Application
+    // Support/ProjectNotes/Project Notes; it stays so existing installs keep
+    // their data (appidentity.h).
+    app.setOrganizationName(PN::Identity::settingsOrganization());
     app.setOrganizationDomain("projectnotespro.com");
-    app.setApplicationName("Project Notes");
+    app.setApplicationName(PN::Identity::displayName());
     app.setApplicationVersion(QStringLiteral(PROJECTNOTES_VERSION));
 
     QCommandLineParser parser;
@@ -34,6 +39,11 @@ int main(int argc, char *argv[])
 
     // Use the iOS-native look by default
     QQuickStyle::setStyle("iOS");
+
+    // Rasterize text with Core Text instead of Qt's distance fields, so SF Pro
+    // gets the same stroke weight it has in UIKit apps such as the App Store.
+    // Safe here because the mobile UI never scales text after layout.
+    QQuickWindow::setTextRenderType(QQuickWindow::NativeTextRendering);
 
     // Register QML singletons — the create() factory is called by the engine on first use.
     qmlRegisterSingletonType<AppController>(

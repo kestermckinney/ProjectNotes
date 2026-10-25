@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(ProjectNotesMobile VERSION 6.4.0 LANGUAGES CXX)
+project(ProjectNotesMobile VERSION 6.5.0 LANGUAGES CXX)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../version.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/version.h @ONLY)
 include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
@@ -23,11 +23,17 @@ endif()
 set(_VCPKG_IOS_ROOT "/Users/paulmckinney/Documents/Projects/vcpkg/installed")
 
 if(CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
-    # x86_64 simulator — runs via Rosetta on Apple Silicon.
-    # Qt's ios package only provides x86_64 for simulator (arm64 slice is device-only).
-    # vcpkg's x64-ios triplet builds against the simulator SDK:
-    #   vcpkg install openssl:x64-ios
-    set(_OPENSSL_TRIPLET "${_VCPKG_IOS_ROOT}/x64-ios")
+    # x86_64 simulator — runs via Rosetta on Apple Silicon. Qt's ios package
+    # ships a fat x86_64+arm64 simulator slice for its *frameworks*, but its
+    # bundled default static *plugins* (qmltooling, networkinformation,
+    # multimedia, iconengines, etc. — verified across several) only have an
+    # arm64 slice tagged for the device platform, with the simulator-tagged
+    # slice being x86_64-only. Building the Simulator target as arm64 fails
+    # at link time ("building for 'iOS-simulator', but linking in object
+    # file ... built for 'iOS'"), so this has to stay x86_64 to match what
+    # Qt actually shipped.
+    set(_OPENSSL_TRIPLET "${_VCPKG_IOS_ROOT}/x64-ios-simulator")
+    set(CMAKE_OSX_ARCHITECTURES "x86_64")
 else()
     set(_OPENSSL_TRIPLET "${_VCPKG_IOS_ROOT}/arm64-ios")
     set(CMAKE_OSX_ARCHITECTURES            "arm64")
@@ -108,12 +114,24 @@ qt_add_qml_module(ProjectNotesMobile
         TextFormatter.cpp   TextFormatter.h
         MailComposer.mm     MailComposer.h
         NativeUrlOpener.mm  NativeUrlOpener.h
+        ShareSheet.mm       ShareSheet.h
     QML_FILES
         qml/Theme.qml
         qml/FormField.qml
         qml/FormLabel.qml
         qml/FieldRow.qml
         qml/FormCombo.qml
+        qml/GlassField.qml
+        qml/SectionHeader.qml
+        qml/GlassBar.qml
+        qml/BarButton.qml
+        qml/NavButton.qml
+        qml/MonoSwitch.qml
+        qml/SettingsSection.qml
+        qml/SettingsItem.qml
+        qml/SettingsField.qml
+        qml/SettingsCombo.qml
+        qml/MonoButton.qml
         qml/ActiveIndicator.qml
         qml/Main.qml
         qml/pages/ProjectsListPage.qml
@@ -123,6 +141,8 @@ qt_add_qml_module(ProjectNotesMobile
         qml/pages/ViewOptionsPage.qml
         qml/pages/PreferencesPage.qml
         qml/pages/AboutPage.qml
+        qml/pages/MainMenuPage.qml
+        qml/pages/AppearancePage.qml
         qml/pages/ContactDetailPage.qml
         qml/pages/CompanyDetailPage.qml
         qml/pages/AllItemsPage.qml
@@ -149,6 +169,9 @@ qt_add_qml_module(ProjectNotesMobile
         qml/pages/FilterSheet.qml
         qml/pages/SortSheet.qml
         qml/pages/QuickFilterDialog.qml
+        qml/pages/ContactCardDialog.qml
+    RESOURCES
+        qml/images/app-icon.png
 )
 
 # ── iOS bundle properties ─────────────────────────────────────────────────────
@@ -183,6 +206,15 @@ if(IOS OR (APPLE AND CMAKE_SYSTEM_NAME STREQUAL "iOS"))
     # Excel/PowerPoint apps claim SharePoint/OneDrive domains) would otherwise
     # intercept regardless of the "Open links in desktop apps" setting.
     target_link_libraries(ProjectNotesMobile PRIVATE "-framework SafariServices")
+endif()
+
+# Keychain storage for the sync password and encryption phrase (MobileSettings).
+target_sources(ProjectNotesMobile PRIVATE ../credentialstore.cpp ../credentialstore.h)
+if(APPLE)
+    target_link_libraries(ProjectNotesMobile PRIVATE "-framework Security")
+elseif(UNIX)
+    find_package(Qt6 REQUIRED COMPONENTS DBus)
+    target_link_libraries(ProjectNotesMobile PRIVATE Qt6::DBus)
 endif()
 
 # ── Link libraries ────────────────────────────────────────────────────────────

@@ -1,0 +1,4 @@
+{ "fields": [
+    { "key": "EditorPath", "label": "Editor application", "type": "file",
+      "help": "The program Plugins > Utilities > Script Editor opens, for editing plugins." }
+] }

@@ -33,7 +33,11 @@ add_library(ProjectNotesIntegrations STATIC
 )
 
 target_include_directories(ProjectNotesIntegrations PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
+# The template stores read and write application settings through
+# global_DBObjects, so consumers must also link ProjectNotesCore after this
+# library; declaring it here keeps static-library link order correct.
 target_link_libraries(ProjectNotesIntegrations PUBLIC
+    ProjectNotesCore
     Qt${QT_VERSION_MAJOR}::Core
     Qt${QT_VERSION_MAJOR}::Network
     Qt${QT_VERSION_MAJOR}::Qml

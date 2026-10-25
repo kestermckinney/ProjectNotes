@@ -8,7 +8,7 @@ Native [Contact Synchronization](Preferences.md#contact-synchronization) and **F
 
 ## Before You Sign In
 
-Your organization must provide a **dedicated** Microsoft Entra app registration for Office 365 Integration. Do not reuse the app registration configured for [Outlook Integration](<../StandardPlugins/OutlookIntegration.md>) — its consent only covers Mail, Calendar, Contacts, and Tasks scopes. Office 365 Integration requests different, higher-privilege delegated Microsoft Graph scopes:
+Your organization must provide a **dedicated** Microsoft Entra app registration for Office 365 Integration. Do not reuse the app registration configured for the old Outlook Integration plugin, whose consent only covers Mail, Calendar, Contacts, and Tasks scopes. Office 365 Integration requests different, higher-privilege delegated Microsoft Graph scopes:
 
 For email drafts and meeting invitations:
 
@@ -17,13 +17,27 @@ For email drafts and meeting invitations:
 - `Calendars.ReadWrite`
 - `offline_access`
 
+For contact synchronization and Full Contact Export:
+
+- `Contacts.ReadWrite`
+
+Importing contacts without ever exporting them needs only `Contacts.Read`. Project Notes asks for `Contacts.ReadWrite` whenever Office 365 is the contact provider, so grant that one unless you are sure nobody will export.
+
 For File Finder's Teams and SharePoint discovery:
 
 - `Team.ReadBasic.All`
 - `Channel.ReadBasic.All`
 - `Files.Read.All`
 
-`Mail.ReadWrite` creates and updates drafts. Project Notes never requests `Mail.Send`, so it cannot send mail from your account.
+`Mail.ReadWrite` creates and updates drafts. It also satisfies plugins that ask for `Mail.Read`, such as Archive Mail. Project Notes never requests `Mail.Send`, so it cannot send mail from your account.
+
+All of these are **delegated** permissions. Application permissions are not used.
+
+### App registration settings
+
+Project Notes signs in with the device-code flow and has no client secret. On the app registration's **Authentication** page, set **Allow public client flows** to **Yes**. Without it, sign-in fails after you enter the code.
+
+The **Supported account types** setting must agree with the tenant ID you enter in Project Notes. The default tenant, `organizations`, needs a registration that accepts accounts in any organizational directory. A registration limited to your own directory works when you enter your specific tenant ID.
 
 Microsoft Graph marks `Team.ReadBasic.All`, `Channel.ReadBasic.All`, and `Files.Read.All` as requiring administrator consent. A tenant administrator must grant consent for these permissions on the dedicated app registration (Microsoft Entra admin center > **App registrations** > the app > **API permissions** > **Grant admin consent**) before sign-in will succeed. If sign-in appears to complete but File Finder then reports an error mentioning admin approval (AADSTS90094), consent has not been granted yet, or the tenant/client ID entered below points at an app registration that was never granted it.
 
@@ -42,7 +56,7 @@ The status panel reports whether Project Notes is signed in and shows the device
 
 ## Credential Storage
 
-Project Notes stores the Microsoft refresh token in the operating system's credential vault. Access tokens remain in memory. The tenant ID, client ID, and connection state are stored in the local Project Notes settings profile and do not sync through the project database. These settings are kept independent of [Outlook Integration](<../StandardPlugins/OutlookIntegration.md>)'s tenant ID and application ID — changing one never affects the other.
+Project Notes stores the Microsoft refresh token in the operating system's credential vault. Access tokens remain in memory. The tenant ID, client ID, and connection state are stored in the local Project Notes settings profile and do not sync through the project database. These settings are kept independent of the old Outlook Integration plugin's tenant ID and application ID — changing one never affects the other.
 
 ## Use with File Finder
 

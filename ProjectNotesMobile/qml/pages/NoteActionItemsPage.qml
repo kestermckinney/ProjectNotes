@@ -37,22 +37,41 @@ Page {
         }
     }
 
-    header: ToolBar {
+    // ── Search bar ─────────────────────────────────────────────────────────
+    // A glass capsule floating over the top of the list. The rows scroll
+    // beneath it and show through frosted, as they do under the tab bar.
+    NavButton {
+        id: navButton
+        anchors { left: parent.left; leftMargin: 12; verticalCenter: searchBar.verticalCenter }
+    }
+
+    GlassBar {
+        id: searchBar
+        z: 2
+        anchors { top: parent.top; left: navButton.right; right: parent.right; topMargin: Theme.topInset + 6; leftMargin: 8; rightMargin: 12 }
+        height: 48
+        contentPadding: 0
+        blurSource: listView
+        blurRect: Qt.rect(searchBar.x - listView.x, searchBar.y - listView.y,
+                          searchBar.width, searchBar.height)
+
         RowLayout {
-            anchors { left: parent.left; right: parent.right; margins: 8 }
-            height: parent.height
+            anchors { fill: parent; leftMargin: 4; rightMargin: 2 }
             TextField {
                 id: searchField
                 Layout.fillWidth: true
                 placeholderText: qsTr("Search action items…")
                 onTextChanged: AppController.setQuickSearch(AppController.notesActionItemsModel, text)
                 inputMethodHints: Qt.ImhNoPredictiveText
-                rightPadding: clearBtn.visible ? clearBtn.width + 4 : 0
+                leftPadding: 10
+                rightPadding: clearBtn.visible ? clearBtn.width + 12 : 10
+                implicitHeight: 36
+                background: Item {}
 
                 Label {
                     id: clearBtn
                     visible: searchField.text.length > 0
-                    anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 6 }
+                    anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 10 }
                     text: "✕"
                     font.pixelSize: 18
                     color: palette.text
@@ -63,7 +82,7 @@ Page {
                     }
                 }
             }
-            ToolButton {
+            BarButton {
                 icon.name: "plus"
                 onClicked: {
                     var newRow = AppController.addNoteActionItem(root.noteId, root.projectId)
@@ -98,6 +117,10 @@ Page {
 
     ListView {
         id: listView
+        topMargin: searchBar.y + searchBar.height + 6   // first row clear of the title bar and search capsule
+        // The lists exist before the title bar is measured; start them at the top
+        // once the margin settles rather than with the first row underneath it.
+        onTopMarginChanged: contentY = -topMargin
         anchors.fill: parent
         model: AppController.notesActionItemsModel
         clip: true
@@ -126,7 +149,7 @@ Page {
                     Label {
                         visible: (model.assigned_to || "") !== ""
                         text: AppController.contactNameForId(model.assigned_to || "")
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: Theme.mutedText
                         elide: Text.ElideRight
                         Layout.fillWidth: true
@@ -138,7 +161,7 @@ Page {
                             var sep = (model.assigned_to || "") !== "" ? "  ·  " : ""
                             return sep + (model.status || "")
                         }
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: root.statusColor(model.status || "")
                     }
 
@@ -148,7 +171,7 @@ Page {
                             var sep = (model.assigned_to || model.status) ? "  ·  " : ""
                             return sep + "Due: " + (model.date_due || "")
                         }
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: model.date_due_foreground || Theme.mutedText
                     }
                 }

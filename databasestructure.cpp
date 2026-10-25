@@ -13,6 +13,7 @@
 #include "databaseupgrade_v6_1_0.h"
 #include "databaseupgrade_v6_2_0.h"
 #include "databaseupgrade_v6_4_0.h"
+#include "databaseupgrade_v6_5_0.h"
 #include <QVersionNumber>
 
 bool DatabaseStructure::CreateDatabase()
@@ -82,6 +83,13 @@ bool DatabaseStructure::UpgradeDatabase()
     // Run cleanup even at the target version: an older synced client can
     // reintroduce retired settings. On failure, leave the version unchanged.
     if (!db_UpgradeStep_v6_4_0()) {
+        db_CreateAllViews();
+        return false;
+    }
+
+    // Also every launch: an older synced client can push the retired
+    // project_folders setting back, and its folders still need moving.
+    if (!db_UpgradeStep_v6_5_0()) {
         db_CreateAllViews();
         return false;
     }

@@ -23,114 +23,83 @@ Page {
         return -1
     }
 
+    // Same spot as on the list pages; see MainMenuPage.qml.
+    NavButton {
+        id: navButton
+        anchors { top: parent.top; left: parent.left; topMargin: Theme.topInset + 8; leftMargin: 12 }
+    }
+
     ScrollView {
-        anchors.fill: parent
+        anchors.fill: parent    // content scrolls up under the title bar
         contentWidth: availableWidth
 
         ColumnLayout {
             width: parent.width
             spacing: 0
+            Item { Layout.preferredHeight: navButton.y + navButton.height + 4 }
 
             // ── Defaults ──────────────────────────────────────────────────────
-            SectionHeader { text: qsTr("Managing Company") }
-            FieldRow {
-                FormCombo {
-                    id: companyCombo
-                    options: root._companyNames()
-                    includeNone: true
-                    searchable: true
-                    Component.onCompleted: {
-                        root._companies = AppController.companyList()
-                        selectOption(root._indexForId(root._companies, AppController.managingCompanyId()))
-                    }
-                    onActivated: {
-                        var i = optionIndex
-                        AppController.setManagingCompanyId(
-                            (i >= 0 && i < root._companies.length) ? root._companies[i].id : "")
+            SettingsSection {
+                title: qsTr("Defaults")
+
+                SettingsItem {
+                    text: qsTr("Managing Company")
+                    showChevron: false
+                    fillControl: true
+                    control: SettingsCombo {
+                        id: companyCombo
+                        options: root._companyNames()
+                        includeNone: true
+                        searchable: true
+                        Component.onCompleted: {
+                            root._companies = AppController.companyList()
+                            selectOption(root._indexForId(root._companies, AppController.managingCompanyId()))
+                        }
+                        onActivated: {
+                            var i = optionIndex
+                            AppController.setManagingCompanyId(
+                                (i >= 0 && i < root._companies.length) ? root._companies[i].id : "")
+                        }
                     }
                 }
-            }
 
-            SectionHeader { text: qsTr("Project Manager") }
-            FieldRow {
-                FormCombo {
-                    id: managerCombo
-                    options: root._contactNames()
-                    includeNone: true
-                    searchable: true
-                    Component.onCompleted: {
-                        root._contacts = AppController.contactList()
-                        selectOption(root._indexForId(root._contacts, AppController.projectManagerId()))
-                    }
-                    onActivated: {
-                        var i = optionIndex
-                        AppController.setProjectManagerId(
-                            (i >= 0 && i < root._contacts.length) ? root._contacts[i].id : "")
+                SettingsItem {
+                    text: qsTr("Project Manager")
+                    showChevron: false
+                    fillControl: true
+                    control: SettingsCombo {
+                        id: managerCombo
+                        options: root._contactNames()
+                        includeNone: true
+                        searchable: true
+                        Component.onCompleted: {
+                            root._contacts = AppController.contactList()
+                            selectOption(root._indexForId(root._contacts, AppController.projectManagerId()))
+                        }
+                        onActivated: {
+                            var i = optionIndex
+                            AppController.setProjectManagerId(
+                                (i >= 0 && i < root._contacts.length) ? root._contacts[i].id : "")
+                        }
                     }
                 }
             }
 
             // ── Office Documents ─────────────────────────────────────────────
-            SectionHeader { text: qsTr("Office Documents") }
-            SettingsRow {
-                label: qsTr("Open links in apps when available")
-                control: Switch {
-                    checked: AppController.office365OpenLinksInDesktop
-                    onToggled: AppController.office365OpenLinksInDesktop = checked
-                }
-            }
-        }
-    }
+            SettingsSection {
+                title: qsTr("Office Documents")
 
-    // ── Shared helper components ──────────────────────────────────────────────
-
-    component SectionHeader: Label {
-        Layout.fillWidth: true
-        Layout.topMargin: 20
-        leftPadding: 16
-        bottomPadding: 4
-        font.pixelSize: 13
-        font.weight: 600
-        color: Theme.navyMid
-        background: Rectangle { color: Theme.sectionBg }
-    }
-
-    component SettingsRow: RowLayout {
-        property string label: ""
-        property alias control: controlSlot.children
-
-        Layout.fillWidth: true
-        Layout.minimumHeight: 44
-        spacing: 0
-
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            color: palette.base
-
-            RowLayout {
-                anchors { fill: parent; leftMargin: 16; rightMargin: 16; topMargin: 8; bottomMargin: 8 }
-
-                Label {
-                    text: parent.parent.parent.label
-                    Layout.fillWidth: true
-                    wrapMode: Text.WordWrap
-                }
-
-                Item {
-                    id: controlSlot
-                    Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
-                    implicitWidth: children.length > 0 ? children[0].implicitWidth : 0
-                    implicitHeight: children.length > 0 ? children[0].implicitHeight : 0
+                SettingsItem {
+                    text: qsTr("Open links in apps when available")
+                    showChevron: false
+                    control: MonoSwitch {
+                        checked: AppController.office365OpenLinksInDesktop
+                        onToggled: AppController.office365OpenLinksInDesktop = checked
+                    }
                 }
             }
 
-            Rectangle {
-                anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-                height: 1
-                color: Theme.mutedText
-                opacity: 0.3
-            }
+            Item { Layout.preferredHeight: 24 }
         }
     }
 }

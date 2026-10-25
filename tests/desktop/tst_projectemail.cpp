@@ -95,6 +95,36 @@ private slots:
         value.contacts[1].email = "not an address";
         QVERIFY(!ProjectEmailPreparationFactory::create(value, context, BackendId::DefaultApp, {}).validation.ok());
     }
+    void contactCardEmailHasNoRecipientsAndNamesTheContact() {
+        auto value = snapshot(); value.projectId.clear(); value.location.reset();
+        // A contact without an email address can still be shared.
+        value.contacts[1].email.clear();
+        auto context = source(Workflow::ContactEmail); context.projectId.clear(); context.contactId = "person";
+        const auto review = ProjectEmailPreparationFactory::create(value, context, BackendId::DefaultApp, {}, false, true);
+        QVERIFY(review.validation.ok());
+        QVERIFY(review.preparation.recipients.isEmpty());
+        QVERIFY(review.preparation.addressLater);
+        QCOMPARE(review.preparation.document.defaultSubject, "Contact: <Alice>");
+        QTemporaryDir dir;
+        QFile card(dir.filePath("card.vcf"));
+        QVERIFY(card.open(QIODevice::WriteOnly));
+        card.write("BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Alice\r\nEND:VCARD\r\n");
+        card.close();
+        auto prepared = review.preparation;
+        prepared.attachments.append({QUuid::createUuid(), card.fileName(), "Alice.vcf", "text/vcard"});
+        const auto email = EmailContentBuilder::prepare(prepared);
+        QVERIFY(email.request.has_value());
+        ValidationResult emlValidation;
+        const auto eml = EmlWriter::write(*email.request, {}, &emlValidation);
+        QVERIFY(emlValidation.ok());
+        QVERIFY(!eml.contains("To:"));
+        QVERIFY(eml.contains("Content-Type: text/vcard"));
+        QVERIFY(eml.contains("filename=\"Alice.vcf\""));
+        context.contactId = "missing";
+        QVERIFY(!ProjectEmailPreparationFactory::create(value, context, BackendId::DefaultApp, {}, false, true).validation.ok());
+        auto project = source(Workflow::ProjectEmail); project.contactId = "person";
+        QVERIFY(!ProjectEmailPreparationFactory::create(snapshot(), project, BackendId::DefaultApp, {}, false, true).validation.ok());
+    }
     void projectEmailIncludesTeamAndManagerWithoutAttendees() {
         CommunicationTemplate value{"custom", "Custom", Workflow::ProjectEmail, "{{ project.name }}", "<p>Project email</p>"};
         const auto review = ProjectEmailPreparationFactory::create(snapshot(), source(Workflow::ProjectEmail), BackendId::DefaultApp, value);

@@ -16,10 +16,13 @@ struct ProjectEmailReview {
     QUrl attachmentUrl;
 };
 
+// shareContactCard (ContactEmail only) prepares a message about the contact
+// rather than to them: no recipients, address-later, and a "Contact: <name>"
+// subject. The caller attaches the vCard.
 class ProjectEmailPreparationFactory final {
 public:
     static ProjectEmailReview create(const CommunicationSnapshot &snapshot, SourceContext source,
                                     BackendId backend, const CommunicationTemplate &contentTemplate,
-                                    bool attachLocation = false);
+                                    bool attachLocation = false, bool shareContactCard = false);
 };
 }

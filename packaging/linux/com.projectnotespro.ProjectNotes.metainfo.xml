@@ -15,8 +15,8 @@
     <p>
       Project Notes is a desktop application for project management that helps you
       track notes, meeting minutes, risks, issues, action items, contacts, and clients.
-      It features a Python plugin system for extensibility and integrates with tools
-      like Outlook and MS Office.
+      JavaScript plugins add menus, dialogs and settings, and it integrates with
+      tools like Outlook and MS Office.
     </p>
     <p>
       Visit www.projectnotespro.com to download the companion mobile application and
@@ -31,6 +31,7 @@
   <content_rating type="oars-1.1"/>
 
   <releases>
+    <release version="6.5.0" date="2026-10-18"/>
     <release version="6.4.3" date="2026-10-17"/>
     <release version="6.4.2" date="2026-10-16"/>
     <release version="6.4.1" date="2026-10-16"/>

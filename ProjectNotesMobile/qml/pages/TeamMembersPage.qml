@@ -28,23 +28,43 @@ Page {
 
     FilterSheet { id: filterSheet }
     SortSheet   { id: sortSheet }
+    ContactCardDialog { id: cardDialog }
 
-    header: ToolBar {
+    // ── Search bar ─────────────────────────────────────────────────────────
+    // A glass capsule floating over the top of the list. The rows scroll
+    // beneath it and show through frosted, as they do under the tab bar.
+    NavButton {
+        id: navButton
+        anchors { left: parent.left; leftMargin: 12; verticalCenter: searchBar.verticalCenter }
+    }
+
+    GlassBar {
+        id: searchBar
+        z: 2
+        anchors { top: parent.top; left: navButton.right; right: parent.right; topMargin: Theme.topInset + 6; leftMargin: 8; rightMargin: 12 }
+        height: 48
+        contentPadding: 0
+        blurSource: listView
+        blurRect: Qt.rect(searchBar.x - listView.x, searchBar.y - listView.y,
+                          searchBar.width, searchBar.height)
+
         RowLayout {
-            anchors { left: parent.left; right: parent.right; margins: 8 }
-            height: parent.height
+            anchors { fill: parent; leftMargin: 4; rightMargin: 2 }
             TextField {
                 id: searchField
                 Layout.fillWidth: true
                 placeholderText: qsTr("Search team…")
                 onTextChanged: AppController.setQuickSearch(AppController.projectTeamMembersModel, text)
                 inputMethodHints: Qt.ImhNoPredictiveText
-                rightPadding: clearBtn.visible ? clearBtn.width + 4 : 0
+                leftPadding: 10
+                rightPadding: clearBtn.visible ? clearBtn.width + 12 : 10
+                implicitHeight: 36
+                background: Item {}
 
                 Label {
                     id: clearBtn
                     visible: searchField.text.length > 0
-                    anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 6 }
+                    anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 10 }
                     text: "✕"
                     font.pixelSize: 18
                     color: palette.text
@@ -55,7 +75,7 @@ Page {
                     }
                 }
             }
-            ToolButton {
+            BarButton {
                 icon.name: "line.3.horizontal.decrease.circle"
                 icon.color: filterBadge.iconColor
                 onClicked: filterSheet.openFor("team", qsTr("Team"))
@@ -64,7 +84,7 @@ Page {
                     active: AppController.filterRev >= 0 && AppController.hasActiveColumnFilters(AppController.projectTeamMembersModel)
                 }
             }
-            ToolButton {
+            BarButton {
                 icon.name: "arrow.up.arrow.down"
                 icon.color: sortBadge.iconColor
                 onClicked: sortSheet.openFor("team", qsTr("Team"))
@@ -73,7 +93,7 @@ Page {
                     active: AppController.sortRev >= 0 && (AppController.activeSort(AppController.projectTeamMembersModel).field || "") !== ""
                 }
             }
-            ToolButton {
+            BarButton {
                 icon.name: "plus"
                 onClicked: {
                     var newRow = AppController.addTeamMember(root.projectId)
@@ -96,6 +116,10 @@ Page {
 
     ListView {
         id: listView
+        topMargin: searchBar.y + searchBar.height + 6   // first row clear of the title bar and search capsule
+        // The lists exist before the title bar is measured; start them at the top
+        // once the margin settles rather than with the first row underneath it.
+        onTopMarginChanged: contentY = -topMargin
         anchors.fill: parent
         model: AppController.projectTeamMembersModel
         clip: true
@@ -105,6 +129,11 @@ Page {
             required property int index
             required property var model
             width: listView.width
+
+            // Long press → contact card actions for this person (see
+            // ContactsPage.qml for why this is pressAndHold, not a TapHandler).
+            onPressAndHold: cardDialog.openFor((delegateRoot.model.people_id || "").toString(),
+                                               (delegateRoot.model.name || "").toString(), false)
 
             contentItem: RowLayout {
                 spacing: 8
@@ -127,7 +156,7 @@ Page {
                             if (delegateRoot.model.role        || "") parts.push(delegateRoot.model.role)
                             return parts.join("  ·  ")
                         }
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: Theme.mutedText
                         elide: Text.ElideRight
                         Layout.fillWidth: true
@@ -136,7 +165,7 @@ Page {
                     Label {
                         visible: (delegateRoot.model.receive_status_report || "0") !== "0"
                         text: qsTr("Receives Status Report")
-                        font.pixelSize: 11
+                        font.pixelSize: Theme.caption2; font.letterSpacing: Theme.tracking(Theme.caption2)
                         color: palette.link
                     }
                 }
@@ -145,21 +174,21 @@ Page {
                     spacing: 0
                     Layout.alignment: Qt.AlignVCenter
 
-                    ToolButton {
+                    BarButton {
                         visible: (delegateRoot.model.cell_phone || "").length > 0
                         icon.name: "iphone"
                         implicitWidth: 44; implicitHeight: 44
                         onClicked: Qt.openUrlExternally("tel:" + (delegateRoot.model.cell_phone || "").replace(/[^\d+]/g, ""))
                     }
 
-                    ToolButton {
+                    BarButton {
                         visible: (delegateRoot.model.office_phone || "").length > 0
                         icon.name: "phone.fill"
                         implicitWidth: 44; implicitHeight: 44
                         onClicked: Qt.openUrlExternally("tel:" + (delegateRoot.model.office_phone || "").replace(/[^\d+]/g, ""))
                     }
 
-                    ToolButton {
+                    BarButton {
                         visible: (delegateRoot.model.email || "").length > 0
                         icon.name: "envelope"
                         implicitWidth: 44; implicitHeight: 44

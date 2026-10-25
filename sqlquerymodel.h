@@ -22,6 +22,8 @@
 using namespace QLogger;
 
 
+#include "recordtree.h"
+
 class DatabaseObjects;
 
 class SqlQueryModel : public QAbstractTableModel
@@ -59,6 +61,10 @@ public:
 
     bool importXMLNode(const QDomNode& domnode);
     bool setData(QDomElement* xmlRow, bool ignoreKey);
+    // Format-neutral import of one row (see recordtree.h). Returns false only
+    // when the row is rejected (an invalid value for a fixed value list); the
+    // outcome says what happened to the row either way.
+    bool importRecordRow(const RecordRow& row, RecordImportOutcome* outcome = nullptr);
 
     void refresh();
     void markDirty() { m_dirty = true; }
@@ -88,7 +94,7 @@ public:
     // the row can be INSERTed whichever column the user filled in first.
     void applyBlankColumnPolicy(int row);
     static QString sqlEscapeLiteral(const QString& value);   // doubles single quotes for safe interpolation into SQL string literals
-    void reformatValue(QVariant& columnValue, DBColumnType columnType) const;
+    static void reformatValue(QVariant& columnValue, DBColumnType columnType);
 
     void addColumn(const QString& columnName, const QString& displayName, DBColumnType type, DBColumnSearchable searchable,
                    DBColumnRequired required = DBNotRequired, DBColumnEditable editTable = DBEditable, DBColumnUnique unique = DBNotUnique,
@@ -238,7 +244,20 @@ public:
     static QString removeInvalidXmlCharacters(const QString &input);
     QDomElement toQDomElement( QDomDocument* xmlDocument, const QString& filter = QString());
 
+    // Schema description used by the plugin data API.
+    const QString& orderBy() const { return m_orderBy; }
+    const QHash<QString, QStringList>& uniqueKeys() const { return m_uniqueKeys; }
+    QStringList* lookupValues(int column) const { return m_lookupValues.value(column, nullptr); }
+    int relatedTableCount() const { return int(m_relatedTable.size()); }
+    QString relatedTable(int i) const { return m_relatedTable.at(i); }
+    QStringList relatedColumns(int i) const { return m_relatedColumns.at(i); }
+    QStringList relatedFkColumns(int i) const { return m_relatedFkColumns.at(i); }
+    QString relationTitle(int i) const { return m_relationTitle.at(i); }
+    bool isRelationExportable(int i) const { return m_relationExportable.at(i) == DBExportable; }
+    const QVector<QVector<QVariant>>& rows() const { return m_cache; }
+
 private:
+    friend class RecordTreeExporter;
     // Emits no model-change signal of its own - only call inside refresh()'s
     // beginResetModel()/endResetModel() block.
     void clear();
@@ -312,7 +331,7 @@ private:
 
     DatabaseObjects* m_dbo;
 
-    void stripFormatting(QVariant& value) const;
+    static void stripFormatting(QVariant& value);
     bool matchesFilter(int column, const QVariant& value);
 
 protected:

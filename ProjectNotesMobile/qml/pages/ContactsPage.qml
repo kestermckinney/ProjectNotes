@@ -7,6 +7,9 @@ import QtQuick.Layouts
 import ProjectNotesMobile
 
 Page {
+    // Space below the last row for Main.qml's floating tab bar.
+    property real listBottomInset: 0
+
     id: root
     title: qsTr("Contacts")
 
@@ -26,11 +29,33 @@ Page {
     FilterSheet     { id: filterSheet }
     SortSheet       { id: sortSheet }
     QuickFilterDialog { id: qfDialog }
+    ContactCardDialog {
+        id: cardDialog
+        property var _quickFilters: []
+        onQuickFilterRequested: qfDialog.openWith(AppController.contactsModel, _quickFilters)
+    }
 
-    header: ToolBar {
+    // ── Search bar ─────────────────────────────────────────────────────────
+    // A glass capsule floating over the top of the list. The rows scroll
+    // beneath it and show through frosted, as they do under the tab bar.
+    NavButton {
+        id: navButton
+        atRoot: true
+        anchors { left: parent.left; leftMargin: 12; verticalCenter: searchBar.verticalCenter }
+    }
+
+    GlassBar {
+        id: searchBar
+        z: 2
+        anchors { top: parent.top; left: navButton.right; right: parent.right; topMargin: Theme.topInset + 6; leftMargin: 8; rightMargin: 12 }
+        height: 48
+        contentPadding: 0
+        blurSource: listView
+        blurRect: Qt.rect(searchBar.x - listView.x, searchBar.y - listView.y,
+                          searchBar.width, searchBar.height)
+
         RowLayout {
-            anchors { left: parent.left; right: parent.right; margins: 8 }
-            height: parent.height
+            anchors { fill: parent; leftMargin: 4; rightMargin: 2 }
 
             TextField {
                 id: searchField
@@ -38,12 +63,15 @@ Page {
                 placeholderText: qsTr("Search contacts…")
                 onTextChanged: AppController.setQuickSearch(AppController.contactsModel, text)
                 inputMethodHints: Qt.ImhNoPredictiveText
-                rightPadding: clearBtn.visible ? clearBtn.width + 4 : 0
+                leftPadding: 10
+                rightPadding: clearBtn.visible ? clearBtn.width + 12 : 10
+                implicitHeight: 36
+                background: Item {}
 
                 Label {
                     id: clearBtn
                     visible: searchField.text.length > 0
-                    anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 6 }
+                    anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 10 }
                     text: "✕"
                     font.pixelSize: 18
                     color: palette.text
@@ -55,7 +83,7 @@ Page {
                 }
             }
 
-            ToolButton {
+            BarButton {
                 icon.name: "line.3.horizontal.decrease.circle"
                 icon.color: filterBadge.iconColor
                 onClicked: filterSheet.openFor("contacts", qsTr("Contacts"))
@@ -65,7 +93,7 @@ Page {
                 }
             }
 
-            ToolButton {
+            BarButton {
                 icon.name: "arrow.up.arrow.down"
                 icon.color: sortBadge.iconColor
                 onClicked: sortSheet.openFor("contacts", qsTr("Contacts"))
@@ -75,7 +103,7 @@ Page {
                 }
             }
 
-            ToolButton {
+            BarButton {
                 icon.name: "plus"
                 onClicked: {
                     var newRow = AppController.addContact()
@@ -99,7 +127,12 @@ Page {
 
     ListView {
         id: listView
+        topMargin: searchBar.y + searchBar.height + 6   // first row clear of the title bar and search capsule
+        // The lists exist before the title bar is measured; start them at the top
+        // once the margin settles rather than with the first row underneath it.
+        onTopMarginChanged: contentY = -topMargin
         anchors.fill: parent
+        bottomMargin: listBottomInset
         model: AppController.contactsModel
         clip: true
         reuseItems: true
@@ -110,12 +143,18 @@ Page {
             required property var model
             width: listView.width
 
-            // Long press → Quick Filter. The delegate's own pressAndHold, not a
+            // Long press → contact card actions, plus Quick Filter when the row
+            // has a company. The delegate's own pressAndHold, not a
             // TapHandler: only the button's hold timer (armed solely by
             // connecting to this signal) suppresses the clicked() that would
             // otherwise navigate to this row when you let go — see
             // AllItemsPage.qml.
-            onPressAndHold: qfDialog.openWith(AppController.contactsModel, root._quickFiltersForRow(delegateRoot.model))
+            onPressAndHold: {
+                cardDialog._quickFilters = root._quickFiltersForRow(delegateRoot.model)
+                cardDialog.openFor((delegateRoot.model.id || "").toString(),
+                                   (delegateRoot.model.name || "").toString(),
+                                   cardDialog._quickFilters.length > 0)
+            }
 
             contentItem: RowLayout {
                 spacing: 12
@@ -129,7 +168,7 @@ Page {
                     Label {
                         anchors.centerIn: parent
                         text: (delegateRoot.model.name || "?").charAt(0).toUpperCase()
-                        font.pixelSize: 16
+                        font.pixelSize: Theme.callout; font.letterSpacing: Theme.tracking(Theme.callout)
                         font.bold: true
                         color: "white"
                     }
@@ -152,7 +191,7 @@ Page {
                             if (email && role) return email + "  ·  " + role
                             return email || role
                         }
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: Theme.mutedText
                         elide: Text.ElideRight
                         Layout.fillWidth: true
@@ -163,21 +202,21 @@ Page {
                     spacing: 0
                     Layout.alignment: Qt.AlignVCenter
 
-                    ToolButton {
+                    BarButton {
                         visible: (delegateRoot.model.cell_phone || "").length > 0
                         icon.name: "iphone"
                         implicitWidth: 44; implicitHeight: 44
                         onClicked: Qt.openUrlExternally("tel:" + (delegateRoot.model.cell_phone || "").replace(/[^\d+]/g, ""))
                     }
 
-                    ToolButton {
+                    BarButton {
                         visible: (delegateRoot.model.office_phone || "").length > 0
                         icon.name: "phone.fill"
                         implicitWidth: 44; implicitHeight: 44
                         onClicked: Qt.openUrlExternally("tel:" + (delegateRoot.model.office_phone || "").replace(/[^\d+]/g, ""))
                     }
 
-                    ToolButton {
+                    BarButton {
                         visible: (delegateRoot.model.email || "").length > 0
                         icon.name: "envelope"
                         implicitWidth: 44; implicitHeight: 44
@@ -215,14 +254,14 @@ Page {
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
             text: qsTr("No Contacts")
-            font.pixelSize: 17
+            font.pixelSize: Theme.title2; font.letterSpacing: Theme.tracking(Theme.title2)
             font.bold: true
         }
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
             text: qsTr("Tap + to add a contact.")
             horizontalAlignment: Text.AlignHCenter
-            font.pixelSize: 14
+            font.pixelSize: Theme.subheadline; font.letterSpacing: Theme.tracking(Theme.subheadline)
             color: Theme.mutedText
         }
     }

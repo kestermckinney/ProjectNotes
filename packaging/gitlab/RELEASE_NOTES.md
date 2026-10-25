@@ -1,12 +1,22 @@
-# Project Notes 6.4.3
+# Project Notes 6.5.0
 
-This maintenance release is part of testing the application auto-update features and fixes the Windows in-app update path.
+Plugins are now written in JavaScript and run inside Project Notes. Python is no longer needed or bundled.
 
-### Fixes
-
-- The Windows updater now finds the desktop installer when GitLab gives its release link a descriptive label instead of a filename. It also skips the separate Remote Host installer.
-
-Linux builds are distributed through a signed Flatpak repository on GitLab Pages. Windows and macOS installers are distributed as release assets.
+- Rewrites the bundled plugins (My Shortcuts, Archive Mail, Office Tools, Team Member Quick Add) and the IFS Cloud plugin in JavaScript. Their settings carry over from the Python versions on first start.
+- Adds plugin installation from `.pnplugin` packages, with a review of what each plugin can do before it runs.
+- Adds plugin settings backup under **Settings > Plugins**. Export settings to a file and import them on another computer. Files from the old Settings Migrator import too.
+- Moves your own plugins to the application data folder, so upgrades leave them alone.
+- Renders report PDFs without Qt WebEngine, which makes the download much smaller.
+- Adds native macOS Contacts support and renames People and Clients to Contacts and Companies throughout.
+- Reorganizes the Settings page and moves Appearance into Preferences.
+- Stores project folders in their own synced table. A project is now in one folder at a time, and existing folders move over on the first start; a project that was in several folders keeps the first one.
+- Click a folder's name in the sidebar to show only its projects. The arrow at the end of the header collapses the folder, and collapsed folders are now remembered per computer.
+- Renames folders from Settings or from a new right-click menu on folder headers, which also edits the icon and color.
+- Adds a Folder filter to the project list on desktop and mobile, and exposes `folder_id` on projects to plugins.
+- Each project now stores its primary project folder. File Finder sets it when it finds the project's folder, and the **⋮** menu on a folder location sets or clears it. Plugins and reports save into this folder, and a project can have none.
+- The macOS download runs on macOS 13 (Ventura) and later again, on both Apple silicon and Intel Macs.
+- On macOS, Project Notes now shares its app identity with the iPhone and iPad app, ready for the Mac App Store. After updating, macOS asks once more for access to Calendar, Contacts and Automation, and may ask whether Project Notes can use its saved cloud sync password. Choose **Always Allow**.
+- The Windows and macOS installers remove the embedded Python runtime, its packages, and the retired Python plugins left behind by earlier versions.
 
 ### Install on Linux
 
@@ -32,4 +42,4 @@ flatpak remote-modify --gpg-import=projectnotes.gpg --url=https://kestermckinney
 flatpak update com.projectnotespro.ProjectNotes
 ```
 
-Existing desktop builds that still check GitHub require a one-time manual installation of this version to switch their update checks to GitLab. Windows and macOS update downloads require their matching installers to be attached to the release.
+Desktop builds older than 6.4.0 still check GitHub for updates and need a one-time manual installation of this version to switch to GitLab. Windows and macOS update downloads require their matching installers to be attached to the release.

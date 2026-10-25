@@ -45,7 +45,7 @@ public:
     ArtifactStoreResult stageGeneratedContent(const QUuid &operationId, const QString &displayName,
                                               const QByteArray &content, const QString &mimeType);
     // Reserve a name in the exact operation-owned artifact directory for an
-    // asynchronous producer (such as QtWebEngine's PDF writer).  The file is
+    // asynchronous producer (such as a PDF writer).  The file is
     // not registered until registerGeneratedFile verifies and hashes it.
     QString reserveGeneratedPath(const QUuid &operationId, const QString &displayName,
                                  ServiceError *error = nullptr);

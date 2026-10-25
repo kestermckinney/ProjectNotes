@@ -22,7 +22,7 @@ All of the fields below sit above the tabs and are editable inline — changes s
 
 | **Column** | **Description** |
 | :--- | :--- |
-| Number | The project number is often a unique identifier used across multiple systems. In many cases Python scripts will use this number to find and relate project information. |
+| Number | The project number is often a unique identifier used across multiple systems. Plugins often use this number to find and relate project information in other systems. |
 | Project Name | The project name should remain consistent across multiple systems. It should be a concise description of the project. |
 | Company | The company the project work applies. |
 | Primary Contact | The primary contact at the company. |
@@ -106,6 +106,14 @@ Team members are set up under the **Team** tab of the Project Page. Team members
 2. Choose **Go To Contact** from the menu.
 3. The application will automatically switch to the Contacts page and open that contact's full record.
 
+**To add team members from vCards:**
+
+Drop one or more vCards on the **Team** tab: a `.vcf` file, or a contact dragged from Outlook or Apple Contacts. Each person is matched to an existing contact by name, or added as a new contact (with their company matched or created), and then put on the team. Someone already on the team is skipped.
+
+**To export a team member as a vCard:**
+
+Drag the team member's name out of Project Notes. Drop it on a folder or the desktop to save `<name>.vcf`, or on a mail message or contacts app to hand over the card. Right-click the row for **Email Contact…** and **Export Contact…**. See [Contacts List Page](<ContactsListPage.md>) for what the card contains.
+
 
 
 ## Reports and Meetings
@@ -124,14 +132,14 @@ Links to project documents and web locations are set up under the **Locations** 
 
 | **Column** | **Description** |
 | :--- | :--- |
-| Type | The type of file location determines how Project Notes handles the Location field. Using the incorrect Type can cause the Location value to get corrupted. Custom Python scripts can use the Type field for specific operations. The types available are File Folder, Web Link, Microsoft Project, Word Document, Excel Document, PDF File, and Generic File (System Identified) |
-| Description | An open description field. In some cases a Python script can look for specific values. One example is "Project Folder". Python scripts use this location to automatically generate project files and folders. |
+| Type | The type of file location determines how Project Notes handles the Location field. Using the incorrect Type can cause the Location value to get corrupted. Plugins can use the Type field for specific operations. The types available are File Folder, Web Link, Microsoft Project, Word Document, Excel Document, PDF File, and Generic File (System Identified) |
+| Description | An open description field. File Finder names the folder it finds for the project "Project Folder". |
 | Location | The file path or web address referred to by the Type field. The field must be formatted correctly according to its type. For example, `C:\MyFolder` would not work properly for a Web Link, and `http://www.google.com` would not work correctly as a File Folder type. |
 
 
 **To add a location:**
 
-1. From the **Locations** tab, click **+ Add Location** to add a blank row, or click **Browse File** to pick a file directly and add it as a new location.
+1. From the **Locations** tab, click **+ Add Location** to add a blank row, click **Browse File** to pick a file and add it as a new location, or click **Browse Folder** to add a folder such as the project folder.
 2. Choose the **Type** from the drop down, if the preferred value doesn't auto fill.
 3. Type the **Description** and **Location** (path or web link).
 
@@ -156,6 +164,16 @@ You can drag one or more files or folders from Finder (macOS) or File Explorer (
 3. Click out of the field — the change saves automatically.
 
 
+
+**The primary project folder:**
+
+One **File Folder** location can be the project's primary project folder, marked with a star. Plugins, reports and Archive Mail save their files there. File Finder fills it in when it finds the project's folder, unless you have already made a choice. A project can also have no project folder at all.
+
+1. Click the **⋮** button on a **File Folder** location.
+2. Choose **Set as Primary Project Folder** to make it the project's folder, or **Clear Primary Project Folder** on the starred one to leave the project without a folder.
+3. Once you have set or cleared it, File Finder leaves your choice alone. Choose **Let File Finder Choose Project Folder** to hand the choice back; if the project has no folder, the next scan picks the one File Finder finds.
+
+Deleting the starred location leaves the project without a project folder.
 
 **To open a location:**
 

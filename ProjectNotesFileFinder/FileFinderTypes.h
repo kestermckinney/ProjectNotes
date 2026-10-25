@@ -53,6 +53,7 @@ struct FileFinderScanSummary
     int inserted = 0;
     int updated = 0;
     int unchanged = 0;
+    int primaryFolders = 0;   // projects whose primary project folder this scan set
     qint64 elapsedMs = 0;
     QString warning;
     QString error;

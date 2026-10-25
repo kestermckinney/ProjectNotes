@@ -14,6 +14,7 @@
 #include <QtTest/QtTest>
 
 #include "DesktopAppController.h"
+#include "PluginUiController.h"
 #include "FolderManager.h"
 #include "HelpController.h"
 #include "LogViewerController.h"
@@ -51,12 +52,29 @@ int main(int argc, char* argv[])
 
     DesktopAppController::setDeveloperProfile("qmltest");
     DesktopAppController::setUpdateChecksEnabled(false);   // no network in tests
+    // Sync credentials stay in memory, never in the user's keyring.
+    static QHash<QString, QString> syncSecrets;
+    DesktopAppController::setSyncSecretStore({
+        [](const QString& account, QString*) { return syncSecrets.value(account); },
+        [](const QString& account, const QString& secret, QString*) { syncSecrets.insert(account, secret); return true; },
+        [](const QString& account, QString*) { syncSecrets.remove(account); return true; }});
+    PluginUiController::setSecretWriter([](const QString&, const QString&, const QString&, QString*) { return true; });
 
     // Start every run from a clean database/settings.
     const QString dataDir = DesktopAppController::dataLocation();
     QDir(dataDir).removeRecursively();
     QDir().mkpath(dataDir);
     qInfo("Test data location: %s", qUtf8Printable(dataDir));
+    // JavaScript plugins installed by the UI smoke tests go here, never into
+    // the real user plugins folder.
+    const QString userPlugins = dataDir + QStringLiteral("/user-plugins");
+    QDir().mkpath(userPlugins);
+    qputenv("PN_PLUGIN_USER_DIR", userPlugins.toUtf8());
+    // The plugins shipped in plugins/ are tested in tst_pluginhost; keep
+    // their menus and Settings tabs out of the UI tests.
+    const QString bundledPlugins = dataDir + QStringLiteral("/bundled-plugins");
+    QDir().mkpath(bundledPlugins);
+    qputenv("PN_PLUGIN_BUNDLED_DIR", bundledPlugins.toUtf8());
 
     QQuickStyle::setStyle("Basic");
 
@@ -71,6 +89,8 @@ int main(int argc, char* argv[])
         "ProjectNotesDesktop", 1, 0, "HelpController", &HelpController::create);
     qmlRegisterSingletonType<TextFormatter>(
         "ProjectNotesDesktop", 1, 0, "TextFormatter", &TextFormatter::create);
+    qmlRegisterSingletonType<PluginUiController>(
+        "ProjectNotesDesktop", 1, 0, "PluginUiController", &PluginUiController::create);
     qmlRegisterType<SpellCheck>("ProjectNotesDesktop", 1, 0, "SpellCheck");
 
     int failed = 0;

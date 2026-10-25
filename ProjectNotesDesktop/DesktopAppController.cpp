@@ -7,8 +7,10 @@
 
 #include "databaseobjects.h"
 #include "vcardparser.h"
+#include "personvcard.h"
 #include "sortfilterproxymodel.h"
 #include "FolderManager.h"
+#include "SecurityScopedBookmarks.h"
 #include "projectsmodel.h"
 #include "projectnotesmodel.h"
 #include "meetingattendeesmodel.h"
@@ -41,7 +43,9 @@
 #include "ProjectNotesEmail/EmlWriter.h"
 #include "ProjectNotesEmail/backends/EmlFileEmailBackend.h"
 #include "ProjectNotesEmail/backends/ThunderbirdEmailBackend.h"
-#include "ProjectNotesEmailRendering/WebEngineReportRenderer.h"
+#include "ProjectNotesEmailRendering/TextDocumentReportRenderer.h"
+#include "ProjectNotesPlugins/PluginRegistry.h"
+#include "ProjectNotesPlugins/PublishedSchema.h"
 #include "ProjectNotesMeetings/MeetingService.h"
 #include "ProjectNotesMeetings/backends/GraphMeetingBackend.h"
 #include "ProjectNotesMeetings/backends/ICloudMeetingBackend.h"
@@ -64,10 +68,6 @@
 #include "Office365SettingsModel.h"
 
 #include <QDesktopServices>
-
-#include "pluginmanager.h"
-#include "plugin.h"
-#include "pythonworker.h"
 
 namespace {
 
@@ -114,6 +114,7 @@ PN::Comm::AudienceRule reviewPresetRule(PN::Comm::Workflow workflow,
 #include "rowencryption.h"
 
 #include "QLogger.h"
+#include "credentialstore.h"
 #include "version.h"
 #include "updatemanager.h"
 
@@ -139,6 +140,7 @@ PN::Comm::AudienceRule reviewPresetRule(PN::Comm::Workflow workflow,
 #include <QPointer>
 #include <QScreen>
 #include <QSet>
+#include <QSaveFile>
 #include <QSettings>
 #include <QSqlError>
 #include <QSqlQuery>
@@ -164,6 +166,26 @@ DesktopAppController* DesktopAppController::s_instance = nullptr;
 QString DesktopAppController::s_developerProfile;
 bool    DesktopAppController::s_testSupabase = false;
 bool    DesktopAppController::s_updateChecksEnabled = true;
+
+// One credential-store entry set per settings profile, so a developer profile
+// can never read or replace the real sync credentials.
+DesktopAppController::SyncSecretStore DesktopAppController::s_syncSecretStore {
+    [](const QString& account, QString* error) {
+        return CredentialStore::read(localSettingsOrganization() + QStringLiteral(" sync"), account, error);
+    },
+    [](const QString& account, const QString& secret, QString* error) {
+        return CredentialStore::write(localSettingsOrganization() + QStringLiteral(" sync"), account, secret, error);
+    },
+    [](const QString& account, QString* error) {
+        return CredentialStore::remove(localSettingsOrganization() + QStringLiteral(" sync"), account, error);
+    }};
+
+void DesktopAppController::setSyncSecretStore(SyncSecretStore store)
+{
+    s_syncSecretStore = std::move(store);
+    if (s_instance)
+        s_instance->m_syncSecrets.clear();
+}
 
 DesktopAppController* DesktopAppController::create(QQmlEngine* /*engine*/, QJSEngine* /*scriptEngine*/)
 {
@@ -235,7 +257,7 @@ DesktopAppController::DesktopAppController(QObject* parent)
 #endif
     m_graphMeetingBackend = std::make_unique<PN::Comm::GraphMeetingBackend>(m_office365Service);
     m_meetingService->registerBackend(PN::Comm::BackendId::Graph, m_graphMeetingBackend.get());
-    QSettings emailSettings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings emailSettings(localSettingsOrganization(), QStringLiteral("AppSettings"));
     registerThunderbirdBackends(PN::Comm::EmailSettingsStore(emailSettings).thunderbirdPath());
     m_communicationsController = std::make_unique<PN::Comm::CommunicationsController>(m_emailService.get());
     connect(m_communicationsController.get(), &PN::Comm::CommunicationsController::sourceRevalidationCancelled,
@@ -257,14 +279,27 @@ DesktopAppController::DesktopAppController(QObject* parent)
             emit infoOccurred(tr("iCloud Draft Created"),
                               tr("The email was saved in iCloud Mail Drafts. iCloud does not provide a link to the new draft, so open iCloud Mail to review and send it."));
     });
+    // Email Contact has no review dialog to show its outcome.
+    connect(m_communicationsController.get(), &PN::Comm::CommunicationsController::stateChanged, this, [this] {
+        if (!m_autoDraftContactCard) return;
+        const PN::Comm::PreparationStage stage = m_communicationsController->stage();
+        if (stage == PN::Comm::PreparationStage::Completed) {
+            m_autoDraftContactCard = false;
+        } else if (stage == PN::Comm::PreparationStage::Failed) {
+            m_autoDraftContactCard = false;
+            const QString diagnostic = m_communicationsController->diagnostic();
+            emit errorOccurred(tr("Email Contact"), diagnostic.isEmpty()
+                ? tr("The email draft could not be created.") : diagnostic);
+        }
+    });
     m_recipientSelectionModel = std::make_unique<PN::Comm::RecipientSelectionModel>();
     m_templateEditorModel = std::make_unique<PN::Comm::TemplateEditorModel>(
-        QStringLiteral("ProjectNotes") + s_developerProfile);
+        localSettingsOrganization());
     m_meetingTemplateEditorModel = std::make_unique<PN::Comm::MeetingTemplateEditorModel>();
     m_office365SettingsModel = std::make_unique<Office365SettingsModel>(
         m_fileFinder, m_office365Service, this);
     m_contactSyncSettingsModel = std::make_unique<PN::Contacts::ContactSyncSettingsModel>(
-        &global_DBObjects, m_office365Service, QStringLiteral("ProjectNotes") + s_developerProfile,
+        &global_DBObjects, m_office365Service, localSettingsOrganization(),
         dataLocation(), this);
     const auto iCloudCredentials = [this] {
         return m_contactSyncSettingsModel ? m_contactSyncSettingsModel->iCloudCredentials()
@@ -276,7 +311,7 @@ DesktopAppController::DesktopAppController(QObject* parent)
     m_meetingService->registerBackend(PN::Comm::BackendId::ICloud, m_iCloudMeetingBackend.get());
     m_office365SettingsModel->setContactSyncModel(m_contactSyncSettingsModel.get());
     m_contactSyncSettingsModel->setIntegrationBackend(preferredEmailBackend());
-    m_webEngineRenderer = new PN::Comm::WebEngineReportRenderer(this);
+    m_reportRenderer = new PN::Comm::TextDocumentReportRenderer(this);
     // A previous session that crashed never reached its quit-time cleanup.
     // Only one instance runs at a time (RunGuard), so nothing in the cache is
     // in use yet.
@@ -290,11 +325,14 @@ DesktopAppController::DesktopAppController(QObject* parent)
             [](const QString &message) { QLog_Debug(DEBUGLOG, message); });
 #endif
     connect(m_fileFinder, &FileFinderService::locationsChanged, this,
-            [](int, int) {
+            [this](int, int, int primaryFolders) {
         // The worker commits a complete scan in one transaction, so refresh
         // dependent views once rather than once for every discovered location.
         global_DBObjects.projectlocationsmodel()->refresh();
         global_DBObjects.searchresultsmodel()->markDirty();
+        if (primaryFolders > 0)
+            global_DBObjects.projectinformationmodel()->refresh();
+        bumpProjectFolderRev();
     });
 
     // Install a backing store for DatabaseObjects "local" parameters (per-machine
@@ -303,16 +341,16 @@ DesktopAppController::DesktopAppController(QObject* parent)
     // s_localSave/s_localLoad, so setShowInternalItems() was a no-op and
     // getShowInternalItems() always returned false — the Show Internal / closed /
     // resolved toggles never took effect. We use the same QSettings the Widgets
-    // app uses ("ProjectNotes"[+profile] / "AppSettings") so both frontends share
+    // app uses (localSettingsOrganization() / "AppSettings") so both frontends share
     // the same view-option state.
     DatabaseObjects::setLocalSettingsCallbacks(
         [](const QString& key, const QString& val) {
-            QSettings s(QStringLiteral("ProjectNotes") + s_developerProfile,
+            QSettings s(localSettingsOrganization(),
                         QStringLiteral("AppSettings"));
             s.setValue(key, val);
         },
         [](const QString& key) -> QString {
-            QSettings s(QStringLiteral("ProjectNotes") + s_developerProfile,
+            QSettings s(localSettingsOrganization(),
                         QStringLiteral("AppSettings"));
             return s.value(key).toString();
         });
@@ -341,10 +379,7 @@ DesktopAppController::DesktopAppController(QObject* parent)
 
 QString DesktopAppController::dataLocation()
 {
-    QString base = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    if (!s_developerProfile.isEmpty())
-        base += "/" + s_developerProfile;
-    return base;
+    return PN::Identity::dataLocation(s_developerProfile);
 }
 
 DesktopAppController::~DesktopAppController()
@@ -380,12 +415,15 @@ void DesktopAppController::cleanupTransientCache()
     // report output are transient cache data.  A cleanup call is idempotent,
     // which also makes the destructor safe after the aboutToQuit handler has
     // already run.
-    if (m_webEngineRenderer && !m_pendingPdfRender.isNull())
-        m_webEngineRenderer->cancel(m_pendingPdfRender);
+    if (m_reportRenderer && !m_pendingPdfRender.isNull())
+        m_reportRenderer->cancel(m_pendingPdfRender);
     const QStringList failed =
         PN::Comm::TransientCacheCleaner(PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile)).clean();
     for (const QString &path : failed)
         QLog_Warning(CONSOLELOG, QStringLiteral("Could not remove temporary file %1").arg(path));
+    // Contact cards dragged out to other applications (contactVCardDragData).
+    QDir(QDir(PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile)).filePath(QStringLiteral("vcard-drag")))
+        .removeRecursively();
 }
 
 void DesktopAppController::registerThunderbirdBackends(const QString &command)
@@ -395,6 +433,10 @@ void DesktopAppController::registerThunderbirdBackends(const QString &command)
     m_meetingService->registerBackend(PN::Comm::BackendId::Thunderbird, nullptr);
     m_thunderbirdEmailBackend.reset();
     m_thunderbirdMeetingBackend.reset();
+#ifdef PN_APP_STORE
+    // Starting Thunderbird is not possible from the App Sandbox.
+    Q_UNUSED(command);
+#else
     if (command.trimmed().isEmpty())
         return;
     m_thunderbirdEmailBackend = std::make_unique<PN::Comm::ThunderbirdEmailBackend>(command.trimmed());
@@ -402,6 +444,7 @@ void DesktopAppController::registerThunderbirdBackends(const QString &command)
     m_thunderbirdMeetingBackend = std::make_unique<PN::Comm::ThunderbirdMeetingBackend>(
         PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile), command.trimmed());
     m_meetingService->registerBackend(PN::Comm::BackendId::Thunderbird, m_thunderbirdMeetingBackend.get());
+#endif
 }
 
 // ── Small proxy helpers ──────────────────────────────────────────────────────
@@ -470,7 +513,7 @@ bool DesktopAppController::openOrCreateDatabase()
     // dialog (errorOccurred → Main.qml). Suppress the models' native
     // QMessageBox popups so a single blocked edit doesn't stack two dialogs.
     global_DBObjects.setGuiDialogsEnabled(false);
-    QSettings localSettings(QStringLiteral("ProjectNotes") + s_developerProfile,
+    QSettings localSettings(localSettingsOrganization(),
                             QStringLiteral("AppSettings"));
     PN::LegacyWidgetSettings::cleanupLocal(localSettings);
 
@@ -490,6 +533,18 @@ bool DesktopAppController::openOrCreateDatabase()
         connect(projProxy, &QAbstractItemModel::dataChanged,
                 this, &DesktopAppController::invalidateFolderSnapshot);
     }
+
+    // Sync, plugins and edits that touch projects or their locations can move
+    // or clear a primary project folder.
+    connect(&global_DBObjects, &DatabaseObjects::displayChangesPending, this, [this](const QVariantList& changes) {
+        for (const QVariant& change : changes) {
+            const QString table = change.toMap().value(QStringLiteral("table")).toString();
+            if (table == QLatin1String("projects") || table == QLatin1String("project_locations")) {
+                bumpProjectFolderRev();
+                return;
+            }
+        }
+    });
 
     global_DBObjects.setGlobalSearches(false);
     global_DBObjects.projectinformationmodel()->refresh();
@@ -542,7 +597,7 @@ bool DesktopAppController::openOrCreateDatabase()
     invalidateFolderSnapshot();
 
     m_fileFinder->initialize(dbPath, &db_rwlock,
-                             QStringLiteral("ProjectNotes") + s_developerProfile);
+                             localSettingsOrganization());
 
     // Snapshot workers always get a fresh read-only connection. A newly opened
     // database receives a new generation so a later action cannot use a stale
@@ -561,9 +616,9 @@ bool DesktopAppController::openOrCreateDatabase()
     emit databaseReady();
     emit projectManagerChanged();   // picks up any PM configured in a prior session
 
-    // Boot the embedded-Python plugin engine now that the database is open (some
-    // plugins query it as they register their menus).
-    ensurePluginManager();
+    // Start the plugins now that the database is open (some query it as they
+    // register their menus).
+    ensureJsPlugins();
 
     // Auto-start cloud sync if the user has it enabled (same as the Widgets app).
     // Deferred so the UI is up first; the heavy bootstrap runs on the sync thread.
@@ -598,7 +653,7 @@ QObject* DesktopAppController::contactSyncSettingsModel() const
 
 QString DesktopAppController::preferredEmailBackend() const
 {
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
     return PN::Comm::toStableString(PN::Comm::EmailSettingsStore(settings).preferredBackend());
 }
 
@@ -606,7 +661,7 @@ void DesktopAppController::setPreferredEmailBackend(const QString &backend)
 {
     const auto parsed = PN::Comm::backendIdFromStableString(backend);
     if (!parsed || !PN::Comm::isBackendAvailableOnThisPlatform(*parsed)) return;
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
     PN::Comm::EmailSettingsStore(settings).setPreferredBackend(*parsed);
     m_contactSyncSettingsModel->setIntegrationBackend(PN::Comm::toStableString(*parsed));
     emit emailSettingsChanged();
@@ -614,13 +669,13 @@ void DesktopAppController::setPreferredEmailBackend(const QString &backend)
 
 QString DesktopAppController::thunderbirdExecutable() const
 {
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
     return PN::Comm::EmailSettingsStore(settings).thunderbirdPath();
 }
 
 void DesktopAppController::setThunderbirdExecutable(const QString &path)
 {
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
     PN::Comm::EmailSettingsStore(settings).setThunderbirdPath(path.trimmed());
     // Recreate the adapters so subsequent reviews use the newly saved command.
     registerThunderbirdBackends(path);
@@ -629,13 +684,13 @@ void DesktopAppController::setThunderbirdExecutable(const QString &path)
 
 QString DesktopAppController::emailSenderAddress() const
 {
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
     return PN::Comm::EmailSettingsStore(settings).senderAddress();
 }
 
 void DesktopAppController::setEmailSenderAddress(const QString &address)
 {
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
     PN::Comm::EmailSettingsStore(settings).setSenderAddress(address.trimmed());
     emit emailSettingsChanged();
 }
@@ -727,7 +782,7 @@ void DesktopAppController::stageRequestedGeneratedAttachmentAsync(
         return;
     }
     if (!m_pendingPdfRender.isNull())
-        m_webEngineRenderer->cancel(m_pendingPdfRender);
+        m_reportRenderer->cancel(m_pendingPdfRender);
     m_pendingPdfRender = preparation.operationId;
     QString stem = preparation.document.fileStem.trimmed();
     if (stem.isEmpty()) stem = QStringLiteral("ProjectNotesReport");
@@ -751,7 +806,7 @@ void DesktopAppController::stageRequestedGeneratedAttachmentAsync(
     request.pageLayout = preparation.document.pdfLayout;
     request.outputPdfPath = path;
     QPointer<DesktopAppController> self(this);
-    m_webEngineRenderer->render(std::move(request), [self, operationId = preparation.operationId,
+    m_reportRenderer->render(std::move(request), [self, operationId = preparation.operationId,
                                                       preparation = std::move(preparation), displayName,
                                                       validation = std::move(validation),
                                                       completion = std::move(completion)](PN::Comm::RenderResult result) mutable {
@@ -798,6 +853,16 @@ bool DesktopAppController::prepareContactEmailReview(const QString &contactId)
     return prepareProjectEmail({}, contactId, {}, false);
 }
 
+bool DesktopAppController::emailContactCard(const QString &contactId)
+{
+    if (contactId.trimmed().isEmpty()) return false;
+    if (!prepareProjectEmail({}, contactId, {}, false, true)) {
+        emit errorOccurred(tr("Email Contact"), tr("Another email is still being prepared. Try again in a moment."));
+        return false;
+    }
+    return true;
+}
+
 bool DesktopAppController::prepareLocationEmailReview(const QString &projectId, const QString &locationId, bool attachment)
 {
     if (projectId.trimmed().isEmpty() || locationId.trimmed().isEmpty()) return false;
@@ -809,21 +874,23 @@ void DesktopAppController::cancelProjectEmailReview()
     const bool pending = !m_pendingProjectEmailReview.isNull();
     const QUuid operationId = m_pendingProjectEmailReview;
     m_pendingProjectEmailReview = {};
+    m_autoDraftContactCard = false;
     if (pending && m_communicationRepository) m_communicationRepository->cancel(operationId);
     if (m_locationAttachmentDownloader) m_locationAttachmentDownloader->cancel();
 }
 
 bool DesktopAppController::prepareProjectEmail(const QString &projectId, const QString &contactId,
-                                             const QString &locationId, bool attachment)
+                                             const QString &locationId, bool attachment, bool contactCard)
 {
     if (!m_databaseOpen || !m_communicationRepository
         || !m_communicationsController->beginReviewPreparation()) return false;
     cancelProjectEmailReview();
+    m_autoDraftContactCard = contactCard;
     // Invalidate callbacks belonging to another review sharing this controller.
     if (!m_pendingPdfRender.isNull()) {
         const QUuid operationId = m_pendingPdfRender;
         m_pendingPdfRender = {};
-        m_webEngineRenderer->cancel(operationId);
+        m_reportRenderer->cancel(operationId);
     }
     m_pendingMeetingNotesReview = {};
     m_pendingMeetingNotesReportReview = {};
@@ -847,7 +914,7 @@ bool DesktopAppController::prepareProjectEmail(const QString &projectId, const Q
     request.capturedAt = QDateTime::currentDateTimeUtc();
     m_pendingProjectEmailReview = request.operationId;
     QPointer<DesktopAppController> self(this);
-    m_communicationRepository->loadSnapshot(request, [self, request, attachment](PN::Comm::SnapshotResult result) {
+    m_communicationRepository->loadSnapshot(request, [self, request, attachment, contactCard](PN::Comm::SnapshotResult result) {
         if (!self || self->m_pendingProjectEmailReview != result.operationId) return;
         const auto fail = [self](QString code, QString message) {
             self->m_pendingProjectEmailReview = {};
@@ -860,19 +927,28 @@ bool DesktopAppController::prepareProjectEmail(const QString &projectId, const Q
             ? std::optional<PN::Comm::CommunicationTemplate>(PN::Comm::CommunicationTemplate{})
             : self->resolveWorkflowTemplate(request.source.workflow);
         if (!contentTemplate) { fail(QStringLiteral("template-required"), self->tr("Configure this email type in Settings.")); return; }
-        QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+        QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
         PN::Comm::EmailSettingsStore emailSettings(settings);
         auto review = PN::Comm::ProjectEmailPreparationFactory::create(result.snapshot, request.source,
-            emailSettings.preferredBackend(), *contentTemplate, attachment);
+            emailSettings.preferredBackend(), *contentTemplate, attachment, contactCard);
         if (!review.validation.ok()) {
             self->m_pendingProjectEmailReview = {};
             self->m_communicationsController->setReviewValidation(review.validation);
             return;
         }
         review.preparation.senderAddress = emailSettings.senderAddress();
+        // Read the card on this thread, like every other people lookup. It is
+        // staged below, once the operation's artifact store exists.
+        QString cardName;
+        const QByteArray card = contactCard
+            ? personVCard(global_DBObjects.getDb(), request.source.contactId, &cardName) : QByteArray();
+        if (contactCard && card.isEmpty()) {
+            fail(QStringLiteral("contact-not-found"), self->tr("The selected contact is no longer available."));
+            return;
+        }
         const QUrl attachmentUrl = review.attachmentUrl;
         self->stageRequestedGeneratedAttachmentAsync(review.preparation,
-            [self, request, review, snapshot = result.snapshot, attachmentUrl]
+            [self, request, review, snapshot = result.snapshot, attachmentUrl, card, cardName]
             (std::optional<PN::Comm::EmailPreparation> staged, PN::Comm::ValidationResult validation) mutable {
                 if (!self || self->m_pendingProjectEmailReview != request.operationId) return;
                 if (!staged) {
@@ -901,6 +977,10 @@ bool DesktopAppController::prepareProjectEmail(const QString &projectId, const Q
                     // never replace it automatically with the project default.
                     if (request.source.contactId.isEmpty())
                         self->applyDefaultReviewAudiencePreset();
+                    if (self->m_autoDraftContactCard && !self->handoffPreparedReview()) {
+                        self->m_autoDraftContactCard = false;
+                        emit self->errorOccurred(self->tr("Email Contact"), self->tr("The email draft could not be created."));
+                    }
                 };
                 const QString cache = PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile);
                 if (attachmentUrl.isLocalFile()) {
@@ -909,6 +989,9 @@ bool DesktopAppController::prepareProjectEmail(const QString &projectId, const Q
                     if (!self->m_locationAttachmentDownloader)
                         self->m_locationAttachmentDownloader = std::make_unique<PN::Comm::LocationAttachmentDownloader>();
                     self->m_locationAttachmentDownloader->download(attachmentUrl, cache, staged->operationId, std::move(finish));
+                } else if (!card.isEmpty()) {
+                    finish(PN::Comm::ArtifactStore(cache).stageGeneratedContent(staged->operationId,
+                        personVCardFileName(cardName), card, QStringLiteral("text/vcard")));
                 } else finish({});
             });
     });
@@ -952,7 +1035,7 @@ bool DesktopAppController::prepareMeetingNotesReview(const QString& projectId, c
         // Persisted backend selection belongs in the immutable preparation so a
         // later, capability-checked handoff cannot silently switch clients.
         // This review path still registers no backend and therefore cannot send.
-        QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+        QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
         const PN::Comm::BackendId backend = PN::Comm::EmailSettingsStore(settings).preferredBackend();
         // Resolve the configured template here rather than asking at delivery
         // time so its subject and body are always applied to the prepared note.
@@ -1039,7 +1122,7 @@ bool DesktopAppController::prepareMeetingNotesReportReviewWithOptions(const QStr
             return;
         }
 
-        QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+        QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
         const PN::Comm::BackendId backend = PN::Comm::EmailSettingsStore(settings).preferredBackend();
         PN::Comm::ValidationResult validation;
         const auto contentTemplate =
@@ -1060,8 +1143,9 @@ bool DesktopAppController::prepareMeetingNotesReportReviewWithOptions(const QStr
         PN::Comm::EmailPreparation prepared = *preparation;
         prepared.senderAddress = PN::Comm::EmailSettingsStore(settings).senderAddress();
         prepared.displayPdf = displayPdf;
+        // The report dialog saves a file by preparing in that format's
+        // attachment mode, so no PDF is rendered unless the mode needs one.
         prepared.createHtmlExport = true;
-        prepared.createPdfExport = true;
         const PN::Comm::RecipientResolution recipients = self->m_recipientSelectionModel->resolve();
         prepared.recipients = recipients.recipients;
         prepared.addressLater = recipients.addressLaterExplicitlyChosen;
@@ -1185,7 +1269,7 @@ bool DesktopAppController::prepareProjectReportReview(const QString &projectId, 
         options.displayPdf = displayPdf;
         if (workflow == PN::Comm::Workflow::TrackerItemsReport && trackerFilters)
             options.tracker = *trackerFilters;
-        QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+        QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
         const auto backend = PN::Comm::EmailSettingsStore(settings).preferredBackend();
         const auto contentTemplate = self->resolveWorkflowTemplate(workflow);
         const PN::Comm::CommunicationTemplate *templatePointer =
@@ -1203,8 +1287,9 @@ bool DesktopAppController::prepareProjectReportReview(const QString &projectId, 
         }
         PN::Comm::EmailPreparation prepared = review->preparation;
         prepared.senderAddress = PN::Comm::EmailSettingsStore(settings).senderAddress();
+        // See prepareMeetingNotesReportReviewWithOptions(): no PDF unless the
+        // chosen mode needs one.
         prepared.createHtmlExport = true;
-        prepared.createPdfExport = true;
         self->stageRequestedGeneratedAttachmentAsync(std::move(prepared),
             [self, audience = review->audience, snapshot = result.snapshot, source = request.source, options,
              reviewValidation = review->validation]
@@ -1454,6 +1539,9 @@ bool DesktopAppController::handoffPreparedReview()
         if (request.source.workflow == PN::Comm::Workflow::ContactEmail) {
             recipients = {};
             recipients.recipients = (*review)->recipients;
+            // A shared contact card has no recipients until the user adds them
+            // in the email client.
+            recipients.addressLaterExplicitlyChosen = (*review)->addressLater;
         }
         if (!recipients.validation.ok()) {
             self->m_communicationsController->failSourceRevalidation(recipients.validation);
@@ -1547,7 +1635,7 @@ bool DesktopAppController::prepareMeetingReview(const QString &projectId, const 
             return;
         }
         // Meetings follow the Email, Contacts, and Calendar integration preference.
-        QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+        QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
         const PN::Comm::BackendId backend = PN::Comm::EmailSettingsStore(settings).preferredBackend();
         PN::Comm::ValidationResult validation;
         auto prepared = PN::Comm::MeetingPreparationFactory::create(
@@ -1990,6 +2078,50 @@ bool DesktopAppController::importXmlFile(const QString& fileUrlOrPath)
     return true;
 }
 
+QString DesktopAppController::contactVCardFileName(const QString& contactId) const
+{
+    QString name;
+    if (!m_databaseOpen || personVCard(global_DBObjects.getDb(), contactId, &name).isEmpty())
+        return {};
+    return personVCardFileName(name);
+}
+
+QVariantMap DesktopAppController::contactVCardDragData(const QString& contactId)
+{
+    QString name;
+    const QByteArray card = m_databaseOpen ? personVCard(global_DBObjects.getDb(), contactId, &name) : QByteArray();
+    if (card.isEmpty())
+        return {};
+    // A folder per drag keeps the file named after the contact while two
+    // contacts with the same name, dragged one after the other, never share a
+    // path that a slow drop target is still reading.
+    const QString folder = QDir(PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile))
+        .filePath(QStringLiteral("vcard-drag/") + QUuid::createUuid().toString(QUuid::WithoutBraces));
+    QSaveFile file(QDir(folder).filePath(personVCardFileName(name)));
+    if (!QDir().mkpath(folder) || !file.open(QIODevice::WriteOnly) || file.write(card) != card.size()
+        || !file.commit())
+        return {};
+    const QString text = QString::fromUtf8(card);
+    return {{QStringLiteral("text/uri-list"), QUrl::fromLocalFile(file.fileName()).toString()},
+            {QStringLiteral("text/vcard"), text},
+            {QStringLiteral("text/x-vcard"), text}};
+}
+
+bool DesktopAppController::exportContactVCard(const QString& contactId, const QString& fileUrlOrPath)
+{
+    const QByteArray card = m_databaseOpen ? personVCard(global_DBObjects.getDb(), contactId) : QByteArray();
+    if (card.isEmpty()) {
+        emit errorOccurred(tr("Export Failed"), tr("The contact is no longer available."));
+        return false;
+    }
+    QSaveFile outfile(localPath(fileUrlOrPath));
+    if (!outfile.open(QIODevice::WriteOnly) || outfile.write(card) != card.size() || !outfile.commit()) {
+        emit errorOccurred(tr("Export Failed"), outfile.errorString());
+        return false;
+    }
+    return true;
+}
+
 bool DesktopAppController::exportRecordXml(const QString& tableName, const QString& recordId,
                                            const QString& fileUrlOrPath)
 {
@@ -2023,7 +2155,7 @@ bool DesktopAppController::exportRecordXml(const QString& tableName, const QStri
 
 bool DesktopAppController::viewReportAfterSave() const
 {
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
     settings.setFallbacksEnabled(false);
     return settings.value(QStringLiteral("Reports/ViewAfterSave"), true).toBool();
 }
@@ -2032,7 +2164,7 @@ void DesktopAppController::setViewReportAfterSave(bool enabled)
 {
     if (viewReportAfterSave() == enabled)
         return;
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
     settings.setFallbacksEnabled(false);
     settings.setValue(QStringLiteral("Reports/ViewAfterSave"), enabled);
     emit viewReportAfterSaveChanged();
@@ -2418,12 +2550,14 @@ void DesktopAppController::rebuildFolderSnapshot()
         m_folderMgrConnected = true;
     }
 
-    // One pass over the proxy's currently-visible rows (which already reflect
-    // the active quick-search and column filters). Each row lands in the ""
-    // (All Projects) list plus every folder it's a member of.
-    const int rows = proxy->rowCount();
+    // One pass over the visible rows (which already reflect the active
+    // quick-search and column filters). Each row lands in the "" (All
+    // Projects) list plus its folder, or Not Categorized.
+    QAbstractItemModel* rowsModel = syncSidebarMirror();
+    const int folderCol = global_DBObjects.projectinformationmodel()->getColumnNumber(QStringLiteral("folder_id"));
+    const int rows = rowsModel->rowCount();
     for (int r = 0; r < rows; ++r) {
-        const QString pid = proxy->data(proxy->index(r, 0)).toString();
+        const QString pid = rowsModel->data(rowsModel->index(r, 0)).toString();
         // A row the New Project button only staged has no id and isn't a project
         // yet — keep it out of the sidebar (and its counts) until it's written.
         if (pid.isEmpty())
@@ -2431,19 +2565,134 @@ void DesktopAppController::rebuildFolderSnapshot()
 
         QVariantMap row;
         row.insert(QStringLiteral("id"),             pid);
-        row.insert(QStringLiteral("project_number"), proxy->data(proxy->index(r, 1)).toString());
-        row.insert(QStringLiteral("project_name"),   proxy->data(proxy->index(r, 2)).toString());
-        row.insert(QStringLiteral("project_status"), proxy->data(proxy->index(r, 14)).toString());
+        row.insert(QStringLiteral("project_number"), rowsModel->data(rowsModel->index(r, 1)).toString());
+        row.insert(QStringLiteral("project_name"),   rowsModel->data(rowsModel->index(r, 2)).toString());
+        row.insert(QStringLiteral("project_status"), rowsModel->data(rowsModel->index(r, 14)).toString());
 
         m_folderSnapshot[QString()].append(row);
         if (fm) {
-            const QStringList memberOf = fm->foldersForProject(pid);
-            for (const QString& fid : memberOf)
-                m_folderSnapshot[fid].append(row);
-            if (memberOf.isEmpty())
-                m_folderSnapshot[kUncategorizedFolderKey].append(row);
+            const QString folderId = rowsModel->data(rowsModel->index(r, folderCol)).toString();
+            m_folderSnapshot[fm->isFolder(folderId) ? folderId : kUncategorizedFolderKey].append(row);
         }
     }
+}
+
+QAbstractItemModel* DesktopAppController::syncSidebarMirror()
+{
+    SortFilterProxyModel* proxy = global_DBObjects.projectinformationmodelproxy();
+    ProjectsModel* src = global_DBObjects.projectinformationmodel();
+    const int folderCol = src->getColumnNumber(QStringLiteral("folder_id"));
+    if (!src->getUserFilterState() || !src->hasUserFilters(folderCol)) {
+        dropSidebarMirror();
+        return proxy;
+    }
+
+    if (!m_sidebarMirrorModel || !m_sidebarMirrorProxy) {
+        dropSidebarMirror();
+        m_sidebarMirrorModel = new ProjectsModel(&global_DBObjects);
+        m_sidebarMirrorModel->setNoExport();
+        m_sidebarMirrorProxy = new SortFilterProxyModel(this);
+        m_sidebarMirrorProxy->setSourceModel(m_sidebarMirrorModel);
+        // Edits to projects outside the shown folder only reach the mirror.
+        auto invalidate = [this]() { if (!m_syncingSidebarMirror) invalidateFolderSnapshot(); };
+        connect(m_sidebarMirrorProxy, &QAbstractItemModel::modelReset, this, invalidate);
+        connect(m_sidebarMirrorProxy, &QAbstractItemModel::rowsInserted, this, invalidate);
+        connect(m_sidebarMirrorProxy, &QAbstractItemModel::rowsRemoved, this, invalidate);
+        connect(m_sidebarMirrorProxy, &QAbstractItemModel::layoutChanged, this, invalidate);
+        connect(m_sidebarMirrorProxy, &QAbstractItemModel::dataChanged, this, invalidate);
+        // Anything that reloads the list (a refresh, an import) reloads the mirror too.
+        connect(src, &QAbstractItemModel::modelReset, m_sidebarMirrorModel,
+                [this]() { if (!m_syncingSidebarMirror) m_sidebarMirrorKey.clear(); });
+        m_sidebarMirrorKey.clear();
+    }
+
+    m_syncingSidebarMirror = true;
+
+    QVariantList specs = PN::ModelViewState::activeColumnFilters(proxy);
+    for (int i = specs.size() - 1; i >= 0; --i)
+        if (specs.at(i).toMap().value(QStringLiteral("field")).toString() == QLatin1String("folder_id"))
+            specs.removeAt(i);
+    const int statusCol = src->getColumnNumber(QStringLiteral("project_status"));
+    const QString statusFilter = src->hasFilter(statusCol) ? src->getFilter(statusCol).toString() : QString();
+    const QString key = QString::fromUtf8(QJsonDocument(QJsonArray::fromVariantList(specs)).toJson(QJsonDocument::Compact))
+                        + QChar(0x1f) + statusFilter;
+    if (key != m_sidebarMirrorKey) {
+        if (statusFilter.isEmpty())
+            m_sidebarMirrorModel->clearFilter(statusCol);
+        else
+            m_sidebarMirrorModel->setFilter(statusCol, statusFilter);
+        PN::ModelViewState::applyFilterSpecsToModel(m_sidebarMirrorModel, specs);
+        if (specs.isEmpty())
+            m_sidebarMirrorModel->deactivateUserFilter();
+        else
+            m_sidebarMirrorModel->activateUserFilter();
+        m_sidebarMirrorModel->refresh();
+        m_sidebarMirrorKey = key;
+    }
+    m_sidebarMirrorProxy->setQuickSearchNow(proxy->quickSearch());
+    if (m_sidebarMirrorProxy->appliedSortColumn() != proxy->appliedSortColumn()
+        || m_sidebarMirrorProxy->appliedSortOrder() != proxy->appliedSortOrder())
+        m_sidebarMirrorProxy->sort(proxy->appliedSortColumn(), proxy->appliedSortOrder());
+
+    m_syncingSidebarMirror = false;
+    return m_sidebarMirrorProxy;
+}
+
+void DesktopAppController::dropSidebarMirror()
+{
+    delete m_sidebarMirrorProxy.data();
+    delete m_sidebarMirrorModel.data();
+    m_sidebarMirrorKey.clear();
+}
+
+void DesktopAppController::filterProjectsByFolder(const QString& folderId)
+{
+    QAbstractItemModel* model = projectsListModel();
+    if (!sourceModelOf(model)) return;
+    // A tap on the folder already shown alone clears the filter (toggle), the
+    // same convention as applyQuickFilter.
+    if (projectFolderFilter() == QStringList{folderId}) {
+        clearProjectFolderFilter();
+        return;
+    }
+    QVariantList specs = PN::ModelViewState::activeColumnFilters(model);
+    for (int i = specs.size() - 1; i >= 0; --i)
+        if (specs.at(i).toMap().value(QStringLiteral("field")).toString() == QLatin1String("folder_id"))
+            specs.removeAt(i);
+    specs.append(QVariantMap{{QStringLiteral("field"), QStringLiteral("folder_id")},
+                             {QStringLiteral("values"), QVariantList{folderId}},
+                             {QStringLiteral("search"), QString()},
+                             {QStringLiteral("rangeStart"), QString()},
+                             {QStringLiteral("rangeEnd"), QString()}});
+    applyColumnFilters(model, specs);
+}
+
+void DesktopAppController::clearProjectFolderFilter()
+{
+    QAbstractItemModel* model = projectsListModel();
+    if (!sourceModelOf(model) || projectFolderFilter().isEmpty()) return;
+    QVariantList specs = PN::ModelViewState::activeColumnFilters(model);
+    for (int i = specs.size() - 1; i >= 0; --i)
+        if (specs.at(i).toMap().value(QStringLiteral("field")).toString() == QLatin1String("folder_id"))
+            specs.removeAt(i);
+    if (specs.isEmpty())
+        clearColumnFilters(model);
+    else
+        applyColumnFilters(model, specs);
+}
+
+QStringList DesktopAppController::projectFolderFilter() const
+{
+    QStringList out;
+    const QVariantList specs = PN::ModelViewState::activeColumnFilters(projectsListModel());
+    for (const QVariant& spec : specs) {
+        const QVariantMap map = spec.toMap();
+        if (map.value(QStringLiteral("field")).toString() != QLatin1String("folder_id"))
+            continue;
+        for (const QVariant& value : map.value(QStringLiteral("values")).toList())
+            out.append(value.toString());
+    }
+    return out;
 }
 
 void DesktopAppController::invalidateFolderSnapshot()
@@ -2461,31 +2710,7 @@ void DesktopAppController::invalidateFolderSnapshot()
     });
 }
 
-// ── Python plugins ────────────────────────────────────────────────────────────
-
-void DesktopAppController::ensurePluginManager()
-{
-    if (m_pluginManager)
-        return;
-    // The constructor initialises the embedded interpreter and loads plugins
-    // from appDir/plugins (+ ~/Project Notes/plugins). It self-registers as
-    // PluginManager::instance() for the Python callbacks.
-    PluginManager::setDeveloperProfile(s_developerProfile);
-    m_pluginManager = new PluginManager(this);
-
-    // A plugin that imports data (Python set_data) runs on a worker thread with
-    // its own non-GUI DatabaseObjects, which queues the touched rows into
-    // global_DBObjects and then emits pluginRefreshRequest. Drain that queue on
-    // the GUI thread so the displayed lists pick up the added/updated/removed
-    // rows — the same wiring MainWindow::onRefreshRequested provides in the
-    // Widgets app. Without this, background plugin imports never reach the UI.
-    connect(m_pluginManager, &PluginManager::pluginRefreshRequest,
-            this, [] {
-                global_DBObjects.updateDisplayData();
-                if (FolderManager* fm = FolderManager::instance())
-                    fm->reload();
-            });
-}
+// ── Plugin menus ─────────────────────────────────────────────────────────────
 
 QVariantList DesktopAppController::pluginMenusForModel(QAbstractItemModel* model)
 {
@@ -2497,29 +2722,27 @@ QVariantList DesktopAppController::pluginMenusForTable(const QString& table)
 {
     QVariantList out;
     m_pluginMenuCache.clear();
-    if (!m_pluginManager || table.isEmpty())
+    if (table.isEmpty())
         return out;
-
-    // A menu appears on a table's right-click when its dataexport matches that
-    // table (empty dataexport = global menu, not a record menu) — same rule as
-    // the Widgets TableView::contextMenuEvent.
-    for (Plugin* p : m_pluginManager->plugins()) {
-        if (!p || !p->loaded())
-            continue;
-        for (const PluginMenu& m : p->pythonplugin().menus()) {
-            if (m.dataexport().compare(table, Qt::CaseInsensitive) != 0)
-                continue;
-
-            m_pluginMenuCache.append({ p, m.functionname(), m.tablefilter(), m.parameter() });
-
-            QVariantMap entry;
-            entry["title"]   = m.menutitle();
-            entry["submenu"] = m.submenu();
-            entry["index"]   = m_pluginMenuCache.size() - 1;
-            out.append(entry);
-        }
-    }
+    appendJsRecordMenus(table, &out);
     return out;
+}
+
+void DesktopAppController::appendJsRecordMenus(const QString& table, QVariantList* out)
+{
+    if (!m_jsPlugins)
+        return;
+    const QString entity = PN::Plugins::PublishedSchema::instance().publishedEntity(table);
+    for (const QVariant& m : m_jsPlugins->menusForEntity(entity)) {
+        const QVariantMap menu = m.toMap();
+        PluginMenuRef ref;
+        ref.jsPluginId = menu.value(QStringLiteral("pluginId")).toString();
+        ref.jsMenuId = menu.value(QStringLiteral("menuId")).toString();
+        m_pluginMenuCache.append(ref);
+        out->append(QVariantMap{{QStringLiteral("title"), menu.value(QStringLiteral("title"))},
+                                {QStringLiteral("submenu"), menu.value(QStringLiteral("submenu"))},
+                                {QStringLiteral("index"), m_pluginMenuCache.size() - 1}});
+    }
 }
 
 QString DesktopAppController::tableNameForModel(QAbstractItemModel* model)
@@ -2541,51 +2764,25 @@ void DesktopAppController::runPluginMenuForTable(const QString& table,
     if (index < 0 || index >= m_pluginMenuCache.size())
         return;
     const PluginMenuRef& ref = m_pluginMenuCache.at(index);
-    if (!ref.plugin || table.isEmpty())
-        return;
-
-    // Export just the selected record (col 0 = id), scoped by the menu's
-    // tablefilter, then hand the XML to the plugin — mirrors slotPluginMenu.
-    SqlQueryModel* exportModel = global_DBObjects.createExportObject(table);
-    if (!exportModel) {
-        emit errorOccurred(tr("Plugin"), tr("Nothing to export for this record type."));
-        return;
-    }
-    exportModel->setFilter(0, recordId);
-    exportModel->refresh();
-
-    QDomDocument* xdoc = global_DBObjects.createXMLExportDoc(exportModel, ref.tablefilter);
-    const QString xml = xdoc->toString();
-
-    ref.plugin->callXmlMethod(ref.functionname, xml, ref.parameter);
-
-    delete xdoc;
+    if (m_jsPlugins)
+        m_jsPlugins->runMenu(ref.jsPluginId, ref.jsMenuId,
+                             PN::Plugins::PublishedSchema::instance().publishedEntity(table), recordId);
 }
 
 QVariantList DesktopAppController::globalPluginMenus()
 {
     QVariantList out;
     m_globalPluginMenuCache.clear();
-    if (!m_pluginManager)
-        return out;
-
-    // A menu is "global" (Plugins > Settings / Utilities / etc. in the Widgets
-    // menu bar) when its dataexport is empty — same rule buildPluginMenu() uses
-    // to skip record menus, inverted.
-    for (Plugin* p : m_pluginManager->plugins()) {
-        if (!p || !p->loaded())
-            continue;
-        for (const PluginMenu& m : p->pythonplugin().menus()) {
-            if (!m.dataexport().isEmpty())
-                continue;
-
-            m_globalPluginMenuCache.append({ p, m.functionname(), QString(), m.parameter() });
-
-            QVariantMap entry;
-            entry["title"]   = m.menutitle();
-            entry["submenu"] = m.submenu();
-            entry["index"]   = m_globalPluginMenuCache.size() - 1;
-            out.append(entry);
+    if (m_jsPlugins) {
+        for (const QVariant& m : m_jsPlugins->globalMenus()) {
+            const QVariantMap menu = m.toMap();
+            PluginMenuRef ref;
+            ref.jsPluginId = menu.value(QStringLiteral("pluginId")).toString();
+            ref.jsMenuId = menu.value(QStringLiteral("menuId")).toString();
+            m_globalPluginMenuCache.append(ref);
+            out.append(QVariantMap{{QStringLiteral("title"), menu.value(QStringLiteral("title"))},
+                                   {QStringLiteral("submenu"), menu.value(QStringLiteral("submenu"))},
+                                   {QStringLiteral("index"), m_globalPluginMenuCache.size() - 1}});
         }
     }
     return out;
@@ -2596,10 +2793,8 @@ void DesktopAppController::runGlobalPluginMenu(int index)
     if (index < 0 || index >= m_globalPluginMenuCache.size())
         return;
     const PluginMenuRef& ref = m_globalPluginMenuCache.at(index);
-    if (!ref.plugin)
-        return;
-
-    ref.plugin->callMethod(ref.functionname, ref.parameter);
+    if (m_jsPlugins)
+        m_jsPlugins->runMenu(ref.jsPluginId, ref.jsMenuId, {}, {});
 }
 
 // ── Filters / refresh ────────────────────────────────────────────────────────
@@ -3911,9 +4106,17 @@ int DesktopAppController::addProjectLocation(const QString& projectId)
 bool DesktopAppController::deleteProjectLocation(int row)
 {
     global_DBObjects.setLastSaveError("");
+    const QString projectId = getProjectLocationData(row).value(QStringLiteral("project_id")).toString();
     if (deleteProxyRow(global_DBObjects.projectlocationsmodelproxy(),
-                       global_DBObjects.projectlocationsmodel(), row))
+                       global_DBObjects.projectlocationsmodel(), row)) {
+        // A trigger clears the project's primary project folder if this was it.
+        if (!projectId.isEmpty()) {
+            global_DBObjects.pushRowChange(QStringLiteral("projects"), projectId);
+            global_DBObjects.updateDisplayData();
+        }
+        bumpProjectFolderRev();
         return true;
+    }
     const QString err = global_DBObjects.lastSaveError();
     if (!err.isEmpty())
         emit errorOccurred(tr("Cannot Delete"), err);
@@ -3954,7 +4157,13 @@ bool DesktopAppController::setProjectLocationPath(int row, const QString& fileUr
         emit errorOccurred(tr("Could Not Save"), err);
         return false;
     }
+    rememberLocation(fileUrlOrPath);
     return true;
+}
+
+void DesktopAppController::rememberLocation(const QString& fileUrlOrPath)
+{
+    SecurityScopedBookmarks::remember(fileUrlOrPath);
 }
 
 bool DesktopAppController::addProjectLocationFromUrl(const QString& projectId,
@@ -4057,6 +4266,72 @@ void DesktopAppController::openProjectLocation(int row)
     }
 
     QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+}
+
+// ── Primary project folder ───────────────────────────────────────────────────
+
+QString DesktopAppController::primaryProjectLocationId(const QString& projectId) const
+{
+    QSqlQuery q(global_DBObjects.getDb());
+    q.prepare(QStringLiteral("SELECT l.id FROM projects p JOIN project_locations l ON l.id = p.primary_location_id "
+                             "WHERE p.id = ? AND l.deleted = 0 AND l.location_type = 'File Folder'"));
+    q.addBindValue(projectId);
+    return q.exec() && q.next() ? q.value(0).toString() : QString();
+}
+
+bool DesktopAppController::projectFolderChosenByUser(const QString& projectId) const
+{
+    QSqlQuery q(global_DBObjects.getDb());
+    q.prepare(QStringLiteral("SELECT COALESCE(primary_location_manual, 0) FROM projects WHERE id = ?"));
+    q.addBindValue(projectId);
+    return q.exec() && q.next() && q.value(0).toInt() != 0;
+}
+
+bool DesktopAppController::setPrimaryProjectLocation(const QString& projectId, const QString& locationId)
+{
+    if (projectId.isEmpty())
+        return false;
+    if (!locationId.isEmpty()) {
+        // Only one of this project's own, live folder locations can be primary.
+        QSqlQuery check(global_DBObjects.getDb());
+        check.prepare(QStringLiteral("SELECT 1 FROM project_locations WHERE id = ? AND project_id = ? "
+                                     "AND deleted = 0 AND location_type = 'File Folder'"));
+        check.addBindValue(locationId);
+        check.addBindValue(projectId);
+        if (!check.exec() || !check.next())
+            return false;
+    }
+    QSqlQuery q(global_DBObjects.getDb());
+    q.prepare(QStringLiteral("UPDATE projects SET primary_location_id = ?, primary_location_manual = 1 WHERE id = ?"));
+    q.addBindValue(locationId.isEmpty() ? QVariant() : QVariant(locationId));
+    q.addBindValue(projectId);
+    if (!q.exec())
+        return false;
+    global_DBObjects.pushRowChange(QStringLiteral("projects"), projectId);
+    global_DBObjects.updateDisplayData();
+    bumpProjectFolderRev();
+    return true;
+}
+
+bool DesktopAppController::letFileFinderChooseProjectFolder(const QString& projectId)
+{
+    QSqlQuery q(global_DBObjects.getDb());
+    q.prepare(QStringLiteral("UPDATE projects SET primary_location_manual = 0 WHERE id = ?"));
+    q.addBindValue(projectId);
+    if (!q.exec() || q.numRowsAffected() == 0)
+        return false;
+    global_DBObjects.pushRowChange(QStringLiteral("projects"), projectId);
+    global_DBObjects.updateDisplayData();
+    bumpProjectFolderRev();
+    if (m_fileFinder && m_fileFinder->enabled())
+        m_fileFinder->scanNow();
+    return true;
+}
+
+void DesktopAppController::bumpProjectFolderRev()
+{
+    ++m_projectFolderRev;
+    emit projectFolderRevChanged();
 }
 
 // ── Status report items ──────────────────────────────────────────────────────
@@ -4445,25 +4720,72 @@ void DesktopAppController::sendLogsToSupport()
 // ── Cloud sync ────────────────────────────────────────────────────────────────
 //
 // Reads the same QSettings the Widgets app writes (organization
-// "ProjectNotes"[+profile], application "AppSettings"), so both apps share one
+// localSettingsOrganization(), application "AppSettings"), so both apps share one
 // sync configuration. The engine runs on its own thread to keep the UI responsive.
 
 QString DesktopAppController::syncSetting(const QString& key) const
 {
-    QSettings s(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings s(localSettingsOrganization(), QStringLiteral("AppSettings"));
     return s.value(key).toString();
 }
 
 void DesktopAppController::setSyncSetting(const QString& key, const QVariant& value)
 {
-    QSettings s(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings s(localSettingsOrganization(), QStringLiteral("AppSettings"));
     s.setValue(key, value);
 }
 
 bool    DesktopAppController::syncEnabled() const { return syncSetting("Sync/Enabled") == "true"; }
 QString DesktopAppController::syncEmail() const { return syncSetting("Sync/Email"); }
-QString DesktopAppController::syncPassword() const { return syncSetting("Sync/Password"); }
-QString DesktopAppController::syncEncryptionPhrase() const { return syncSetting("Sync/EncryptionPhrase"); }
+QString DesktopAppController::syncPassword() const { return syncSecret(QStringLiteral("Password")); }
+QString DesktopAppController::syncEncryptionPhrase() const { return syncSecret(QStringLiteral("EncryptionPhrase")); }
+
+// Earlier versions kept the password and phrase in AppSettings in clear text
+// ("Sync/<account>"). The first read moves such a value into the credential
+// store, and deletes the plain copy only once the store holds it.
+QString DesktopAppController::syncSecret(const QString& account) const
+{
+    const auto cached = m_syncSecrets.constFind(account);
+    if (cached != m_syncSecrets.constEnd())
+        return *cached;
+
+    QString error;
+    QString value = s_syncSecretStore.read(account, &error);
+    const QString legacyKey = QStringLiteral("Sync/") + account;
+    const QString legacy = syncSetting(legacyKey);
+    if (!legacy.isEmpty() && error.isEmpty()) {
+        if (value.isEmpty() && !s_syncSecretStore.write(account, legacy, &error))
+            QLog_Warning(SYNCERRORLOG, QStringLiteral("Could not move the cloud sync %1 to the credential store: %2")
+                                           .arg(account, error));
+        else
+            QSettings(localSettingsOrganization(), QStringLiteral("AppSettings")).remove(legacyKey);
+    } else if (!error.isEmpty()) {
+        QLog_Warning(SYNCERRORLOG, QStringLiteral("Could not read the cloud sync %1 from the credential store: %2")
+                                       .arg(account, error));
+    }
+    if (value.isEmpty())
+        value = legacy;
+    // A locked or missing keyring isn't a definitive answer: ask again next time.
+    if (error.isEmpty() || !value.isEmpty())
+        m_syncSecrets.insert(account, value);
+    return value;
+}
+
+void DesktopAppController::setSyncSecret(const QString& account, const QString& value)
+{
+    QString error;
+    const bool stored = value.isEmpty() ? s_syncSecretStore.remove(account, &error)
+                                        : s_syncSecretStore.write(account, value, &error);
+    // Kept for this session even when the store refused it, so sync still runs.
+    m_syncSecrets.insert(account, value);
+    QSettings(localSettingsOrganization(), QStringLiteral("AppSettings")).remove(QStringLiteral("Sync/") + account);
+    if (!stored)
+        emit errorOccurred(tr("Cloud Sync"),
+                           tr("Project Notes could not save the cloud sync %1 in the system credential store, "
+                              "so you will need to enter it again the next time Project Notes starts.\n\n%2")
+                               .arg(account == QLatin1String("Password") ? tr("password") : tr("encryption phrase"),
+                                    error));
+}
 
 // Each setter is a no-op when the value is unchanged: the Settings screen
 // commits every sync field whenever it loses focus (or the user navigates), so
@@ -4491,14 +4813,14 @@ void DesktopAppController::setSyncEmail(const QString& v)
 void DesktopAppController::setSyncPassword(const QString& v)
 {
     if (syncPassword() == v) return;
-    setSyncSetting("Sync/Password", v);
+    setSyncSecret(QStringLiteral("Password"), v);
     setSyncSettingsUnverified(true);
     emit syncSettingsChanged();
 }
 void DesktopAppController::setSyncEncryptionPhrase(const QString& v)
 {
     if (syncEncryptionPhrase() == v) return;
-    setSyncSetting("Sync/EncryptionPhrase", v);
+    setSyncSecret(QStringLiteral("EncryptionPhrase"), v);
     setSyncSettingsUnverified(true);
     emit syncSettingsChanged();
 }
@@ -4730,10 +5052,7 @@ void DesktopAppController::syncNow()
     configureSyncApi();
 
     SqliteSyncPro* api = m_syncApi;
-    QString dataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    if (!s_developerProfile.isEmpty())
-        dataDir += "/" + s_developerProfile;
-    const QString dbPath = dataDir + "/ProjectNotes.db";
+    const QString dbPath = dataLocation() + "/ProjectNotes.db";
 
     m_syncSessionActive = true;     // keep the bar up until we reach 100%
     setSyncProgress(0.01, false);   // show the indicator immediately
@@ -4787,10 +5106,7 @@ void DesktopAppController::syncAll()
     configureSyncApi();
 
     SqliteSyncPro* api = m_syncApi;
-    QString dataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    if (!s_developerProfile.isEmpty())
-        dataDir += "/" + s_developerProfile;
-    const QString dbPath = dataDir + "/ProjectNotes.db";
+    const QString dbPath = dataLocation() + "/ProjectNotes.db";
 
     m_syncSessionActive = true;     // keep the bar up until we reach 100%
     setSyncProgress(0.01, false);   // show the indicator immediately

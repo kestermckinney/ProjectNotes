@@ -4,7 +4,11 @@
 # Builds a signed, notarized macOS installer (.pkg wrapped in .dmg) containing
 # the QML desktop frontend's "Project Notes.app" (ProjectNotesDesktop target),
 # plus a self-contained ProjectNotes-<ver>-macOS.zip consumed by the in-app
-# auto-updater (UpdateManager on macOS).
+# auto-updater (UpdateManager on macOS). These are the direct-download assets
+# published on GitLab; the Mac App Store build comes from build_appstore.sh.
+#
+# The app is built here, as a universal (Apple silicon and Intel) Release build
+# that runs on macOS 13 or later. build_common.sh explains how.
 #
 # Usage:
 #   ./build_installer.sh [options]
@@ -14,6 +18,8 @@
 #   --notarize    Submit the final .pkg for Apple notarization (implies --sign)
 #   --dmg         Wrap the signed .pkg in a distributable .dmg
 #   --all         Equivalent to --sign --notarize --dmg
+#   --skip-build  Package the existing build in PN_BUILD_DIR as is. It must
+#                 still pass the macOS 13 / universal checks.
 #
 # Configuration (override via environment variables or edit the defaults below):
 #   SIGN_IDENTITY            Developer ID Application certificate CN
@@ -22,11 +28,13 @@
 #   APPLE_ID                 Apple ID email for notarytool
 #   NOTARIZE_KEYCHAIN_PROFILE Keychain profile name created with:
 #                              xcrun notarytool store-credentials <profile>
-#   PN_BUILD_DIR             Path to the CMake Release build dir for ProjectNotes
+#   PN_BUILD_DIR             CMake build directory (default build/release)
+#   QT_MACOS                 Qt macOS kit (contains bin/qt-cmake)
+#   VCPKG_ROOT               vcpkg checkout used for static Hunspell and OpenSSL
 #
 # Prerequisites:
 #   - Xcode Command Line Tools (codesign, pkgbuild, productbuild, hdiutil, xcrun)
-#   - Both apps must be built in Release before running this script.
+#   - The Qt macOS kit and a vcpkg checkout (see build_common.sh)
 
 set -euo pipefail
 
@@ -44,16 +52,18 @@ NOTARIZE_KEYCHAIN_PROFILE="${NOTARIZE_KEYCHAIN_PROFILE:-ProjectNotes-Notarize}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-# Adjust these to match your Qt Creator build directory names. PN_BUILD_DIR is
-# the top-level CMake build dir. The QML frontend is the only desktop target and
-# builds to its own subdirectory (ProjectNotesDesktop's CMakeLists.txt pins its
-# RUNTIME_OUTPUT_DIRECTORY there):
-#   ${PN_BUILD_DIR}/ProjectNotesDesktop/Project Notes.app — the shipped app
-PN_BUILD_DIR="${PN_BUILD_DIR:-${PROJECT_ROOT}/build/Qt_6_11_1_for_macOS_Release}"
+# shellcheck source=build_common.sh
+source "${SCRIPT_DIR}/build_common.sh"
+
+# Not the Qt Creator build directory: Qt Creator leaves the deployment target
+# empty, and the result only runs on the build machine's macOS.
+PN_BUILD_DIR="${PN_BUILD_DIR:-${PROJECT_ROOT}/build/release}"
 
 PN_APP="${PN_BUILD_DIR}/ProjectNotesDesktop/Project Notes.app"
+# The iOS app's bundle ID, shared with the App Store build. Must match
+# PN_MACOS_BUNDLE_ID in the top-level CMakeLists.txt.
+BUNDLE_ID="com.projectnotespro.projectnotesmobile"
 
-PN_VERSION="6.4.3"
 INSTALLER_VERSION="${PN_VERSION}"
 
 STAGING_DIR="${SCRIPT_DIR}/staging"
@@ -65,6 +75,7 @@ RESOURCES_DIR="${SCRIPT_DIR}/resources"
 DO_SIGN=false
 DO_NOTARIZE=false
 DO_DMG=false
+DO_BUILD=true
 
 for arg in "$@"; do
     case "$arg" in
@@ -72,18 +83,24 @@ for arg in "$@"; do
         --notarize)  DO_SIGN=true; DO_NOTARIZE=true ;;
         --dmg)       DO_DMG=true ;;
         --all)       DO_SIGN=true; DO_NOTARIZE=true; DO_DMG=true ;;
+        --skip-build) DO_BUILD=false ;;
         *)           echo "Unknown option: $arg"; exit 1 ;;
     esac
 done
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
-log()  { echo "[$(date '+%H:%M:%S')] $*"; }
-die()  { echo "ERROR: $*" >&2; exit 1; }
-
 require_app() {
     [[ -d "$1" ]] || die "App bundle not found: $1
-Build the project in Release first, or set PN_BUILD_DIR / SA_BUILD_DIR."
+Run without --skip-build, or set PN_BUILD_DIR."
+    # The App Store flavor is sandboxed and leaves out the updater and the
+    # Thunderbird helper; it must not ship as the direct download.
+    [[ -e "$1/Contents/MacOS/ProjectNotesThunderbirdContacts" ]] || \
+        die "$1 is the Mac App Store flavor. Build without -DPN_APP_STORE."
+    local id
+    id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$1/Contents/Info.plist")"
+    [[ "${id}" == "${BUNDLE_ID}" ]] || \
+        die "$1 has bundle ID ${id}, expected ${BUNDLE_ID}. Run without --skip-build."
 }
 
 # Deep-sign an app bundle with hardened runtime.
@@ -91,20 +108,14 @@ Build the project in Release first, or set PN_BUILD_DIR / SA_BUILD_DIR."
 sign_bundle() {
     local bundle="$1"
     local entitlements="${2:-}"
-    local webengine_entitlements=""
 
     log "Signing: ${bundle}"
-
-    # Qt WebEngine's Chromium helper requires Qt's own entitlement set. It
-    # must not inherit the application's Python-oriented entitlements merely
-    # because both happen to be nested .app bundles.
-    webengine_entitlements="$(find "${bundle}/Contents" -path '*/QtWebEngineProcess.app/Contents/Resources/QtWebEngineProcess.entitlements' -type f -print -quit 2>/dev/null || true)"
 
     # Strip build-system artifacts from nested frameworks.  Static archives
     # (.a), object files (.o), pkg-config files (.pc), and shell config scripts
     # (.sh) cannot be code-signed and cause notarization / codesign --strict to
-    # reject the bundle (e.g. Python's config-*/python.o).  These files are
-    # development-only and not needed at runtime.
+    # reject the bundle.  These files are development-only and not needed at
+    # runtime.
     find "${bundle}/Contents" \
         \( -name "*.a" -o -name "*.o" -o -name "*.pc" \
         -o -name "tclConfig.sh" -o -name "tkConfig.sh" \
@@ -112,18 +123,16 @@ sign_bundle() {
         -delete 2>/dev/null || true
 
     # ── Pass 1: sign every Mach-O binary directly, deepest path first ──────────
-    # We must sign the actual binaries, not just their enclosing bundles. The
-    # PyQt5 Qt5 frameworks ship from PyPI ad-hoc signed AND with a non-standard
-    # layout (no Versions/Current symlink), so signing the .framework bundle
-    # re-seals its CodeResources but leaves the inner Mach-O ad-hoc — which is
-    # exactly what notarization rejects ("not signed with a valid Developer ID
-    # certificate" / "no secure timestamp" / "hardened runtime not enabled").
-    # Signing the versioned binary directly fixes that; the bundle is re-sealed
-    # over it in Pass 2.
+    # We must sign the actual binaries, not just their enclosing bundles: a
+    # framework with a non-standard layout (no Versions/Current symlink) gets
+    # its CodeResources re-sealed while the inner Mach-O stays ad-hoc, which
+    # notarization rejects ("not signed with a valid Developer ID certificate" /
+    # "no secure timestamp" / "hardened runtime not enabled"). Signing the
+    # binary directly fixes that; the bundle is re-sealed over it in Pass 2.
     #
     # Detect Mach-O files by content (not extension) so nothing is missed:
     # loadable modules (.so/.dylib), framework main binaries (no extension), and
-    # bare executables such as Python.framework's bin/python3.13. A single
+    # bare helper executables. A single
     # batched `file` scan over the bundle is cheap. printf+cut (not awk) sorts by
     # path length without splitting on spaces, so deepest paths sign first.
     # `file` column-pads filenames with spaces before the description, so match
@@ -145,8 +154,7 @@ sign_bundle() {
 
     # ── Pass 2: sign nested bundles depth-first to (re)seal their contents ─────
     # Deepest path first ensures an inner bundle is sealed before the bundle that
-    # encloses it (e.g. QtWebEngineProcess.app before QtWebEngineCore.framework,
-    # and all nested frameworks before Python.framework). Frameworks get their
+    # encloses it. Frameworks get their
     # CodeResources re-sealed over the Developer ID binaries signed in Pass 1;
     # .app helpers also get their own Mach-O executable signed here. Entitlements
     # are applied only to .app bundles (executables); they are meaningless on a
@@ -156,13 +164,7 @@ sign_bundle() {
     while IFS= read -r item; do printf '%d\t%s\n' "${#item}" "$item"; done | \
     sort -rn | cut -f2- | \
     while IFS= read -r item; do
-        if [[ "${item}" == *QtWebEngineProcess.app && -n "${webengine_entitlements}" ]]; then
-            codesign --force --sign "${SIGN_IDENTITY}" \
-                --options runtime \
-                --timestamp \
-                --entitlements "${webengine_entitlements}" \
-                "${item}" 2>&1 | grep -v "replacing existing signature" || true
-        elif [[ "${item}" == *.app && -n "${entitlements}" ]]; then
+        if [[ "${item}" == *.app && -n "${entitlements}" ]]; then
             codesign --force --sign "${SIGN_IDENTITY}" \
                 --options runtime \
                 --timestamp \
@@ -191,10 +193,21 @@ sign_bundle() {
     log "Signed successfully: $(basename "${bundle}")"
 }
 
-# ── Step 1: Validate inputs ────────────────────────────────────────────────────
+# ── Step 1: Build ─────────────────────────────────────────────────────────────
 
-log "=== Project Notes macOS Installer Build ==="
+log "=== Project Notes ${PN_VERSION} macOS Installer Build ==="
 log "Project Notes: ${PN_APP}"
+
+if [[ "${DO_BUILD}" == true ]]; then
+    pn_require_tools
+    log "=== Building Hunspell and OpenSSL with vcpkg ==="
+    pn_build_static_deps
+    log "=== Building Project Notes (macOS ${MIN_MACOS}+, ${PN_ARCHS[*]}) ==="
+    # PN_APP_STORE=OFF in case the build directory was ever configured with it.
+    pn_configure_and_build "${PN_BUILD_DIR}" -DPN_APP_STORE=OFF -DPN_MACOS_BUNDLE_ID="${BUNDLE_ID}"
+else
+    log "Skipping build (--skip-build)"
+fi
 
 require_app "${PN_APP}"
 
@@ -202,7 +215,7 @@ require_app "${PN_APP}"
 
 log "Preparing staging area..."
 # Clear immutable flags then delete. Fall back to find -delete if rm -rf
-# is blocked by memory-mapped files (e.g. Python.framework dylibs in use).
+# is blocked by memory-mapped files (e.g. dylibs in use).
 for _dir in "${STAGING_DIR}" "${OUTPUT_DIR}"; do
     if [[ -d "${_dir}" ]]; then
         chflags -R nouchg "${_dir}" 2>/dev/null || true
@@ -223,63 +236,15 @@ log "Copying app bundle..."
 ditto "${PN_APP}" "${STAGING_DIR}/projectnotes/Project Notes.app"
 
 PN_STAGED="${STAGING_DIR}/projectnotes/Project Notes.app"
-PN_RESOURCES="${PN_STAGED}/Contents/Resources"
+pn_prune_bundle "${PN_STAGED}"
+pn_check_bundle "${PN_STAGED}"
 
 # Second copy for the in-app auto-updater asset.  Signed/notarized/zipped in
 # Step 8.
 UPDATER_APP="${STAGING_DIR}/updater/Project Notes.app"
 mkdir -p "${STAGING_DIR}/updater"
 ditto "${PN_APP}" "${UPDATER_APP}"
-
-# ── IFS plugin removal ──────────────────────────────────────────────────────────
-# The IFS Cloud plugins are excluded from the macOS distribution. Shipping them
-# as a separate optional installer component is incompatible with a notarized,
-# signed app: the component's payload is an unsigned partial .app (which fails
-# notarization) and installing it into the already-signed bundle would
-# invalidate the Developer ID signature on the user's machine. Strip the files
-# from both the installer bundle and the auto-updater bundle so neither carries
-# them.
-
-IFS_PLUGIN_FILES=(
-    "plugins/ifs_ssrs_generate_plugin.py"
-    "plugins/ifscloud_plugin_settings.py"
-    "plugins/includes/ifs_tools.py"
-    "threads/ifssync_thread.py"
-)
-
-RETIRED_PLUGIN_FILES=(
-    "threads/filefinder_thread.py"
-    "plugins/exportnotes_plugin.py"
-    "plugins/exportstatusreport_plugin.py"
-    "plugins/exporttrackeritems_plugin.py"
-    "plugins/forms/dialogExportNotesOptions.ui"
-    "plugins/forms/dialogExportStatusReportOptions.ui"
-    "plugins/forms/dialogExportTrackerOptions.ui"
-    "plugins/forms/dialogMeetingEmailTemplate.ui"
-    "plugins/forms/dialogMeetingEmailTypes.ui"
-    "plugins/forms/dialogFileFinder.ui"
-    "plugins/forms/dialogClassification.ui"
-)
-
-log "Removing retired plugin files from macOS bundles..."
-for rel in "${RETIRED_PLUGIN_FILES[@]}"; do
-    for base in "${PN_RESOURCES}" "${UPDATER_APP}/Contents/Resources"; do
-        rm -f "${base}/${rel}"
-        mod="$(basename "${rel}" .py)"
-        rm -f "$(dirname "${base}/${rel}")/__pycache__/${mod}".*.pyc
-        rm -f "$(dirname "${base}/${rel}")/__pycache__/${mod}".*.pyo
-    done
-done
-
-log "Removing IFS plugin files from macOS bundles..."
-for rel in "${IFS_PLUGIN_FILES[@]}"; do
-    for base in "${PN_RESOURCES}" "${UPDATER_APP}/Contents/Resources"; do
-        rm -f "${base}/${rel}"
-        # Also drop any compiled bytecode so the module cannot be imported.
-        mod="$(basename "${rel}" .py)"
-        rm -f "$(dirname "${base}/${rel}")/__pycache__/${mod}".*.pyc
-    done
-done
+pn_prune_bundle "${UPDATER_APP}"
 
 # ── Step 3: Code signing ──────────────────────────────────────────────────────
 
@@ -295,11 +260,15 @@ fi
 
 log "=== Building Component Packages ==="
 
+# The package identifier matches the bundle ID. Releases before 6.5.0 used
+# com.projectnotespro.ProjectNotes for both, so macOS records this as a new
+# package rather than an upgrade; the preinstall script removes the old app.
+# distribution.xml names the same identifier.
 pkgbuild \
     --root "${STAGING_DIR}/projectnotes" \
     --scripts "${SCRIPT_DIR}/projectnotes-scripts" \
     --component-plist "${SCRIPT_DIR}/ProjectNotes-component.plist" \
-    --identifier "com.projectnotespro.ProjectNotes" \
+    --identifier "${BUNDLE_ID}" \
     --version "${PN_VERSION}" \
     --install-location "/Applications" \
     "${OUTPUT_DIR}/ProjectNotes.pkg"

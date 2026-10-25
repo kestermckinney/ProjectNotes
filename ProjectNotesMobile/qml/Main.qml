@@ -4,6 +4,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.iOS
+import QtQuick.Effects
 import QtQuick.Layouts
 import ProjectNotesMobile
 
@@ -13,6 +14,45 @@ ApplicationWindow {
     width: 390
     height: 844
     title: qsTr("Project Notes")
+
+    // Since Qt 6.9 the window pads its content by the safe-area margins, which
+    // left a band of window background under the lists. Drop the bottom
+    // padding so the tab lists run to the screen edge under the floating tab
+    // bar; pageStack re-applies the inset for detail pages, whose footer
+    // toolbars must stay clear of the home indicator.
+    bottomPadding: 0
+    readonly property real safeBottom: SafeArea.margins.bottom
+    // Likewise at the top: the pages run up under the status bar and the
+    // frosted title bar, which pads for the safe area itself.
+    topPadding: 0
+
+    // Pages, forms and lists share one background; see Theme.pageBackground.
+    palette.window: Theme.pageBackground
+
+    // Monochrome buttons in place of the iOS style's system blue. Flat buttons
+    // draw their text in palette.button; filled ones fill with it and draw
+    // their text in buttonText, so that is the page color. Each group is set
+    // on its own so disabled buttons keep a dimmed tint. palette.highlight is
+    // left alone: text selection and the sheets' checkmarks use it too.
+    palette.active.button:       Theme.iconColor
+    palette.inactive.button:     Theme.iconColor
+    palette.disabled.button:     Theme.iconColorDisabled
+    palette.buttonText:          Theme.pageBackground
+
+    // The default font every control inherits (most list rows show text at
+    // this size), scaled by the Text Size setting, with SF Pro's native
+    // tracking. Controls that set their own font.pixelSize use Theme's sizes,
+    // which scale the same way, and set a matching font.letterSpacing.
+    readonly property int _baseFontSize: Qt.application.font.pixelSize > 0
+                                         ? Qt.application.font.pixelSize
+                                         : Qt.application.font.pointSize
+    font.pixelSize: Theme.scaled(_baseFontSize)
+    font.letterSpacing: Theme.tracking(Theme.scaled(_baseFontSize))
+
+    // Text Size steps (Appearance page) as a multiple of the default body
+    // size: iOS Dynamic Type's body sizes 14-23pt over its 17pt default.
+    readonly property var _textScales: [14/17, 15/17, 16/17, 1.0, 19/17, 21/17, 23/17]
+    Binding { target: Theme; property: "textScale"; value: root._textScales[AppController.textSize] || 1.0 }
 
     // Save current page data before app closes
     function saveCurrentPage() {
@@ -86,6 +126,11 @@ ApplicationWindow {
             next()
     }
 
+    // Called by NavButton on the tab pages.
+    function openMainMenu() {
+        pageStack.push(Qt.resolvedUrl("pages/MainMenuPage.qml"), { stackView: pageStack })
+    }
+
     // Attempt to save the current detail page and pop.  If the C++ layer
     // rejects the data (lastSaveError is non-empty), stay on the page so the
     // user can fix their input — the errorOccurred signal opens the dialog,
@@ -157,6 +202,7 @@ ApplicationWindow {
         modal: true
         anchors.centerIn: Overlay.overlay
         standardButtons: Dialog.Ok
+        palette.highlight: Theme.iconColorPressed   // monochrome pressed OK button
         Label { text: errorDialog.message; wrapMode: Text.Wrap; width: 260 }
     }
 
@@ -166,6 +212,7 @@ ApplicationWindow {
         modal: true
         anchors.centerIn: Overlay.overlay
         standardButtons: Dialog.Ok
+        palette.highlight: Theme.iconColorPressed   // monochrome pressed OK button
 
         Label {
             width: 260
@@ -239,14 +286,14 @@ ApplicationWindow {
                 Item { Layout.fillWidth: true }
 
                 // Leave with the settings as typed — they stay saved either way.
-                Button {
+                MonoButton {
                     text: qsTr("Leave Anyway")
                     visible: syncCheckDialog.fixable
                     flat: true
                     onClicked: { root._resumeNavigation(); syncCheckDialog.close() }
                 }
 
-                Button {
+                MonoButton {
                     text: syncCheckDialog.checking ? qsTr("Skip")
                           : (syncCheckDialog.fixable ? qsTr("Back to Settings") : qsTr("OK"))
                     flat: true
@@ -262,161 +309,76 @@ ApplicationWindow {
         }
     }
 
-    // ── Hamburger drawer ──────────────────────────────────────────────────────
-    Drawer {
-        id: hamburgerDrawer
-        width: Math.min(280, root.width * 0.78)
-        height: root.height
-        edge: Qt.LeftEdge
+    // ── Title bar ─────────────────────────────────────────────────────────────
+    // Frosted glass over the top of the page: the pages run up underneath it
+    // (they start their own rows Theme.topInset down) and show through
+    // blurred as they scroll, as in iOS. Covers the status bar too.
+    Item {
+        id: titleBar
+        z: 15
+        anchors { top: parent.top; left: parent.left; right: parent.right }
+        height: SafeArea.margins.top + 52
 
-        ColumnLayout {
+        // A live copy of whatever is behind the bar, blurred. The opaque base
+        // keeps the sharp original from showing through the blur.
+        Rectangle {
             anchors.fill: parent
-            spacing: 0
+            color: Theme.pageBackground
+        }
+        ShaderEffectSource {
+            id: titleBackdrop
+            anchors.fill: parent
+            sourceItem: pageStack
+            sourceRect: Qt.rect(0, titleBar.y - pageStack.y, titleBar.width, titleBar.height)
+            live: true
+            visible: false
+        }
+        MultiEffect {
+            anchors.fill: parent
+            source: titleBackdrop
+            autoPaddingEnabled: false
+            blurEnabled: true
+            blur: 1.0
+            blurMax: 48
+            saturation: 0.3
+        }
+        // Tint, so the title reads over anything, and a hairline underneath.
+        Rectangle {
+            anchors.fill: parent
+            color: Qt.rgba(Theme.pageBackground.r, Theme.pageBackground.g, Theme.pageBackground.b, 0.72)
+        }
+        Rectangle {
+            anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+            height: 1
+            color: Theme.separator
+        }
 
-            Rectangle {
-                Layout.fillWidth: true
-                height: 32
-                color: Theme.navyDark
-
-                Label {
-                    anchors.centerIn: parent
-                    text: qsTr("Main Menu")
-                    font.pixelSize: 20
-                    font.bold: true
-                    color: "white"
-                }
-            }
-
-            ScrollView {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                contentWidth: availableWidth
-
-                Column {
-                    width: parent.width
-
-                    ItemDelegate {
-                        width: parent.width
-                        text: qsTr("Cloud Sync Settings")
-                        onClicked: {
-                            hamburgerDrawer.close()
-                            pageStack.push(Qt.resolvedUrl("pages/SyncSettingsPage.qml"))
-                        }
-                    }
-
-                    MenuSeparator { width: parent.width }
-
-                    ItemDelegate {
-                        width: parent.width
-                        text: qsTr("View")
-                        onClicked: {
-                            hamburgerDrawer.close()
-                            pageStack.push(Qt.resolvedUrl("pages/ViewOptionsPage.qml"))
-                        }
-                    }
-
-                    ItemDelegate {
-                        width: parent.width
-                        text: qsTr("Sync All…")
-                        enabled: AppController.syncEnabled
-                        onClicked: {
-                            hamburgerDrawer.close()
-                            AppController.syncAll()
-                        }
-                    }
-
-                    MenuSeparator { width: parent.width }
-
-                    ItemDelegate {
-                        width: parent.width
-                        text: qsTr("Preferences…")
-                        onClicked: {
-                            hamburgerDrawer.close()
-                            pageStack.push(Qt.resolvedUrl("pages/PreferencesPage.qml"))
-                        }
-                    }
-
-                    MenuSeparator { width: parent.width }
-
-                    ItemDelegate {
-                        width: parent.width
-                        text: qsTr("Help")
-                        onClicked: {
-                            hamburgerDrawer.close()
-                            Qt.openUrlExternally("https://projectnotes.readthedocs.io/en/latest/Mobile/ProjectNotesMobile/")
-                        }
-                    }
-
-                    ItemDelegate {
-                        width: parent.width
-                        text: qsTr("What's New")
-                        onClicked: {
-                            hamburgerDrawer.close()
-                            Qt.openUrlExternally("https://gitlab.com/kestermckinney/ProjectNotes/-/releases")
-                        }
-                    }
-
-                    ItemDelegate {
-                        width: parent.width
-                        text: qsTr("About")
-                        onClicked: {
-                            hamburgerDrawer.close()
-                            pageStack.push(Qt.resolvedUrl("pages/AboutPage.qml"))
-                        }
-                    }
-                }
-            }
+        Label {
+            anchors { left: parent.left; right: parent.right; bottom: parent.bottom
+                      leftMargin: 16; rightMargin: 16 }
+            height: 52
+            text: pageStack.depth > 1
+                ? (pageStack.currentItem ? (pageStack.currentItem.title || "") : "")
+                : (root.tabTitles[root.currentTabIndex] || "")
+            font.pixelSize: Theme.headline; font.letterSpacing: Theme.tracking(Theme.headline)
+            font.weight: Font.DemiBold
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            elide: Text.ElideRight
+            color: palette.windowText
         }
     }
 
-    // ── Persistent header toolbar ─────────────────────────────────────────────
-    header: ToolBar {
-        // palette.window drives the iOS-style ToolBar tint; background overrides the QML layer
-        palette.window: Theme.navyDark
-        background: Rectangle { color: Theme.navyDark }
-        height: 100
-
-        RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 4
-            anchors.rightMargin: 8
-
-            ToolButton {
-                id: navButton
-                // depth 1 = initial SwipeView item; depth > 1 = a detail page is open
-                icon.name: pageStack.depth > 1 ? "chevron.left" : "line.3.horizontal"
-                icon.color: "white"
-                onClicked: {
-                    if (pageStack.depth > 1)
-                        trySaveAndPop()
-                    else
-                        hamburgerDrawer.open()
-                }
-            }
-
-            Label {
-                Layout.fillWidth: true
-                text: pageStack.depth > 1
-                    ? (pageStack.currentItem ? (pageStack.currentItem.title || "") : "")
-                    : (root.tabTitles[root.currentTabIndex] || "")
-                font.pixelSize: 17
-                font.bold: true
-                horizontalAlignment: Text.AlignHCenter
-                elide: Text.ElideRight
-                color: "white"
-            }
-
-            Item { width: navButton.width }
-        }
-    }
+    // Pages offset their top row by this much to clear the title bar.
+    Binding { target: Theme; property: "topInset"; value: titleBar.height }
 
     // ── Sync progress strip ───────────────────────────────────────────────────
-    // Sits at the very top of the content area (below the header toolbar).
+    // Sits just under the title bar, over the page.
     // Green while syncing, red on error; auto-hides 2 s after successful completion.
     Rectangle {
         id: syncStrip
-        z: 10
-        anchors { top: parent.top; left: parent.left; right: parent.right }
+        z: 16
+        anchors { top: titleBar.bottom; left: parent.left; right: parent.right }
         height: AppController.syncProgress >= 0.0 ? 5 : 0
         color: palette.window        // strip background (shows when bar < 100%)
 
@@ -432,11 +394,12 @@ ApplicationWindow {
 
     // ── Main content ──────────────────────────────────────────────────────────
     // The StackView's initialItem is the tab content (SwipeView).  Pages pushed
-    // from the drawer land on top at depth 2+.  pop() back to depth 1 is always
+    // from the main menu land on top at depth 2+.  pop() back to depth 1 is always
     // valid — Qt forbids pop() that would empty the stack entirely.
     StackView {
         id: pageStack
-        anchors { top: syncStrip.bottom; left: parent.left; right: parent.right; bottom: parent.bottom }
+        anchors { top: parent.top; left: parent.left; right: parent.right; bottom: parent.bottom }
+        anchors.bottomMargin: depth > 1 ? root.safeBottom : 0
         initialItem: mainTabsComponent
     }
 
@@ -469,26 +432,64 @@ ApplicationWindow {
                 }
             }
 
-            ProjectsListPage { stackView: pageStack }
-            ContactsPage      { stackView: pageStack }
-            CompaniesPage     { stackView: pageStack }
-            AllItemsPage      { stackView: pageStack }
+            ProjectsListPage { stackView: pageStack; listBottomInset: root.tabDockInset }
+            ContactsPage      { stackView: pageStack; listBottomInset: root.tabDockInset }
+            CompaniesPage     { stackView: pageStack; listBottomInset: root.tabDockInset }
+            AllItemsPage      { stackView: pageStack; listBottomInset: root.tabDockInset }
         }
     }
 
     // ── Bottom tab bar ────────────────────────────────────────────────────────
-    footer: TabBar {
-        id: tabBar
-        // Collapse when a detail page is open so StackView fills the full window.
-        visible: pageStack.depth <= 1
-        height: visible ? implicitHeight : 0
-        currentIndex: root.currentTabIndex
-        onCurrentIndexChanged: root.currentTabIndex = currentIndex
+    // A floating glass capsule over the list, in the style of iOS 26 tab bars.
+    // The lists run full height underneath it; each tab page pads its list by
+    // tabDockInset so the last row can still scroll clear of the capsule.
+    readonly property real tabDockInset: tabDock.height + tabDock.anchors.bottomMargin
 
-        TabButton { text: qsTr("Projects"); icon.name: "folder"    }
-        TabButton { text: qsTr("Contacts"); icon.name: "person"    }
-        TabButton { text: qsTr("Companies"); icon.name: "building"  }
-        TabButton { text: qsTr("Items");    icon.name: "list.bullet" }
+    GlassBar {
+        id: tabDock
+        z: 10
+        // Hidden while a detail page is open, as the old footer was.
+        visible: pageStack.depth <= 1
+        height: 62
+        anchors {
+            left: parent.left; right: parent.right; bottom: parent.bottom
+            leftMargin: 16; rightMargin: 16
+            // Sit just above the home indicator, or a fixed gap without one.
+            bottomMargin: Math.max(12, root.safeBottom - 10)
+        }
+
+        blurSource: pageStack
+        blurRect: Qt.rect(tabDock.x - pageStack.x, tabDock.y - pageStack.y,
+                          tabDock.width, tabDock.height)
+
+        TabBar {
+            id: tabBar
+            anchors.fill: parent
+            position: TabBar.Footer
+            currentIndex: root.currentTabIndex
+            onCurrentIndexChanged: root.currentTabIndex = currentIndex
+
+            // The iOS style tints the selected tab with palette.button (system
+            // blue); use the monochrome icon color instead. TabButtons inherit it.
+            palette.button: Theme.iconColor
+
+            // No bar background; just a pill that slides behind the current tab.
+            background: Item {
+                Rectangle {
+                    width: tabBar.count > 0 ? tabBar.width / tabBar.count : 0
+                    height: tabBar.height
+                    x: tabBar.currentIndex * width
+                    radius: height / 2
+                    color: Theme.isDarkMode ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(0, 0, 0, 0.06)
+                    Behavior on x { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+                }
+            }
+
+            TabButton { text: qsTr("Projects"); icon.name: "folder"    }
+            TabButton { text: qsTr("Contacts"); icon.name: "person"    }
+            TabButton { text: qsTr("Companies"); icon.name: "building"  }
+            TabButton { text: qsTr("Items");    icon.name: "list.bullet" }
+        }
     }
 
     // ── Startup ───────────────────────────────────────────────────────────────

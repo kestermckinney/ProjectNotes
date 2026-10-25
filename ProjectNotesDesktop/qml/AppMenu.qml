@@ -65,6 +65,8 @@ Popup {
             { icon: "search",    label: qsTr("Search…"),     key: AppShortcuts.text("search"),      action: "search" },
             { icon: "ios_share", label: qsTr("Export XML…"), key: AppShortcuts.text("export"),      action: "export" },
             { icon: "download",  label: qsTr("Import XML…"), key: AppShortcuts.text("import"),      action: "import" },
+            { icon: "settings_backup_restore", label: qsTr("Export Settings…"), key: "", action: "export_settings" },
+            { icon: "restore_page", label: qsTr("Import Settings…"), key: "", action: "import_settings" },
             { icon: "settings",  label: qsTr("Preferences"), key: AppShortcuts.text("preferences"), action: "preferences" },
             { icon: "sync",      label: qsTr("Sync Now"),    key: "",   action: "sync" },
             { icon: "sync_alt",  label: qsTr("Sync All"),    key: "",   action: "sync_all" },
@@ -101,10 +103,12 @@ Popup {
         ]},
         { name: qsTr("Help"), items: [
             { icon: "menu_book", label: qsTr("User Guide"), key: AppShortcuts.text("help"), action: "help" },
-            { icon: "system_update_alt", label: qsTr("Check for Updates…"), key: "", action: "check_updates" },
+        ].concat(DesktopAppController.updatesSupported   // the App Store build updates through the store
+            ? [{ icon: "system_update_alt", label: qsTr("Check for Updates…"), key: "", action: "check_updates" }] : []
+        ).concat([
             { icon: "forward_to_inbox", label: qsTr("Send Logs to Support…"), key: "", action: "support_logs" },
             { icon: "info", label: qsTr("About"), key: "", action: "about" },
-        ]},
+        ])},
     ]
 
     // All plugin menus — both the global (dataless) ones and, when a record is

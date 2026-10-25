@@ -12,6 +12,8 @@ void restoreColumnFilters(SqlQueryModel* src);
 QVariantList filterColumns(QAbstractItemModel* model);
 QVariantList columnDistinctValues(QAbstractItemModel* model, const QString& field);
 void applyColumnFilters(QAbstractItemModel* model, const QVariantList& specs);
+// Sets src's user filters from specs without activating, refreshing or saving them.
+void applyFilterSpecsToModel(SqlQueryModel* src, const QVariantList& specs);
 void clearColumnFilters(QAbstractItemModel* model);
 QVariantList activeColumnFilters(QAbstractItemModel* model);
 void applyQuickFilter(QAbstractItemModel* model, const QString& field, const QVariantList& values);

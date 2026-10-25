@@ -32,11 +32,13 @@ Right-click a project in the sidebar, project list, or project page and choose *
 
 On the **Contacts** page or a contact's own page, choose **Email…** to start a blank message to that contact, even if they are not attached to a project. This action uses your configured email integration but does not apply a project template or offer project audiences.
 
+To send someone a contact's details, right-click a contact, team member, or meeting attendee and choose **Email Contact…**. There is no review step: the draft opens in your configured email integration with that person's vCard (`.vcf`) attached and no recipients, so you address it in your mail client. **Export Contact…** on the same menu saves the `.vcf` file instead.
+
 In the project's **Locations** tab, right-click a location and choose **Share as Attachment…**. Web URLs also offer **Share Link…**. Local locations must point to an existing file to be attached. URL attachments are downloaded into the application cache before the review becomes ready; downloads have a 50 MB limit and a 60-second timeout. Download errors appear in the review and prevent creating an incomplete draft.
 
 Location sharing uses the same saved audiences as reports. Choose an existing audience, adjust recipients, or save a new audience and optionally make it the sharing default. Configure the subject and body using the **Share Location** email type. Its fields include `location.description`, `location.url`, and `location.fileName`; keep `{{ content.body }}` in the body to include the link or attachment description.
 
-Create Email Draft dialogs do not display the subject or email body. Project Email and Share Location drafts still use their configured templates; plain contact emails start blank and open a draft directly when you select **Email...** on a person. Adjust recipients and audiences where offered, then choose **Create Email Draft**. Review, edit, and send the message from your mail client. Cached downloads and attachment copies are deleted when Project Notes closes, so save or send the draft before quitting.
+Create Email Draft dialogs do not display the subject or email body. Project Email and Share Location drafts still use their configured templates; plain contact emails and contact cards start with an empty body, and **Email...** on a person opens a draft directly. Adjust recipients and audiences where offered, then choose **Create Email Draft**. Review, edit, and send the message from your mail client. Cached downloads and attachment copies are deleted when Project Notes closes, so save or send the draft before quitting.
 
 ## Running a project report
 

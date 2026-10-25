@@ -133,6 +133,10 @@ ApplicationWindow {
 
     Connections {
         target: DesktopAppController
+        // A JavaScript plugin asked to open a record (app.navigate).
+        function onPluginNavigateRequested(dataType, dataId, fkId, dataKey) {
+            root.openSearchResult(dataType, dataId, fkId, dataKey)
+        }
         function onErrorOccurred(title, message) {
             errorDialog.title = title
             errorLabel.text = message
@@ -351,6 +355,23 @@ ApplicationWindow {
     // Navigate to a search result based on its datatype. dataId is the record's
     // own id, fkId its parent (usually the project), dataKey a secondary key the
     // database_search view carries for a few rows (mirrors mainwindow.cpp).
+    // Tells the plugin host which record is on screen (app.currentView()).
+    // Detail pages identify their record by these id properties; the checks
+    // run most specific first, since note and item pages also carry projectId.
+    function _reportCurrentView() {
+        var item = contentStack ? contentStack.currentItem : null
+        var entity = "", key = ""
+        if (item) {
+            if (item.noteId !== undefined && item.noteId !== "") { entity = "project_notes"; key = item.noteId }
+            else if (item.itemId !== undefined && item.itemId !== "") { entity = "item_tracker"; key = item.itemId }
+            else if (item.contactId !== undefined && item.contactId !== "") { entity = "contacts"; key = item.contactId }
+            else if (item.companyId !== undefined && item.companyId !== "") { entity = "companies"; key = item.companyId }
+            else if (item.projectId !== undefined && item.projectId !== "") { entity = "projects"; key = item.projectId }
+        }
+        DesktopAppController.setCurrentView(root.currentSection, entity, key, "")
+    }
+    onCurrentSectionChanged: _reportCurrentView()
+
     function openSearchResult(dataType, dataId, fkId, dataKey) {
         switch (dataType) {
         case "Project":
@@ -390,6 +411,12 @@ ApplicationWindow {
             return
         root.selectedProjectId = projectId
         var r = DesktopAppController.projectRowForId(projectId)
+        // The sidebar lists every project, so the one picked may sit outside
+        // the folder the projects list is filtered to. Drop that filter.
+        if (r < 0 && DesktopAppController.projectFolderFilter().length > 0) {
+            DesktopAppController.clearProjectFolderFilter()
+            r = DesktopAppController.projectRowForId(projectId)
+        }
         if (r < 0) return
         root.crumbSub = DesktopAppController.projectNumberForId(projectId)
                         + " " + DesktopAppController.projectNameForId(projectId)
@@ -482,6 +509,8 @@ ApplicationWindow {
                 exportRecord(it.exportTable, it.exportId)
             break
         case "import":      importDialog.open(); break
+        case "export_settings": settingsExportPicker.open(); break
+        case "import_settings": settingsImportPicker.open(); break
         case "preferences": selectSection("settings"); break
         case "about":       aboutDialog.open(); break
         case "sync":        DesktopAppController.syncNow(); break
@@ -679,6 +708,8 @@ ApplicationWindow {
             onFilterRequested: () => filterDialog.openFor(root.currentSection)
             onSortRequested: (sx, sy) => sortMenu.openFor(root.currentSection, sx, sy)
             onItemMoveRequested: (itemId, pid) => root.requestTrackerItemMove(itemId, pid)
+            // Filtering by folder shows the list it filters.
+            onFolderFilterApplied: if (contentStack.depth > 1) root.selectSection("projects")
         }
 
         ColumnLayout {
@@ -738,6 +769,7 @@ ApplicationWindow {
                 focus: true
                 onCurrentItemChanged: {
                     if (currentItem) currentItem.forceActiveFocus(Qt.OtherFocusReason)
+                    root._reportCurrentView()
                 }
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -1725,6 +1757,67 @@ ApplicationWindow {
         onAccepted: DesktopAppController.importXmlFile(selectedFile)
     }
 
+    // File > Export / Import Settings: application and plugin settings in one
+    // JSON file, to restore here or move to another computer.
+    FileDialog {
+        id: settingsExportPicker
+        title: qsTr("Export Settings")
+        fileMode: FileDialog.SaveFile
+        defaultSuffix: "json"
+        nameFilters: [ qsTr("JSON files (*.json)") ]
+        onAccepted: {
+            var error = PluginUiController.exportAllSettings(selectedFile)
+            if (error !== "") {
+                errorDialog.title = qsTr("Export Settings")
+                errorLabel.text = error
+                errorDialog.open()
+                return
+            }
+            infoDialog.title = qsTr("Export Settings")
+            infoLabel.text = qsTr("Settings saved to %1.\n\nPasswords and the sync encryption phrase are not included.")
+                                 .arg(PluginUiController.urlToPath(selectedFile))
+            infoDialog.open()
+        }
+    }
+    FileDialog {
+        id: settingsImportPicker
+        title: qsTr("Import Settings")
+        fileMode: FileDialog.OpenFile
+        nameFilters: [ qsTr("JSON files (*.json)"), qsTr("All files (*)") ]
+        onAccepted: settingsImportConfirm.openFor(selectedFile)
+    }
+    ThemedMessageDialog {
+        id: settingsImportConfirm
+        property url source
+        iconName: "settings_backup_restore"
+        iconColor: Theme.accent
+        confirmText: qsTr("Import")
+        function openFor(url) {
+            source = url
+            title = qsTr("Import Settings")
+            message = qsTr("Settings in %1 replace the current values of the same settings. Other settings are kept.")
+                          .arg(PluginUiController.urlToPath(url))
+            open()
+        }
+        onConfirmed: {
+            var result = PluginUiController.importAllSettings(source)
+            if (!result.ok) {
+                errorDialog.title = qsTr("Import Settings")
+                errorLabel.text = result.error
+                errorDialog.open()
+                return
+            }
+            var lines = [qsTr("Imported %n application setting(s).", "", result.appCount)]
+            if (result.count > 0)
+                lines.push(qsTr("Imported %n plugin setting(s) for %1.", "", result.count).arg(result.plugins.join(", ")))
+            if (result.appCount > 0)
+                lines.push(qsTr("Restart Project Notes to use the imported application settings."))
+            infoDialog.title = qsTr("Import Settings")
+            infoLabel.text = lines.join("\n\n")
+            infoDialog.open()
+        }
+    }
+
     // Filter editor (opened from the TopBar Filter button and the hamburger menu).
     FilterDialog { id: filterDialog }
     SortMenu { id: sortMenu }
@@ -1759,4 +1852,7 @@ ApplicationWindow {
         sequences: [ StandardKey.HelpContents ]
         onActivated: root.openHelp(root._helpTopicForSection(root.currentSection))
     }
+
+    // Dialogs, pickers, progress and notifications requested by JavaScript plugins.
+    PluginUiHost { z: 100 }
 }

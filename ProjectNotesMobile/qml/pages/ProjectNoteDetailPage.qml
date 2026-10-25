@@ -79,16 +79,29 @@ Page {
     }
 
     // ── Header: utility buttons only ─────────────────────────────────────────
-    header: ToolBar {
-        implicitHeight: 44
+    // ── Actions ──────────────────────────────────────────────────────────────
+    // Glass pill floating at the top right, over the form as it scrolls.
+    NavButton {
+        id: navButton
+        anchors { left: parent.left; leftMargin: 12; verticalCenter: topBar.verticalCenter }
+    }
+
+    GlassBar {
+        id: topBar
+        z: 2
+        anchors { top: parent.top; right: parent.right; topMargin: Theme.topInset + 6; rightMargin: 12 }
+        height: 44
+        width: topBarRow.implicitWidth + 2 * contentPadding
+        contentPadding: 6
+        blurSource: scrollView
+        blurRect: Qt.rect(topBar.x - scrollView.x, topBar.y - scrollView.y,
+                          topBar.width, topBar.height)
 
         RowLayout {
-            anchors.fill: parent
+            id: topBarRow
+            anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter }
             spacing: 0
-
-            Item { Layout.fillWidth: true }
-
-            ToolButton {
+            BarButton {
                 icon.name: "envelope"
                 focusPolicy: Qt.NoFocus
                 onClicked: {
@@ -113,7 +126,7 @@ Page {
                 }
             }
 
-            ToolButton {
+            BarButton {
                 icon.name: "doc.on.doc"
                 focusPolicy: Qt.NoFocus
                 onClicked: {
@@ -134,7 +147,7 @@ Page {
                 }
             }
 
-            ToolButton {
+            BarButton {
                 icon.name: "trash"
                 focusPolicy: Qt.NoFocus
                 onClicked: {
@@ -149,12 +162,22 @@ Page {
     }
 
     // ── Footer: Attendees + Action Items ─────────────────────────────────────
-    footer: ToolBar {
+    // ── Bottom bar ───────────────────────────────────────────────────────────
+    // Glass capsule floating over the bottom of the form, like the tab bar.
+    GlassBar {
+        id: bottomBar
+        z: 2
+        anchors { bottom: parent.bottom; left: parent.left; right: parent.right; bottomMargin: 8; leftMargin: 16; rightMargin: 16 }
+        height: 60
+        blurSource: scrollView
+        blurRect: Qt.rect(bottomBar.x - scrollView.x, bottomBar.y - scrollView.y,
+                          bottomBar.width, bottomBar.height)
+
         RowLayout {
             anchors.centerIn: parent
             spacing: 32
 
-            ToolButton {
+            BarButton {
                 icon.name: "person.2"
                 // text: qsTr("Attendees")
                 display: AbstractButton.TextUnderIcon
@@ -170,7 +193,7 @@ Page {
                 }
             }
 
-            ToolButton {
+            BarButton {
                 icon.name: "checklist"
                 // text: qsTr("Action Items")
                 display: AbstractButton.TextUnderIcon
@@ -196,6 +219,9 @@ Page {
         ColumnLayout {
             width: parent.width
             spacing: 0
+            // Room for the floating action pill above the first field.
+            Item { Layout.preferredHeight: topBar.y + topBar.height + 6 }
+
 
             SectionHeader { text: qsTr("Title") }
             FieldRow {
@@ -222,11 +248,15 @@ Page {
             // // the outer ScrollView handles all vertical scrolling.
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: Math.max(120, noteEdit.contentHeight + 24)
-                color: palette.base
+                Layout.preferredHeight: Math.max(120, noteEdit.contentHeight + 40)
+                color: "transparent"
+                GlassField {
+                    anchors { fill: parent; leftMargin: 16; rightMargin: 16; topMargin: 2; bottomMargin: 2 }
+                    focused: noteEdit.activeFocus
+                }
                 TextEdit {
                     id: noteEdit
-                    anchors { fill: parent; margins: 8 }
+                    anchors { fill: parent; leftMargin: 34; rightMargin: 34; topMargin: 16; bottomMargin: 16 }
                     color: palette.text
                     selectByMouse: true
 
@@ -236,10 +266,6 @@ Page {
                     font.family: "Arial"
                     onTextChanged: root._hasChanges = true
                 }
-                Rectangle {
-                    anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-                    height: 1; color: Theme.mutedText; opacity: 0.3
-                }
             }
 
             SectionHeader {
@@ -248,9 +274,9 @@ Page {
             }
             FieldRow {
                 visible: AppController.showInternalItems
-                Switch {
+                MonoSwitch {
                     id: internalSwitch
-                    anchors { left: parent.left; verticalCenter: parent.verticalCenter; leftMargin: 12 }
+                    anchors { left: parent.left; verticalCenter: parent.verticalCenter; leftMargin: 16 }
                     checked: root.initialInternal
                     text: qsTr("Internal Item")
                     onToggled: root._hasChanges = true
@@ -264,6 +290,8 @@ Page {
                                         ? Qt.inputMethod.keyboardRectangle.height + 44 + 24
                                         : 24
             }
+            // Room for the floating bottom bar below the last field.
+            Item { Layout.preferredHeight: bottomBar.visible ? bottomBar.height + 16 : 0 }
         }
     }
 
@@ -282,24 +310,30 @@ Page {
         // usable height of the button row.
         padding: 0
         topPadding: 0
-        leftPadding: 4
-        rightPadding: 4
+        leftPadding: 10
+        rightPadding: 10
 
-        x: 0
+        // A glass capsule inset from the screen edges, floating just above
+        // the keyboard like the tab bar floats above the lists.
+        x: 8
         y: Qt.inputMethod.visible
-           ? Qt.inputMethod.keyboardRectangle.y - height
-           : (parent ? parent.height - height : 0)
-        width:  parent ? parent.width : 390
-        height: 48
+           ? Qt.inputMethod.keyboardRectangle.y - height - 8
+           : (parent ? parent.height - height - 8 : 0)
+        width:  parent ? parent.width - 16 : 374
+        height: 52
 
         visible: !_formatSheetOpen && !_fontPickerOpen && (Qt.inputMethod.visible || noteEdit.selectionStart !== noteEdit.selectionEnd)
 
-        background: Rectangle {
-            radius: 16
-            color: Qt.rgba(palette.window.r, palette.window.g, palette.window.b, 0.97)
-            Rectangle {
-                anchors { top: parent.top; left: parent.left; right: parent.right }
-                height: 1; color: palette.mid; opacity: 0.4
+        // Frosts the note text scrolling behind the bar. blurRect is the
+        // bar's area in page coordinates (the popup lives in the overlay).
+        // mapFromItem() isn't tracked by the binding, so it also re-runs on
+        // open and on page resize: its first run comes before layout settles.
+        background: GlassBar {
+            blurSource: root
+            blurRect: {
+                keyboardAccessory.opened; root.width; root.height
+                var p = root.mapFromItem(Overlay.overlay, keyboardAccessory.x, keyboardAccessory.y)
+                return Qt.rect(p.x, p.y, keyboardAccessory.width, keyboardAccessory.height)
             }
         }
 
@@ -307,7 +341,7 @@ Page {
             spacing: 4
 
             // Aa — open the Format sheet
-            ToolButton {
+            BarButton {
                 text: "Aa"
                 font.pixelSize: 18
                 font.weight: Font.DemiBold
@@ -327,7 +361,7 @@ Page {
             }
 
             // Font — open advanced font picker
-            ToolButton {
+            BarButton {
                 text: "ƒ"
                 font.pixelSize: 18
                 focusPolicy: Qt.NoFocus
@@ -347,7 +381,7 @@ Page {
             Rectangle { width: 1; height: 22; color: palette.mid; opacity: 0.4; Layout.alignment: Qt.AlignVCenter }
 
             // Font size bump controls
-            ToolButton {
+            BarButton {
                 text: "A+"; font.pixelSize: 18; font.weight: Font.DemiBold; focusPolicy: Qt.NoFocus
                 onClicked: {
                     var ss = noteEdit.selectionStart
@@ -357,7 +391,7 @@ Page {
                     noteEdit.select(ss, se)
                 }
             }
-            ToolButton {
+            BarButton {
                 text: "A-"; font.pixelSize: 18; font.weight: Font.DemiBold; focusPolicy: Qt.NoFocus
                 onClicked: {
                     var ss = noteEdit.selectionStart
@@ -370,14 +404,14 @@ Page {
 
             Rectangle { width: 1; height: 22; color: palette.mid; opacity: 0.4; Layout.alignment: Qt.AlignVCenter }
 
-            ToolButton {
+            BarButton {
                 icon.name: "list.bullet"; focusPolicy: Qt.NoFocus
                 onClicked: {
                     TextFormatter.applyStyle(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 1)
                     noteEdit.forceActiveFocus()
                 }
             }
-            ToolButton {
+            BarButton {
                 icon.name: "list.number"; focusPolicy: Qt.NoFocus
                 onClicked: {
                     TextFormatter.applyStyle(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 4)
@@ -387,14 +421,14 @@ Page {
 
             Rectangle { width: 1; height: 22; color: palette.mid; opacity: 0.4; Layout.alignment: Qt.AlignVCenter }
 
-            ToolButton {
+            BarButton {
                 text: "⇥"; font.pixelSize: 18; focusPolicy: Qt.NoFocus
                 onClicked: {
                     TextFormatter.indentText(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd)
                     noteEdit.forceActiveFocus()
                 }
             }
-            ToolButton {
+            BarButton {
                 text: "⇤"; font.pixelSize: 18; focusPolicy: Qt.NoFocus
                 onClicked: {
                     TextFormatter.unindentText(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd)
@@ -405,7 +439,7 @@ Page {
             Item { Layout.fillWidth: true }
 
             // Dismiss keyboard
-            ToolButton {
+            BarButton {
                 icon.name: "keyboard.chevron.compact.down"
                 focusPolicy: Qt.NoFocus
                 onClicked: Qt.inputMethod.hide()
@@ -465,16 +499,5 @@ Page {
             function(match, size, unit) {
                 return "font-size:" + Math.round(parseFloat(size) * factor) + unit
             })
-    }
-
-    component SectionHeader: Label {
-        Layout.fillWidth: true
-        Layout.topMargin: 20
-        leftPadding: 16
-        bottomPadding: 4
-        font.pixelSize: 13
-        font.weight: 600
-        color: Theme.navyMid
-        background: Rectangle { color: Theme.sectionBg }
     }
 }

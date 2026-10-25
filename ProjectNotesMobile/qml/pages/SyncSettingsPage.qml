@@ -22,166 +22,106 @@ Page {
         AppController.syncEncryptionPhrase = phraseField.text
     }
 
+    // Same spot as on the list pages; see MainMenuPage.qml.
+    NavButton {
+        id: navButton
+        anchors { top: parent.top; left: parent.left; topMargin: Theme.topInset + 8; leftMargin: 12 }
+    }
+
     ScrollView {
-        anchors.fill: parent
+        anchors.fill: parent    // content scrolls up under the title bar
         contentWidth: availableWidth
 
         ColumnLayout {
             width: parent.width
             spacing: 0
+            Item { Layout.preferredHeight: navButton.y + navButton.height + 4 }
 
             // ── Sync toggle ───────────────────────────────────────────────────
-            SectionHeader { text: qsTr("Sync") }
+            SettingsSection {
+                title: qsTr("Sync")
 
-            SettingsRow {
-                label: qsTr("Enable Sync")
-                control: Switch {
-                    checked: AppController.syncEnabled
-                    onToggled: AppController.syncEnabled = checked
+                SettingsItem {
+                    text: qsTr("Enable Sync")
+                    showChevron: false
+                    control: MonoSwitch {
+                        checked: AppController.syncEnabled
+                        onToggled: AppController.syncEnabled = checked
+                    }
                 }
             }
 
             // ── Credentials ───────────────────────────────────────────────────
-            SectionHeader { text: qsTr("Email") }
-            FieldRow {
-                FormField {
-                    id: emailField
-                    text: AppController.syncEmail
-                    placeholderText: qsTr("user@example.com")
-                    inputMethodHints: Qt.ImhEmailCharactersOnly | Qt.ImhNoPredictiveText
-                    onEditingFinished: AppController.syncEmail = text
-                }
-            }
+            SettingsSection {
+                title: qsTr("Account")
 
-            SectionHeader { text: qsTr("Password") }
-            FieldRow {
-                FormField {
-                    id: passwordField
-                    text: AppController.syncPassword
-                    placeholderText: qsTr("password")
-                    echoMode: TextInput.Password
-                    onEditingFinished: AppController.syncPassword = text
+                SettingsItem {
+                    text: qsTr("Email")
+                    showChevron: false
+                    fillControl: true
+                    control: SettingsField {
+                        id: emailField
+                        text: AppController.syncEmail
+                        placeholderText: qsTr("user@example.com")
+                        inputMethodHints: Qt.ImhEmailCharactersOnly | Qt.ImhNoPredictiveText
+                        onEditingFinished: AppController.syncEmail = text
+                    }
                 }
-            }
 
-            SectionHeader { text: qsTr("Encryption Phrase") }
-            FieldRow {
-                FormField {
-                    id: phraseField
-                    text: AppController.syncEncryptionPhrase
-                    placeholderText: qsTr("optional passphrase")
-                    onEditingFinished: AppController.syncEncryptionPhrase = text
+                SettingsItem {
+                    text: qsTr("Password")
+                    showChevron: false
+                    fillControl: true
+                    control: SettingsField {
+                        id: passwordField
+                        text: AppController.syncPassword
+                        placeholderText: qsTr("password")
+                        echoMode: TextInput.Password
+                        onEditingFinished: AppController.syncPassword = text
+                    }
+                }
+
+                SettingsItem {
+                    text: qsTr("Encryption Phrase")
+                    showChevron: false
+                    fillControl: true
+                    control: SettingsField {
+                        id: phraseField
+                        text: AppController.syncEncryptionPhrase
+                        placeholderText: qsTr("optional")
+                        onEditingFinished: AppController.syncEncryptionPhrase = text
+                    }
                 }
             }
 
             // ── Subscription status ───────────────────────────────────────────
-            SectionHeader { text: qsTr("Subscription") }
+            SettingsSection {
+                title: qsTr("Subscription")
 
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: subscriptionLabel.implicitHeight + 24
-                color: palette.base
-
-                Label {
-                    id: subscriptionLabel
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                SettingsItem {
                     text: AppController.subscriptionStatusText.length > 0
                           ? AppController.subscriptionStatusText
                           : qsTr("Not connected — enable sync to view subscription status")
-                    textFormat: Text.RichText
-                    wrapMode: Text.Wrap
-                    horizontalAlignment: Text.AlignHCenter
+                    showChevron: false
+                    down: false        // information only, not a button
                 }
 
-                Rectangle {
-                    anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-                    height: 1
-                    color: Theme.mutedText
-                    opacity: 0.3
-                }
-            }
-
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 44
-                color: palette.base
-
-                Label {
-                    anchors.centerIn: parent
-                    text: "<a href=\"https://www.projectnotespro.com\">www.projectnotespro.com</a>"
-                    textFormat: Text.RichText
-                    horizontalAlignment: Text.AlignHCenter
-                    onLinkActivated: Qt.openUrlExternally(link)
-                }
-
-                Rectangle {
-                    anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-                    height: 1
-                    color: Theme.mutedText
-                    opacity: 0.3
+                SettingsItem {
+                    text: qsTr("www.projectnotespro.com")
+                    iconName: "safari"
+                    showChevron: false
+                    onClicked: Qt.openUrlExternally("https://www.projectnotespro.com")
                 }
             }
 
             Label {
                 Layout.fillWidth: true
-                Layout.topMargin: 8
-                Layout.bottomMargin: 16
+                Layout.topMargin: 12
+                Layout.bottomMargin: 24
                 horizontalAlignment: Text.AlignHCenter
                 text: AppController.supabaseConnectionInfo
-                font.pixelSize: 11
-                color: Theme.mutedText
-                opacity: 0.6
-            }
-        }
-    }
-
-    // ── Helper components ─────────────────────────────────────────────────────
-
-    component SectionHeader: Label {
-        Layout.fillWidth: true
-        Layout.topMargin: 20
-        leftPadding: 16
-        bottomPadding: 4
-        font.pixelSize: 13
-        font.weight: 600
-        color: Theme.navyMid
-        background: Rectangle { color: Theme.sectionBg }
-    }
-
-    component SettingsRow: RowLayout {
-        property string label: ""
-        property alias control: controlSlot.children
-
-        Layout.fillWidth: true
-        Layout.preferredHeight: 44
-        spacing: 0
-
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            color: palette.base
-
-            RowLayout {
-                anchors { fill: parent; leftMargin: 16; rightMargin: 16 }
-
-                Label {
-                    text: parent.parent.parent.label
-                    Layout.fillWidth: true
-                }
-
-                Item {
-                    id: controlSlot
-                    Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
-                    implicitWidth: children.length > 0 ? children[0].implicitWidth : 0
-                    implicitHeight: children.length > 0 ? children[0].implicitHeight : 0
-                }
-            }
-
-            Rectangle {
-                anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-                height: 1
-                color: Theme.mutedText
-                opacity: 0.3
+                font.pixelSize: Theme.caption2; font.letterSpacing: Theme.tracking(Theme.caption2)
+                color: Theme.secondaryText
             }
         }
     }

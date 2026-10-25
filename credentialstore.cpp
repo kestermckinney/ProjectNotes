@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "credentialstore.h"
+#include "appidentity.h"
 
 #include <QByteArray>
 
@@ -54,7 +55,7 @@ Q_DECLARE_METATYPE(SecretServiceSecret)
 namespace {
 QString storeKey(const QString& service, const QString& account)
 {
-    return QStringLiteral("com.projectnotespro.ProjectNotes/%1/%2").arg(service, account);
+    return QStringLiteral("%1/%2/%3").arg(PN::Identity::credentialNamespace(), service, account);
 }
 
 #if defined(Q_OS_LINUX)
@@ -121,6 +122,21 @@ QByteArray readSecretValue(const QVariant& value)
 {
     return qdbus_cast<SecretServiceSecret>(value).value;
 }
+#elif defined(Q_OS_DARWIN)
+// A generic-password query for one service/account pair; the caller releases it.
+CFMutableDictionaryRef keychainQuery(const QString& service, const QString& account)
+{
+    CFMutableDictionaryRef query = CFDictionaryCreateMutable(nullptr, 0, &kCFTypeDictionaryKeyCallBacks,
+                                                             &kCFTypeDictionaryValueCallBacks);
+    CFStringRef s = service.toCFString();
+    CFStringRef a = account.toCFString();
+    CFDictionarySetValue(query, kSecClass, kSecClassGenericPassword);
+    CFDictionarySetValue(query, kSecAttrService, s);
+    CFDictionarySetValue(query, kSecAttrAccount, a);
+    CFRelease(s);
+    CFRelease(a);
+    return query;
+}
 #endif
 }
 
@@ -157,7 +173,7 @@ QString CredentialStore::read(const QString& service, const QString& account, QS
     if (status == errSecItemNotFound) return {};
     if (status != errSecSuccess)
     {
-        if (error) *error = QStringLiteral("macOS Keychain error %1.").arg(status);
+        if (error) *error = QStringLiteral("Keychain error %1.").arg(status);
         return {};
     }
     CFDataRef data = static_cast<CFDataRef>(result);
@@ -207,10 +223,18 @@ bool CredentialStore::write(const QString& service, const QString& account, cons
 #elif defined(Q_OS_DARWIN)
     QString ignored;
     remove(service, account, &ignored);
-    const QByteArray s = service.toUtf8(), a = account.toUtf8(), value = secret.toUtf8();
-    OSStatus status = SecKeychainAddGenericPassword(nullptr, s.size(), s.constData(), a.size(), a.constData(),
-                                                     value.size(), value.constData(), nullptr);
-    if (status != errSecSuccess && error) *error = QStringLiteral("macOS Keychain error %1.").arg(status);
+    CFMutableDictionaryRef item = keychainQuery(service, account);
+    const QByteArray value = secret.toUtf8();
+    CFDataRef data = CFDataCreate(nullptr, reinterpret_cast<const UInt8*>(value.constData()), value.size());
+    CFDictionarySetValue(item, kSecValueData, data);
+#if defined(Q_OS_IOS)
+    // Background sync may run while the device is locked, after the first unlock.
+    CFDictionarySetValue(item, kSecAttrAccessible, kSecAttrAccessibleAfterFirstUnlock);
+#endif
+    const OSStatus status = SecItemAdd(item, nullptr);
+    CFRelease(data);
+    CFRelease(item);
+    if (status != errSecSuccess && error) *error = QStringLiteral("Keychain error %1.").arg(status);
     return status == errSecSuccess;
 #elif defined(Q_OS_LINUX)
     SecretSession session = openSession();
@@ -253,14 +277,12 @@ bool CredentialStore::remove(const QString& service, const QString& account, QSt
     if (error) *error = QStringLiteral("Windows Credential Manager error %1.").arg(GetLastError());
     return false;
 #elif defined(Q_OS_DARWIN)
-    const QByteArray s = service.toUtf8(), a = account.toUtf8();
-    SecKeychainItemRef item = nullptr;
-    OSStatus status = SecKeychainFindGenericPassword(nullptr, s.size(), s.constData(), a.size(), a.constData(), nullptr, nullptr, &item);
-    if (status == errSecItemNotFound) return true;
-    if (status == errSecSuccess) status = SecKeychainItemDelete(item);
-    if (item) CFRelease(item);
-    if (status != errSecSuccess && error) *error = QStringLiteral("macOS Keychain error %1.").arg(status);
-    return status == errSecSuccess;
+    CFMutableDictionaryRef query = keychainQuery(service, account);
+    const OSStatus status = SecItemDelete(query);
+    CFRelease(query);
+    if (status == errSecSuccess || status == errSecItemNotFound) return true;
+    if (error) *error = QStringLiteral("Keychain error %1.").arg(status);
+    return false;
 #elif defined(Q_OS_LINUX)
     QString searchError;
     const auto items = searchUnlocked(secretAttributes(service, account), &searchError);

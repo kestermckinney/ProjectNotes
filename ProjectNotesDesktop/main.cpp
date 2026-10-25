@@ -3,10 +3,13 @@
 
 #include "version.h"
 #include "DesktopAppController.h"
+#include "PluginUiController.h"
 #include "FolderManager.h"
 #include "HelpController.h"
 #include "LogViewerController.h"
 #include "runguard.h"
+#include "SecurityScopedBookmarks.h"
+#include "DirectDownloadMigration.h"
 #include "SpellCheck.h"
 #include "TextFormatter.h"
 #include "ProjectNotesIntegrations/CommunicationTypes.h"
@@ -25,7 +28,6 @@
 #include <QStandardPaths>
 #include <QTextStream>
 #include <QWindow>
-#include <QtWebEngineQuick/QtWebEngineQuick>
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -98,10 +100,6 @@ void applyWindowsTaskbarIdentity(QWindow* window)
 
 int main(int argc, char* argv[])
 {
-    // WebEngine Quick must initialise before QApplication/QML construction so
-    // native report rendering and any future in-app HTML preview use the same
-    // deployed QtWebEngine helper rather than a Python wheel's runtime.
-    QtWebEngineQuick::initialize();
     PN::Comm::registerCommunicationMetaTypes();
 #if defined(_WIN32)
     // Give the QML desktop app its own taskbar / Task Manager identity. Both this
@@ -113,13 +111,6 @@ int main(int argc, char* argv[])
     // process uses its own embedded/window icon. Must be called early in main().
     SetCurrentProcessExplicitAppUserModelID(L"ProjectNotesPro.ProjectNotes.Desktop");
 #endif
-
-    // Must be set before QApplication is constructed, or any Python plugin that
-    // imports PyQt6.QtWebEngineWidgets fails to load with "QtWebEngineWidgets
-    // must be imported or Qt.AA_ShareOpenGLContexts must be set before a
-    // QCoreApplication instance is created". No bundled plugin still does this
-    // now that the report plugins are native, but user plugins may.
-    QCoreApplication::setAttribute(Qt::ApplicationAttribute::AA_ShareOpenGLContexts);
 
     // QApplication (not QGuiApplication): ProjectNotesCore surfaces database
     // errors through QMessageBox, which requires the Widgets application object.
@@ -133,14 +124,11 @@ int main(int argc, char* argv[])
     // derived from its executable basename, which its CMake sets per platform:
     //   Linux  -> "projectnotes"   (OUTPUT_NAME)
     //   Win/mac-> "Project Notes"  (OUTPUT_NAME / bundle name)
-    // We set applicationName explicitly to reproduce the identical path.
+    // We set applicationName explicitly to reproduce the identical path
+    // (PN::Identity::applicationName(), appidentity.h).
     QApplication::setOrganizationDomain("projectnotespro.com");
-#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
-    QApplication::setApplicationName("Project Notes");
-#else
-    QApplication::setApplicationName("projectnotes");
-#endif
-    QApplication::setApplicationDisplayName("Project Notes");
+    QApplication::setApplicationName(PN::Identity::applicationName());
+    QApplication::setApplicationDisplayName(PN::Identity::displayName());
     QApplication::setApplicationVersion(QStringLiteral(APP_VERSION_STRING));
 
     // --developer-profile PROFILENAME: use a separate data directory (same
@@ -164,17 +152,26 @@ int main(int argc, char* argv[])
     if (parser.isSet(testSupabaseOption))
         DesktopAppController::setTestSupabase(true);
 
-    // Single-instance guard — same RunGuard class and behavior as the Widgets
-    // app (critical dialog, then exit), but its own UUID key so the two apps'
-    // guards are independent: this only blocks a second copy of THIS app, not
-    // the Widgets build running alongside it — both still share the same WAL
-    // SQLite database, which handles that concurrent access fine.
+#ifdef PN_APP_STORE
+    // The App Store updates the app; the in-app updater must stay off.
+    DesktopAppController::setUpdateChecksEnabled(false);
+    // First start: offer to copy the direct download's data into the container.
+    if (!parser.isSet(devProfileOption))
+        DirectDownloadMigration::run();
+    // Reopen the folders the user granted in earlier sessions (sandbox).
+    SecurityScopedBookmarks::setSettingsOrganization(DesktopAppController::localSettingsOrganization());
+    SecurityScopedBookmarks::restoreAll();
+#else
+    // Single-instance guard (critical dialog, then exit). The App Store build
+    // relies on macOS instead, which keeps a bundle to one running instance;
+    // RunGuard's System V semaphore is not allowed in the App Sandbox.
     RunGuard guard("2863cc03-a39e-4aca-b328-de18b045d0ba");
     if (!guard.tryToRun()) {
         QMessageBox::critical(nullptr, QStringLiteral("Only One Instance"),
             QObject::tr("Only one instance of Project Notes can be running at a time."));
         return 0;
     }
+#endif
 
 #ifndef Q_OS_MACOS
     // Windows/Linux taskbar and window-manager icon hints come from the window's
@@ -186,10 +183,6 @@ int main(int argc, char* argv[])
     // appears. Skipping it on macOS keeps the Dock icon the bundle one throughout.
     app.setWindowIcon(QIcon(":/qt/qml/ProjectNotesDesktop/icons/projectnotes.ico"));
 #endif
-
-    // The executable links QtWebEngine directly.  Deployment must therefore
-    // provide Qt's matching helper/resources; never redirect it into a PyQt
-    // wheel, which can silently mix incompatible Qt runtimes.
 
     // Basic style is fully themeable (no platform palette overrides), which the
     // custom light/dark design system in Theme.qml relies on.
@@ -210,6 +203,8 @@ int main(int argc, char* argv[])
         "ProjectNotesDesktop", 1, 0, "HelpController", &HelpController::create);
     qmlRegisterSingletonType<TextFormatter>(
         "ProjectNotesDesktop", 1, 0, "TextFormatter", &TextFormatter::create);
+    qmlRegisterSingletonType<PluginUiController>(
+        "ProjectNotesDesktop", 1, 0, "PluginUiController", &PluginUiController::create);
     // Creatable (non-singleton) inline spell-check attach type.
     qmlRegisterType<SpellCheck>("ProjectNotesDesktop", 1, 0, "SpellCheck");
 
@@ -240,7 +235,7 @@ int main(int argc, char* argv[])
 
         // Append to a startup log next to the app's data so failures on end-user
         // machines leave a trace even if the dialog is dismissed unread.
-        const QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+        const QString dir = DesktopAppController::dataLocation();
         QDir().mkpath(dir);
         QFile logFile(dir + QStringLiteral("/startup-error.log"));
         if (logFile.open(QFile::WriteOnly | QFile::Append | QFile::Text)) {

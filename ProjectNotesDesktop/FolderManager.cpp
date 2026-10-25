@@ -3,16 +3,31 @@
 
 #include "FolderManager.h"
 
-#include "databaseobjects.h"
+#include "DesktopAppController.h"
 
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
+#include <QSettings>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QUuid>
 #include <QVariantMap>
 
 FolderManager* FolderManager::s_instance = nullptr;
-const QString  FolderManager::kSettingKey = QStringLiteral("project_folders");
+
+namespace {
+
+// Collapse state is a per-device preference, so it lives in the local store
+// rather than the synced database.
+QSettings localSettings()
+{
+    return QSettings(DesktopAppController::localSettingsOrganization(), QStringLiteral("AppSettings"));
+}
+
+QString collapsedKey(const QString& group)
+{
+    return QStringLiteral("ProjectFolders/Collapsed/") + group;
+}
+
+} // namespace
 
 FolderManager* FolderManager::create(QQmlEngine* /*engine*/, QJSEngine* /*scriptEngine*/)
 {
@@ -28,44 +43,55 @@ FolderManager::FolderManager(QObject* parent)
         s_instance = this;
 }
 
+FolderManager::~FolderManager()
+{
+    if (s_instance == this)
+        s_instance = nullptr;
+}
+
 // ── QML property ─────────────────────────────────────────────────────────────
 
 QVariantList FolderManager::folders() const
 {
+    const QSettings settings = localSettings();
     QVariantList out;
     out.reserve(m_folders.size());
     for (const Folder& f : m_folders) {
-        int count = 0;
-        for (auto it = m_memberships.constBegin(); it != m_memberships.constEnd(); ++it)
-            if (it.value().contains(f.id)) ++count;
-
         QVariantMap m;
         m.insert(QStringLiteral("id"),        f.id);
         m.insert(QStringLiteral("name"),      f.name);
         m.insert(QStringLiteral("icon"),      f.icon);
         m.insert(QStringLiteral("color"),     f.color);
-        m.insert(QStringLiteral("count"),     count);
-        m.insert(QStringLiteral("collapsed"), f.collapsed);
+        m.insert(QStringLiteral("count"),     m_counts.value(f.id));
+        m.insert(QStringLiteral("collapsed"), settings.value(collapsedKey(f.id), false).toBool());
         out.append(m);
     }
     return out;
 }
 
+bool FolderManager::allProjectsCollapsed() const
+{
+    return localSettings().value(collapsedKey(QStringLiteral("AllProjects")), false).toBool();
+}
+
 void FolderManager::setAllProjectsCollapsed(bool collapsed)
 {
-    if (m_allProjectsCollapsed == collapsed)
+    if (allProjectsCollapsed() == collapsed)
         return;
-    m_allProjectsCollapsed = collapsed;
-    save();
+    localSettings().setValue(collapsedKey(QStringLiteral("AllProjects")), collapsed);
     emit allProjectsCollapsedChanged();
+}
+
+bool FolderManager::uncategorizedCollapsed() const
+{
+    return localSettings().value(collapsedKey(QStringLiteral("Uncategorized")), false).toBool();
 }
 
 void FolderManager::setUncategorizedCollapsed(bool collapsed)
 {
-    if (m_uncategorizedCollapsed == collapsed)
+    if (uncategorizedCollapsed() == collapsed)
         return;
-    m_uncategorizedCollapsed = collapsed;
-    save();
+    localSettings().setValue(collapsedKey(QStringLiteral("Uncategorized")), collapsed);
     emit uncategorizedCollapsedChanged();
 }
 
@@ -74,100 +100,43 @@ void FolderManager::setUncategorizedCollapsed(bool collapsed)
 void FolderManager::reload()
 {
     // Callers (sync completion, XML/plugin import) invoke this whenever external
-    // data may have changed. Only rebuild — and only signal QML — when the stored
-    // document actually differs from what we already hold, so an unrelated sync
-    // never resets the sidebar's expand state or re-instantiates its rows.
-    if (global_DBObjects.loadParameter(kSettingKey) == m_rawJson)
+    // data may have changed. Only signal QML when something differs, so an
+    // unrelated sync never resets the sidebar's rows.
+    QVector<Folder> folders;
+    QHash<QString, int> counts;
+    load(folders, counts);
+    if (folders == m_folders && counts == m_counts)
         return;
-
-    load();
+    m_folders = folders;
+    m_counts = counts;
     emit foldersChanged();
-    emit allProjectsCollapsedChanged();
-    emit uncategorizedCollapsedChanged();
 }
 
-void FolderManager::load()
+void FolderManager::refresh()
 {
-    m_folders.clear();
-    m_memberships.clear();
-
-    const QString raw = global_DBObjects.loadParameter(kSettingKey);
-    m_rawJson = raw;
-    if (raw.isEmpty())
-        return;
-
-    const QJsonDocument doc = QJsonDocument::fromJson(raw.toUtf8());
-    if (!doc.isObject())
-        return;
-
-    const QJsonObject root = doc.object();
-
-    const QJsonArray folders = root.value(QStringLiteral("folders")).toArray();
-    for (const QJsonValue& v : folders) {
-        const QJsonObject o = v.toObject();
-        Folder f;
-        f.id    = o.value(QStringLiteral("id")).toString();
-        f.name  = o.value(QStringLiteral("name")).toString();
-        f.icon  = o.value(QStringLiteral("icon")).toString(QStringLiteral("folder"));
-        f.color = o.value(QStringLiteral("color")).toString(QStringLiteral("#c98a1a"));
-        f.collapsed = o.value(QStringLiteral("collapsed")).toBool(false);
-        if (!f.id.isEmpty())
-            m_folders.append(f);
-    }
-
-    m_allProjectsCollapsed   = root.value(QStringLiteral("allCollapsed")).toBool(false);
-    m_uncategorizedCollapsed = root.value(QStringLiteral("uncategorizedCollapsed")).toBool(false);
-
-    const QJsonObject memberships = root.value(QStringLiteral("memberships")).toObject();
-    for (auto it = memberships.constBegin(); it != memberships.constEnd(); ++it) {
-        QStringList folderIds;
-        for (const QJsonValue& fv : it.value().toArray()) {
-            const QString fid = fv.toString();
-            if (!fid.isEmpty())
-                folderIds.append(fid);
-        }
-        if (!folderIds.isEmpty())
-            m_memberships.insert(it.key(), folderIds);
-    }
+    load(m_folders, m_counts);
+    emit foldersChanged();
 }
 
-void FolderManager::save()
+void FolderManager::load(QVector<Folder>& folders, QHash<QString, int>& counts) const
 {
-    QJsonArray folders;
-    for (int i = 0; i < m_folders.size(); ++i) {
-        const Folder& f = m_folders.at(i);
-        QJsonObject o;
-        o.insert(QStringLiteral("id"),        f.id);
-        o.insert(QStringLiteral("name"),      f.name);
-        o.insert(QStringLiteral("icon"),      f.icon);
-        o.insert(QStringLiteral("color"),     f.color);
-        o.insert(QStringLiteral("order"),     i);
-        o.insert(QStringLiteral("collapsed"), f.collapsed);
-        folders.append(o);
+    folders.clear();
+    counts.clear();
+    if (!global_DBObjects.getDb().isOpen())
+        return;
+
+    QSqlQuery q(global_DBObjects.getDb());
+    if (q.exec(QStringLiteral("SELECT id, folder_name, icon, color FROM project_folders WHERE deleted = 0 "
+                              "ORDER BY sort_order, folder_name COLLATE NOCASE"))) {
+        while (q.next())
+            folders.append({q.value(0).toString(), q.value(1).toString(),
+                            q.value(2).toString(), q.value(3).toString()});
     }
-
-    QJsonObject memberships;
-    for (auto it = m_memberships.constBegin(); it != m_memberships.constEnd(); ++it) {
-        if (it.value().isEmpty())
-            continue;
-        QJsonArray arr;
-        for (const QString& fid : it.value())
-            arr.append(fid);
-        memberships.insert(it.key(), arr);
+    if (q.exec(QStringLiteral("SELECT folder_id, COUNT(*) FROM projects "
+                              "WHERE deleted = 0 AND COALESCE(folder_id, '') <> '' GROUP BY folder_id"))) {
+        while (q.next())
+            counts.insert(q.value(0).toString(), q.value(1).toInt());
     }
-
-    QJsonObject root;
-    root.insert(QStringLiteral("folders"), folders);
-    root.insert(QStringLiteral("memberships"), memberships);
-    root.insert(QStringLiteral("allCollapsed"), m_allProjectsCollapsed);
-    root.insert(QStringLiteral("uncategorizedCollapsed"), m_uncategorizedCollapsed);
-
-    const QByteArray json = QJsonDocument(root).toJson(QJsonDocument::Compact);
-    m_rawJson = QString::fromUtf8(json);   // keep in step so a synced echo of this
-                                           // same value is recognised as a no-op
-    global_DBObjects.saveParameter(kSettingKey, m_rawJson);
-
-    emit foldersChanged();
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -180,82 +149,130 @@ int FolderManager::indexOfFolder(const QString& folderId) const
     return -1;
 }
 
+void FolderManager::folderRowChanged(const QString& folderId, KeyColumnChange::OperationType operation)
+{
+    // Tells the projects proxies their cached folder names are stale.
+    global_DBObjects.pushRowChange(QStringLiteral("project_folders"), folderId, operation);
+    global_DBObjects.updateDisplayData();
+}
+
+bool FolderManager::updateFolder(const QString& folderId, const char* column, const QVariant& value)
+{
+    if (indexOfFolder(folderId) < 0)
+        return false;
+    QSqlQuery q(global_DBObjects.getDb());
+    q.prepare(QStringLiteral("UPDATE project_folders SET %1 = ? WHERE id = ?").arg(QLatin1String(column)));
+    q.addBindValue(value);
+    q.addBindValue(folderId);
+    if (!q.exec())
+        return false;
+    folderRowChanged(folderId, KeyColumnChange::Update);
+    refresh();
+    return true;
+}
+
 // ── Folder CRUD ──────────────────────────────────────────────────────────────
 
-QString FolderManager::addFolder(const QString& name, const QString& icon, const QString& color)
+QString FolderManager::folderNameError(const QString& name, const QString& excludeFolderId) const
 {
     const QString trimmed = name.trimmed();
     if (trimmed.isEmpty())
+        return tr("Enter a folder name.");
+    for (const Folder& f : m_folders)
+        if (f.id != excludeFolderId && f.name.compare(trimmed, Qt::CaseInsensitive) == 0)
+            return tr("A folder named \"%1\" already exists.").arg(f.name);
+    return {};
+}
+
+QString FolderManager::folderName(const QString& folderId) const
+{
+    const int i = indexOfFolder(folderId);
+    return i < 0 ? QString() : m_folders.at(i).name;
+}
+
+QString FolderManager::addFolder(const QString& name, const QString& icon, const QString& color)
+{
+    if (!folderNameError(name).isEmpty())
         return {};
 
-    Folder f;
-    f.id    = QUuid::createUuid().toString(QUuid::WithoutBraces);
-    f.name  = trimmed;
-    f.icon  = icon.isEmpty() ? QStringLiteral("folder") : icon;
-    f.color = color.isEmpty() ? QStringLiteral("#c98a1a") : color;
-    m_folders.append(f);
-    save();
-    return f.id;
+    const QString id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    QSqlQuery q(global_DBObjects.getDb());
+    q.prepare(QStringLiteral("INSERT INTO project_folders(id, folder_name, icon, color, sort_order, updateddate, deleted) "
+                             "VALUES(?, ?, ?, ?, (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM project_folders), "
+                             "CAST(strftime('%s', 'now') AS INTEGER), 0)"));
+    q.addBindValue(id);
+    q.addBindValue(name.trimmed());
+    q.addBindValue(icon.isEmpty() ? QStringLiteral("folder") : icon);
+    q.addBindValue(color.isEmpty() ? QStringLiteral("#c98a1a") : color);
+    if (!q.exec())
+        return {};
+    folderRowChanged(id, KeyColumnChange::Insert);
+    refresh();
+    return id;
 }
 
 bool FolderManager::renameFolder(const QString& folderId, const QString& name)
 {
-    const int i = indexOfFolder(folderId);
-    if (i < 0 || name.trimmed().isEmpty())
+    if (!folderNameError(name, folderId).isEmpty())
         return false;
-    m_folders[i].name = name.trimmed();
-    save();
-    return true;
+    return updateFolder(folderId, "folder_name", name.trimmed());
 }
 
 bool FolderManager::setFolderIcon(const QString& folderId, const QString& icon)
 {
-    const int i = indexOfFolder(folderId);
-    if (i < 0 || icon.isEmpty())
-        return false;
-    m_folders[i].icon = icon;
-    save();
-    return true;
+    return !icon.isEmpty() && updateFolder(folderId, "icon", icon);
 }
 
 bool FolderManager::setFolderColor(const QString& folderId, const QString& color)
 {
-    const int i = indexOfFolder(folderId);
-    if (i < 0 || color.isEmpty())
-        return false;
-    m_folders[i].color = color;
-    save();
-    return true;
+    return !color.isEmpty() && updateFolder(folderId, "color", color);
 }
 
 bool FolderManager::removeFolder(const QString& folderId)
 {
-    const int i = indexOfFolder(folderId);
-    if (i < 0)
+    if (indexOfFolder(folderId) < 0)
         return false;
-    m_folders.remove(i);
 
-    // Drop this folder from every project's membership list.
-    for (auto it = m_memberships.begin(); it != m_memberships.end(); ) {
-        it.value().removeAll(folderId);
-        if (it.value().isEmpty())
-            it = m_memberships.erase(it);
-        else
-            ++it;
+    // Its projects move to Not Categorized; each one is its own synced change.
+    QStringList members;
+    QSqlQuery q(global_DBObjects.getDb());
+    q.prepare(QStringLiteral("SELECT id FROM projects WHERE folder_id = ?"));
+    q.addBindValue(folderId);
+    if (q.exec())
+        while (q.next())
+            members.append(q.value(0).toString());
+
+    QSqlDatabase& db = global_DBObjects.getDb();
+    if (!db.transaction())
+        return false;
+    QSqlQuery clear(db);
+    clear.prepare(QStringLiteral("UPDATE projects SET folder_id = NULL WHERE folder_id = ?"));
+    clear.addBindValue(folderId);
+    QSqlQuery remove(db);
+    remove.prepare(QStringLiteral("UPDATE project_folders SET deleted = 1 WHERE id = ?"));
+    remove.addBindValue(folderId);
+    if (!clear.exec() || !remove.exec() || !db.commit()) {
+        db.rollback();
+        return false;
     }
-    save();
+
+    localSettings().remove(collapsedKey(folderId));
+    for (const QString& projectId : std::as_const(members))
+        global_DBObjects.pushRowChange(QStringLiteral("projects"), projectId);
+    folderRowChanged(folderId, KeyColumnChange::Delete);
+    refresh();
     return true;
 }
 
 bool FolderManager::setFolderCollapsed(const QString& folderId, bool collapsed)
 {
-    const int i = indexOfFolder(folderId);
-    if (i < 0)
+    if (indexOfFolder(folderId) < 0)
         return false;
-    if (m_folders[i].collapsed == collapsed)
+    QSettings settings = localSettings();
+    if (settings.value(collapsedKey(folderId), false).toBool() == collapsed)
         return true;
-    m_folders[i].collapsed = collapsed;
-    save();
+    settings.setValue(collapsedKey(folderId), collapsed);
+    emit foldersChanged();
     return true;
 }
 
@@ -264,65 +281,64 @@ bool FolderManager::moveFolder(const QString& folderId, int newIndex)
     const int i = indexOfFolder(folderId);
     if (i < 0)
         return false;
-    newIndex = qBound(0, newIndex, m_folders.size() - 1);
+    newIndex = qBound(0, newIndex, int(m_folders.size()) - 1);
     if (newIndex == i)
         return true;
-    const Folder f = m_folders.at(i);
-    m_folders.remove(i);
-    m_folders.insert(newIndex, f);
-    save();
+    QVector<Folder> order = m_folders;
+    order.move(i, newIndex);
+
+    QSqlDatabase& db = global_DBObjects.getDb();
+    if (!db.transaction())
+        return false;
+    for (int n = 0; n < order.size(); ++n) {
+        QSqlQuery q(db);
+        q.prepare(QStringLiteral("UPDATE project_folders SET sort_order = ? WHERE id = ? AND sort_order IS NOT ?"));
+        q.addBindValue(n);
+        q.addBindValue(order.at(n).id);
+        q.addBindValue(n);
+        if (!q.exec()) {
+            db.rollback();
+            return false;
+        }
+    }
+    if (!db.commit()) {
+        db.rollback();
+        return false;
+    }
+    refresh();
     return true;
 }
 
 // ── Membership ───────────────────────────────────────────────────────────────
 
-bool FolderManager::addProjectToFolder(const QString& projectId, const QString& folderId)
+bool FolderManager::setProjectFolder(const QString& projectId, const QString& folderId)
 {
-    if (projectId.isEmpty() || indexOfFolder(folderId) < 0)
+    if (projectId.isEmpty() || (!folderId.isEmpty() && indexOfFolder(folderId) < 0))
+        return false;
+    if (folderForProject(projectId) == folderId)
+        return true;
+
+    QSqlQuery q(global_DBObjects.getDb());
+    q.prepare(QStringLiteral("UPDATE projects SET folder_id = ? WHERE id = ?"));
+    q.addBindValue(folderId.isEmpty() ? QVariant() : QVariant(folderId));
+    q.addBindValue(projectId);
+    if (!q.exec())
         return false;
 
-    QStringList& ids = m_memberships[projectId];
-    if (ids.contains(folderId))
-        return true;   // already a member — no-op, still success
-    ids.append(folderId);
-    save();
+    global_DBObjects.pushRowChange(QStringLiteral("projects"), projectId);
+    global_DBObjects.updateDisplayData();
+    refresh();
     return true;
 }
 
-bool FolderManager::removeProjectFromFolder(const QString& projectId, const QString& folderId)
+QString FolderManager::folderForProject(const QString& projectId) const
 {
-    auto it = m_memberships.find(projectId);
-    if (it == m_memberships.end())
-        return false;
-    if (it.value().removeAll(folderId) == 0)
-        return false;
-    if (it.value().isEmpty())
-        m_memberships.erase(it);
-    save();
-    return true;
-}
-
-void FolderManager::removeProjectFromAllFolders(const QString& projectId)
-{
-    if (m_memberships.remove(projectId))
-        save();
-}
-
-bool FolderManager::isProjectInFolder(const QString& projectId, const QString& folderId) const
-{
-    return m_memberships.value(projectId).contains(folderId);
-}
-
-QStringList FolderManager::foldersForProject(const QString& projectId) const
-{
-    return m_memberships.value(projectId);
-}
-
-QStringList FolderManager::projectIdsInFolder(const QString& folderId) const
-{
-    QStringList out;
-    for (auto it = m_memberships.constBegin(); it != m_memberships.constEnd(); ++it)
-        if (it.value().contains(folderId))
-            out.append(it.key());
-    return out;
+    QSqlQuery q(global_DBObjects.getDb());
+    q.prepare(QStringLiteral("SELECT folder_id FROM projects WHERE id = ?"));
+    q.addBindValue(projectId);
+    if (!q.exec() || !q.next())
+        return {};
+    // A folder deleted on another device leaves the project uncategorized.
+    const QString folderId = q.value(0).toString();
+    return indexOfFolder(folderId) < 0 ? QString() : folderId;
 }

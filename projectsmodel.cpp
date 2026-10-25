@@ -63,7 +63,10 @@ ProjectsModel::ProjectsModel(DatabaseObjects* dbo) : SqlQueryModel(dbo)
                   date('now','localtime') > date(last_invoice_date,'unixepoch','localtime','start of month','+1 month'))
                  then 'Yes'
             else 'No'
-        end) invoicing_overdue
+        end) invoicing_overdue,
+        folder_id,
+        primary_location_id,
+        primary_location_manual
         FROM projects
         )");
 
@@ -101,6 +104,16 @@ ProjectsModel::ProjectsModel(DatabaseObjects* dbo) : SqlQueryModel(dbo)
     // intentional, matches the existing color semantics exactly.
     addColumn("status_overdue", tr("Status Overdue"), DBString, DBSearchable, DBNotRequired, DBReadOnly);
     addColumn("invoicing_overdue", tr("Invoicing Overdue"), DBString, DBSearchable, DBNotRequired, DBReadOnly);
+    // Last so the numbered columns above keep their positions. NULL or '' (or
+    // a folder deleted elsewhere) means the project is in no folder.
+    addColumn("folder_id", tr("Folder"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
+              "project_folders", "id", "folder_name");
+    // The primary project folder (a File Folder location). Manual = 1 once the
+    // user has set or cleared it; File Finder only fills it in while it is 0.
+    // A plain location id rather than a lookup: XML import keeps location ids,
+    // and the project row is read before its locations exist.
+    addColumn("primary_location_id", tr("Project Folder"), DBString, DBNotSearchable, DBNotRequired, DBEditable);
+    addColumn("primary_location_manual", tr("Project Folder Chosen"), DBBool, DBNotSearchable, DBNotRequired, DBEditable);
 
     addRelatedTable("project_notes", "project_id", "id", "Meeting", DBExportable);
     addRelatedTable("item_tracker", "project_id", "id", "Action/Tracker Item", DBExportable);
@@ -318,6 +331,9 @@ void ProjectsModel::prepareCopiedRecord(QVector<QVariant>& newrecord, const QMod
     // Copy columns 5-14; let base class handle making columns 1-2 unique
     for (int col = 5; col <= 14; ++col)
         newrecord[col] = data(this->index(sourceIndex.row(), col));
+    // A duplicate lands in the same folder as its source.
+    const int folderCol = getColumnNumber(QStringLiteral("folder_id"));
+    newrecord[folderCol] = data(this->index(sourceIndex.row(), folderCol));
 }
 
 const QModelIndex ProjectsModel::copyRecord(QModelIndex index)

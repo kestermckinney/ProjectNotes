@@ -17,6 +17,8 @@ Most items also have a keyboard shortcut, shown beside the item's label. The tab
 | Search… | Switches to the [Search Page](<SearchPage.md>). | Ctrl+K |
 | Export XML… | Exports the record currently open (a project, note, item, contact, or company) to a [Project Notes XML](<../PluginsOverview/ProjectNotesXML.md>) file. Only enabled when a record is open — same action as the **Export** button in the top bar. | Ctrl+Shift+E |
 | Import XML… | Imports records from a Project Notes XML file — see [Getting Started](<../Introduction/GettingStarted.md>). | Ctrl+Shift+I |
+| Export Settings… | Saves your application settings and every plugin's settings in one JSON file. Passwords and the sync encryption phrase are left out. See [Backing Up Settings](<Preferences.md#backing-up-settings>). | — |
+| Import Settings… | Restores settings from a file saved with **Export Settings…**, on this computer or another one. Restart Project Notes afterward. | — |
 | Preferences | Opens the [Settings page](<Preferences.md>). | Ctrl+, |
 | Sync Now | Runs an immediate incremental sync cycle — see [Cloud Sync](<RemoteHost.md>). | — |
 | Sync All | Runs a full re-push and re-pull of the whole database — see [Cloud Sync](<RemoteHost.md>). | — |
@@ -24,7 +26,7 @@ Most items also have a keyboard shortcut, shown beside the item's label. The tab
 
 ## Plugins
 
-When one or more installed plugins add global menu items (ones not tied to a specific record's table), they appear grouped under a **Plugins** entry, positioned right after **File**. Plugins that share a submenu name are nested under that name inside **Plugins**; plugins with no submenu appear as plain rows. If no plugin adds a global menu item, this group is hidden. See [Adding Functionality](<../PluginsOverview/AddingFunctionality.md>) for how plugins register menu entries.
+When one or more installed plugins add global menu items (ones not tied to a specific record's table), they appear grouped under a **Plugins** entry, positioned right after **File**. Plugins that share a submenu name are nested under that name inside **Plugins**; plugins with no submenu appear as plain rows. If no plugin adds a global menu item, this group is hidden. See [JavaScript Plugins](<../PluginsOverview/JavaScriptPlugins.md#menus>) for how plugins register menu entries.
 
 When a record with its own plugin menus is open (for example a project with an **Export** or **Templates** submenu), those table-scoped submenus appear as additional groups at the end of the menu, alongside File/Plugins/Edit/View/Help — see [Plugin Settings](<../StandardPlugins/PluginSettings.md>).
 

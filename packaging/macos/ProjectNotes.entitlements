@@ -2,22 +2,13 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <!-- Required for Python's bytecode compiler and JIT path -->
+    <!-- Hardened runtime entitlements for the Developer ID (direct download)
+         build. It is not sandboxed, so sandbox entitlements (network, files)
+         would have no effect and are left out. The Mac App Store build uses
+         ProjectNotes-AppStore.entitlements. -->
+
+    <!-- The QML and JavaScript (plugin) engines compile to native code -->
     <key>com.apple.security.cs.allow-jit</key>
-    <true/>
-
-    <!-- Required to load Python C-extension modules (.so) that are signed
-         by Python.org (or unsigned), not by this app's Developer ID -->
-    <key>com.apple.security.cs.disable-library-validation</key>
-    <true/>
-
-    <!-- Allows DYLD_* environment variables; some Python extension build
-         tools set these at import time -->
-    <key>com.apple.security.cs.allow-dyld-environment-variables</key>
-    <true/>
-
-    <!-- Network access for cloud sync and IFS/Outlook plugin features -->
-    <key>com.apple.security.network.client</key>
     <true/>
 
     <!-- Apple Events to Calendar.app (and System Events) for the "MacOS Email
@@ -33,19 +24,10 @@
     <key>com.apple.security.personal-information.calendars</key>
     <true/>
 
-    <!-- Read/write access to user-selected files (open/save dialogs) -->
-    <key>com.apple.security.files.user-selected.read-write</key>
+    <!-- Contact synchronization with the Contacts app (MacContactsProvider).
+         Under the hardened runtime the Contacts prompt never appears without
+         this. -->
+    <key>com.apple.security.personal-information.addressbook</key>
     <true/>
-
-    <!-- Access to the user's Documents folder (default database location) -->
-    <key>com.apple.security.files.downloads.read-write</key>
-    <true/>
-
-    <!-- Note: com.apple.security.app-sandbox is intentionally NOT set.
-         This app embeds Python with third-party C extensions (PyQt6, MSAL, etc.)
-         signed by PyPI, incompatible with App Sandbox.
-         Distribution is via Developer ID + notarization (direct download), not
-         the Mac App Store. The three cs.* entitlements above are permitted for
-         Developer ID distribution and are required for Python embedding. -->
 </dict>
 </plist>

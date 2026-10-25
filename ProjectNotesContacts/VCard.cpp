@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include "VCard.h"
 #include "ContactMatcher.h"
+#include "personvcard.h"
 #include <QRegularExpression>
 namespace PN::Contacts {
 static QString unescape(QString s) {
@@ -42,14 +43,8 @@ Contact parseVCard(const QString &text,const QString&id,const QString&book) {
 }
 static QString escaped(QString s){s.replace("\\","\\\\");s.replace("\r\n","\\n");s.replace('\n',"\\n");s.remove('\r');s.replace(";","\\;");s.replace(",","\\,");return s;}
 QByteArray writeVCard(const Contact &c,const QString&uid) {
-    QStringList lines={"BEGIN:VCARD","VERSION:3.0","UID:"+escaped(uid),"FN:"+escaped(c.name),"N:;"+escaped(c.name)+";;;"};
-    for(const auto &pair:QList<QPair<QString,QString>>{{"ORG",c.company},{"TITLE",c.fields.value("role").toString()},
-        {"EMAIL;TYPE=WORK",c.fields.value("email").toString()},{"TEL;TYPE=WORK",c.fields.value("office_phone").toString()},
-        {"TEL;TYPE=CELL",c.fields.value("cell_phone").toString()}}) if(!pair.second.isEmpty())lines<<pair.first+":"+escaped(pair.second);
-    lines<<"PRODID:-//Project Notes//Native Contacts//EN"<<"END:VCARD";
-    QByteArray out;
-    for(const auto&line:lines){QByteArray bytes=line.toUtf8();while(bytes.size()>75){int n=75;while(n>0&&(uchar(bytes[n])&0xc0)==0x80)--n;out+=bytes.left(n)+"\r\n ";bytes=bytes.mid(n);}out+=bytes+"\r\n";}
-    return out;
+    QVariantMap fields=c.fields;fields["name"]=c.name;fields["company"]=c.company;
+    return writePersonVCard(fields,uid,"-//Project Notes//Native Contacts//EN");
 }
 QByteArray mergeVCard(const QByteArray &existing,const Contact &c,const Contact &previous) {
     QString text=QString::fromUtf8(existing);text.replace(QRegularExpression("\\r?\\n[ \\t]"),"");

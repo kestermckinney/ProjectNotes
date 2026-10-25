@@ -19,6 +19,9 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QDomDocument>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QUuid>
@@ -28,6 +31,7 @@
 #include "databasestructure.h"
 #include "databaseupgrade_v6_4_0.h"
 #include "version.h"
+#include "FolderManager.h"
 #include "legacywidgetsettings.h"
 #include <QSettings>
 #include <QScopeGuard>
@@ -117,6 +121,66 @@ private slots:
         for (const QString &key : retained) QCOMPARE(settings.value(key).toString(), QString("saved"));
     }
 
+    // A clear-text sync password or phrase left by an older version moves into
+    // the credential store on first read; a store that refuses it keeps the
+    // plain copy so the user isn't signed out. New values never reach AppSettings.
+    void test_syncSecretsLeaveAppSettings()
+    {
+        QSettings app(DesktopAppController::localSettingsOrganization(), QStringLiteral("AppSettings"));
+        QHash<QString, QString> store;
+        bool writable = false;
+        const auto install = [&] {
+            DesktopAppController::setSyncSecretStore({
+                [&](const QString& account, QString*) { return store.value(account); },
+                [&](const QString& account, const QString& secret, QString* error) {
+                    if (!writable) { *error = QStringLiteral("locked"); return false; }
+                    store.insert(account, secret);
+                    return true;
+                },
+                [&](const QString& account, QString*) { store.remove(account); return true; }});
+        };
+        auto restore = qScopeGuard([&] {
+            app.remove(QStringLiteral("Sync/Password"));
+            app.remove(QStringLiteral("Sync/EncryptionPhrase"));
+            // Back to an in-memory store that outlives this test.
+            static QHash<QString, QString> later;
+            DesktopAppController::setSyncSecretStore({
+                [](const QString& account, QString*) { return later.value(account); },
+                [](const QString& account, const QString& secret, QString*) { later.insert(account, secret); return true; },
+                [](const QString& account, QString*) { later.remove(account); return true; }});
+        });
+
+        app.setValue(QStringLiteral("Sync/Password"), QStringLiteral("hunter2"));
+        app.setValue(QStringLiteral("Sync/EncryptionPhrase"), QStringLiteral("phrase"));
+        app.sync();
+
+        install();
+        QCOMPARE(c->syncPassword(), QStringLiteral("hunter2"));
+        app.sync();
+        QVERIFY(store.isEmpty());
+        QCOMPARE(app.value(QStringLiteral("Sync/Password")).toString(), QStringLiteral("hunter2"));
+
+        writable = true;
+        install();
+        QCOMPARE(c->syncPassword(), QStringLiteral("hunter2"));
+        QCOMPARE(c->syncEncryptionPhrase(), QStringLiteral("phrase"));
+        app.sync();
+        QCOMPARE(store.value(QStringLiteral("Password")), QStringLiteral("hunter2"));
+        QCOMPARE(store.value(QStringLiteral("EncryptionPhrase")), QStringLiteral("phrase"));
+        QVERIFY(!app.contains(QStringLiteral("Sync/Password")));
+        QVERIFY(!app.contains(QStringLiteral("Sync/EncryptionPhrase")));
+
+        c->setSyncPassword(QStringLiteral("changed"));
+        app.sync();
+        QCOMPARE(store.value(QStringLiteral("Password")), QStringLiteral("changed"));
+        QVERIFY(!app.contains(QStringLiteral("Sync/Password")));
+        c->setSyncPassword(QString());
+        QVERIFY(!store.contains(QStringLiteral("Password")));
+        c->setSyncEncryptionPhrase(QString());
+        // setSync* marked the settings unverified; leave the controller as found.
+        c->verifySyncSettings();
+    }
+
     void test_settingsFailuresReleaseLockAndPreserveTombstones()
     {
         const QString connection = uniq("settings-test-");
@@ -171,7 +235,7 @@ private slots:
         // Empty legacy tables can be dropped; unrelated extension tables remain.
         QVERIFY(q.exec("CREATE TABLE project_risks(id TEXT)"));
         QVERIFY(q.exec("CREATE TABLE review_extension_data(id TEXT)"));
-        QVERIFY(q.exec("UPDATE application_version SET current_version='3.2.1'"));
+        QVERIFY(q.exec("UPDATE application_version SET current_version='6.3.0'"));
         DatabaseStructure structure;
         QVERIFY(structure.UpgradeDatabase());
         QVERIFY(!global_DBObjects.getDb().tables().contains("project_risks"));
@@ -210,7 +274,7 @@ private slots:
     {
         QSqlQuery q(global_DBObjects.getDb());
         QVERIFY(global_DBObjects.saveParameter("PageState:rollback-test:record", "legacy"));
-        QVERIFY(q.exec("UPDATE application_version SET current_version='3.2.1'"));
+        QVERIFY(q.exec("UPDATE application_version SET current_version='6.3.0'"));
         QVERIFY(q.exec("CREATE TRIGGER review_cleanup_failure BEFORE UPDATE ON application_settings "
                        "WHEN OLD.parameter_name='PageState:rollback-test:record' "
                        "BEGIN SELECT RAISE(ABORT, 'cleanup failed'); END"));
@@ -225,10 +289,99 @@ private slots:
         QCOMPARE(global_DBObjects.loadParameter("PageState:rollback-test:record"), QString("legacy"));
         QVERIFY(q.exec("SELECT current_version FROM application_version"));
         QVERIFY(q.next());
-        QCOMPARE(q.value(0).toString(), QString("3.2.1"));
+        QCOMPARE(q.value(0).toString(), QString("6.3.0"));
         q.finish();
         QVERIFY(db_rwlock.tryLockForWrite());
         db_rwlock.unlock();
+    }
+
+    void test_upgrade650MovesProjectFoldersIntoTables()
+    {
+        QSqlQuery q(global_DBObjects.getDb());
+        const QString tag = uniq("fold");
+        const QStringList projects{tag + "-p1", tag + "-p2", tag + "-p3", tag + "-p4"};
+        for (const QString& id : projects) {
+            q.prepare("INSERT INTO projects(id, project_number, project_name, deleted) VALUES(?, ?, ?, 0)");
+            q.addBindValue(id);
+            q.addBindValue(id);
+            q.addBindValue("Folder migration " + id);
+            QVERIFY(q.exec());
+        }
+        const QString fa = tag + "-fa", fb = tag + "-fb", fc = tag + "-fc", gone = tag + "-gone";
+        // A folder deleted since the old document was written.
+        q.prepare("INSERT INTO project_folders(id, folder_name, deleted) VALUES(?, ?, 1)");
+        q.addBindValue(gone);
+        q.addBindValue(tag + " Old");
+        QVERIFY(q.exec());
+        auto cleanup = qScopeGuard([&] {
+            QSqlQuery r(global_DBObjects.getDb());
+            r.exec("DELETE FROM projects WHERE id LIKE '" + tag + "%'");
+            r.exec("DELETE FROM project_folders WHERE id LIKE '" + tag + "%'");
+            r.exec("DELETE FROM application_settings WHERE parameter_name='project_folders'");
+        });
+
+        auto folder = [&](const QString& id, const QString& name, const QString& icon, const QString& color) {
+            return QJsonObject{{"id", id}, {"name", tag + " " + name}, {"icon", icon}, {"color", color}};
+        };
+        const QJsonObject document{
+            {"folders", QJsonArray{folder(fa, "Favorites", "star", "#111111"), folder(fb, "Clients", "work", "#222222"),
+                                   folder(fc, "favorites", "bolt", "#333333"), folder(gone, "Old", "folder", "#444444")}},
+            {"memberships", QJsonObject{{projects[0], QJsonArray{fb, fa}}, {projects[1], QJsonArray{gone, fa}},
+                                        {projects[2], QJsonArray{gone}}, {projects[3], QJsonArray{fc}}}},
+            {"allCollapsed", true}};
+        const QString json = QString::fromUtf8(QJsonDocument(document).toJson(QJsonDocument::Compact));
+        QVERIFY(global_DBObjects.saveParameter("project_folders", json));
+
+        DatabaseStructure structure;
+        QVERIFY(structure.UpgradeDatabase());
+
+        auto folderOf = [&](const QString& projectId) {
+            QSqlQuery f(global_DBObjects.getDb());
+            f.prepare("SELECT folder_id FROM projects WHERE id = ?");
+            f.addBindValue(projectId);
+            return f.exec() && f.next() ? f.value(0) : QVariant();
+        };
+        // One folder per project: the first one it listed that still exists.
+        QCOMPARE(folderOf(projects[0]).toString(), fb);
+        QCOMPARE(folderOf(projects[1]).toString(), fa);
+        QVERIFY(folderOf(projects[2]).isNull());
+        // A duplicate name merges into the folder that already has it.
+        QCOMPARE(folderOf(projects[3]).toString(), fa);
+
+        QVERIFY(q.exec("SELECT id, folder_name, icon, color, sort_order, deleted, updateddate FROM project_folders "
+                       "WHERE id LIKE '" + tag + "%' ORDER BY id"));
+        QMap<QString, QVariantList> rows;
+        while (q.next())
+            rows.insert(q.value(0).toString(), {q.value(1), q.value(2), q.value(3), q.value(4), q.value(5), q.value(6)});
+        q.finish();
+        QCOMPARE(rows.size(), 3);
+        QVERIFY(!rows.contains(fc));
+        QCOMPARE(rows.value(fa).at(0).toString(), tag + " Favorites");
+        QCOMPARE(rows.value(fa).at(1).toString(), QString("star"));
+        QCOMPARE(rows.value(fa).at(2).toString(), QString("#111111"));
+        QCOMPARE(rows.value(fa).at(3).toInt(), 0);
+        QCOMPARE(rows.value(fb).at(3).toInt(), 1);
+        QVERIFY(!rows.value(fa).at(5).isNull());
+        QCOMPARE(rows.value(gone).at(4).toInt(), 1);   // stays deleted
+
+        // The setting is retired as a synced soft delete.
+        QVERIFY(global_DBObjects.loadParameter("project_folders").isEmpty());
+        QVERIFY(q.exec("SELECT COUNT(*) FROM application_settings WHERE parameter_name='project_folders' AND deleted=1"));
+        QVERIFY(q.next());
+        QCOMPARE(q.value(0).toInt(), 1);
+        q.finish();
+
+        // Running again, or an old client pushing the document back, changes nothing.
+        QVERIFY(structure.UpgradeDatabase());
+        QVERIFY(global_DBObjects.saveParameter("project_folders", json));
+        QVERIFY(structure.UpgradeDatabase());
+        QCOMPARE(folderOf(projects[0]).toString(), fb);
+        QVERIFY(folderOf(projects[2]).isNull());
+        QVERIFY(q.exec("SELECT COUNT(*) FROM project_folders WHERE id LIKE '" + tag + "%' AND deleted = 0"));
+        QVERIFY(q.next());
+        QCOMPARE(q.value(0).toInt(), 2);
+        q.finish();
+        QVERIFY(global_DBObjects.loadParameter("project_folders").isEmpty());
     }
 
     // ── Static option lists back the ComboBoxes on every form ─────────────────
@@ -316,6 +469,183 @@ private slots:
         QVERIFY(mapHasValue(data, name));
 
         m_projectId = id; m_projectName = name; m_projectNumber = num;
+    }
+
+    void test_03b_projectFolders()
+    {
+        FolderManager folders;
+        folders.reload();
+        const QString tag = uniq("Folder ");
+        const QString a = folders.addFolder(tag + " A", "star", "#111111");
+        const QString b = folders.addFolder(tag + " B");
+        QVERIFY(!a.isEmpty());
+        QVERIFY(!b.isEmpty());
+        auto cleanup = qScopeGuard([&] {
+            folders.removeFolder(a);
+            folders.removeFolder(b);
+        });
+
+        // Names are required and unique, ignoring case.
+        QVERIFY(folders.addFolder("  ").isEmpty());
+        QVERIFY(folders.addFolder(tag.toLower() + " a").isEmpty());
+        QVERIFY(!folders.folderNameError(tag + " B", a).isEmpty());
+        QVERIFY(folders.folderNameError(tag + " A", a).isEmpty());
+        QVERIFY(!folders.renameFolder(a, tag + " b"));
+        QVERIFY(folders.renameFolder(a, tag + " Renamed"));
+        QCOMPARE(folders.folderName(a), tag + " Renamed");
+        QVERIFY(folders.setFolderIcon(a, "bolt"));
+        QVERIFY(folders.setFolderColor(a, "#abcdef"));
+        QVERIFY(folders.moveFolder(b, 0));
+        QSqlQuery q(global_DBObjects.getDb());
+        QVERIFY(q.exec("SELECT folder_name, icon, color FROM project_folders WHERE id = '" + a + "'"));
+        QVERIFY(q.next());
+        QCOMPARE(q.value(0).toString(), tag + " Renamed");
+        QCOMPARE(q.value(1).toString(), QString("bolt"));
+        QCOMPARE(q.value(2).toString(), QString("#abcdef"));
+        q.finish();
+        int indexA = -1, indexB = -1;
+        const QVariantList list = folders.folders();
+        for (int i = 0; i < list.size(); ++i) {
+            if (list.at(i).toMap().value("id") == a) indexA = i;
+            if (list.at(i).toMap().value("id") == b) indexB = i;
+        }
+        QVERIFY(indexB >= 0 && indexB < indexA);
+
+        // Collapse state stays out of the database.
+        QVERIFY(folders.setFolderCollapsed(a, true));
+        QVERIFY(q.exec("SELECT COUNT(*) FROM application_settings WHERE parameter_name LIKE '%" + a + "%'"));
+        QVERIFY(q.next());
+        QCOMPARE(q.value(0).toInt(), 0);
+        q.finish();
+        QVERIFY(folders.setFolderCollapsed(a, false));
+
+        // One folder per project; a deleted folder releases its projects.
+        QVERIFY(c->addProject() >= 0);
+        QAbstractItemModel* projects = c->projectsListModel();
+        QString projectId;
+        for (int r = 0; r < projects->rowCount() && projectId.isEmpty(); ++r)
+            projectId = projects->data(projects->index(r, 0)).toString();
+        QVERIFY(!projectId.isEmpty());
+        QVERIFY(folders.setProjectFolder(projectId, a));
+        QCOMPARE(folders.folderForProject(projectId), a);
+        QVERIFY(folders.setProjectFolder(projectId, b));
+        QCOMPARE(folders.folderForProject(projectId), b);
+        QVERIFY(!folders.setProjectFolder(projectId, "no-such-folder"));
+        QCOMPARE(folders.folders().at(0).toMap().value("count").toInt(), 1);
+
+        // The Folder filter lists every folder plus Not Categorized.
+        const QVariantList values = c->columnDistinctValues(projects, "folder_id");
+        QVERIFY(values.size() >= 3);
+        QCOMPARE(values.first().toMap().value("value").toString(), QString());
+        QStringList valueIds;
+        for (const QVariant& v : values) valueIds << v.toMap().value("value").toString();
+        QVERIFY(valueIds.contains(a));
+        QVERIFY(valueIds.contains(b));
+
+        // Filtering the list to a folder keeps every sidebar group whole.
+        const int allBefore = c->folderProjects("").size();
+        c->filterProjectsByFolder(b);
+        QCOMPARE(c->projectFolderFilter(), QStringList{b});
+        QCOMPARE(projects->rowCount(), 1);
+        QCOMPARE(projects->data(projects->index(0, 0)).toString(), projectId);
+        QCOMPARE(c->folderProjects("").size(), allBefore);
+        QCOMPARE(c->folderProjects(b).size(), 1);
+        c->filterProjectsByFolder("");
+        QCOMPARE(c->projectFolderFilter(), QStringList{QString()});
+        for (int r = 0; r < projects->rowCount(); ++r)
+            QVERIFY(projects->data(projects->index(r, 0)).toString() != projectId);
+        QCOMPARE(c->folderProjects("").size(), allBefore);
+        c->filterProjectsByFolder("");   // the same folder again toggles it off
+        QVERIFY(c->projectFolderFilter().isEmpty());
+        QVERIFY(!c->hasActiveColumnFilters(projects));
+
+        QVERIFY(folders.removeFolder(b));
+        QVERIFY(folders.folderForProject(projectId).isEmpty());
+        QVERIFY(q.exec("SELECT folder_id FROM projects WHERE id = '" + projectId + "'"));
+        QVERIFY(q.next());
+        QVERIFY(q.value(0).isNull());
+        q.finish();
+        QVERIFY(q.exec("SELECT deleted FROM project_folders WHERE id = '" + b + "'"));
+        QVERIFY(q.next());
+        QCOMPARE(q.value(0).toInt(), 1);
+        q.finish();
+    }
+
+    void test_03c_primaryProjectFolder()
+    {
+        const QString projectId = m_projectId;
+        QVERIFY(!projectId.isEmpty());
+        const QString tag = uniq("loc");
+        const QString main = tag + "-main", other = tag + "-other", link = tag + "-link";
+        QSqlQuery q(global_DBObjects.getDb());
+        const QList<QStringList> rows{{main, "File Folder", "Project Folder", "/projects/main"},
+                                      {other, "File Folder", "Contracts", "/projects/contracts"},
+                                      {link, "Web Link", "Project Folder", "https://example.test/team"}};
+        for (const QStringList& row : rows) {
+            q.prepare("INSERT INTO project_locations(id, project_id, location_type, location_description, full_path, deleted) "
+                      "VALUES(?, ?, ?, ?, ?, 0)");
+            q.addBindValue(row[0]);
+            q.addBindValue(projectId);
+            q.addBindValue(row[1]);
+            q.addBindValue(row[2]);
+            q.addBindValue(row[3]);
+            QVERIFY(q.exec());
+        }
+        auto cleanup = qScopeGuard([&] {
+            QSqlQuery r(global_DBObjects.getDb());
+            r.exec("DELETE FROM project_locations WHERE id LIKE '" + tag + "%'");
+            r.exec("UPDATE projects SET primary_location_id = NULL, primary_location_manual = 0 WHERE id = '" + projectId + "'");
+        });
+        auto manualFlag = [&]() {
+            QSqlQuery f(global_DBObjects.getDb());
+            f.prepare("SELECT primary_location_manual FROM projects WHERE id = ?");
+            f.addBindValue(projectId);
+            return f.exec() && f.next() ? f.value(0).toInt() : -1;
+        };
+
+        // The upgrade that adds the columns backfills the "Project Folder" row once.
+        for (const char* sql : {"DROP TRIGGER IF EXISTS trg_project_locations_primary_deleted",
+                                "DROP TRIGGER IF EXISTS trg_project_locations_primary_removed",
+                                "ALTER TABLE projects DROP COLUMN primary_location_manual",
+                                "ALTER TABLE projects DROP COLUMN primary_location_id"})
+            QVERIFY2(q.exec(sql), qPrintable(q.lastError().text()));
+        DatabaseStructure structure;
+        QVERIFY(structure.UpgradeDatabase());
+        global_DBObjects.projectinformationmodel()->refresh();
+        QCOMPARE(c->primaryProjectLocationId(projectId), main);
+        QVERIFY(!c->projectFolderChosenByUser(projectId));
+
+        // Only this project's live folder locations can be chosen.
+        QVERIFY(!c->setPrimaryProjectLocation(projectId, link));
+        QVERIFY(!c->setPrimaryProjectLocation(projectId, "no-such-location"));
+        QSignalSpy revs(c, &DesktopAppController::projectFolderRevChanged);
+        QVERIFY(c->setPrimaryProjectLocation(projectId, other));
+        QVERIFY(revs.count() >= 1);
+        QCOMPARE(c->primaryProjectLocationId(projectId), other);
+        QVERIFY(c->projectFolderChosenByUser(projectId));
+
+        // Clearing leaves the project without a folder, and it stays that way.
+        QVERIFY(c->setPrimaryProjectLocation(projectId, ""));
+        QVERIFY(c->primaryProjectLocationId(projectId).isEmpty());
+        QCOMPARE(manualFlag(), 1);
+        QVERIFY(structure.UpgradeDatabase());
+        QVERIFY(c->primaryProjectLocationId(projectId).isEmpty());
+
+        QVERIFY(c->letFileFinderChooseProjectFolder(projectId));
+        QCOMPARE(manualFlag(), 0);
+        QVERIFY(c->primaryProjectLocationId(projectId).isEmpty());
+
+        // Deleting the primary location clears it but keeps the user's flag.
+        QVERIFY(c->setPrimaryProjectLocation(projectId, main));
+        QVERIFY(q.exec("UPDATE project_locations SET deleted = 1 WHERE id = '" + main + "'"));
+        QVERIFY(q.exec("SELECT primary_location_id, primary_location_manual FROM projects WHERE id = '" + projectId + "'"));
+        QVERIFY(q.next());
+        QVERIFY(q.value(0).isNull());
+        QCOMPARE(q.value(1).toInt(), 1);
+        q.finish();
+        QVERIFY(c->setPrimaryProjectLocation(projectId, other));
+        QVERIFY(q.exec("DELETE FROM project_locations WHERE id = '" + other + "'"));
+        QVERIFY(c->primaryProjectLocationId(projectId).isEmpty());
     }
 
     void test_04_pickerLists()
@@ -590,6 +920,124 @@ private slots:
         QVERIFY(!c->saveReviewAudiencePreset("Not a project audience"));
         QVERIFY(!c->prepareProjectEmailReview({}));
         QVERIFY(!c->prepareContactEmailReview({}));
+    }
+
+    void test_11d_contactCardExportAndEmail()
+    {
+        const int row = c->addContact();
+        QVERIFY(row >= 0);
+        QVERIFY(c->saveContact(row, "Card; Person", "card@example.test", "555-0100", "555-0199", m_clientId, "Lead, QA"));
+        const QString contactId = idForColumnValue(c->contactsModel(), 1, "Card; Person");
+        QVERIFY(!contactId.isEmpty());
+        QCOMPARE(c->contactVCardFileName(contactId), "Card; Person.vcf");
+        QVERIFY(c->contactVCardFileName("missing").isEmpty());
+
+        QTemporaryDir dir;
+        const QString path = dir.filePath("card.vcf");
+        QVERIFY(c->exportContactVCard(contactId, QUrl::fromLocalFile(path).toString()));
+        QFile file(path);
+        QVERIFY(file.open(QIODevice::ReadOnly));
+        const QByteArray card = file.readAll();
+        QVERIFY(card.startsWith("BEGIN:VCARD\r\nVERSION:3.0\r\n"));
+        QVERIFY(card.contains("FN:Card\\; Person\r\n"));
+        QVERIFY(card.contains("EMAIL;TYPE=WORK:card@example.test\r\n"));
+        QVERIFY2(card.contains("TEL;TYPE=WORK:5550100\r\n"), card.constData());
+        QVERIFY(card.contains("TEL;TYPE=CELL:5550199\r\n"));
+        QVERIFY(card.contains("TITLE:Lead\\, QA\r\n"));
+        QVERIFY(card.contains("ORG:"));
+        QVERIFY(card.endsWith("END:VCARD\r\n"));
+        QVERIFY(!c->exportContactVCard("missing", path + ".2"));
+
+        // Email Contact skips the review dialog: the draft goes straight to
+        // the email integration with the card attached and no recipients.
+        QSignalSpy errors(c, &DesktopAppController::errorOccurred);
+        QVERIFY(c->emailContactCard(contactId));
+        auto *review = qobject_cast<PN::Comm::CommunicationsController *>(c->communicationsController());
+        QTRY_VERIFY_WITH_TIMEOUT(review->stageName() == "completed" || review->stageName() == "failed", 5000);
+        QCOMPARE(review->preparation().source.workflow, PN::Comm::Workflow::ContactEmail);
+        QVERIFY(review->preparation().recipients.isEmpty());
+        QVERIFY(review->preparation().addressLater);
+        QCOMPARE(review->subject(), "Contact: Card; Person");
+        QCOMPARE(review->attachmentNames(), QStringList{"Card; Person.vcf"});
+        QCOMPARE(review->preparation().attachments.first().mimeType, "text/vcard");
+        // The handoff reached the backend. Offscreen test runs can't open the
+        // .eml in a mail app, which is the only acceptable failure here.
+        if (review->stageName() == "failed") {
+            QCOMPARE(errors.count(), 1);
+            QVERIFY2(review->lastResult().certainty != PN::Comm::OutcomeCertainty::NotStarted
+                         || review->lastResult().error.code.contains("open"),
+                     qPrintable(review->diagnostic()));
+        } else {
+            QCOMPARE(errors.count(), 0);
+        }
+        QVERIFY(!c->emailContactCard({}));
+    }
+
+    void test_11e_vCardDragAndDropImport()
+    {
+        // An exported card dropped on the Contacts list creates the contact
+        // with every field the card carries.
+        const int row = c->addContact();
+        QVERIFY(row >= 0);
+        QVERIFY(c->saveContact(row, "Drop Source", "drop@example.test", "5550111", "5550122", m_clientId, "Engineer"));
+        const QString sourceId = idForColumnValue(c->contactsModel(), 1, "Drop Source");
+        QTemporaryDir dir;
+        const QString path = dir.filePath("Drop Source.vcf");
+        QVERIFY(c->exportContactVCard(sourceId, QUrl::fromLocalFile(path).toString()));
+        QFile file(path);
+        QVERIFY(file.open(QIODevice::ReadOnly));
+        QString card = QString::fromUtf8(file.readAll());
+        card.replace("Drop Source", "Dropped, Person");
+        card.replace("drop@example.test", "dropped@example.test");
+        QCOMPARE(c->addContactsFromVCardDrop({}, card), 1);
+        QSqlQuery q(global_DBObjects.getDb());
+        q.prepare("SELECT id, email, office_phone, cell_phone, client_id, role FROM people WHERE name = ? AND deleted = 0");
+        q.addBindValue("Dropped, Person");
+        QVERIFY(q.exec() && q.next());
+        const QString droppedId = q.value(0).toString();
+        QCOMPARE(q.value(1).toString(), "dropped@example.test");
+        QCOMPARE(q.value(2).toString(), "5550111");
+        QCOMPARE(q.value(3).toString(), "5550122");
+        QCOMPARE(q.value(4).toString(), m_clientId);
+        QCOMPARE(q.value(5).toString(), "Engineer");
+
+        // The exported file dropped on a project's Team list adds the
+        // existing contact to the team instead of creating a duplicate.
+        QCOMPARE(c->addTeamMembersFromVCardDrop(m_projectId, {QUrl::fromLocalFile(path).toString()}, {}), 1);
+        q.prepare("SELECT COUNT(*) FROM people WHERE name = 'Drop Source' AND deleted = 0");
+        QVERIFY(q.exec() && q.next());
+        QCOMPARE(q.value(0).toInt(), 1);
+        q.prepare("SELECT COUNT(*) FROM project_people WHERE project_id = ? AND people_id = ? AND deleted = 0");
+        q.addBindValue(m_projectId);
+        q.addBindValue(sourceId);
+        QVERIFY(q.exec() && q.next());
+        QCOMPARE(q.value(0).toInt(), 1);
+        QVERIFY(!droppedId.isEmpty());
+    }
+
+    void test_11f_vCardDragOutData()
+    {
+        const QString contactId = idForColumnValue(c->contactsModel(), 1, "Drop Source");
+        QVERIFY(!contactId.isEmpty());
+        const QVariantMap data = c->contactVCardDragData(contactId);
+        QCOMPARE(data.keys(), (QStringList{"text/uri-list", "text/vcard", "text/x-vcard"}));
+        const QUrl url(data.value("text/uri-list").toString());
+        QVERIFY(url.isLocalFile());
+        QCOMPARE(QFileInfo(url.toLocalFile()).fileName(), "Drop Source.vcf");
+        QFile file(url.toLocalFile());
+        QVERIFY(file.open(QIODevice::ReadOnly));
+        const QByteArray card = file.readAll();
+        file.close();
+        QCOMPARE(QString::fromUtf8(card), data.value("text/vcard").toString());
+        QCOMPARE(data.value("text/x-vcard"), data.value("text/vcard"));
+        // A second drag of the same contact gets its own file, so a drop
+        // target still reading the first one is never disturbed.
+        const QUrl second(c->contactVCardDragData(contactId).value("text/uri-list").toString());
+        QVERIFY(second != url);
+        QVERIFY(QFile::exists(url.toLocalFile()));
+        QVERIFY(c->contactVCardDragData("missing").isEmpty());
+        // Dragged-out cards live in the transient cache, which is cleared on quit.
+        QVERIFY(url.toLocalFile().contains("/vcard-drag/"));
     }
 
     void test_12_statusItems()

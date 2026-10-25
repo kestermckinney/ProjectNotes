@@ -11,18 +11,12 @@ Rectangle {
     default property alias content: innerItem.data
 
     Layout.fillWidth: true
-    Layout.preferredHeight: 44
-    color: palette.base
+    Layout.preferredHeight: 50
+    color: "transparent"
 
     Item {
         id: innerItem
         anchors.fill: parent
     }
 
-    Rectangle {
-        anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-        height: 1
-        color: Theme.mutedText
-        opacity: 0.3
-    }
 }

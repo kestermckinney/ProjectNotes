@@ -14,7 +14,9 @@
 #include "authmanager.h"
 #include "httpclient.h"
 #include "NativeUrlOpener.h"
+#include "ShareSheet.h"
 #include "officedeeplink.h"
+#include "personvcard.h"
 #include "rowencryption.h"
 
 #include <QCoreApplication>
@@ -22,12 +24,16 @@
 #include <QDesktopServices>
 #include <QDir>
 #include <QFileInfo>
+#include <QGuiApplication>
+#include <QStyleHints>
 #include <QHash>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QPointer>
+#include <QSaveFile>
 #include <QSet>
+#include <QStandardPaths>
 #include <QSqlQuery>
 #include <QTextDocument>
 #include <QThread>
@@ -90,6 +96,54 @@ AppController::AppController(QObject* parent)
     // Auto-start sync whenever sync settings change and are now complete
     connect(this, &AppController::syncSettingsChanged,
             this, &AppController::onSyncSettingsChanged);
+
+    // Apply the saved Day/Night choice before any QML is loaded, so the first
+    // frame already has the right colors.
+    applyAppearance(appearance());
+}
+
+// ── Appearance ───────────────────────────────────────────────────────────────
+// Stored as "Appearance" in the mobile settings: 0 = System, 1 = Day, 2 = Night.
+// QStyleHints::setColorScheme overrides the system setting for the whole app;
+// Unknown hands control back to the system. Theme.qml and the iOS style both
+// read Application.styleHints.colorScheme, so everything restyles at once.
+
+int AppController::appearance() const
+{
+    const int mode = global_MobileSettings.getValue("Appearance", 0).toInt();
+    return (mode >= 0 && mode <= 2) ? mode : 0;
+}
+
+void AppController::setAppearance(int mode)
+{
+    if (mode < 0 || mode > 2 || mode == appearance()) return;
+    global_MobileSettings.setValue("Appearance", mode);
+    applyAppearance(mode);
+    emit appearanceChanged();
+}
+
+// ── Text size ────────────────────────────────────────────────────────────────
+// Stored as "TextSize"; Main.qml turns the step into Theme.textScale.
+
+int AppController::textSize() const
+{
+    const int step = global_MobileSettings.getValue("TextSize", 3).toInt();
+    return (step >= 0 && step <= 6) ? step : 3;
+}
+
+void AppController::setTextSize(int step)
+{
+    if (step < 0 || step > 6 || step == textSize()) return;
+    global_MobileSettings.setValue("TextSize", step);
+    emit textSizeChanged();
+}
+
+void AppController::applyAppearance(int mode)
+{
+    const Qt::ColorScheme scheme = mode == 1 ? Qt::ColorScheme::Light
+                                 : mode == 2 ? Qt::ColorScheme::Dark
+                                             : Qt::ColorScheme::Unknown;
+    QGuiApplication::styleHints()->setColorScheme(scheme);
 }
 
 AppController::~AppController()
@@ -1068,6 +1122,44 @@ void AppController::sendMeetingNotesEmail(const QString& commaSeparatedEmails,
         addresses.append(p.trimmed());
 
     MailComposer::present(addresses, subject, body);
+}
+
+bool AppController::emailContactCard(const QString& contactId)
+{
+    if (!MailComposer::isAvailable())
+        return shareContactCard(contactId);
+    QString name;
+    const QByteArray card = personVCard(global_DBObjects.getDb(), contactId, &name);
+    if (card.isEmpty()) {
+        emit errorOccurred(tr("Email Contact"), tr("The contact is no longer available."));
+        return false;
+    }
+    MailComposer::present({}, tr("Contact: %1").arg(name.simplified()), QString(),
+                          card, QStringLiteral("text/vcard"), personVCardFileName(name));
+    return true;
+}
+
+bool AppController::shareContactCard(const QString& contactId)
+{
+    QString name;
+    const QByteArray card = personVCard(global_DBObjects.getDb(), contactId, &name);
+    if (card.isEmpty()) {
+        emit errorOccurred(tr("Export Contact"), tr("The contact is no longer available."));
+        return false;
+    }
+    // The share sheet needs a file. Keep one card at a time in a folder of
+    // the temporary directory; the next share replaces it.
+    QDir dir(QStandardPaths::writableLocation(QStandardPaths::TempLocation));
+    const QString folder = QStringLiteral("ContactCards");
+    if (dir.exists(folder))
+        QDir(dir.filePath(folder)).removeRecursively();
+    QSaveFile file(dir.filePath(folder + u'/' + personVCardFileName(name)));
+    if (!dir.mkpath(folder) || !file.open(QIODevice::WriteOnly) || file.write(card) != card.size()
+        || !file.commit() || !ShareSheet::shareFile(file.fileName())) {
+        emit errorOccurred(tr("Export Contact"), tr("The contact card could not be shared."));
+        return false;
+    }
+    return true;
 }
 
 QString AppController::attendeeNameList() const

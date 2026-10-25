@@ -3,6 +3,7 @@
 
 #include "updatemanager.h"
 #include "version.h"
+#include "appidentity.h"
 
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
@@ -385,13 +386,13 @@ QString UpdateManager::writeMacRelaunchScript(const QString &zipPath, const QStr
     // authenticated copy only if an in-place swap is denied — e.g. a pkg-installed
     // bundle owned by root in /Applications), and relaunches.
     const QString tempDir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
-    const QString scriptPath = QDir(tempDir).filePath("projectnotes_update.sh");
+    const QString scriptPath = QDir(tempDir).filePath(PN::Identity::tempPrefix() + QStringLiteral("update.sh"));
 
     const QString script = QString(R"SH(#!/bin/bash
 PID=%1
 ZIP="%2"
 TARGET="%3"
-STAGE="$(mktemp -d -t pn_update)"
+STAGE="$(mktemp -d -t %4update)"
 
 # Wait for the running app to exit before touching its bundle.
 while kill -0 "$PID" 2>/dev/null; do sleep 0.2; done
@@ -409,7 +410,7 @@ fi
 /usr/bin/xattr -dr com.apple.quarantine "$NEW_APP" 2>/dev/null || true
 
 # Inner swap script keeps path quoting simple when re-run under osascript.
-SWAP="$(mktemp -t pn_swap)"
+SWAP="$(mktemp -t %4swap)"
 cat > "$SWAP" <<'SWAPEOF'
 #!/bin/bash
 set -e
@@ -427,7 +428,8 @@ fi
 /bin/rm -f "$0"
 )SH")
         .arg(QCoreApplication::applicationPid())
-        .arg(zipPath, targetApp);
+        .arg(zipPath, targetApp)
+        .arg(PN::Identity::tempPrefix());
 
     QFile out(scriptPath);
     if (!out.open(QIODevice::WriteOnly | QIODevice::Truncate) ||

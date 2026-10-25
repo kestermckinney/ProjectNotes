@@ -81,6 +81,14 @@ class AppController : public QObject
     Q_PROPERTY(bool office365OpenLinksInDesktop READ office365OpenLinksInDesktop
                WRITE setOffice365OpenLinksInDesktop NOTIFY viewOptionsChanged)
 
+    // Light/dark override: 0 = follow the system, 1 = Day (light), 2 = Night
+    // (dark). Its own signal, not viewOptionsChanged, which reloads the lists.
+    Q_PROPERTY(int appearance READ appearance WRITE setAppearance NOTIFY appearanceChanged)
+
+    // Text size step, 0-6, matching iOS Dynamic Type from Extra Small to
+    // Extra Extra Extra Large; 3 (Large, 17pt body) is the default.
+    Q_PROPERTY(int textSize READ textSize WRITE setTextSize NOTIFY textSizeChanged)
+
 public:
     explicit AppController(QObject* parent = nullptr);
     ~AppController() override;
@@ -140,6 +148,13 @@ public:
     Q_INVOKABLE void    sendMeetingNotesEmail(const QString& commaSeparatedEmails,
                                              const QString& subject,
                                              const QString& body);
+    // Contact cards (vCard). emailContactCard opens a Mail draft with the card
+    // attached and no recipients; without a Mail account it falls back to the
+    // share sheet, which reaches other mail apps. shareContactCard opens the
+    // share sheet (Save to Files, AirDrop, Messages, ...). Both report a
+    // failure through errorOccurred().
+    Q_INVOKABLE bool    emailContactCard(const QString& contactId);
+    Q_INVOKABLE bool    shareContactCard(const QString& contactId);
     Q_INVOKABLE QString projectNumberForId(const QString& projectId) const;
     Q_INVOKABLE QString projectNameForId(const QString& projectId) const;
     // Stable {id,name} snapshot of a project's team, for the Primary Contact
@@ -434,6 +449,12 @@ public:
         emit viewOptionsChanged();
     }
 
+    int  appearance() const;
+    void setAppearance(int mode);   // saves the choice and applies it at once
+
+    int  textSize() const;
+    void setTextSize(int step);
+
     bool newAndAssignedOnly() const { return !global_DBObjects.getShowResolvedTrackerItems(); }
     void setNewAndAssignedOnly(bool v);  // implemented in .cpp — needs model filter calls
 
@@ -465,6 +486,8 @@ signals:
     void errorOccurred(const QString& title, const QString& message);
     void databaseReady();
     void viewOptionsChanged();
+    void appearanceChanged();
+    void textSizeChanged();
     void filterRevChanged();
     void sortRevChanged();
 
@@ -476,6 +499,9 @@ private slots:
     void onSyncRowChanged(const QString& tableName, const QString& id);
 
 private:
+    // Sets the app-wide color scheme for an appearance() value.
+    static void applyAppearance(int mode);
+
     // INSERT a project row that addProject() only staged (via
     // SqlQueryModel::insertStagedRow) and add its default project manager.
     bool insertStagedProject(int srcRow, const QVector<QPair<int, QVariant>>& fields);

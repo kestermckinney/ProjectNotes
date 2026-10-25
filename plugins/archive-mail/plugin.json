@@ -1,0 +1,21 @@
+{
+    "id": "com.projectnotespro.archive-mail",
+    "name": "Archive Mail",
+    "version": "2.0.0",
+    "apiVersion": 1,
+    "description": "Archives project emails into project folders. Uses Office 365 (Microsoft Graph), or Outlook (classic) on Windows for archiving.",
+    "author": "Project Notes",
+    "main": "main.mjs",
+    "permissions": [
+        "data.read:projects,project_locations",
+        "files", "office365", "com"
+    ],
+    "office365": { "scopes": ["Mail.Read"] },
+    "com": ["Outlook.Application"],
+    "legacySettings": ["Outlook Integration"],
+    "contributes": {
+        "settings": [
+            { "id": "outlook", "title": "Archive Mail", "schema": "settings.schema.json" }
+        ]
+    }
+}

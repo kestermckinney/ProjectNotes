@@ -10,110 +10,73 @@ Page {
     id: root
     title: qsTr("View")
 
+    // Same spot as on the list pages; see MainMenuPage.qml.
+    NavButton {
+        id: navButton
+        anchors { top: parent.top; left: parent.left; topMargin: Theme.topInset + 8; leftMargin: 12 }
+    }
+
     ScrollView {
-        anchors.fill: parent
+        anchors.fill: parent    // content scrolls up under the title bar
         contentWidth: availableWidth
 
         ColumnLayout {
             width: parent.width
             spacing: 0
+            Item { Layout.preferredHeight: navButton.y + navButton.height + 4 }
 
-            // ── Projects ──────────────────────────────────────────────────────
-            SectionHeader { text: qsTr("Projects") }
+            SettingsSection {
+                title: qsTr("Projects")
 
-            SettingsRow {
-                label: qsTr("Show Closed Projects")
-                control: Switch {
-                    checked: AppController.showClosedProjects
-                    onToggled: {
-                        AppController.showClosedProjects = checked
-                        // A flick writes `checked` on the switch itself, so
-                        // until the property next changes the row shows a value
-                        // nothing has accepted yet. Re-assert the binding so it
-                        // always ends up showing what the controller holds.
-                        checked = Qt.binding(function() { return AppController.showClosedProjects })
+                SettingsItem {
+                    text: qsTr("Show Closed Projects")
+                    showChevron: false
+                    control: MonoSwitch {
+                        checked: AppController.showClosedProjects
+                        onToggled: {
+                            AppController.showClosedProjects = checked
+                            // A flick writes `checked` on the switch itself, so
+                            // until the property next changes the row shows a value
+                            // nothing has accepted yet. Re-assert the binding so it
+                            // always ends up showing what the controller holds.
+                            checked = Qt.binding(function() { return AppController.showClosedProjects })
+                        }
                     }
                 }
             }
 
-            // ── Tracker Items ─────────────────────────────────────────────────
-            SectionHeader { text: qsTr("Tracker Items") }
+            SettingsSection {
+                title: qsTr("Tracker Items")
 
-            SettingsRow {
-                label: qsTr("Internal Items")
-                control: Switch {
-                    checked: AppController.showInternalItems
-                    onToggled: {
-                        AppController.showInternalItems = checked
-                        checked = Qt.binding(function() { return AppController.showInternalItems })
+                SettingsItem {
+                    text: qsTr("Internal Items")
+                    showChevron: false
+                    control: MonoSwitch {
+                        checked: AppController.showInternalItems
+                        onToggled: {
+                            AppController.showInternalItems = checked
+                            checked = Qt.binding(function() { return AppController.showInternalItems })
+                        }
+                    }
+                }
+
+                // Same name and same sense as the desktop app's View menu and its
+                // View Options screen — the controller property is the inverse of
+                // both, so this is the one row that binds through a negation.
+                SettingsItem {
+                    text: qsTr("Show Resolved Items")
+                    showChevron: false
+                    control: MonoSwitch {
+                        checked: !AppController.newAndAssignedOnly
+                        onToggled: {
+                            AppController.newAndAssignedOnly = !checked
+                            checked = Qt.binding(function() { return !AppController.newAndAssignedOnly })
+                        }
                     }
                 }
             }
 
-            // Same name and same sense as the desktop app's View menu and its
-            // View Options screen — the controller property is the inverse of
-            // both, so this is the one row that binds through a negation.
-            SettingsRow {
-                label: qsTr("Show Resolved Items")
-                control: Switch {
-                    checked: !AppController.newAndAssignedOnly
-                    onToggled: {
-                        AppController.newAndAssignedOnly = !checked
-                        checked = Qt.binding(function() { return !AppController.newAndAssignedOnly })
-                    }
-                }
-            }
-        }
-    }
-
-    // ── Shared helper components ──────────────────────────────────────────────
-
-    component SectionHeader: Label {
-        Layout.fillWidth: true
-        Layout.topMargin: 20
-        leftPadding: 16
-        bottomPadding: 4
-        font.pixelSize: 13
-        font.weight: 600
-        color: Theme.navyMid
-        background: Rectangle { color: Theme.sectionBg }
-    }
-
-    component SettingsRow: RowLayout {
-        property string label: ""
-        property alias control: controlSlot.children
-
-        Layout.fillWidth: true
-        Layout.preferredHeight: 44
-        spacing: 0
-
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            color: palette.base
-
-            RowLayout {
-                anchors { fill: parent; leftMargin: 16; rightMargin: 16 }
-
-                Label {
-                    text: parent.parent.parent.label
-                    Layout.fillWidth: true
-                }
-
-                Item {
-                    id: controlSlot
-                    Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
-                    implicitWidth: children.length > 0 ? children[0].implicitWidth : 0
-                    implicitHeight: children.length > 0 ? children[0].implicitHeight : 0
-                }
-            }
-
-            Rectangle {
-                anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-                height: 1
-                color: Theme.mutedText
-                opacity: 0.3
-            }
+            Item { Layout.preferredHeight: 24 }
         }
     }
 }

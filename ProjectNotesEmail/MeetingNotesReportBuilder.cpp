@@ -32,6 +32,7 @@ QString emailMarkup(QString markup)
         {"cell-value", cell + "background-color:#DCE6F1;"},
         {"cell-notes", cell + "background-color:#DCE6F1;"},
         {"cell-header", cell + "background-color:#EEECE1;font-weight:bold;text-align:center;"},
+        {"cell-center", "text-align:center;"},
         {"col-item", "width:55%;"},
         {"footer", font + "font-size:9pt;color:#555;margin-top:16px;"},
         {"branding", font + "font-size:9pt;color:#000;margin-top:2px;"}
@@ -68,15 +69,15 @@ QString meetingBlock(const CommunicationSnapshot &snapshot, const SnapshotNote &
     for (const SnapshotActionItem &item : snapshot.actionItems) {
         if (item.noteId != note.id)
             continue;
-        actions += markup(QStringLiteral("<tr><td class='cell-value'>%1</td><td class='cell-value' style='text-align:center'>%2</td>"
-                                  "<td class='cell-value' style='text-align:center'>%3</td><td class='cell-value' style='text-align:center'>%4</td></tr>"))
+        actions += markup(QStringLiteral("<tr><td class='cell-value'>%1</td><td class='cell-value cell-center'>%2</td>"
+                                  "<td class='cell-value cell-center'>%3</td><td class='cell-value cell-center'>%4</td></tr>"))
                        .arg(escape(item.name), escape(item.assignedTo), escape(item.status), escape(item.dueDate));
     }
     if (!actions.isEmpty())
         actions.prepend(markup(QStringLiteral("<tr><td colspan='4' class='cell-header'>Action Items</td></tr>"
                                        "<tr><th class='cell-header col-item'>Item</th><th class='cell-header'>Assigned To</th>"
                                        "<th class='cell-header'>Status</th><th class='cell-header'>Due Date</th></tr>")));
-    return markup(QStringLiteral("<div class='meeting'><div class='meeting-title'>%1</div><table class='meeting-table'>"
+    return markup(QStringLiteral("<div class='meeting'><div class='meeting-title'>%1</div><table class='meeting-table' width='100%'>"
                           "<tr><td class='cell-label'>Date:</td><td class='cell-value' colspan='3'>%2</td></tr>"
                           "<tr><td class='cell-label'>Attendees:</td><td class='cell-value' colspan='3'>%3</td></tr>"
                           "<tr><td colspan='4' class='cell-header'>Meeting Notes</td></tr>"
@@ -113,7 +114,7 @@ std::optional<ReportDocument> MeetingNotesReportBuilder::build(const MeetingNote
         "body{font-family:Calibri,Arial,sans-serif;font-size:10pt;margin:0;padding:.2in}h1{font-size:13pt;color:#1F497D;font-weight:bold;margin-bottom:8px}"
         ".meeting{margin-bottom:16px}.meeting-title{font-size:11pt;font-weight:bold;color:#1F497D;margin-bottom:4px}"
         ".meeting-table{border-collapse:collapse;width:100%}.meeting-table td,.meeting-table th{border:1px solid #808080;padding:3px 6px;font-size:10pt;vertical-align:top}"
-        ".cell-label{background:#EEECE1;font-weight:bold;text-align:right;white-space:nowrap;width:80px}.cell-value,.cell-notes{background:#DCE6F1}.cell-header{background:#EEECE1;font-weight:bold;text-align:center}.col-item{width:55%}"
+        ".cell-label{background:#EEECE1;font-weight:bold;text-align:right;white-space:nowrap;width:80px}.cell-value,.cell-notes{background:#DCE6F1}.cell-header{background:#EEECE1;font-weight:bold;text-align:center}.cell-center{text-align:center}.col-item{width:55%}"
         ".footer{font-size:9pt;color:#555;margin-top:16px}.branding{font-size:9pt;color:#000;margin-top:2px}.branding a{color:#0066CC;text-decoration:none}</style></head><body>%1</body></html>").arg(fragment);
     report.emailFragment = "<div style='font-family:Calibri,Arial,sans-serif;font-size:10pt;margin:0;padding:.2in;'>"
         + emailMarkup(reportTemplate).arg(escape(input.snapshot.projectNumber + QStringLiteral(" ") + input.snapshot.projectName),

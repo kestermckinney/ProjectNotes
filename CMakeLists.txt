@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(ProjectNotes VERSION 6.4.3 LANGUAGES CXX)
+project(ProjectNotes VERSION 6.5.0 LANGUAGES CXX)
 
 if(APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0" CACHE STRING "Minimum macOS deployment version")
@@ -25,15 +25,15 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Qt::Widgets is still required even though the frontend is pure QML: the app
-# runs a QApplication so that Python plugins can open PyQt6.QtWidgets dialogs
-# (see plugins/includes/common.py), and ProjectNotesCore reports database
-# errors through QMessageBox.
+# Qt::Widgets is still required even though the frontend is pure QML:
+# ProjectNotesCore reports database errors through QMessageBox, so the app runs
+# a QApplication.
 # Charts is not used by this project's own code, but SqliteSyncProLib links
 # Qt::Charts. Finding it here, at top-level scope, is what makes the imported
 # target visible to the consumers that walk SqliteSyncProLib's dependencies.
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Widgets Sql Xml Network Charts WebEngineCore WebEngineQuick)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets Sql Xml Network Charts WebEngineCore WebEngineQuick)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Widgets Sql Xml Network Charts)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets Sql Xml Network Charts)
+
 # CorePrivate exposes QtCore's private QZipWriter (qzipwriter_p.h), used by the
 # "Send Logs to Support" log bundler.
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS CorePrivate)
@@ -44,30 +44,6 @@ endif()
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(ENV{QT_LOGGING_RULES} "qt.*.debug=true")
 endif()
-
-if(APPLE)
-    # Must point at the python.org framework that actually gets bundled: the macOS
-    # release copies this whole framework into the .app (BundlePythonFramework.cmake)
-    # and pluginmanager.cpp hardcodes python313.zip on sys.path. If this path does
-    # not exist, find_package silently falls back to Homebrew's python3 and the app
-    # links one interpreter while bundling another.
-    set(Python3_ROOT_DIR "/Library/Frameworks/Python.framework/Versions/3.13" CACHE PATH "Python 3.13 root (python.org install)")
-endif()
-
-if(WIN32)
-    find_package(Python3 3.13 REQUIRED COMPONENTS Interpreter Development)
-elseif(APPLE)
-    find_package(Python3 3.13 REQUIRED COMPONENTS Interpreter Development)
-else()
-    # Linux (incl. Flatpak KDE 6.9 SDK, which ships Python 3.12). This is a
-    # minimum: a newer system Python (e.g. 3.14 on Fedora) is still accepted.
-    find_package(Python3 3.12 REQUIRED COMPONENTS Interpreter Development)
-endif()
-
-# Ensure we use the release libraries even in debug mode
-set(Python3_LIBRARIES ${Python3_LIBRARY_RELEASE})
-set(Python3_LIBRARY_DIRS ${Python3_LIBRARY_DIRS_RELEASE})
-
 
 # Find the Hunspell library
 find_path(Hunspell_INCLUDE_DIRS NAMES hunspell/hunspell.hxx)
@@ -82,16 +58,6 @@ message(STATUS "Hunspell library: ${HUNSPELL_LIBRARIES}")
 # into the executable below. (The vcpkg quazip port was avoided because it pulls
 # in a full vcpkg Qt rebuild, and a source build of QuaZip needs the Qt5Compat
 # module which is not part of this Qt install.)
-
-
-# see what libraries we are really using for python
-message(STATUS "Python3 executable: ${Python3_EXECUTABLE}")
-message(STATUS "Python3 library: ${Python3_LIBRARIES}")
-message(STATUS "Python3 include dir: ${Python3_INCLUDE_DIRS}")
-
-# Python includes are scoped to the desktop executable (added below after target is defined)
-# link_directories must remain at directory level for linker
-link_directories(${Python3_LIBRARY_DIRS})
 
 
 if(APPLE AND NOT OPENSSL_ROOT_DIR)
@@ -119,6 +85,9 @@ add_subdirectory(ProjectNotesCore)
 add_subdirectory(ProjectNotesIntegrations)
 add_subdirectory(ProjectNotesFileFinder EXCLUDE_FROM_ALL)
 if(NOT ANDROID AND NOT IOS)
+    add_subdirectory(ProjectNotesPlugins)
+endif()
+if(NOT ANDROID AND NOT IOS)
     add_subdirectory(ProjectNotesEmail)
     add_subdirectory(ProjectNotesEmailRendering)
     add_subdirectory(ProjectNotesMeetings)
@@ -129,6 +98,23 @@ endif()
 # The ProjectNotesDesktop target is the desktop app; it reuses ProjectNotesCore.
 # ON by default on desktop platforms.
 option(BUILD_QML_DESKTOP "Build the new QML (Qt Quick) desktop frontend" ON)
+
+# Mac App Store flavor of the desktop app: App Sandbox (security-scoped
+# bookmarks for folders the user picks), no in-app updater, no programs
+# started by plugins, no Thunderbird. Packaged by packaging/macos/build_appstore.sh.
+option(PN_APP_STORE "Build the Mac App Store flavor of the desktop app" OFF)
+# Lets App Review's objection to user plugins be met without a code change.
+option(PN_APP_STORE_USER_PLUGINS "Let the App Store flavor load plugins from the user's plugins folder" ON)
+# Every macOS build, direct download and App Store alike, uses the iOS app's
+# bundle identifier: the Mac app ships in the same App Store Connect record
+# ("Project Notes Pro"). Releases before 6.5.0 used
+# com.projectnotespro.ProjectNotes. Override only to test the sandboxed build
+# without creating the real app's container.
+set(PN_MACOS_BUNDLE_ID "com.projectnotespro.projectnotesmobile" CACHE STRING
+    "Bundle identifier of the macOS app")
+if(PN_APP_STORE AND NOT APPLE)
+    message(FATAL_ERROR "PN_APP_STORE is for macOS builds only.")
+endif()
 if(BUILD_QML_DESKTOP AND NOT ANDROID AND NOT IOS)
     add_subdirectory(ProjectNotesDesktop)
 endif()
@@ -151,10 +137,8 @@ include(GNUInstallDirs)
 # These stage runtime assets and freedesktop metadata for the *installed* tree.
 if(NOT APPLE)
     # CMake directory installs merge into an existing prefix. Remove every
-    # plugin, thread and form an earlier release shipped and this one dropped,
-    # so an upgrade never leaves a retired script behind for PluginManager to
-    # load (the report plugins, the Python File Finder, the old email and
-    # meeting plugins, and so on).
+    # Python plugin, thread and form earlier releases shipped, so an upgrade
+    # leaves none of them behind.
     configure_file(
         "${CMAKE_CURRENT_SOURCE_DIR}/packaging/RemoveRetiredPlugins.cmake.in"
         "${CMAKE_CURRENT_BINARY_DIR}/RemoveRetiredPlugins.cmake"
@@ -164,17 +148,12 @@ if(NOT APPLE)
 
     # Install runtime assets alongside the executable so packaged builds
     # (e.g. Flatpak installs to /app/bin) can find them via appResourcesPath().
-    # The IFS ERP plugins are intentionally excluded from this (Flatpak/Linux)
-    # install — they are not shipped in the Flatpak. __pycache__ is excluded so
-    # stale compiled bytecode (including any IFS .pyc) is never bundled.
+    # Windows-only plugins (Office automation) are left out.
     install(DIRECTORY
             "${CMAKE_CURRENT_SOURCE_DIR}/plugins"
-            "${CMAKE_CURRENT_SOURCE_DIR}/threads"
             "${CMAKE_CURRENT_SOURCE_DIR}/dictionary"
         DESTINATION "${CMAKE_INSTALL_BINDIR}"
-        PATTERN "__pycache__" EXCLUDE
-        PATTERN "*ifs*" EXCLUDE
-        PATTERN "*IFS*" EXCLUDE
+        PATTERN "office-tools" EXCLUDE
     )
 
     # Freedesktop integration (Linux/Flatpak): desktop entry, AppStream metadata,
@@ -207,16 +186,6 @@ endif()
 
 # ── Windows installer staging target ──────────────────────────────────────────
 if(WIN32)
-    # Paths to the Python environment — override on the cmake command line if needed
-    set(PYTHON_EMBED_DIR
-        "C:/Users/paulmckinney/Documents/python-3.13.2-embed-amd64"
-        CACHE PATH "Python embeddable distribution directory")
-    set(PYTHON_PACKAGES_DIR
-        "C:/Program Files/Python313/Lib/site-packages"
-        CACHE PATH "Full Python site-packages directory to bundle")
-    set(PYTHON_USER_PACKAGES_DIR
-        "C:/Users/paulmckinney/AppData/Roaming/Python/Python313/site-packages"
-        CACHE PATH "User-level Python site-packages to bundle (supplements PYTHON_PACKAGES_DIR)")
     set(SQLITESYNCPRO_BUILD_DIR
         "${CMAKE_CURRENT_SOURCE_DIR}/../SqliteSyncPro/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Release"
         CACHE PATH "SqliteSyncPro release build directory")
@@ -305,36 +274,11 @@ if(WIN32)
             "${SQLITESYNCPRO_BUILD_DIR}/admin/libpq.dll"
             "${DEPLOY_DIR}/libpq.dll"
 
-        # 6. Python embeddable distribution (python313.dll, .zip, .pyd files, etc.)
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${PYTHON_EMBED_DIR}"
-            "${DEPLOY_DIR}"
-
-        # 7. Filter and copy site-packages; generate install_files.nsh + remove_files.nsh
-        COMMAND "${Python3_EXECUTABLE}"
-            "${NSIS_DIR}/collect_packages.py"
-            "--source" "${PYTHON_PACKAGES_DIR}"
-            "--source" "${PYTHON_USER_PACKAGES_DIR}"
-            "--dest"   "${DEPLOY_DIR}/site-packages"
-            "--nsis-install"   "${NSIS_DIR}/install_files.nsh"
-            "--nsis-uninstall" "${NSIS_DIR}/remove_files.nsh"
-
-        # 8. Application content
+        # 6. Application content
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/plugins"    "${DEPLOY_DIR}/plugins"
-
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_CURRENT_SOURCE_DIR}/threads"    "${DEPLOY_DIR}/threads"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/dictionary" "${DEPLOY_DIR}/dictionary"
-
-        # A native Qt WebEngine renderer is linked into the QML executable.
-        # Do not let a PyQt wheel under site-packages mask a missing native
-        # Chromium helper/resources/locales deployment.
-        COMMAND ${CMAKE_COMMAND}
-            "-DPN_PLATFORM=windows"
-            "-DPN_PACKAGE_ROOT=${DEPLOY_DIR}"
-            -P "${CMAKE_CURRENT_SOURCE_DIR}/packaging/verify_native_webengine_package.cmake"
 
         DEPENDS ProjectNotes
         VERBATIM

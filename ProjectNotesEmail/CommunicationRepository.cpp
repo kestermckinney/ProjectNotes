@@ -114,12 +114,11 @@ SnapshotResult SqliteSnapshotLoader::load(const SnapshotRequest &request) const
                     QStringLiteral("SELECT name FROM people WHERE id=? AND deleted=0"),
                     result.snapshot.projectManagerId);
                 QSqlQuery projectFolder(db);
+                // The project's primary project folder; a project may have none.
                 projectFolder.prepare(QStringLiteral(
-                    "SELECT full_path FROM project_locations "
-                    "WHERE project_id=? AND deleted=0 AND location_type='File Folder' "
-                    "AND trim(coalesce(full_path,'')) <> '' "
-                    "ORDER BY CASE WHEN location_description='Project Folder' THEN 0 ELSE 1 END, "
-                    "location_description,id LIMIT 1"));
+                    "SELECT l.full_path FROM projects p JOIN project_locations l ON l.id = p.primary_location_id "
+                    "WHERE p.id=? AND l.deleted=0 AND l.location_type='File Folder' "
+                    "AND trim(coalesce(l.full_path,'')) <> ''"));
                 projectFolder.addBindValue(request.source.projectId);
                 if (!projectFolder.exec()) {
                     result.error = {QStringLiteral("snapshot-query-failed"), projectFolder.lastError().text()};

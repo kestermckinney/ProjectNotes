@@ -1,72 +1,46 @@
-# New Document Templates
+# Office Document Templates
 
-Project Notes includes several plugins that copy pre-configured Microsoft Office and MS Project templates into your project folder, optionally replacing placeholder tags with project-specific data. These plugins are available on all platforms, though opening the created files may require the associated application.
+The **Office Tools** plugin (Windows) creates project documents from Word, Excel, PowerPoint and Microsoft Project templates, opens a project's schedule, and closes Excel or Word processes that automation left behind. It needs Microsoft Office, and Microsoft Project for the schedule commands.
 
-## Available Template Plugins
+## New documents
 
-| Plugin | Template File | Default Output Sub-folder |
-| :--- | :--- | :--- |
-| **New Change Order** | `plugins/templates/PCR Template.docx` (Word) | `Project Management/PCR's` |
-| **New MS Project** | User-selected `.mpp` from `plugins/templates/` | `Project Management/Schedule` |
-| **PCR Register** | `plugins/templates/PCR Registry Template.xlsx` (Excel) | `Project Management/PCR's` |
-| **New PowerPoint** | User-selected `.pptx` from `plugins/templates/` | `Project Management/Meeting Minutes` |
-| **New Risk Register** | `plugins/templates/Risk Register Template.xlsx` (Excel) | `Project Management/Risk Management` |
+Right-click a project and choose **Templates**, then one of:
 
-## Default Project Folder Structure
+| Command | Template | Placeholders filled in | Default subfolder |
+| :--- | :--- | :--- | :--- |
+| **Change Order** | `PCR Template.docx` (asks for the change number) | `{{ project.number }}`, `{{ company.name }}`, `{{ project.name }}`, `{{ current.date }}`, `{{ change.number }}` | `Project Management/PCR's` |
+| **PCR Register** | `PCR Registry Template.xlsx` | none; the copy opens in Excel | `Project Management/PCR's` |
+| **PowerPoint** | one you choose | `{{ project.number }}`, `{{ project.name }}`, `{{ current.date }}` | `Project Management/Meeting Minutes` |
+| **Risk Register** | `Risk Register Template.xlsx` | `{{ project.number }}`, `{{ project.name }}`, `{{ company.name }}`, `{{ current.date }}` | `Project Management/Risk Management` |
+| **MS Project** | one you choose (`.mpp`) | tasks whose name contains `{{ project.name }}` | `Project Management/Schedule` |
 
-All template plugins look for a **Files & Folders** entry on the project with the description **"Project Folder"** to determine the project's root folder on disk. From that root, each plugin writes output to a configurable sub-folder. The defaults assume the following structure:
+Each command copies the template into the project folder's subfolder, names the copy after the project (for example `P-100 Risk Register.xlsx`), fills in the placeholders, and adds the file to the project's **Files & Folders**. A file that already exists is opened as it is, not overwritten. When the project has no folder, you are asked where to save.
+
+The Change Order and PCR Register templates are not included with Project Notes; the first time, you are asked to choose your own. The Risk Register, Lessons Learned and Meeting templates come in the plugin's `templates` folder.
+
+## Placeholders
+
+Templates use the same `{{ name }}` placeholders as email templates. See [Plugin Settings](<PluginSettings.md#placeholders>). Templates made for earlier versions, with `<PROJECTNUMBER>`, `<CLIENTNAME>`, `<PROJECTNAME>`, `<CRDATE>` or `<CRNUMBER>`, still work. In the Risk Register, the old `<PROJECTNAME>` tag still gets the project number in front of the name.
+
+## Subfolders
+
+Open **Settings > Office Tools** to change the subfolder each command saves to. Each is relative to the project's folder, which is set on the [Project Page](<../InterfaceOverview/ProjectPage.md>) **Files & Folders** tab.
 
 ```
 [Project Folder]/
 └── Project Management/
-    ├── Meeting Minutes/      ← New PowerPoint
-    ├── Schedule/             ← New MS Project
-    ├── PCR's/                ← New Change Order, PCR Register
-    ├── Risk Management/      ← New Risk Register
-    └── Status Reports/       ← SSRS Report Capture (IFS)
+    ├── Meeting Minutes/      ← PowerPoint
+    ├── Schedule/             ← MS Project
+    ├── PCR's/                ← Change Order, PCR Register
+    └── Risk Management/      ← Risk Register
 ```
 
-If no **"Project Folder"** entry is configured for a project, the plugin will prompt you to choose a folder when it runs.
+## Open MS Project
 
-## How Template Plugins Work
+Right-click a project and choose **Open MS Project**. Project Notes opens the `.mpp` file listed in the project's **Files & Folders**, or asks which one when there are several.
 
-When you invoke a template plugin from the right-click menu on a project:
+## Stranded Excel and Word
 
-1. The plugin locates the configured template file in `plugins/templates/`.
-2. It copies the template to the configured sub-folder inside your **Project Folder**.
-3. For PowerPoint and Word templates, supported placeholder tags in the document are replaced with project values such as the project number and project name.
+When automation fails partway, Excel or Word can keep running in the background. **Plugins · Utilities > Close Stranded Excel** and **Close Stranded Word** close the copies that were started by automation and leave the ones you opened yourself alone.
 
-Common placeholder tags used in templates:
-
-| Tag | Replaced With |
-| :--- | :--- |
-| `<PROJECTNUMBER>` | The project number |
-| `<PROJECTNAME>` | The project name |
-| `<DATE>` | Today's date |
-
-## Configuring Template Settings
-
-Each template plugin has its own settings entry under **Plugins > Settings** where you can configure the sub-folder within the project folder where the generated file will be placed. The default sub-folder for each plugin is shown in the table above.
-
-**To configure a template plugin:**
-
-1. From the **Plugins** menu choose **Settings > [Template Name]** (e.g., **Settings > New Change Order**).
-2. Enter the sub-folder name relative to the project folder.
-3. Click **OK**.
-
-## Open MS Project (Windows Only)
-
-The **Open MS Project** plugin (Windows only) scans the project Files & Folders for `.mpp` files and opens the selected file in Microsoft Project. If multiple `.mpp` files are associated with the project, a selection dialog appears.
-
-**To open an MS Project file:**
-
-1. Right-click on a project.
-2. Choose **Open MS Project**.
-3. If prompted, select the `.mpp` file to open.
-
-## Stranded Process Cleanup
-
-If Microsoft Excel or Word automation fails mid-execution, the application process may remain open in the background. Use the utilities in the **Plugins > Utilities** menu to clean up these stranded processes:
-
-- **Close Stranded Excel** — Terminates any Excel processes left running by automation.
-- **Close Stranded Word** — Terminates any Word processes left running by automation.
+Subfolder settings from the Python template plugins carry over the first time Office Tools starts.

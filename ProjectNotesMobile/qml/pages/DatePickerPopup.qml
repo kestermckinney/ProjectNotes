@@ -71,6 +71,13 @@ Popup {
     // ── Popup geometry — slides up from screen bottom ─────────────────────────
     modal: true
     dim: true
+    // Take focus from whatever text field had it, so the on-screen keyboard
+    // goes away instead of covering the calendar.
+    focus: true
+    onAboutToShow: {
+        Qt.inputMethod.commit()
+        Qt.inputMethod.hide()
+    }
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
     x: 0
@@ -110,7 +117,7 @@ Popup {
             RowLayout {
                 anchors { fill: parent; leftMargin: 8; rightMargin: 8 }
 
-                Button {
+                MonoButton {
                     text: qsTr("Cancel")
                     flat: true
                     onClicked: root.close()
@@ -118,13 +125,13 @@ Popup {
 
                 Label {
                     text: qsTr("Select Date")
-                    font.pixelSize: 16
-                    font.bold: true
+                    font.pixelSize: Theme.headline; font.letterSpacing: Theme.tracking(Theme.headline)
+                    font.weight: Font.DemiBold
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignHCenter
                 }
 
-                Button {
+                MonoButton {
                     text: qsTr("Done")
                     flat: true
                     font.bold: true
@@ -150,7 +157,7 @@ Popup {
             Layout.leftMargin: 4
             Layout.rightMargin: 4
 
-            Button {
+            MonoButton {
                 text: "‹"
                 flat: true
                 font.pixelSize: 24
@@ -164,11 +171,11 @@ Popup {
                 Layout.fillWidth: true
                 text: root._monthLabel
                 horizontalAlignment: Text.AlignHCenter
-                font.pixelSize: 16
+                font.pixelSize: Theme.callout; font.letterSpacing: Theme.tracking(Theme.callout)
                 font.bold: true
             }
 
-            Button {
+            MonoButton {
                 text: "›"
                 flat: true
                 font.pixelSize: 24
@@ -194,7 +201,7 @@ Popup {
                         Label {
                             anchors.centerIn: parent
                             text: modelData
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                             font.bold: true
                             color: Theme.mutedText
                         }
@@ -263,7 +270,7 @@ Popup {
                         Label {
                             anchors.centerIn: parent
                             text: dayNum
-                            font.pixelSize: 15
+                            font.pixelSize: Theme.subheadline; font.letterSpacing: Theme.tracking(Theme.subheadline)
                             font.bold: isSelected || isToday
                             color: isSelected   ? "white"
                                  : isToday      ? Theme.navyMid
@@ -290,7 +297,7 @@ Popup {
             Layout.leftMargin: 8
             Layout.rightMargin: 8
 
-            Button {
+            MonoButton {
                 text: qsTr("Today")
                 flat: true
                 onClicked: {
@@ -305,7 +312,7 @@ Popup {
 
             Item { Layout.fillWidth: true }
 
-            Button {
+            MonoButton {
                 text: qsTr("Clear")
                 flat: true
                 onClicked: {

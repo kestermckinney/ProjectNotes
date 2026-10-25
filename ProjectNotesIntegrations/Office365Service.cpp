@@ -150,6 +150,17 @@ void Office365Service::requestContactConsent(bool exportEnabled)
     }
 }
 
+void Office365Service::requestAdditionalScopes(const QStringList &extra)
+{
+    if (!m_oauth)
+        return;
+    QStringList scopes = m_oauth->grantedScopeList();
+    scopes.append({QStringLiteral("offline_access"), QStringLiteral("User.Read")});
+    scopes.append(extra);
+    scopes.removeDuplicates();
+    m_oauth->setRequestedScopes(scopes);
+}
+
 void Office365Service::startSignIn() { if (m_oauth) m_oauth->startSignIn(); }
 void Office365Service::signOut() { if (m_oauth) m_oauth->signOut(); }
 

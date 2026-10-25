@@ -62,6 +62,9 @@ struct KeyColumnChange
     }
 };
 
+struct RecordTree;
+struct RecordImportOutcome;
+
 class DatabaseObjects : public QObject
 {
     Q_OBJECT
@@ -219,6 +222,20 @@ public:
     QDomDocument* createXMLExportDoc(QList<SqlQueryModel*>* querymodels);
 
     bool importXMLDoc(const QDomDocument& xmldoc);
+
+    // One transaction around many statements. While a batch is open, execute()
+    // and SqlQueryModel::refresh() run inside it instead of starting their own
+    // transaction. A failed statement marks the batch; commitBatch() then rolls
+    // back and returns false. Used by the plugin data API's transaction().
+    bool beginBatch();
+    bool commitBatch();
+    void rollbackBatch();
+    bool inBatch() const { return m_inBatch; }
+    bool batchFailed() const { return m_batchFailed; }
+    const QString& batchError() const { return m_batchError; }
+    // Format-neutral import shared by XML import and the plugin data API.
+    // `outcomes`, when given, receives one entry per row in import order.
+    bool importRecordTree(const RecordTree& tree, QList<RecordImportOutcome>* outcomes = nullptr);
     QList<SqlQueryModel*>* getData(const QDomDocument& xmldoc);
 
     // helper functions
@@ -226,6 +243,10 @@ public:
     void addDefaultPMToMeeting(const QString& noteId);
 
 private:
+    bool m_inBatch = false;
+    bool m_batchFailed = false;
+    QString m_batchError;
+
     QString m_databaseFile;
     QSqlDatabase m_sqliteDb;
     bool m_gui = true;
@@ -298,6 +319,9 @@ signals:
     // Emitted by non-GUI instances when a row is changed, so the GUI thread
     // can forward changes to global_DBObjects via a QueuedConnection
     void rowChanged(const QString& table, const QVariant& value, int optype);
+    // Emitted by updateDisplayData() with the row changes it is about to apply:
+    // {table, key, operation} maps. The desktop app forwards them to plugins.
+    void displayChangesPending(const QVariantList& changes);
     // Emitted when the Show Closed Projects setting changes programmatically
     // so that MainWindow can keep the menu checkbox in sync
     void showClosedProjectsChanged(bool showClosed);

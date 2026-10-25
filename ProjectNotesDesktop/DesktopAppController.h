@@ -4,7 +4,11 @@
 #ifndef DESKTOPAPPCONTROLLER_H
 #define DESKTOPAPPCONTROLLER_H
 
+#include "appidentity.h"
+
+#include <QHash>
 #include <QObject>
+#include <QPointer>
 
 #include <functional>
 #include <QAbstractItemModel>
@@ -30,16 +34,18 @@ class QQmlEngine;
 class QJSEngine;
 class QThread;
 class UpdateManager;
+class ProjectsModel;
+class SortFilterProxyModel;
 class SqliteSyncPro;
 struct SyncResult;
-class PluginManager;
-class Plugin;
+class DesktopPluginServices;
+namespace PN::Plugins { class PluginRegistry; struct PluginManifest; struct PluginError; }
 class FileFinderService;
 class Office365SettingsModel;
 namespace PN::Contacts { class ContactSyncSettingsModel; }
 namespace PN::Comm {
 class AsyncSqliteCommunicationRepository;
-class WebEngineReportRenderer;
+class ReportRenderer;
 class CommunicationsController;
 class EmailService;
 class LocationAttachmentDownloader;
@@ -117,12 +123,17 @@ class DesktopAppController : public QObject
     // Whether the project folder panel is shown beside the icon rail. Persisted
     // per-user like the panel's width; toggled from the View menu and the rail.
     Q_PROPERTY(bool showProjectSidebar READ showProjectSidebar WRITE setShowProjectSidebar NOTIFY viewOptionsChanged)
+    // False in builds the App Store updates (Help > Check for Updates is hidden).
+    Q_PROPERTY(bool updatesSupported READ updatesSupported CONSTANT)
 
     // Bumped (coalesced per event-loop turn) whenever the sidebar's per-folder
     // project snapshots go stale — projects proxy reset/filter/data change or a
     // folder membership change. FolderGroup references it so its rows/count
     // bindings re-fetch folderProjects().
     Q_PROPERTY(int sidebarRev READ sidebarRev NOTIFY sidebarRevChanged)
+    // Bumped whenever a project's primary project folder may have changed, so
+    // bindings re-read primaryProjectLocationId().
+    Q_PROPERTY(int projectFolderRev READ projectFolderRev NOTIFY projectFolderRevChanged)
 
     // Cloud sync — settings are read/written to the same QSettings the Widgets
     // app uses, so both share one configuration.
@@ -163,6 +174,8 @@ public:
     // the data location so a separate dev database is used. Set before the QML
     // engine loads (from main.cpp).
     static void setDeveloperProfile(const QString& profile) { s_developerProfile = profile; }
+    // Organization name of the local, per-user QSettings store.
+    static QString localSettingsOrganization() { return PN::Identity::settingsOrganization(s_developerProfile); }
 
     // --test-supabase: route cloud sync at the TEST Supabase instance instead of
     // production. Set from main.cpp before the engine loads.
@@ -171,6 +184,18 @@ public:
     // Disable the GitLab update check (used by the test runner so the suite makes
     // no network calls). Enabled by default.
     static void setUpdateChecksEnabled(bool enabled) { s_updateChecksEnabled = enabled; }
+
+    // Where the cloud sync password and encryption phrase are kept, by account
+    // ("Password", "EncryptionPhrase"). Defaults to the platform credential
+    // store; tests substitute an in-memory one so they never touch the keyring.
+    struct SyncSecretStore
+    {
+        std::function<QString(const QString& account, QString* error)> read;
+        std::function<bool(const QString& account, const QString& secret, QString* error)> write;
+        std::function<bool(const QString& account, QString* error)> remove;
+    };
+    // Also forgets the values the running controller has already read.
+    static void setSyncSecretStore(SyncSecretStore store);
 
     // Absolute app data directory (AppDataLocation + optional developer profile).
     // Matches AppSettings::dataLocation() so both frontends share one location.
@@ -198,6 +223,10 @@ public:
     Q_INVOKABLE bool prepareMeetingNotesReview(const QString& projectId, const QString& noteId);
     Q_INVOKABLE bool prepareProjectEmailReview(const QString &projectId, const QString &contactId = {});
     Q_INVOKABLE bool prepareContactEmailReview(const QString &contactId);
+    // Creates a draft with the contact's vCard attached and no recipients in
+    // the configured email client, without a review dialog; the user
+    // addresses it there. Failures are reported through errorOccurred().
+    Q_INVOKABLE bool emailContactCard(const QString &contactId);
     Q_INVOKABLE bool prepareLocationEmailReview(const QString &projectId, const QString &locationId, bool attachment);
     Q_INVOKABLE void cancelProjectEmailReview();
     // Starts a read-only review of the project's meeting-notes report.  The
@@ -289,6 +318,18 @@ public:
     Q_INVOKABLE bool importXmlFile(const QString& fileUrlOrPath);
     Q_INVOKABLE bool exportRecordXml(const QString& tableName, const QString& recordId,
                                      const QString& fileUrlOrPath);
+
+    // ── vCard export ─────────────────────────────────────────────────────────
+    // Suggested save name for a contact's card ("<name>.vcf"), or "" when the
+    // contact doesn't exist.
+    Q_INVOKABLE QString contactVCardFileName(const QString& contactId) const;
+    Q_INVOKABLE bool exportContactVCard(const QString& contactId, const QString& fileUrlOrPath);
+    // Drag.mimeData for dragging a contact out to another application: the
+    // card written to "<name>.vcf" in the transient cache (as text/uri-list,
+    // for file managers) plus the card itself (text/vcard, text/x-vcard, for
+    // mail and contacts apps). Empty when the contact doesn't exist or the
+    // file can't be written. The files are removed with the rest of the cache.
+    Q_INVOKABLE QVariantMap contactVCardDragData(const QString& contactId);
 
     // ── Preferences (managing company / project manager, by id) ──────────────
     bool viewReportAfterSave() const;
@@ -451,20 +492,30 @@ public:
     // visible project (the "All Projects" group). Served from a snapshot built
     // in one pass over the proxy and cached until sidebarRev bumps — replaces
     // the old per-folder full-model Repeater + O(rows) folderVisibleCount().
+    // A Folder filter on the projects list is ignored here, so every group
+    // keeps its projects while the list shows one folder.
     Q_INVOKABLE QVariantList folderProjects(const QString& folderId);
     int sidebarRev() const { return m_sidebarRev; }
 
-    // ── Python plugins (right-click menus, mirrors the Widgets TableView) ─────
-    // Menus registered by loaded plugins whose dataexport matches this model's
-    // table, as [{ title, submenu, index }]. `index` is an opaque handle into a
+    // Folder filter on the projects list, driven by clicking a sidebar folder.
+    // folderId "" filters to Not Categorized; filtering to the folder that is
+    // already the only one shown clears the folder filter instead.
+    Q_INVOKABLE void filterProjectsByFolder(const QString& folderId);
+    Q_INVOKABLE void clearProjectFolderFilter();
+    // Values of the active Folder filter: [] when there is none, [""] for Not
+    // Categorized. Re-read on filterRev.
+    Q_INVOKABLE QStringList projectFolderFilter() const;
+
+    // ── Plugin menus ─────────────────────────────────────────────────────────
+    // Record menus that JavaScript plugins contribute to this model's entity,
+    // as [{ title, submenu, index }]. `index` is an opaque handle into a
     // per-call cache; pass it back to runPluginMenu. Rebuilt on each call, so
     // query it right before showing the menu.
     Q_INVOKABLE QVariantList pluginMenusForModel(QAbstractItemModel* model);
     // As above, but keyed directly by table name — for heterogeneous lists (the
     // global search results) where each row's table isn't the model's own table.
     Q_INVOKABLE QVariantList pluginMenusForTable(const QString& table);
-    // Run a plugin menu against a record: exports the record to XML (scoped by
-    // the menu's tablefilter) and hands it to the plugin function.
+    // Run a plugin menu against a record (its key, in the menu's entity).
     Q_INVOKABLE void runPluginMenu(QAbstractItemModel* model,
                                    const QString& recordId, int index);
     Q_INVOKABLE void runPluginMenuForTable(const QString& table,
@@ -481,6 +532,10 @@ public:
     // Run one: calls the plugin function directly with its configured
     // parameter, no record/XML involved (mirrors MainWindow::slotPluginMenu).
     Q_INVOKABLE void runGlobalPluginMenu(int index);
+    // The page the user is looking at, reported by Main.qml whenever it
+    // changes; JavaScript plugins read it through app.currentView().
+    Q_INVOKABLE void setCurrentView(const QString& section, const QString& entity,
+                                    const QString& key, const QString& tab);
 
     // ── Filters (scope child models to a project / note) ─────────────────────
     Q_INVOKABLE void setProjectFilter(const QString& projectId);
@@ -699,9 +754,29 @@ public:
     // Set just the path on an existing location row (used by the per-row browse
     // button); the model re-derives the file type + description.
     Q_INVOKABLE bool        setProjectLocationPath(int row, const QString& fileUrlOrPath);
+    // Keeps access to a file or folder the user picked, across restarts, in
+    // the sandboxed App Store build (a no-op elsewhere). Call it from pickers
+    // whose result the app reads again later.
+    Q_INVOKABLE void        rememberLocation(const QString& fileUrlOrPath);
+    bool updatesSupported() const { return s_updateChecksEnabled; }
     // Open a location with the OS default handler (browser, Office deep link, or
     // local file), using desktop services like the Widgets app.
     Q_INVOKABLE void        openProjectLocation(int row);
+
+    // ── Primary project folder ───────────────────────────────────────────────
+    // The project's primary project folder: a live File Folder location, or ""
+    // when it has none. Re-read on projectFolderRev.
+    Q_INVOKABLE QString     primaryProjectLocationId(const QString& projectId) const;
+    // True once the user has set or cleared the primary project folder, which
+    // stops File Finder from choosing one.
+    Q_INVOKABLE bool        projectFolderChosenByUser(const QString& projectId) const;
+    // locationId "" leaves the project without a project folder. Either way
+    // the choice is the user's from then on.
+    Q_INVOKABLE bool        setPrimaryProjectLocation(const QString& projectId, const QString& locationId);
+    // Hand the choice back to File Finder, which fills in a primary project
+    // folder on its next scan if the project has none.
+    Q_INVOKABLE bool        letFileFinderChooseProjectFolder(const QString& projectId);
+    int projectFolderRev() const { return m_projectFolderRev; }
 
     // ── Status report items ──────────────────────────────────────────────────
     Q_INVOKABLE int         addStatusItem(const QString& projectId);
@@ -812,7 +887,31 @@ public:
     QString subscriptionStatusText() const { return m_subscriptionStatusText; }
     QString supabaseConnectionInfo() const;
 
+    // ── JavaScript plugin services (DesktopPluginServices) ─────────────────
+    PN::Plugins::PluginRegistry* pluginRegistry() const { return m_jsPlugins; }
+    void composePluginEmail(const PN::Plugins::PluginManifest& plugin, const QVariantMap& message,
+                            std::function<void(const QVariant&, const PN::Plugins::PluginError&)> reply);
+    QVariantList pluginEmailBackends() const;
+    QVariantList pluginEmailAudiences(const QString& projectId, const QString& workflow) const;
+    QVariant pluginResolveAudience(const QString& projectId, const QString& audienceId, PN::Plugins::PluginError* error) const;
+    QVariantList pluginEmailTemplates();
+    void renderPluginEmailTemplate(const QString& templateId, const QVariantMap& context,
+                                   std::function<void(const QVariant&, const PN::Plugins::PluginError&)> reply);
+    void draftPluginMeeting(const PN::Plugins::PluginManifest& plugin, const QVariantMap& meeting,
+                            std::function<void(const QVariant&, const PN::Plugins::PluginError&)> reply);
+    QString writePluginIcs(const QVariantMap& meeting, const QString& path, PN::Plugins::PluginError* error);
+    void navigateForPlugin(const QString& entity, const QString& key, const QString& tab, PN::Plugins::PluginError* error);
+    void refreshViewsForPlugin();
+    // The managing company and project manager from Settings (app.defaults()).
+    QVariantMap pluginDefaults() const;
+    PN::Contacts::ContactSyncSettingsModel* contactSyncModel() const { return m_contactSyncSettingsModel.get(); }
+    PN::Comm::Office365Service* office365ServiceForPlugins() const { return m_office365Service; }
+
 signals:
+    // A JavaScript plugin asked to open a record (app.navigate). The arguments
+    // match Main.qml's openSearchResult().
+    void pluginNavigateRequested(const QString& dataType, const QString& dataId,
+                                 const QString& fkId, const QString& dataKey);
     void viewReportAfterSaveChanged();
     void reviewAudiencePresetChanged();
     void emailSettingsChanged();
@@ -837,6 +936,7 @@ signals:
     void quitForUpdate();
     void viewOptionsChanged();
     void sidebarRevChanged();
+    void projectFolderRevChanged();
     void filterRevChanged();
     void sortRevChanged();
     void projectManagerChanged();
@@ -930,7 +1030,8 @@ private:
     std::unique_ptr<PN::Comm::MeetingTemplateEditorModel> m_meetingTemplateEditorModel;
     std::unique_ptr<Office365SettingsModel> m_office365SettingsModel;
     std::unique_ptr<PN::Contacts::ContactSyncSettingsModel> m_contactSyncSettingsModel;
-    PN::Comm::WebEngineReportRenderer *m_webEngineRenderer = nullptr;
+    // QObject-parented to the controller; see the constructor.
+    PN::Comm::ReportRenderer *m_reportRenderer = nullptr;
     // Bound to the currently open database only. It owns worker threads, so it
     // must be destroyed before global_DBObjects closes that database.
     std::unique_ptr<PN::Comm::AsyncSqliteCommunicationRepository> m_communicationRepository;
@@ -939,6 +1040,9 @@ private:
     QUuid m_pendingMeetingNotesReportReview;
     QUuid m_pendingProjectReportReview;
     QUuid m_pendingProjectEmailReview;
+    // Set while emailContactCard() runs: the prepared review is handed off
+    // as soon as it is ready, and its outcome closes the flag.
+    bool m_autoDraftContactCard = false;
     std::optional<PN::Comm::EmailPreparation> m_projectEmailReview;
     std::unique_ptr<PN::Comm::LocationAttachmentDownloader> m_locationAttachmentDownloader;
     QUuid m_pendingHandoffRevalidation;
@@ -971,7 +1075,7 @@ private:
                                     bool displayPdf = false,
                                     std::optional<PN::Comm::TrackerFilters> trackerFilters = std::nullopt);
     bool prepareProjectEmail(const QString &projectId, const QString &contactId,
-                             const QString &locationId, bool attachment);
+                             const QString &locationId, bool attachment, bool contactCard = false);
     bool stageRequestedGeneratedAttachment(PN::Comm::EmailPreparation *preparation,
                                            PN::Comm::ValidationResult *validation);
     void stageRequestedGeneratedAttachmentAsync(PN::Comm::EmailPreparation preparation,
@@ -988,8 +1092,19 @@ private:
     bool m_sidebarRevPending     = false;   // a coalesced rev bump is queued
     bool m_folderMgrConnected    = false;   // FolderManager signal hooked up
     int  m_sidebarRev            = 0;
+    int  m_projectFolderRev      = 0;
+    void bumpProjectFolderRev();
     void rebuildFolderSnapshot();
     void invalidateFolderSnapshot();
+    // While the projects list has a Folder filter, the snapshot reads a mirror
+    // of it that carries every other filter, the quick search and the sort.
+    QAbstractItemModel* syncSidebarMirror();
+    void dropSidebarMirror();
+    // QPointer: the model is parented to global_DBObjects, which can close.
+    QPointer<ProjectsModel>        m_sidebarMirrorModel;
+    QPointer<SortFilterProxyModel> m_sidebarMirrorProxy;
+    QString m_sidebarMirrorKey;              // filters last applied to the mirror
+    bool    m_syncingSidebarMirror = false;  // ignore the mirror's own signals
 
     // Bumped by applyColumnFilters/clearColumnFilters/applyQuickFilter — see
     // filterRev/hasActiveColumnFilters(). Filter changes are discrete user
@@ -1026,6 +1141,11 @@ private:
     void    finishSyncVerification(const QString& status, const QString& detail);
     QString syncSetting(const QString& key) const;
     void    setSyncSetting(const QString& key, const QVariant& value);
+    // The password and encryption phrase, read from s_syncSecretStore once per
+    // session (moving any clear-text copy out of AppSettings on the way).
+    QString syncSecret(const QString& account) const;
+    void    setSyncSecret(const QString& account, const QString& value);
+    mutable QHash<QString, QString> m_syncSecrets;
     // Sync host for the active environment (--test-supabase picks the TEST
     // instance). Shared by configureSyncApi() and verifySyncSettings() so the
     // engine and the settings check can't drift onto different servers.
@@ -1042,17 +1162,21 @@ private:
     static QString s_developerProfile;
     static bool    s_testSupabase;
     static bool    s_updateChecksEnabled;
+    static SyncSecretStore s_syncSecretStore;
 
     // ── Plugins ──────────────────────────────────────────────────────────────
-    PluginManager* m_pluginManager = nullptr;
-    void ensurePluginManager();   // create the manager once, after the DB is open
+    // JavaScript (QJSEngine) plugins; see docs/QJSEnginePluginsPlan.md.
+    PN::Plugins::PluginRegistry* m_jsPlugins = nullptr;
+    DesktopPluginServices* m_pluginServices = nullptr;
+    bool m_forwardingPluginRows = false;
+    void ensureJsPlugins();
+    void appendJsRecordMenus(const QString& table, QVariantList* out);
+    PN::Comm::EmailAddress pluginRecipient(const QVariant& value, PN::Comm::RecipientRole role) const;
 
     // Per-call handle table for pluginMenusForModel → runPluginMenu.
     struct PluginMenuRef {
-        Plugin* plugin = nullptr;
-        QString functionname;
-        QString tablefilter;
-        QString parameter;
+        QString jsPluginId;
+        QString jsMenuId;
     };
     QVector<PluginMenuRef> m_pluginMenuCache;
     QVector<PluginMenuRef> m_globalPluginMenuCache;

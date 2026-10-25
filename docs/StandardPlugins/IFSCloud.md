@@ -1,59 +1,92 @@
 # IFS Cloud Integration
 
-Project Notes includes optional integration with the **IFS Cloud ERP** system. The integration uses **Keycloak SSO** (OAuth2 browser-redirect flow) to authenticate with the IFS REST API. The first time a sync runs, a browser window opens for you to sign in; the token is then cached and refreshed automatically.
+The **IFS Cloud** plugin connects Project Notes to a customized IFS Cloud ERP system. It imports the projects you manage with their budgets and team members, keeps tracker items in step with IFS tasks, generates SSRS status and tracker reports, and adds menus that open IFS pages and reports.
 
-## Installing the IFS Plugins
+The plugin is written for the custom fields of one IFS deployment (Cornerstone Controls) and will not work against an arbitrary IFS environment.
 
-The IFS integration is shipped as an **optional component** of the Project Notes installer. On Windows, the installer presents a **"Custom IFS Plugins"** section you can deselect; on macOS, the installer offers an **"IFS Custom Plugins"** package.
+## Installing
 
-The custom IFS plugins are written for the specific custom fields used in Cornerstone Controls' IFS deployment and will not work against an arbitrary IFS environment. Skip the IFS plugins component if your organization does not use these custom fields.
+The plugin is not part of the Project Notes installers. Install the `com.projectnotespro.ifs-cloud` `.pnplugin` file from **Settings > Plugins > Install**, review what it asks for, and approve it. It goes into your own plugins folder, so the signed application is never modified and upgrades keep it.
 
-> **Note:** Installing the IFS plugins component modifies files inside the application bundle, which can invalidate the code signature on signed Project Notes packages. If signature integrity is required, install the IFS plugins to your user home folder instead, or run an unsigned build.
+Settings from the Python IFS plugins carry over the first time it starts.
 
-## IFS Cloud Settings
+## Settings
 
-**To open the IFS Cloud settings:**
-
-1. From the **Plugins** menu choose **Settings > IFS Cloud Settings**.
+Open **Settings > IFS Cloud**.
 
 | Setting | Default | Description |
 | :--- | :--- | :--- |
-| **URL** | *(none)* | The base URL of your IFS Cloud instance (e.g., `https://ifs.cornerstonecontrols.com`). Used as both the REST API base URL and the Keycloak issuer. |
-| **Realm** | `cciprod` | The Keycloak realm used for SSO. Change this to match the realm configured in your IFS deployment. |
-| **Domain User** | *(none)* | Windows domain username used to authenticate with the SSRS report server (separate from IFS SSO). |
-| **Domain Password** | *(none)* | Windows domain password for the report server. |
-| **Report Server** | *(none)* | The hostname of the SQL Server Reporting Services (SSRS) report server. Change this to match your organization's report server. |
-| **Sync Tracker Items** | *(unchecked)* | When checked, tracker items will be synchronized with IFS work orders or tasks during the background sync. |
+| **IFS Cloud address** | `https://ifs.cornerstonecontrols.com` | The base address of your IFS Cloud system. |
+| **Sign-in realm** | `cciprod` | The Keycloak realm used for sign-in. |
+| **Keep tracker items in step with IFS ISSUES tasks** | off | Syncs tracker items with the tasks of each project's ISSUES activity. |
+| **Report server** | `indvifsbi05` | The SSRS report server's host name. |
+| **Domain user**, **Domain password** | none | The Windows account used for the report server. The password is moved to your system's credential store when you save. |
+| **Project subfolder for status reports** | `Project Management/Status Reports` | Where status reports are saved in the project folder. |
+| **Project subfolder for tracker reports** | `Project Management/Issues List` | Where tracker reports are saved in the project folder. |
 
-Your IFS Person ID is determined automatically from the SSO token at sign-in — there is no longer a separate Person ID field.
+The plugin may reach only the hosts listed in its manifest. If your IFS address or report server differs, the plugin's provider has to add it and rebuild the package; Project Notes then asks you to approve it again.
 
-## IFS Project Synchronization
+## Signing in
 
-The **IFS Integration** background thread runs automatically while Project Notes is open. It periodically imports project data from IFS Cloud into Project Notes.
+The first time the plugin needs IFS, your browser opens the IFS sign-in page. Afterwards the token is kept in your system's credential store and refreshed without the browser. If you don't finish signing in, the plugin waits an hour before opening the browser again. Your IFS user is found from the account you sign in with.
 
-**To trigger an immediate IFS project import:**
+## Importing projects
 
-1. From the **Plugins** menu choose **Utilities > Import IFS Projects**.
+Every three minutes while Project Notes is open, the plugin imports the next few of your active IFS projects: name, customer, budget, actual cost, earned value and team members with their resource groups. Projects that are no longer active in IFS are closed in Project Notes. **Plugins · Utilities > Import IFS Projects** imports them all at once.
 
-When **Sync Tracker Items** is enabled in IFS Cloud Settings, tracker and action items are also pushed to IFS as work orders or tasks during each sync cycle.
+## Tracker items
 
-## SSRS Report Generation (Windows Only)
+With tracker sync on, each active project's items are compared with the tasks of its ISSUES activity after the import:
 
-The **SSRS Report Capture** plugin retrieves reports from a **SQL Server Reporting Services** server and saves them as PDFs. This is useful for pulling standard IFS reports (e.g., project cost or schedule reports) directly into your project folder.
+- A task created in IFS becomes item `IFS<task id>`.
+- An item created in Project Notes becomes a task named after the project and item number. Internal items stay out of IFS.
+- When both sides have the item, the one updated more recently wins.
 
-The plugin looks for a **File/Folder Location** with the description **"Project Folder"** to determine where to save the generated report. The default output sub-folder is `Project Management/Status Reports`. You can change this sub-folder under **Plugins > Settings > SQL Report**.
+### How ISSUES sync works
 
-**To generate an SSRS report:**
+Every three minutes, after the project import, the plugin walks your active projects. For each one it looks up the activity numbered `ISSUES` in IFS. A project without that activity is skipped. Otherwise the plugin reads every task under it and matches them to the project's tracker items.
 
-1. Right-click on a project in the **Project List Page**.
-2. Choose **Generate Status Report**.
-3. The plugin connects to the report server using the credentials configured in **IFS Cloud Settings** and downloads the report.
-4. The PDF is saved to `[Project Folder]/Project Management/Status Reports/`.
+Matching uses the task ID. A task whose ID starts with the project number came from Project Notes, and the rest of the ID is the item number, so task `P4000012` is item `012` of project `P4000`. Any other task is item `IFS` plus its task ID. If no item has that number but one has the same name, the plugin updates that item rather than create a duplicate.
 
-## Authentication
+When a task and an item match, the plugin compares the item's **Updated** date with the task's date-updated field:
 
-IFS Cloud integration uses **Keycloak SSO** with the OAuth2 authorization-code flow. When the integration first needs a token, Project Notes opens your default browser to the IFS sign-in page; after you complete sign-in, the token is cached locally and refreshed silently as long as the refresh token is valid. If the cached token has expired and the browser flow cannot complete (for example, you don't respond), the integration backs off for a short cool-down before prompting again so it does not repeatedly open the browser.
+| Comparison | Result |
+| :--- | :--- |
+| Project Notes is newer | The item is written to the IFS task. |
+| Both dates are the same | Nothing changes. |
+| IFS is newer, or either date is blank | The task overwrites the item. |
 
-A network connectivity check runs before each authentication attempt; if the IFS host is unreachable, sign-in is skipped until the next cycle.
+Tasks with no matching item become new items. Items with no matching task become new IFS tasks, except internal items and items whose number starts with `IFS`. Those are tasks someone deleted in IFS, and the plugin leaves them alone instead of recreating them.
 
-The Domain User, Domain Password, and Report Server settings are used only by the SSRS report capture step and are independent of the IFS REST API authentication.
+Editing an item in Project Notes sets its **Updated** date to today. That date is what tells the plugin to send your change to IFS.
+
+### Why there is no sync timestamp
+
+The **Keep tracker items in step with IFS ISSUES tasks** setting is only a check box. Nothing records when it was turned on or when a sync last finished. Without that reference point the plugin can't tell what changed since the last sync. It only knows which side carries the later date. Expect these consequences:
+
+- **First sync pushes everything.** Turn the setting on for a project with existing items and every non-internal item that IFS lacks becomes a new IFS task at once, including items closed long ago. Mark items internal first if you don't want them in IFS.
+- **Same-day edits on both sides are lost.** Updated dates hold a day, not a time. If you edit an item on the day someone also edits its task in IFS, the dates match and neither change crosses over. The two stay different until one side is edited again on a later day.
+- **One side's change can overwrite the other's.** Whichever side has the later date wins the whole item. Someone who edits the task in IFS today replaces the status you set in Project Notes yesterday, even if they changed a different field.
+- **Deletions come back.** The plugin can't tell an item you deleted from an item that never existed. Delete an item in Project Notes while its task remains in IFS and the next sync brings it back. Delete a Project Notes task in IFS and the item is sent back as a new task. Delete the matching record on both sides, or close the item instead.
+- **Turning the setting off and on again catches up blindly.** Changes made on both sides while sync was off are settled by date alone, with the same-day and whole-item problems above.
+- **Blank dates favor IFS.** A task or item with no updated date is treated as older, so IFS overwrites the item.
+
+If you depend on IFS and Project Notes agreeing, pick one side as the place you edit tracker items and treat the other as a copy.
+
+## Status reports
+
+Right-click a project and choose **Generate Status Report**. Choose the report date and how to send it: in the message body (Windows, using Word), as a PDF, as a Word document, or not at all. The plugin downloads the report from the report server with the domain account, saves the PDF (and a Word copy, if you ask) in the project's report folder, prepares the email for your review, and records the date as the project's last status date.
+
+The email goes to the project's default status report audience, or to the team members marked to receive status reports when there is none.
+
+## Tracker reports
+
+Right-click a project and choose **Generate Tracker Report** to file and send the SSRS **Issues List** report. The choices match the status report, including the Windows-only option that puts the Word version of the report in the message body. The report date only names the file (`20261001 P4000 Tracker Report.pdf`) and dates the subject; it doesn't change the project's last status date.
+
+The PDF and the optional Word copy go in the tracker report subfolder. The email goes to the project's default Tracker Items Report audience, falling back to the team members marked to receive status reports.
+
+## IFS shortcuts
+
+The plugin adds **IFS Cloud** menus to projects and contacts (Open Project, Open Gantt, Invoicing Plan, Open Time Entry and others) and a **Reports** menu of SSRS reports to projects. They are listed in the **Shortcuts** table at the bottom of **Settings > IFS Cloud**, where you can rename, change, add or remove them. The table works like the one in My Shortcuts.
+
+A URL can use `{{ ifs.address }}` and `{{ ifs.reportServer }}` for the IFS address and report server, so changing either setting updates every shortcut that uses it. Clear one and its shortcuts disappear from the menus. Empty the table and it stays empty; the defaults come back only on a fresh install.

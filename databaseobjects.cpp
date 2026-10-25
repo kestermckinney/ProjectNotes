@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "databaseobjects.h"
+#include "recordtree.h"
+
+#include <QScopedPointer>
 #include "databasestructure.h"
 
 #include <QUuid>
@@ -332,6 +335,26 @@ QString DatabaseObjects::execute(const QString& sql)
     {
         QSqlQuery query(m_sqliteDb);
 
+        // Inside beginBatch()/commitBatch() every statement joins the batch's
+        // transaction; starting another would fail and skip the statement.
+        if (m_inBatch)
+        {
+            query.prepare(sql);
+            if (!query.exec())
+            {
+                QString msg = objectName() + " - SQL QUERY FAILED: " + query.lastError().text() + "\nSQL: " + sql;
+                qWarning() << msg;
+                QLog_Error(ERRORLOG, msg);
+                m_batchFailed = true;
+                m_batchError = query.lastError().text();
+            }
+            else if (query.next())
+            {
+                val = query.value(0).toString();
+            }
+            return val;
+        }
+
         if (m_sqliteDb.transaction())
         {
             query.prepare(sql);
@@ -374,6 +397,44 @@ QString DatabaseObjects::execute(const QString& sql)
     }
 
     return val;
+}
+
+bool DatabaseObjects::beginBatch()
+{
+    QWriteLocker locker(&db_rwlock);
+    if (m_inBatch || !m_sqliteDb.transaction())
+        return false;
+    m_inBatch = true;
+    m_batchFailed = false;
+    m_batchError.clear();
+    return true;
+}
+
+bool DatabaseObjects::commitBatch()
+{
+    QWriteLocker locker(&db_rwlock);
+    if (!m_inBatch)
+        return false;
+    m_inBatch = false;
+    if (m_batchFailed) {
+        m_sqliteDb.rollback();
+        return false;
+    }
+    if (!m_sqliteDb.commit()) {
+        m_batchError = m_sqliteDb.lastError().text();
+        m_sqliteDb.rollback();
+        return false;
+    }
+    return true;
+}
+
+void DatabaseObjects::rollbackBatch()
+{
+    QWriteLocker locker(&db_rwlock);
+    if (!m_inBatch)
+        return;
+    m_inBatch = false;
+    m_sqliteDb.rollback();
 }
 
 void DatabaseObjects::closeDatabase()
@@ -885,179 +946,39 @@ QList<QDomNode> DatabaseObjects::findTableNodes(const QDomNode& xmlelement, cons
 
 bool DatabaseObjects::importXMLDoc(const QDomDocument& xmldoc)
 {
-    // import clients
-    QDomElement root = xmldoc.documentElement();
-    QList<QDomNode> domlist;
+    return importRecordTree(RecordTreeXml::treeFromDocument(xmldoc));
+}
 
-    domlist = findTableNodes(root, "clients");
-    if (!domlist.empty())
+bool DatabaseObjects::importRecordTree(const RecordTree& tree, QList<RecordImportOutcome>* outcomes)
+{
+    // Tables are applied parents first (companies, contacts, projects, then
+    // their children), each table's rows in document order, wherever the table
+    // appears in the tree. A row rejected for an invalid value stops the import.
+    for (const QString& name : RecordTreeImport::tableOrder())
     {
+        const QList<const RecordTable*> tables = RecordTreeImport::tablesNamed(tree, name);
+        if (tables.isEmpty())
+            continue;
+
 #ifdef QT_DEBUG
-        QLog_Debug(DEBUGLOG, "importXMLDoc processing clients.");
+        QLog_Debug(DEBUGLOG, QString("importRecordTree processing %1.").arg(name));
 #endif
-        CompaniesModel companies_model(this);
+        QScopedPointer<SqlQueryModel> model(createExportObject(name));
+        if (!model)
+            continue;
 
-        for (QDomNode& tablenode : domlist)
-            if (!companies_model.importXMLNode(tablenode))
-                return false;
-
-        domlist.clear();
-    }
-
-    // import people
-    domlist = findTableNodes(root, "people");
-    if (!domlist.empty())
-    {
-#ifdef QT_DEBUG
-        QLog_Debug(DEBUGLOG, "importXMLDoc processing people.");
-#endif
-        ContactsModel contacts_model(this);
-
-        for (QDomNode& tablenode : domlist)
-            if(!contacts_model.importXMLNode(tablenode))
-                return false;
-
-        domlist.clear();
-    }
-
-    // import projects
-    domlist = findTableNodes(root, "projects");
-    if (!domlist.empty())
-    {
-#ifdef QT_DEBUG
-        QLog_Debug(DEBUGLOG, "importXMLDoc processing projects.");
-#endif
-        ProjectsModel projects_model(this);
-
-        for (QDomNode& tablenode : domlist)
-            if (!projects_model.importXMLNode(tablenode))
-                return false;
-
-        domlist.clear();
-    }
-
-    // import project people
-    domlist = findTableNodes(root, "project_email_audiences");
-    if (!domlist.empty())
-    {
-        ProjectEmailAudiencesModel audience_model(this);
-        for (QDomNode& tablenode : domlist)
-            if (!audience_model.importXMLNode(tablenode))
-                return false;
-        domlist.clear();
-    }
-
-    // import project people
-    domlist = findTableNodes(root, "project_people");
-    if (!domlist.empty())
-    {
-#ifdef QT_DEBUG
-        QLog_Debug(DEBUGLOG, "importXMLDoc processing project_people.");
-#endif
-        ProjectTeamMembersModel project_people_model(this);
-
-        for (QDomNode& tablenode : domlist)
-            if (!project_people_model.importXMLNode(tablenode))
-                return false;
-
-        domlist.clear();
-    }
-
-    // import status report items
-    domlist = findTableNodes(root, "status_report_items");
-    if (!domlist.empty())
-    {
-#ifdef QT_DEBUG
-        QLog_Debug(DEBUGLOG, "importXMLDoc processing status_report_items.");
-#endif
-        StatusReportItemsModel status_report_items_model(this);
-
-        for (QDomNode& tablenode : domlist)
-            if(!status_report_items_model.importXMLNode(tablenode))
-                return false;
-
-        domlist.clear();
-    }
-
-    // import project locations
-    domlist = findTableNodes(root, "project_locations");
-    if (!domlist.empty())
-    {
-#ifdef QT_DEBUG
-        QLog_Debug(DEBUGLOG, "importXMLDoc processing project_locations.");
-#endif
-        ProjectLocationsModel project_locations_model(this);
-
-        for (QDomNode& tablenode : domlist)
-            if(!project_locations_model.importXMLNode(tablenode))
-                return false;
-
-        domlist.clear();
-    }
-
-
-    // import project notes
-    domlist = findTableNodes(root, "project_notes");
-    if (!domlist.empty())
-    {
-#ifdef QT_DEBUG
-        QLog_Debug(DEBUGLOG, "importXMLDoc processing project_notes.");
-#endif
-        ProjectNotesModel project_notes_model(this);
-
-        for (QDomNode& tablenode : domlist)
-            if(!project_notes_model.importXMLNode(tablenode))
-                return false;
-
-        domlist.clear();
-    }
-
-    // import item tracker
-    domlist = findTableNodes(root, "item_tracker");
-    if (!domlist.empty())
-    {
-#ifdef QT_DEBUG
-        QLog_Debug(DEBUGLOG, "importXMLDoc processing item_tracker.");
-#endif
-        TrackerItemsModel tracker_items_model(this);
-
-        for (QDomNode& tablenode : domlist)
-            if(!tracker_items_model.importXMLNode(tablenode))
-                return false;
-
-        domlist.clear();
-    }
-
-    // import meeting attendees
-    domlist = findTableNodes(root, "meeting_attendees");
-    if (!domlist.empty())
-    {
-#ifdef QT_DEBUG
-        QLog_Debug(DEBUGLOG, "importXMLDoc processing meeting_attendees.");
-#endif
-        MeetingAttendeesModel meeting_attendees_model(this);
-
-        for (QDomNode& tablenode : domlist)
-            if(!meeting_attendees_model.importXMLNode(tablenode))
-                return false;
-
-        domlist.clear();
-    }
-
-    // import tracker items updates
-    domlist = findTableNodes(root, "item_tracker_updates");
-    if (!domlist.empty())
-    {
-#ifdef QT_DEBUG
-        QLog_Debug(DEBUGLOG, "importXMLDoc processing item_tracker_updates.");
-#endif
-        TrackerItemCommentsModel item_tracker_updates_model(this);
-
-        for (QDomNode& tablenode : domlist)
-            if(!item_tracker_updates_model.importXMLNode(tablenode))
-                return false;
-
-        domlist.clear();
+        for (const RecordTable* table : tables)
+        {
+            for (const RecordRow& row : table->rows)
+            {
+                RecordImportOutcome outcome;
+                const bool ok = model->importRecordRow(row, &outcome);
+                if (outcomes)
+                    outcomes->append(outcome);
+                if (!ok)
+                    return false;
+            }
+        }
     }
 
     return true;
@@ -1337,6 +1258,15 @@ bool DatabaseObjects::popRowChange(KeyColumnChange& outChange)
 void DatabaseObjects::updateDisplayData()
 {
     KeyColumnChange keyColChange;
+
+    if (!m_keyColumnChanges.isEmpty()) {
+        QVariantList pending;
+        pending.reserve(m_keyColumnChanges.size());
+        for (const KeyColumnChange& change : std::as_const(m_keyColumnChanges))
+            pending.append(QVariantMap{{QStringLiteral("table"), change.table}, {QStringLiteral("key"), change.value},
+                                       {QStringLiteral("operation"), int(change.operation_type)}});
+        emit displayChangesPending(pending);
+    }
 
     while (popRowChange(keyColChange))
     {

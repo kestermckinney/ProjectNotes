@@ -20,7 +20,7 @@ The email address for your Project Notes Pro account.
 
 ### Sync Password
 
-The password for your Project Notes Pro account. It is stored in your local OS profile and is never synced.
+The password for your Project Notes Pro account. Project Notes keeps it, along with your encryption phrase, in your operating system's credential store (Keychain, Windows Credential Manager, or the desktop keyring on Linux). Neither is synced. If the credential store is locked or missing, Project Notes says so and you will need to enter them again after a restart.
 
 ### Encryption Phrase
 

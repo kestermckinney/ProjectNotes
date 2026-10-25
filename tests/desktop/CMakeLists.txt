@@ -48,18 +48,19 @@ qt_add_executable(tst_qmldesktop
     ${DESKTOP_DIR}/LogViewerController.cpp  ${DESKTOP_DIR}/LogViewerController.h
     ${DESKTOP_DIR}/HelpController.cpp       ${DESKTOP_DIR}/HelpController.h
     ${DESKTOP_DIR}/SpellCheck.cpp           ${DESKTOP_DIR}/SpellCheck.h
+    ${DESKTOP_DIR}/PluginUiController.cpp   ${DESKTOP_DIR}/PluginUiController.h
+    ${DESKTOP_DIR}/DesktopPluginServices.cpp ${DESKTOP_DIR}/DesktopPluginServices.h
+    ${DESKTOP_DIR}/DesktopAppControllerPlugins.cpp
+    ${DESKTOP_DIR}/SecurityScopedBookmarks.cpp ${DESKTOP_DIR}/SecurityScopedBookmarks.h
     ${MOBILE_DIR}/TextFormatter.cpp         ${MOBILE_DIR}/TextFormatter.h
-    ${ROOT_DIR}/plugin.cpp          ${ROOT_DIR}/plugin.h
-    ${ROOT_DIR}/pluginmanager.cpp   ${ROOT_DIR}/pluginmanager.h
-    ${ROOT_DIR}/pythonworker.cpp    ${ROOT_DIR}/pythonworker.h
     ${ROOT_DIR}/credentialstore.cpp ${ROOT_DIR}/credentialstore.h
     ${ROOT_DIR}/updatemanager.cpp   ${ROOT_DIR}/updatemanager.h
 )
 
+target_compile_definitions(tst_qmldesktop PRIVATE PN_TEST_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/fixtures")
 target_include_directories(tst_qmldesktop PRIVATE
     ${DESKTOP_DIR}
     ${MOBILE_DIR}
-    ${Python3_INCLUDE_DIRS}
 )
 
 # ── Re-declare the desktop QML module ──────────────────────────────────────────
@@ -105,11 +106,16 @@ qt_add_resources(tst_qmldesktop "helpcontent"
     FILES  ${HELP_MD} ${HELP_IMG} ${HELP_TOC}
 )
 
+qt_add_resources(tst_qmldesktop "plugin_ui_module"
+    PREFIX "/qt/qml/ProjectNotes/PluginUI"
+    BASE ${DESKTOP_DIR}/pluginui
+    FILES ${DESKTOP_DIR}/pluginui/qmldir
+)
+
 target_link_libraries(tst_qmldesktop PRIVATE
     Qt6::Core Qt6::CorePrivate Qt6::Gui Qt6::Widgets Qt6::Qml Qt6::Quick Qt6::QuickControls2
     Qt6::Sql Qt6::Xml Qt6::Network Qt6::Test
     "${HUNSPELL_LIBRARIES}"
-    "${Python3_LIBRARIES}"
     SqliteSyncProLib
     ProjectNotesCore
     ProjectNotesFileFinder
@@ -117,6 +123,7 @@ target_link_libraries(tst_qmldesktop PRIVATE
     ProjectNotesEmailRendering
     ProjectNotesMeetings
     ProjectNotesContacts
+    ProjectNotesPlugins
 )
 
 if(UNIX AND NOT APPLE AND NOT ANDROID)
@@ -131,8 +138,8 @@ if(Hunspell_INCLUDE_DIRS AND NOT "${Hunspell_INCLUDE_DIRS}" MATCHES "NOTFOUND")
     target_include_directories(tst_qmldesktop PRIVATE ${Hunspell_INCLUDE_DIRS})
 endif()
 
-# Deploy dictionary + plugins/threads next to the test binary so the embedded
-# Python plugin engine and spell checker behave exactly as in the real app.
+# Deploy the dictionary next to the test binary so the spell checker behaves
+# as in the real app. tst_main points the plugin folders at empty directories.
 add_custom_command(TARGET tst_qmldesktop POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E remove_directory "$<TARGET_FILE_DIR:tst_qmldesktop>/plugins"
     COMMAND ${CMAKE_COMMAND} -E remove_directory "$<TARGET_FILE_DIR:tst_qmldesktop>/threads"
@@ -140,9 +147,7 @@ add_custom_command(TARGET tst_qmldesktop POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${ROOT_DIR}/dictionary/en_US.aff" "${ROOT_DIR}/dictionary/en_US.dic"
         "$<TARGET_FILE_DIR:tst_qmldesktop>/dictionary/"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${ROOT_DIR}/plugins" "$<TARGET_FILE_DIR:tst_qmldesktop>/plugins"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${ROOT_DIR}/threads" "$<TARGET_FILE_DIR:tst_qmldesktop>/threads"
-    COMMENT "Deploying dictionary + plugins/threads for tst_qmldesktop")
+    COMMENT "Deploying the dictionary for tst_qmldesktop")
 
 enable_testing()
 add_test(NAME qmldesktop COMMAND tst_qmldesktop)
@@ -207,20 +212,31 @@ add_executable(tst_artifactstore tst_artifactstore.cpp)
 target_link_libraries(tst_artifactstore PRIVATE Qt6::Core Qt6::Test ProjectNotesEmail)
 add_test(NAME artifactstore COMMAND tst_artifactstore)
 
-# This is intentionally a real WebEngine process test, separate from the
-# headless contract suite.  Some container runtimes prohibit Chromium helper
-# shutdown even when its sandbox is disabled, so maintainers opt in only on a
-# native/package-like host where it can be valid evidence for G4.
-option(ENABLE_WEBENGINE_RENDERER_TESTS "Register native Qt WebEngine renderer tests" OFF)
-if(ENABLE_WEBENGINE_RENDERER_TESTS)
-    add_executable(tst_webenginerenderer tst_webenginerenderer.cpp)
-    target_link_libraries(tst_webenginerenderer PRIVATE
-        Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Test Qt6::WebEngineCore Qt6::WebEngineQuick
-        ProjectNotesEmail ProjectNotesEmailRendering)
-    add_test(NAME webenginerenderer COMMAND tst_webenginerenderer)
-    set_tests_properties(webenginerenderer PROPERTIES ENVIRONMENT
-        "QT_QPA_PLATFORM=offscreen;QTWEBENGINE_DISABLE_SANDBOX=1;QTWEBENGINE_CHROMIUM_FLAGS=--disable-gpu")
-endif()
+# QTextDocument/QPdfWriter report renderer. Headless; set PN_RENDER_OUT to keep
+# the PDFs for visual review.
+add_executable(tst_textdocumentrenderer tst_textdocumentrenderer.cpp)
+target_link_libraries(tst_textdocumentrenderer PRIVATE
+    Qt6::Core Qt6::Gui Qt6::Test ProjectNotesEmail ProjectNotesEmailRendering)
+add_test(NAME textdocumentrenderer COMMAND tst_textdocumentrenderer)
+set_tests_properties(textdocumentrenderer PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# XML export/import parity across the RecordTree refactor (golden files).
+add_executable(tst_recordtree tst_recordtree.cpp)
+target_include_directories(tst_recordtree PRIVATE ${ROOT_DIR})
+target_link_libraries(tst_recordtree PRIVATE Qt6::Core Qt6::Sql Qt6::Xml Qt6::Test ProjectNotesCore)
+target_compile_definitions(tst_recordtree PRIVATE
+    PN_RECORDTREE_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/fixtures/recordtree")
+add_test(NAME recordtree COMMAND tst_recordtree)
+
+# QJSEngine plugin host: manifest, data API, permissions, menus, watchdog,
+# install/approval and hot reload, against a throwaway database.
+add_executable(tst_pluginhost tst_pluginhost.cpp)
+target_include_directories(tst_pluginhost PRIVATE ${ROOT_DIR})
+target_link_libraries(tst_pluginhost PRIVATE Qt6::Core Qt6::Sql Qt6::Xml Qt6::Qml Qt6::Test Qt6::CorePrivate ProjectNotesPlugins ProjectNotesCore)
+target_compile_definitions(tst_pluginhost PRIVATE PN_TEST_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/fixtures"
+                                                PN_REPO_PLUGINS="${ROOT_DIR}/plugins"
+                                                PN_REPO_ROOT="${ROOT_DIR}")
+add_test(NAME pluginhost COMMAND tst_pluginhost)
 
 add_executable(tst_communicationrepository tst_communicationrepository.cpp)
 target_link_libraries(tst_communicationrepository PRIVATE Qt6::Core Qt6::Sql Qt6::Test ProjectNotesEmail)

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectnotes managing_company_id="" managing_company_name="" managing_manager_name="" project_manager_id="">
+ <table name="project_people">
+  <row>
+   <column name="id">team-jim</column>
+   <column lookupvalue="P4000" name="project_id">project-p4000</column>
+   <column lookupvalue="Jim Smith" name="people_id">person-jim</column>
+   <column name="name">Jim Smith</column>
+   <column name="receive_status_report">1</column>
+   <column name="role">Lead</column>
+   <column name="email">jim@acme.example</column>
+   <column name="project_number">P4000</column>
+   <column name="project_name">IT New Server Install</column>
+   <column name="client_name">Acme Corp</column>
+   <column name="office_phone">5550100</column>
+   <column name="cell_phone"></column>
+  </row>
+  <row>
+   <column name="id">team-mike</column>
+   <column lookupvalue="P4000" name="project_id">project-p4000</column>
+   <column lookupvalue="Mike Smith" name="people_id">person-mike</column>
+   <column name="name">Mike Smith</column>
+   <column name="receive_status_report">0</column>
+   <column name="role">Support</column>
+   <column name="email">mike@globex.example</column>
+   <column name="project_number">P4000</column>
+   <column name="project_name">IT New Server Install</column>
+   <column name="client_name">Globex, Inc.</column>
+   <column name="office_phone"></column>
+   <column name="cell_phone"></column>
+  </row>
+ </table>
+</projectnotes>

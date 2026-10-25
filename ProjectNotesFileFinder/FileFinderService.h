@@ -87,7 +87,7 @@ signals:
     void authenticationChanged();
     void statusChanged();
     void scanningLocationChanged();
-    void locationsChanged(int inserted, int updated);
+    void locationsChanged(int inserted, int updated, int primaryFolders);
     void diagnostic(const QString &message);
 
 private:

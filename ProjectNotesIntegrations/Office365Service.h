@@ -55,6 +55,9 @@ public:
     void requestFileFinderConsent();
     void requestCommunicationsConsent(bool includeContacts = false, bool exportContacts = false);
     void requestContactConsent(bool exportEnabled);
+    // Adds scopes (for example a plugin's office365.scopes) to those already
+    // granted, for the next sign-in.
+    void requestAdditionalScopes(const QStringList &scopes);
     void startSignIn();
     void signOut();
     // Internal File Finder capability. It is intentionally not a Q_PROPERTY or

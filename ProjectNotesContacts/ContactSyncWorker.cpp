@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include "ContactSyncWorker.h"
+#include "appidentity.h"
 #include "ContactMatcher.h"
 #include "ThunderbirdBridge.h"
 #include "credentialstore.h"
@@ -116,7 +117,7 @@ void ContactSyncWorker::cancelSync(){const bool fullExport=m_runningFullExport;c
 void ContactSyncWorker::setDatabase(const QString &path){
     cancel();m_repository.close();m_databasePath=path;m_path.clear();m_journal={};m_books.clear();m_authFailed=false;
     m_config={{"provider","office365"},{"enabled",false},{"startup",true},{"interval",5},{"account",""},{"mailAccount",""},{"sourceBooks",QStringList{}}};
-    m_config["credentialService"]=m_organization=="ProjectNotes"?QString("Project Notes iCloud Contacts"):QString("Project Notes iCloud Contacts/")+m_organization;
+    m_config["credentialService"]=m_organization==PN::Identity::settingsOrganization()?QString("Project Notes iCloud Contacts"):QString("Project Notes iCloud Contacts/")+m_organization;
     if(path.isEmpty()){m_status="Open a database to configure contact synchronization.";emit changed();return;}
     QString databaseError;
     if(!m_repository.open(path,databaseError)){m_status=databaseError;emit changed();return;}
@@ -136,11 +137,10 @@ void ContactSyncWorker::setDatabase(const QString &path){
         m_journal["version"]=1;m_status="Settings migrated where available. Confirm the source and enable native sync.";
         if(!account.isEmpty()){
             QString legacyId=hash(QFileInfo(path).absoluteFilePath()+QChar(0)+account.toLower());
-            QString cache=QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
-            if(m_organization.startsWith("ProjectNotes")&&m_organization!="ProjectNotes")cache+="/"+m_organization.mid(12);
+            QString cache=PN::Identity::cacheLocation(PN::Identity::profileOf(m_organization));
             QFile old(cache+"/icloud_contacts_"+legacyId+".json");
             if(old.open(QIODevice::ReadOnly)){auto state=QJsonDocument::fromJson(old.readAll()).object();m_journal["legacyICloudLinks"]=state["links"].toObject();m_journal["legacyICloudAccount"]=account.trimmed().toCaseFolded();}
-            if(m_organization!="ProjectNotes"){
+            if(m_organization!=PN::Identity::settingsOrganization()){
                 QString service=m_config.value("credentialService").toString();
                 if(CredentialStore::read(service,account).isEmpty()){
                     auto secret=CredentialStore::read("Project Notes iCloud Contacts",account);

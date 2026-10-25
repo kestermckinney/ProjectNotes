@@ -17,7 +17,7 @@ Options, Data, and About. A few other Settings-page tabs are substantial
 enough to have their own documentation:
 
 - [Cloud Sync](<RemoteHost.md>) — Sync your database with Project Notes Pro
-- [Project Folders](<ProjectFolders.md>) — Configure per-project folder locations
+- [Project Folders](<ProjectFolders.md>) — Create, rename, and color the folders in the project sidebar
 - [File Finder](<FileFinder.md>) — Native automatic project file discovery
 - [Office 365 Integration](<Office365Integration.md>) — Native Microsoft 365 sign-in used by File Finder
 
@@ -80,7 +80,7 @@ The source's supplied values replace corresponding Project Notes fields, includi
 
 Office 365 and iCloud synchronize incrementally after the first run, fetching only what changed since the last sync. If the service invalidates that incremental position (for example, after it has been unused for a long time), Project Notes resets it automatically and re-fetches the full address book on the next sync — you don't need to do anything.
 
-Names are compared using normalization, token reordering, edit distance, company legal suffix variants, and a branch/location suffix after a dash (for example, "Acme — Chicago" is recognized as a possible branch of "Acme"). Saved source identities take precedence. Strong matches reuse existing IDs. **Review Contact Conflicts** enables when uncertain companies or contacts need attention and opens a separate review dialog. First resolve duplicate companies: click **Use This Company** under either side to associate the source company with that existing company, **Skip** to leave that source company and its contacts out of the import, or **Use Both** to keep them as distinct companies. Each company choice applies to all its source contacts and is saved for later synchronization. Once all company choices are resolved, contact matching resumes using those companies. Uncertain contacts then wait before contacts are created: choose **Use This One** under either contact, **Skip** to leave the source contact out, or **Use Both** to retain the existing contact and import a separate contact. Both sides show name, company, email, and phone details. The company association follows the saved company choice, and the display name comes from the chosen contact; when keeping both identical names, a unique display name is derived automatically from the source company. Existing duplicate records are not merged. Review includes the external fields that will be applied.
+Names are compared using normalization, token reordering, edit distance, company legal suffix variants, and a branch/location suffix after a dash (for example, "Acme — Chicago" is recognized as a possible branch of "Acme"). Saved source identities take precedence. Strong matches reuse existing IDs. A contact with the same full name as an existing contact links to it without review unless something contradicts the match: a different email address, a different company, or a different phone number when no shared company confirms the person. **Review Contact Conflicts** enables when uncertain companies or contacts need attention and opens a separate review dialog. First resolve duplicate companies: click **Use This Company** under either side to associate the source company with that existing company, **Skip** to leave that source company and its contacts out of the import, or **Use Both** to keep them as distinct companies. Each company choice applies to all its source contacts and is saved for later synchronization. Once all company choices are resolved, contact matching resumes using those companies. Uncertain contacts then wait before contacts are created: choose **Use This One** under either contact, **Skip** to leave the source contact out, or **Use Both** to retain the existing contact and import a separate contact. Both sides show name, company, email, and phone details. The company association follows the saved company choice, and the display name comes from the chosen contact; when keeping both identical names, a unique display name is derived automatically from the source company. Existing duplicate records are not merged. Review includes the external fields that will be applied.
 
 A Full Contact Export item that is stuck in an uncertain or error state offers **Ignore** to drop it from review, or **I checked the destination; allow retry** once you have confirmed the destination record yourself. If the Office 365 account changes while a sync or export is running, Project Notes cancels the operation and reports how many contacts it completed first. If the saved contact-sync state becomes damaged or was written by an incompatible version, synchronization pauses with a message asking you to restore the state file before trying again.
 
@@ -188,6 +188,18 @@ When you use the [Filter Tool](FilterTool.md) or the **Show Internal / Budget It
 The **Project Manager** and **Managing Company** settings are saved in the `application_settings` table inside the Project Notes database (`ProjectNotes.db`). This means they travel with the database — if you share a database or copy it to another machine, your preferences move with it. They are also included in cloud sync when synchronization is enabled.
 
 The **Email, Contacts, and Calendar** choice and the Thunderbird path are stored in your local OS profile instead, so each machine can use a different mail application. See [Plugin Settings — Where Settings Are Stored](<../StandardPlugins/PluginSettings.md>) for the full breakdown.
+
+## Backing Up Settings
+
+Settings kept in your OS profile stay on one computer. To copy them, choose **File > Export Settings…** and save the JSON file. On the new computer, or after a reinstall, choose **File > Import Settings…** and pick that file. Values in the file replace the same settings, and anything the file doesn't mention is left alone. Restart Project Notes after an import so every application setting takes effect. Plugin settings apply right away.
+
+The file covers application settings (email backend, File Finder rules, report folders, sync server and email, view options) and the settings of every plugin. Some things stay out on purpose:
+
+- Passwords and the sync encryption phrase. Enter them again on the new computer, then turn sync back on.
+- Window size and position, sidebar width, and which project folders are collapsed.
+- Office 365 sign-in state. Sign in again where needed.
+
+To back up only plugin settings, use the **Back Up Plugin Settings** section at the bottom of **Settings > Plugins**. Its **Import Settings…** button also reads a full settings file and takes just the plugin part.
 
 ## Related Documentation
 

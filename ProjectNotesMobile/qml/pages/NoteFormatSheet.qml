@@ -90,7 +90,7 @@ Popup {
 
     // Reusable button shape. `active` highlights the button to indicate the
     // formatting it controls is currently applied at the cursor/selection.
-    component FormatBtn: ToolButton {
+    component FormatBtn: BarButton {
         property bool active: false
         focusPolicy: Qt.NoFocus
         Layout.preferredWidth:  44
@@ -116,10 +116,10 @@ Popup {
             Label {
                 anchors.centerIn: parent
                 text: qsTr("Format")
-                font.pixelSize: 17
+                font.pixelSize: Theme.headline; font.letterSpacing: Theme.tracking(Theme.headline)
                 font.weight: Font.DemiBold
             }
-            ToolButton {
+            BarButton {
                 anchors { right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
                 icon.name: "xmark"
                 focusPolicy: Qt.NoFocus
@@ -309,11 +309,11 @@ Popup {
                 onClicked: { TextFormatter.applyStyle(root.textDocument, root.selStart, root.selEnd, 4); root.close() }
             }
             FormatBtn {
-                text: "⇥"; font.pixelSize: 16
+                text: "⇥"; font.pixelSize: Theme.callout; font.letterSpacing: Theme.tracking(Theme.callout)
                 onClicked: { TextFormatter.indentText(root.textDocument, root.selStart, root.selEnd); root.close() }
             }
             FormatBtn {
-                text: "⇤"; font.pixelSize: 16
+                text: "⇤"; font.pixelSize: Theme.callout; font.letterSpacing: Theme.tracking(Theme.callout)
                 onClicked: { TextFormatter.unindentText(root.textDocument, root.selStart, root.selEnd); root.close() }
             }
 

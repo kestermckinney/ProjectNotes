@@ -1,8 +1,8 @@
 # Editor
 
-## Editing Script Plugins
+## Editing plugins
 
-Customizing a plugin, or writing your own, is easier in an editor with Python syntax highlighting. The **Editor** setting tells Project Notes which editor to start, and **Plugins · Utilities > Script Editor** opens it.
+The **Script Editor** setting tells Project Notes which program to open for editing plugins, and **Plugins · Utilities > Script Editor** starts it. Any editor that understands JavaScript works well.
 
 Until you choose one, Project Notes uses the editor that ships with your operating system:
 
@@ -12,10 +12,8 @@ Until you choose one, Project Notes uses the editor that ships with your operati
 | **macOS** | TextEdit (`/Applications/TextEdit.app/Contents/MacOS/TextEdit`) |
 | **Linux** | vi (`/usr/bin/vi`) |
 
-**To choose a different editor:**
+**To choose a different editor**, open **Settings > Script Editor**, choose the editor program, and save.
 
-1. From the app menu choose **Plugins · Settings**, then **Editor**.
-2. Click the **...** button and choose the editor's executable.
-3. Click **OK**.
+Project Notes reloads a plugin when you save one of its files. Keep your own plugins in the plugins folder in the application's data folder (**Settings > Plugins > Open Plugins Folder** opens it): upgrades replace the plugins in the application's folder. See [JavaScript Plugins](<../PluginsOverview/JavaScriptPlugins.md>) for the plugin API.
 
-Project Notes reloads a plugin as soon as you save it. Keep your own plugins in `~/Project Notes/plugins/` rather than the application's `plugins` folder: installers replace the bundled plugins on every upgrade and remove the ones a release retires. See [Adding Functionality](<../PluginsOverview/AddingFunctionality.md>) for the plugin API.
+Builds that cannot start other programs, such as the Mac App Store version, leave the Script Editor menu out.

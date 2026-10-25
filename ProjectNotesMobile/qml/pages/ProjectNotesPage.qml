@@ -36,22 +36,41 @@ Page {
     FilterSheet { id: filterSheet }
     SortSheet   { id: sortSheet }
 
-    header: ToolBar {
+    // ── Search bar ─────────────────────────────────────────────────────────
+    // A glass capsule floating over the top of the list. The rows scroll
+    // beneath it and show through frosted, as they do under the tab bar.
+    NavButton {
+        id: navButton
+        anchors { left: parent.left; leftMargin: 12; verticalCenter: searchBar.verticalCenter }
+    }
+
+    GlassBar {
+        id: searchBar
+        z: 2
+        anchors { top: parent.top; left: navButton.right; right: parent.right; topMargin: Theme.topInset + 6; leftMargin: 8; rightMargin: 12 }
+        height: 48
+        contentPadding: 0
+        blurSource: listView
+        blurRect: Qt.rect(searchBar.x - listView.x, searchBar.y - listView.y,
+                          searchBar.width, searchBar.height)
+
         RowLayout {
-            anchors { left: parent.left; right: parent.right; margins: 8 }
-            height: parent.height
+            anchors { fill: parent; leftMargin: 4; rightMargin: 2 }
             TextField {
                 id: searchField
                 Layout.fillWidth: true
                 placeholderText: qsTr("Search notes…")
                 onTextChanged: AppController.setQuickSearch(AppController.projectNotesModel, text)
                 inputMethodHints: Qt.ImhNoPredictiveText
-                rightPadding: clearBtn.visible ? clearBtn.width + 4 : 0
+                leftPadding: 10
+                rightPadding: clearBtn.visible ? clearBtn.width + 12 : 10
+                implicitHeight: 36
+                background: Item {}
 
                 Label {
                     id: clearBtn
                     visible: searchField.text.length > 0
-                    anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 6 }
+                    anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 10 }
                     text: "✕"
                     font.pixelSize: 18
                     color: palette.text
@@ -62,7 +81,7 @@ Page {
                     }
                 }
             }
-            ToolButton {
+            BarButton {
                 icon.name: "line.3.horizontal.decrease.circle"
                 icon.color: filterBadge.iconColor
                 onClicked: filterSheet.openFor("notes", qsTr("Notes"))
@@ -71,7 +90,7 @@ Page {
                     active: AppController.filterRev >= 0 && AppController.hasActiveColumnFilters(AppController.projectNotesModel)
                 }
             }
-            ToolButton {
+            BarButton {
                 icon.name: "arrow.up.arrow.down"
                 icon.color: sortBadge.iconColor
                 onClicked: sortSheet.openFor("notes", qsTr("Notes"))
@@ -80,7 +99,7 @@ Page {
                     active: AppController.sortRev >= 0 && (AppController.activeSort(AppController.projectNotesModel).field || "") !== ""
                 }
             }
-            ToolButton {
+            BarButton {
                 icon.name: "plus"
                 onClicked: {
                     var newRow = AppController.addProjectNote(root.projectId)
@@ -104,6 +123,10 @@ Page {
 
     ListView {
         id: listView
+        topMargin: searchBar.y + searchBar.height + 6   // first row clear of the title bar and search capsule
+        // The lists exist before the title bar is measured; start them at the top
+        // once the margin settles rather than with the first row underneath it.
+        onTopMarginChanged: contentY = -topMargin
         anchors.fill: parent
         model: AppController.projectNotesModel
         clip: true
@@ -129,7 +152,7 @@ Page {
 
                     Label {
                         text: delegateRoot.model.note_date || ""
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.caption1; font.letterSpacing: Theme.tracking(Theme.caption1)
                         color: Theme.mutedText
                     }
                 }
@@ -137,7 +160,7 @@ Page {
                 Label {
                     visible: AppController.showInternalItems && (delegateRoot.model.internal_item || "0") !== "0"
                     text: qsTr("Internal")
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.caption2; font.letterSpacing: Theme.tracking(Theme.caption2)
                     color: palette.link
                 }
             }
@@ -171,14 +194,14 @@ Page {
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
             text: qsTr("No Notes")
-            font.pixelSize: 17
+            font.pixelSize: Theme.title2; font.letterSpacing: Theme.tracking(Theme.title2)
             font.bold: true
         }
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
             text: qsTr("Tap + to add a meeting note.")
             horizontalAlignment: Text.AlignHCenter
-            font.pixelSize: 14
+            font.pixelSize: Theme.subheadline; font.letterSpacing: Theme.tracking(Theme.subheadline)
             color: Theme.mutedText
         }
     }

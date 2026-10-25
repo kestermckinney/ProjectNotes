@@ -9,7 +9,14 @@
 // data the parity group seeds first (same process, same database).
 
 #include <QtTest/QtTest>
+#include <QFile>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QQmlApplicationEngine>
+
+#include "PluginUiController.h"
+#include "ProjectNotesPlugins/PluginRegistry.h"
 #include <QQmlError>
 #include <QQuickItem>
 #include <QQmlContext>
@@ -232,6 +239,20 @@ private slots:
         menu->setProperty("contactId", "");
         QVERIFY(menu->property("canContactEmail").toBool());
         QVERIFY(!menu->property("canProjectEmail").toBool());
+        // Contact cards: the contact row itself, or the person behind a team
+        // member or attendee row; other tables never offer them.
+        QVERIFY(menu->property("canContactCard").toBool());
+        QCOMPARE(menu->property("contactCardId").toString(), projectId);
+        for (const char *table : {"project_people", "meeting_attendees"}) {
+            menu->setProperty("recordTable", table);
+            menu->setProperty("contactId", "");
+            QVERIFY(!menu->property("canContactCard").toBool());
+            menu->setProperty("contactId", "person-1");
+            QCOMPARE(menu->property("contactCardId").toString(), QString("person-1"));
+        }
+        menu->setProperty("recordTable", "item_tracker");
+        QVERIFY(!menu->property("canContactCard").toBool());
+        menu->setProperty("contactId", "");
         menu->setProperty("recordTable", "project_locations");
         menu->setProperty("emailProjectId", projectId);
         menu->setProperty("locationPath", "https://example.test/file.pdf");
@@ -239,6 +260,36 @@ private slots:
         QVERIFY(menu->property("canShareLink").toBool());
         menu->setProperty("locationPath", "/tmp/file.pdf");
         QVERIFY(!menu->property("canShareLink").toBool());
+        // Primary project folder actions: File Folder locations only, and the
+        // set / clear / hand-back items follow the stored choice.
+        {
+            const QString folderId = "smoke-primary-folder";
+            QSqlQuery q(global_DBObjects.getDb());
+            QVERIFY(q.exec("INSERT INTO project_locations(id, project_id, location_type, location_description, full_path, deleted) "
+                           "VALUES('" + folderId + "', '" + projectId + "', 'File Folder', 'Smoke Folder', '/tmp/smoke', 0)"));
+            const QString before = c->primaryProjectLocationId(projectId);
+            const bool beforeChosen = c->projectFolderChosenByUser(projectId);
+            menu->setProperty("recordId", folderId);
+            menu->setProperty("locationType", "PDF File");
+            QVERIFY(!menu->property("canProjectFolder").toBool());
+            menu->setProperty("locationType", "File Folder");
+            QVERIFY(menu->property("canProjectFolder").toBool());
+            QVERIFY(c->setPrimaryProjectLocation(projectId, folderId));
+            QVERIFY(menu->property("_isProjectFolder").toBool());
+            QVERIFY(menu->property("_projectFolderChosen").toBool());
+            QVERIFY(c->setPrimaryProjectLocation(projectId, ""));
+            QVERIFY(!menu->property("_isProjectFolder").toBool());
+            QVERIFY(c->letFileFinderChooseProjectFolder(projectId));
+            QVERIFY(!menu->property("_projectFolderChosen").toBool());
+            QVERIFY(q.exec("DELETE FROM project_locations WHERE id = '" + folderId + "'"));
+            q.prepare("UPDATE projects SET primary_location_id = ?, primary_location_manual = ? WHERE id = ?");
+            q.addBindValue(before.isEmpty() ? QVariant() : QVariant(before));
+            q.addBindValue(beforeChosen ? 1 : 0);
+            q.addBindValue(projectId);
+            QVERIFY(q.exec());
+            menu->setProperty("locationType", "");
+            menu->setProperty("recordId", projectId);
+        }
         menu->setProperty("recordTable", "meeting_attendees");
         menu->setProperty("contactId", "person");
         QVERIFY(menu->property("canProjectEmail").toBool());
@@ -256,7 +307,6 @@ private slots:
         QTRY_VERIFY_WITH_TIMEOUT(dialog->property("visible").toBool(), 1000);
         QVERIFY(dialog->property("width").toDouble() > 0);
         QVERIFY(dialog->property("height").toDouble() > 0);
-        QTest::qWait(300);
         QVERIFY(!dialog->findChild<QQuickItem *>("projectEmailSubject"));
         QVERIFY(!dialog->findChild<QQuickItem *>("projectEmailBody"));
         auto *draftButton = dialog->findChild<QQuickItem *>("projectEmailDraftButton");
@@ -440,6 +490,57 @@ private slots:
         assertClean("plain scrolling page and editor keys");
     }
 
+    // The contact card's ContactDragArea (vCard drag-out) takes the card's
+    // presses, so it must still open the contact on click and its menu on
+    // right-click.
+    void test_01c2_contactCardClickAndRightClick()
+    {
+        clearWarnings();
+        auto* window = qobject_cast<QQuickWindow*>(root);
+        QVERIFY(window);
+        window->show();
+        window->requestActivate();
+        auto* stack = findVisualChild(window->contentItem(), "contentStack");
+        QVERIFY(stack);
+        nav("selectSection", "contacts");
+        QTRY_VERIFY(!stack->property("busy").toBool());
+        auto* page = qvariant_cast<QQuickItem*>(stack->property("currentItem"));
+        QVERIFY(page);
+        auto* area = findVisualChild(page, "contactDragArea");
+        QVERIFY(area);
+        auto* card = area->parentItem();
+        const QString id = card->property("pid").toString();
+        QVERIFY(!id.isEmpty());
+        QCOMPARE(area->property("contactId").toString(), id);
+        // Left of the card, on the avatar: away from the kebab button.
+        const QPoint point = card->mapToScene(QPointF(22, card->height() / 2)).toPoint();
+        QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier, point);
+        QTRY_COMPARE(stack->property("depth").toInt(), 2);
+        QTRY_VERIFY(!stack->property("busy").toBool());
+        auto* detail = qvariant_cast<QQuickItem*>(stack->property("currentItem"));
+        QVERIFY(detail);
+        QCOMPARE(detail->property("contactId").toString(), id);
+        QTest::keyClick(window, Qt::Key_Left, Qt::AltModifier);
+        QTRY_COMPARE(stack->property("depth").toInt(), 1);
+        QTRY_VERIFY(!stack->property("busy").toBool());
+        page->setProperty("_ctxId", QString());
+        QTest::mouseClick(window, Qt::RightButton, Qt::NoModifier, point);
+        QTRY_COMPARE(page->property("_ctxId").toString(), id);
+        bool menuClosed = false;
+        for (QObject* object : page->findChildren<QObject*>()) {
+            if (object->property("contactCardId").isValid() && object->property("visible").toBool()) {
+                QCOMPARE(object->property("contactCardId").toString(), id);
+                QVERIFY(object->property("canContactCard").toBool());
+                QMetaObject::invokeMethod(object, "close");
+                menuClosed = true;
+            }
+        }
+        QVERIFY(menuClosed);
+        QTest::qWait(50);
+        window->hide();
+        assertClean("contact card click and right-click");
+    }
+
     void test_01d_enterOpensSelectedRecordsAndKeyboardBack()
     {
         clearWarnings();
@@ -571,7 +672,6 @@ private slots:
         for (int i = 0; i < allGroups.size(); ++i)
             if (allGroups[i].toMap().value("name").toString() == "Navigate") navigateIndex = i;
         QVERIFY(QMetaObject::invokeMethod(menu, "_activateGroup", Q_ARG(QVariant, navigateIndex)));
-        QTest::qWait(300);
         const QImage screenshot = window->grabWindow();
         if (!screenshot.isNull()) screenshot.save("/tmp/projectnotes-navigate-menu.png");
         QTest::keyClick(window, Qt::Key_2, Qt::ControlModifier);
@@ -657,7 +757,7 @@ private slots:
         QVERIFY(!projectId.isEmpty());
         const QString folderId = folders->addFolder("Keyboard Folder");
         QVERIFY(!folderId.isEmpty());
-        QVERIFY(folders->addProjectToFolder(projectId, folderId));
+        QVERIFY(folders->setProjectFolder(projectId, folderId));
         QVERIFY(folders->setFolderCollapsed(folderId, true));
         QStringList extraFolders;
         for (int i = 0; i < 20; ++i) {
@@ -675,9 +775,18 @@ private slots:
         sidebar->setProperty("keyboardKey", headerKey);
         sidebar->forceActiveFocus();
         QVERIFY(!expanded());
-        QTest::keyClick(window, Qt::Key_Return);
+        // Right/Left expand and collapse a header; Return filters by it.
+        QTest::keyClick(window, Qt::Key_Right);
         QTRY_VERIFY(expanded());
         QCOMPARE(sidebar->property("keyboardKey").toString(), headerKey);
+        const int allCount = c->folderProjects("").size();
+        QTest::keyClick(window, Qt::Key_Return);
+        QTRY_COMPARE(c->projectFolderFilter(), QStringList{folderId});
+        QCOMPARE(c->projectsListModel()->rowCount(), 1);
+        QCOMPARE(c->folderProjects("").size(), allCount);
+        QTest::keyClick(window, Qt::Key_Return);
+        QTRY_VERIFY(c->projectFolderFilter().isEmpty());
+        QVERIFY(expanded());
         QTest::keyClick(window, Qt::Key_Down);
         QCOMPARE(sidebar->property("keyboardKey").toString(), folderId + "/project/" + projectId);
         QTest::keyClick(window, Qt::Key_Enter);
@@ -691,12 +800,12 @@ private slots:
         sidebar->forceActiveFocus();
         QTest::keyClick(window, Qt::Key_Up);
         QCOMPARE(sidebar->property("keyboardKey").toString(), headerKey);
-        QTest::keyClick(window, Qt::Key_Return);
+        QTest::keyClick(window, Qt::Key_Left);
         QTRY_VERIFY(!expanded());
         QTest::keyClick(window, Qt::Key_Down);
         QCOMPARE(sidebar->property("keyboardKey").toString(), extraFolders.first() + "/folder");
         // Expanding an empty folder leaves its header highlighted.
-        QTest::keyClick(window, Qt::Key_Return);
+        QTest::keyClick(window, Qt::Key_Right);
         QCOMPARE(sidebar->property("keyboardKey").toString(), extraFolders.first() + "/folder");
         QTest::keyClick(window, Qt::Key_Down);
         QCOMPARE(sidebar->property("keyboardKey").toString(), extraFolders[1] + "/folder");
@@ -722,6 +831,39 @@ private slots:
         QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier, click);
         QVERIFY(sidebar->hasActiveFocus());
         QCOMPARE(sidebar->property("keyboardKey").toString(), headerKey);
+        // Clicking the name filters; only the chevron collapses.
+        QTRY_COMPARE(c->projectFolderFilter(), QStringList{folderId});
+        QVERIFY(!expanded());
+        auto* chevron = findVisualChild(sidebar, "sidebar_" + headerKey + "/chevron");
+        QVERIFY(chevron);
+        const QPoint chevronClick = chevron->mapToScene(QPointF(chevron->width() / 2, chevron->height() / 2)).toPoint();
+        QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier, chevronClick);
+        QTRY_VERIFY(expanded());
+        QCOMPARE(c->projectFolderFilter(), QStringList{folderId});
+        c->clearProjectFolderFilter();
+        QVERIFY(c->projectFolderFilter().isEmpty());
+        // The header menu's folder dialog edits name, icon and color together.
+        auto* editDialog = root->findChild<QObject*>("folderEditDialog");
+        QVERIFY(editDialog);
+        QVariantMap folderMap;
+        for (const QVariant& f : folders->folders())
+            if (f.toMap().value("id").toString() == folderId) folderMap = f.toMap();
+        QVERIFY(QMetaObject::invokeMethod(editDialog, "openFor", Q_ARG(QVariant, folderMap)));
+        QTRY_VERIFY(editDialog->property("opened").toBool());
+        auto* nameField = editDialog->findChild<QObject*>("folderEditName");
+        QVERIFY(nameField);
+        nameField->setProperty("text", "Keyboard Folder Renamed");
+        editDialog->setProperty("_icon", "bolt");
+        QVERIFY(QMetaObject::invokeMethod(editDialog, "_save"));
+        QTRY_VERIFY(!editDialog->property("visible").toBool());
+        QCOMPARE(folders->folderName(folderId), QString("Keyboard Folder Renamed"));
+        QVERIFY(QMetaObject::invokeMethod(editDialog, "openNew"));
+        QTRY_VERIFY(editDialog->property("opened").toBool());
+        nameField->setProperty("text", "keyboard folder renamed");
+        QVERIFY(QMetaObject::invokeMethod(editDialog, "_save"));
+        QVERIFY(!editDialog->property("_error").toString().isEmpty());   // duplicate name
+        QVERIFY(QMetaObject::invokeMethod(editDialog, "close"));
+        QTRY_VERIFY(!editDialog->property("visible").toBool());
         for (const auto& id : extraFolders) QVERIFY(folders->removeFolder(id));
         QVERIFY(folders->removeFolder(folderId));
         folders->setAllProjectsCollapsed(allCollapsed);
@@ -759,11 +901,13 @@ private slots:
         QCOMPARE(tabs->property("currentIndex").toInt(), 1);
         QTest::keyClick(window, Qt::Key_Enter);
         QCOMPARE(settings->property("currentTab").toInt(), 1);
+        // The last built-in tab is Plugins (index 10); no plugin in this test
+        // environment contributes Settings sections after it.
         for (int i = 0; i < 15; ++i) QTest::keyClick(window, Qt::Key_Down);
-        QCOMPARE(tabs->property("currentIndex").toInt(), 9);
+        QCOMPARE(tabs->property("currentIndex").toInt(), 10);
         QCOMPARE(settings->property("currentTab").toInt(), 1);
         QTest::keyClick(window, Qt::Key_Return);
-        QCOMPARE(settings->property("currentTab").toInt(), 9);
+        QCOMPARE(settings->property("currentTab").toInt(), 10);
         for (int i = 0; i < 15; ++i) QTest::keyClick(window, Qt::Key_Up);
         QCOMPARE(tabs->property("currentIndex").toInt(), 0);
         QTest::keyClick(window, Qt::Key_Return);
@@ -867,8 +1011,9 @@ private slots:
         QQuickItem* pages = findVisualChild(window->contentItem(), QStringLiteral("settingsPages"));
         QVERIFY(tabList);
         QVERIFY(pages);
-        QCOMPARE(tabList->property("count").toInt(), 10);
-        QCOMPARE(pages->property("count").toInt(), 10);
+        QCOMPARE(tabList->property("count").toInt(), 11);
+        QCOMPARE(pages->property("count").toInt(), 11);
+        QVERIFY(findVisualChild(window->contentItem(), QStringLiteral("settingsTab_plugins")));
         assertClean("settings category tabs");
     }
 
@@ -1402,12 +1547,416 @@ private slots:
                                 .arg(doubled.join(QStringLiteral(", ")))));
     }
 
+    // My Shortcuts' table: the URL cell's right-click menu offers Insert Field
+    // with the preferences values plus the columns of the row's Entity, and the
+    // Entity cell is a drop-down. Uses the plugin's real settings schema.
+    void test_09b_schemaFormTableInsertField()
+    {
+        clearWarnings();
+        QFile file(QStringLiteral(PN_TEST_FIXTURES) + QStringLiteral("/../../../plugins/myshortcuts/settings.schema.json"));
+        QVERIFY2(file.open(QIODevice::ReadOnly), qPrintable(file.fileName()));
+        QQmlComponent component(engine);
+        component.setData(R"(
+            import QtQuick
+            import ProjectNotesDesktop
+            SchemaForm {
+                id: form
+                width: 900
+                property string schemaJson: ""
+                fields: JSON.parse(schemaJson).fields
+                values: ({ shortcuts: [{ menu: "a", submenu: "", entity: "", url: "x" }] })
+                // Every insertFields list under the form, as JSON, read inside QML where
+                // a `var` property is plain JavaScript.
+                function insertFieldLists() {
+                    var out = []
+                    function walk(item) {
+                        if (item.spellCheckEnabled !== undefined)
+                            out.push(item.insertFields)
+                        for (var i = 0; i < item.children.length; ++i) walk(item.children[i])
+                    }
+                    walk(form)
+                    return JSON.stringify(out)
+                }
+                function choiceOptions() {
+                    var out = []
+                    function walk(item) {
+                        if (item.includeNone === true && item.options !== undefined && item.options.indexOf("projects") >= 0)
+                            out.push(item)
+                        for (var i = 0; i < item.children.length; ++i) walk(item.children[i])
+                    }
+                    walk(form)
+                    return out.length ? out[0] : null
+                }
+            }
+        )", QUrl());
+        QScopedPointer<QObject> object(component.createWithInitialProperties(
+            {{QStringLiteral("schemaJson"), QString::fromUtf8(file.readAll())}}));
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* form = qobject_cast<QQuickItem*>(object.data());
+        QVERIFY(form);
+        QQuickWindow window;
+        form->setParentItem(window.contentItem());
+        window.resize(900, 600);
+        window.show();
+
+        auto insertFields = [&]() {
+            QVariant json;
+            QMetaObject::invokeMethod(form, "insertFieldLists", Q_RETURN_ARG(QVariant, json));
+            QList<QStringList> found;
+            for (const QJsonValue& list : QJsonDocument::fromJson(json.toString().toUtf8()).array()) {
+                QStringList names;
+                for (const QJsonValue& name : list.toArray())
+                    names.append(name.toString());
+                found.append(names);
+            }
+            return found;
+        };
+        QTRY_VERIFY_WITH_TIMEOUT(!insertFields().isEmpty(), 3000);
+        // Four text cells in the row; only the URL cell lists any fields. A blank Entity
+        // still offers the preferences values.
+        auto longest = [&]() {
+            int most = 0;
+            for (const QStringList& list : insertFields())
+                most = qMax(most, int(list.size()));
+            return most;
+        };
+        QCOMPARE(longest(), 3);
+
+        // Choose projects in the Entity drop-down.
+        QObject* entityCombo = nullptr;
+        {
+            QVariant found;
+            QMetaObject::invokeMethod(form, "choiceOptions", Q_RETURN_ARG(QVariant, found));
+            entityCombo = found.value<QObject*>();
+        }
+        QVERIFY2(entityCombo, "Entity should be a drop-down");
+        QVERIFY(QMetaObject::invokeMethod(entityCombo, "activated", Q_ARG(QString, QStringLiteral("projects"))));
+        QTRY_VERIFY_WITH_TIMEOUT(longest() > 10, 3000);
+        bool hasNumber = false;
+        for (const QStringList& list : insertFields())
+            hasNumber = hasNumber || list.contains(QStringLiteral("projects.project_number"));
+        QVERIFY(hasNumber);
+        assertClean("schema form table insert field");
+    }
+
+    // A plugin Settings section's table loads saved rows and saves edits. The
+    // rows reach QML through PluginUiController::settingValues as a sequence
+    // wrapper (Array.isArray false), which once left the table empty; an edit
+    // reaches setSetting as a QJSValue, which QSettings once failed to store.
+    void test_09c_pluginSettingsTableRoundTrip()
+    {
+        clearWarnings();
+        PluginUiController* ui = PluginUiController::instance();
+        QVERIFY(ui);
+        const QString id = QStringLiteral("test.settingstable");
+        const QVariantMap first {{QStringLiteral("menu"), QStringLiteral("a")}, {QStringLiteral("submenu"), QString()},
+                                 {QStringLiteral("entity"), QStringLiteral("projects")}, {QStringLiteral("url"), QStringLiteral("x")}};
+        QVariantMap second = first;
+        second.insert(QStringLiteral("menu"), QStringLiteral("b"));
+        ui->setSetting(id, QStringLiteral("shortcuts"), QVariantList{first, second});
+
+        QFile file(QStringLiteral(PN_TEST_FIXTURES) + QStringLiteral("/../../../plugins/myshortcuts/settings.schema.json"));
+        QVERIFY2(file.open(QIODevice::ReadOnly), qPrintable(file.fileName()));
+        const QVariantMap info {{QStringLiteral("pluginId"), id}, {QStringLiteral("id"), QStringLiteral("shortcuts")},
+                                {QStringLiteral("title"), QStringLiteral("Shortcuts")},
+                                {QStringLiteral("schema"), QJsonDocument::fromJson(file.readAll()).toVariant()}};
+
+        QQmlComponent component(engine);
+        component.setData(R"(
+            import QtQuick
+            import ProjectNotesDesktop
+            PluginSettingsSection {
+                id: section
+                width: 900
+                function find(item, test) {
+                    if (test(item)) return item
+                    for (var i = 0; i < item.children.length; ++i) {
+                        var found = find(item.children[i], test)
+                        if (found) return found
+                    }
+                    return null
+                }
+                function schemaForm() { return find(section, function (i) { return i._revision !== undefined }) }
+                function storedRows() {
+                    var v = schemaForm().value("shortcuts")
+                    return Array.isArray(v) ? v.length : -1
+                }
+                // Rows on screen: each has one remove button (the button, not
+                // the label inside it, has a clicked signal).
+                function shownRows() {
+                    var count = 0
+                    function walk(item) {
+                        if (item.text === "×" && typeof item.clicked === "function" && item.visible) ++count
+                        for (var i = 0; i < item.children.length; ++i) walk(item.children[i])
+                    }
+                    walk(section)
+                    return count
+                }
+                // What the Add Row button does.
+                function addRow() {
+                    var form = schemaForm()
+                    form.setValue("shortcuts", form.value("shortcuts").concat([{ menu: "c", submenu: "", entity: "", url: "y" }]))
+                }
+            }
+        )", QUrl());
+        QScopedPointer<QObject> object(component.createWithInitialProperties({{QStringLiteral("info"), info}}));
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* section = qobject_cast<QQuickItem*>(object.data());
+        QVERIFY(section);
+        QQuickWindow window;
+        section->setParentItem(window.contentItem());
+        window.resize(900, 600);
+        window.show();
+
+        auto call = [&](const char* name) {
+            QVariant result;
+            QMetaObject::invokeMethod(section, name, Q_RETURN_ARG(QVariant, result));
+            return result.toInt();
+        };
+        QCOMPARE(call("storedRows"), 2);
+        QTRY_COMPARE_WITH_TIMEOUT(call("shownRows"), 2, 3000);
+
+        QVERIFY(QMetaObject::invokeMethod(section, "addRow"));
+        QTRY_COMPARE_WITH_TIMEOUT(call("shownRows"), 3, 3000);
+        const QVariant saved = ui->settingValues(id).value(QStringLiteral("shortcuts"));
+        QCOMPARE(saved.typeId(), int(QMetaType::QVariantList));
+        const QVariantList rows = saved.toList();
+        QCOMPARE(rows.size(), 3);
+        QCOMPARE(rows.at(0).toMap().value(QStringLiteral("menu")).toString(), QStringLiteral("a"));
+        QCOMPARE(rows.at(2).toMap().value(QStringLiteral("menu")).toString(), QStringLiteral("c"));
+
+        ui->setSetting(id, QStringLiteral("shortcuts"), QVariant());
+        assertClean("plugin settings table round trip");
+    }
+
+    // Settings > Plugins backup: exportSettings writes a plugin's values
+    // (tables included) to JSON and importSettings restores them. test_10
+    // covers password fields and Python Settings Migrator files.
+    void test_09d_pluginSettingsBackupRoundTrip()
+    {
+        clearWarnings();
+        PluginUiController* ui = PluginUiController::instance();
+        QVERIFY(ui);
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        const QString id = QStringLiteral("test.settingsbackup");
+        const QVariantList rows {QVariantMap{{QStringLiteral("menu"), QStringLiteral("a")}},
+                                 QVariantMap{{QStringLiteral("menu"), QStringLiteral("b")}}};
+        ui->setSetting(id, QStringLiteral("rows"), rows);
+        ui->setSetting(id, QStringLiteral("folder"), QStringLiteral("Plans"));
+
+        const QUrl backup = QUrl::fromLocalFile(dir.filePath(QStringLiteral("backup.json")));
+        QCOMPARE(ui->exportSettings(backup, {id}), QString());
+        QFile file(backup.toLocalFile());
+        QVERIFY(file.open(QIODevice::ReadOnly));
+        const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();
+        QCOMPARE(root.value(QStringLiteral("format")).toString(), QStringLiteral("projectnotes-plugin-settings"));
+        QCOMPARE(root.value(QStringLiteral("plugins")).toObject().value(id).toObject()
+                     .value(QStringLiteral("rows")).toArray().size(), 2);
+        QVERIFY(!ui->exportSettings(QUrl::fromLocalFile(dir.filePath(QStringLiteral("none.json"))),
+                                    {QStringLiteral("test.nosettings")}).isEmpty());
+
+        ui->setSetting(id, QStringLiteral("rows"), QVariant());
+        ui->setSetting(id, QStringLiteral("folder"), QStringLiteral("Changed"));
+        const int revision = ui->settingsRevision();
+        QVariantMap result = ui->importSettings(backup);
+        QVERIFY2(result.value(QStringLiteral("ok")).toBool(), qPrintable(result.value(QStringLiteral("error")).toString()));
+        QCOMPARE(result.value(QStringLiteral("count")).toInt(), 2);
+        QCOMPARE(ui->settingsRevision(), revision + 1);
+        QVariantMap values = ui->settingValues(id);
+        QCOMPARE(values.value(QStringLiteral("folder")).toString(), QStringLiteral("Plans"));
+        const QVariantList restored = values.value(QStringLiteral("rows")).toList();
+        QCOMPARE(restored.size(), 2);
+        QCOMPARE(restored.at(1).toMap().value(QStringLiteral("menu")).toString(), QStringLiteral("b"));
+
+        QFile bad(dir.filePath(QStringLiteral("bad.json")));
+        QVERIFY(bad.open(QIODevice::WriteOnly));
+        bad.write("not json");
+        bad.close();
+        QVERIFY(!ui->importSettings(QUrl::fromLocalFile(bad.fileName())).value(QStringLiteral("ok")).toBool());
+
+        ui->setSetting(id, QStringLiteral("rows"), QVariant());
+        ui->setSetting(id, QStringLiteral("folder"), QVariant());
+        assertClean("plugin settings backup round trip");
+    }
+
+    // File > Export / Import Settings: application settings and plugin settings
+    // in one file. Secrets and window layout stay out of the file.
+    void test_09e_allSettingsBackupRoundTrip()
+    {
+        clearWarnings();
+        PluginUiController* ui = PluginUiController::instance();
+        QVERIFY(ui);
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        const QString org = DesktopAppController::localSettingsOrganization();
+        const QString id = QStringLiteral("test.allsettings");
+        {
+            QSettings app(org, QStringLiteral("AppSettings"));
+            app.setValue(QStringLiteral("Email/v1/SenderAddress"), QStringLiteral("me@example.com"));
+            app.setValue(QStringLiteral("Sync/Password"), QStringLiteral("hunter2"));
+            app.setValue(QStringLiteral("Sync/EncryptionPhrase"), QStringLiteral("phrase"));
+            app.setValue(QStringLiteral("UI:QMLMainWindow:Width"), 1234);
+        }
+        ui->setSetting(id, QStringLiteral("folder"), QStringLiteral("Plans"));
+
+        const QUrl backup = QUrl::fromLocalFile(dir.filePath(QStringLiteral("all.json")));
+        QCOMPARE(ui->exportAllSettings(backup), QString());
+        QFile file(backup.toLocalFile());
+        QVERIFY(file.open(QIODevice::ReadOnly));
+        const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();
+        QCOMPARE(root.value(QStringLiteral("format")).toString(), QStringLiteral("projectnotes-settings"));
+        const QJsonObject appJson = root.value(QStringLiteral("app")).toObject();
+        QCOMPARE(appJson.value(QStringLiteral("Email/v1/SenderAddress")).toString(), QStringLiteral("me@example.com"));
+        QVERIFY(!appJson.contains(QStringLiteral("Sync/Password")));
+        QVERIFY(!appJson.contains(QStringLiteral("Sync/EncryptionPhrase")));
+        QVERIFY(!appJson.contains(QStringLiteral("UI:QMLMainWindow:Width")));
+        QCOMPARE(root.value(QStringLiteral("plugins")).toObject().value(id).toObject()
+                     .value(QStringLiteral("folder")).toString(), QStringLiteral("Plans"));
+
+        {
+            QSettings app(org, QStringLiteral("AppSettings"));
+            app.setValue(QStringLiteral("Email/v1/SenderAddress"), QStringLiteral("changed@example.com"));
+        }
+        ui->setSetting(id, QStringLiteral("folder"), QStringLiteral("Changed"));
+        const QVariantMap result = ui->importAllSettings(backup);
+        QVERIFY2(result.value(QStringLiteral("ok")).toBool(), qPrintable(result.value(QStringLiteral("error")).toString()));
+        QVERIFY(result.value(QStringLiteral("appCount")).toInt() > 0);
+        QCOMPARE(ui->settingValues(id).value(QStringLiteral("folder")).toString(), QStringLiteral("Plans"));
+        {
+            QSettings app(org, QStringLiteral("AppSettings"));
+            QCOMPARE(app.value(QStringLiteral("Email/v1/SenderAddress")).toString(), QStringLiteral("me@example.com"));
+            QCOMPARE(app.value(QStringLiteral("Sync/Password")).toString(), QStringLiteral("hunter2"));
+            app.remove(QStringLiteral("Email/v1/SenderAddress"));
+            app.remove(QStringLiteral("Sync/Password"));
+            app.remove(QStringLiteral("Sync/EncryptionPhrase"));
+            app.remove(QStringLiteral("UI:QMLMainWindow:Width"));
+        }
+
+        // The plugin-only import reads the plugin part of a full backup.
+        ui->setSetting(id, QStringLiteral("folder"), QStringLiteral("Changed"));
+        QVERIFY(ui->importSettings(backup).value(QStringLiteral("ok")).toBool());
+        QCOMPARE(ui->settingValues(id).value(QStringLiteral("folder")).toString(), QStringLiteral("Plans"));
+
+        QFile other(dir.filePath(QStringLiteral("other.json")));
+        QVERIFY(other.open(QIODevice::WriteOnly));
+        other.write("{\"group\": {\"key\": 1}}");
+        other.close();
+        QVERIFY(!ui->importAllSettings(QUrl::fromLocalFile(other.fileName())).value(QStringLiteral("ok")).toBool());
+
+        ui->setSetting(id, QStringLiteral("folder"), QVariant());
+        assertClean("all settings backup round trip");
+    }
+
     void cleanupTestCase()
     {
         delete engine;   // tear the window down before the app object goes away
         engine = nullptr;
     }
 
+    // A JavaScript plugin end to end in the real UI: installing into the user
+    // plugin folder, approval, its Settings section, a schema form through
+    // PluginUiHost, and a plugin QML dialog importing ProjectNotes.PluginUI
+    // that calls back into the plugin. Fails on any QML warning.
+    void test_10_jsPluginUi()
+    {
+        clearWarnings();
+        PN::Plugins::PluginRegistry* registry = c->pluginRegistry();
+        QVERIFY(registry);
+        PluginUiController* ui = PluginUiController::instance();
+        const QString id = QStringLiteral("test.uitest");
+
+        // Install from the fixture folder, then approve its permissions.
+        QString installedId;
+        QString error;
+        QVERIFY2(registry->install(QStringLiteral(PN_TEST_FIXTURES) + QStringLiteral("/plugins/uitest"),
+                                   &installedId, &error), qPrintable(error));
+        QCOMPARE(installedId, id);
+        QVERIFY(registry->plugin(id).needsApproval);
+        QCOMPARE(ui->approve(id), QString());
+        QTRY_VERIFY_WITH_TIMEOUT(registry->isRunning(id), 10000);
+
+        // Settings: the Plugins pane and the plugin's own section tab.
+        nav("selectSection", "settings");
+        QQuickWindow* window = qobject_cast<QQuickWindow*>(root);
+        QVERIFY(window);
+        QTRY_VERIFY(findVisualChild(window->contentItem(), QStringLiteral("settingsTab_plugin_test.uitest_general")));
+        QQuickItem* tabList = findVisualChild(window->contentItem(), QStringLiteral("settingsTabList"));
+        QTRY_COMPARE(tabList->property("count").toInt(), 12);
+        ui->setSetting(id, QStringLiteral("color"), QStringLiteral("Blue"));
+        QCOMPARE(ui->settingValues(id).value(QStringLiteral("color")).toString(), QStringLiteral("Blue"));
+        nav("selectSection", "projects");
+
+        // Settings backup: password fields stay out of the file, and a Python
+        // Settings Migrator file reaches this plugin through legacySettings.
+        {
+            QTemporaryDir dir;
+            QVERIFY(dir.isValid());
+            // A password field goes to the plugin's credential-store namespace,
+            // never to the plugin settings; a blank one keeps what is stored.
+            QHash<QString, QString> secrets;
+            PluginUiController::setSecretWriter([&secrets](const QString& plugin, const QString& key, const QString& secret, QString*) {
+                secrets.insert(plugin + QLatin1Char('/') + key, secret);
+                return true;
+            });
+            auto restoreWriter = qScopeGuard([] {
+                PluginUiController::setSecretWriter([](const QString&, const QString&, const QString&, QString*) { return true; });
+            });
+            ui->setSetting(id, QStringLiteral("token"), QStringLiteral("hunter2"));
+            QCOMPARE(secrets.value(id + QStringLiteral("/token")), QStringLiteral("hunter2"));
+            QVERIFY(!ui->settingValues(id).contains(QStringLiteral("token")));
+            ui->setSetting(id, QStringLiteral("token"), QString());
+            QCOMPARE(secrets.value(id + QStringLiteral("/token")), QStringLiteral("hunter2"));
+            bool listed = false;
+            for (const QVariant& candidate : ui->settingsBackupCandidates())
+                listed = listed || candidate.toMap().value(QStringLiteral("id")).toString() == id;
+            QVERIFY(listed);
+            const QUrl backup = QUrl::fromLocalFile(dir.filePath(QStringLiteral("backup.json")));
+            QCOMPARE(ui->exportSettings(backup, {id}), QString());
+            QFile file(backup.toLocalFile());
+            QVERIFY(file.open(QIODevice::ReadOnly));
+            const QJsonObject saved = QJsonDocument::fromJson(file.readAll()).object()
+                                          .value(QStringLiteral("plugins")).toObject().value(id).toObject();
+            QCOMPARE(saved.value(QStringLiteral("color")).toString(), QStringLiteral("Blue"));
+            QVERIFY(!saved.contains(QStringLiteral("token")));
+            ui->setSetting(id, QStringLiteral("token"), QVariant());
+
+            QFile legacy(dir.filePath(QStringLiteral("legacy.json")));
+            QVERIFY(legacy.open(QIODevice::WriteOnly));
+            legacy.write(R"({ "UI Test Legacy": { "Folder": "from python", "Password": "python secret" } })");
+            legacy.close();
+            const QVariantMap result = ui->importSettings(QUrl::fromLocalFile(legacy.fileName()));
+            QVERIFY2(result.value(QStringLiteral("ok")).toBool(), qPrintable(result.value(QStringLiteral("error")).toString()));
+            QCOMPARE(result.value(QStringLiteral("plugins")).toStringList(), QStringList{QStringLiteral("UI Test Plugin")});
+            QCOMPARE(ui->settingValues(id).value(QStringLiteral("OldFolder")).toString(), QStringLiteral("from python"));
+            // The export's clear-text password lands in the credential store only.
+            QCOMPARE(secrets.value(id + QStringLiteral("/OldPassword")), QStringLiteral("python secret"));
+            QVERIFY(!ui->settingValues(id).contains(QStringLiteral("OldPassword")));
+            ui->setSetting(id, QStringLiteral("OldFolder"), QVariant());
+        }
+
+        // A schema form: answer it as the OK button would.
+        registry->runMenu(id, QStringLiteral("form"), {}, {});
+        QObject* form = nullptr;
+        QTRY_VERIFY_WITH_TIMEOUT((form = root->findChild<QObject*>(QStringLiteral("pluginRequest_form"))) != nullptr, 10000);
+        QTRY_VERIFY(form->property("visible").toBool());
+        ui->respond(form->property("requestId").toInt(),
+                    QVariantMap{{QStringLiteral("name"), QStringLiteral("Zed")}, {QStringLiteral("kind"), QStringLiteral("B")}});
+        QTRY_COMPARE_WITH_TIMEOUT(ui->settingValues(id).value(QStringLiteral("formResult")).toMap()
+                                      .value(QStringLiteral("name")).toString(), QStringLiteral("Zed"), 10000);
+        QTRY_VERIFY(!root->findChild<QObject*>(QStringLiteral("pluginRequest_form")));
+
+        // A plugin QML dialog that invokes a plugin handler and accepts itself.
+        registry->runMenu(id, QStringLiteral("dialog"), {}, {});
+        QTRY_VERIFY2_WITH_TIMEOUT(ui->settingValues(id).value(QStringLiteral("dialogResult")).toString() == QLatin1String("HI back"),
+                                  qPrintable(m_warnings.join(QStringLiteral(" | ")) + QStringLiteral(" || ") + registry->plugin(id).lastError),
+                                  10000);
+        QTRY_VERIFY(!root->findChild<QObject*>(QStringLiteral("pluginRequest_dialog")));
+
+        QVERIFY2(registry->plugin(id).lastError.isEmpty(), qPrintable(registry->plugin(id).lastError));
+        QVERIFY2(registry->uninstall(id, &error), qPrintable(error));
+        assertClean("JavaScript plugin UI");
+    }
 private:
     // Controls' TextField/TextArea are QML composite types (and pages subclass
     // them further), so their class names are generated. Identify an editor by

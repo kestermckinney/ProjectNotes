@@ -4,7 +4,7 @@ Project Notes Mobile is an iOS companion app for Project Notes. It gives project
 
 ## Navigation
 
-The app uses a bottom tab bar with four top-level tabs and a side drawer (hamburger menu) for settings and utilities.
+The app uses a bottom tab bar with four top-level tabs. Settings and utilities live in the Main Menu, a full-screen page opened from the ≡ button at the top left.
 
 **Bottom Tabs:**
 
@@ -15,17 +15,22 @@ The app uses a bottom tab bar with four top-level tabs and a side drawer (hambur
 | Companies | List of all companies |
 | Items | Unified list of all tracker items across all projects |
 
-**Hamburger Menu (top-left ≡ button):**
+**Main Menu (top-left ≡ button):**
 
-| Item | Description |
-| :--- | :--- |
-| Cloud Sync Settings | Open the [Sync Settings](#sync-settings) page |
-| View | Open the [View Options](#view-options) page |
-| Sync All… | Manually trigger a full sync with the cloud server |
-| Preferences… | Open the [Preferences](#preferences) page |
-| Help | Open this documentation |
-| What's New | Open the release notes |
-| About | Display the About screen with version information |
+The menu fills the screen. Tap the back button at the top left to return to the tabs. Pages opened from the menu return to it when you go back. Sync All closes the menu so you can watch the sync progress bar over your lists.
+
+The items are grouped on rounded cards under three headings.
+
+| Section | Item | Description |
+| :--- | :--- | :--- |
+| App | Appearance | Open the [Appearance](#appearance) page for light/dark mode and text size. The current mode shows beside it |
+| App | View | Open the [View Options](#view-options) page |
+| App | Preferences | Open the [Preferences](#preferences) page |
+| Sync | Cloud Sync Settings | Open the [Sync Settings](#sync-settings) page |
+| Sync | Sync All | Manually trigger a full sync with the cloud server |
+| Support | Help | Open this documentation |
+| Support | What's New | Open the release notes |
+| Support | About | Display the About screen with version information |
 
 ---
 
@@ -37,6 +42,7 @@ The entry point for project work. Displays all projects as a scrollable list. A 
 
 - Tap a project to open the [Project Details Page](#project-details-page).
 - The list respects the **Show Closed Projects** setting in [View Options](#view-options).
+- Tap the filter button and choose **Folder** to show only the projects in one or more project folders. Every folder is listed, along with **Not Categorized** for projects in no folder. Check as many as you like and tap **Apply**. Folders are created and named in the desktop app and sync to the phone with the rest of your data.
 
 ### Project Details Page
 
@@ -75,6 +81,7 @@ Displays the full content of a single meeting note.
 ### Meeting Attendees Page
 
 Lists all attendees for a specific meeting note. Tap an attendee to open the [Meeting Attendee Detail Page](#meeting-attendee-detail-page).
+Touch and hold an attendee to share their [contact card](#sharing-a-contact-card).
 
 ### Meeting Attendee Detail Page
 
@@ -145,6 +152,8 @@ When the path is a web link, an **Open** button appears. For a Word, Excel, Powe
 
 Lists all team members assigned to a specific project.
 
+Touch and hold a team member to share their [contact card](#sharing-a-contact-card).
+
 ### Team Member Detail Page
 
 Displays the relationship between a team member and a project, including their role on that project.
@@ -160,6 +169,16 @@ A unified view of tracker items across **all** projects. Useful for seeing all o
 Lists all team members in the database. A **Quick Search** bar filters the list as you type.
 
 - Tap a contact to open the [Contact Detail Page](#contact-detail-page).
+- Touch and hold a contact to share their [contact card](#sharing-a-contact-card). When the contact has a company, the same menu offers **Quick Filter…** to show only that company's contacts.
+
+### Sharing a Contact Card
+
+Touch and hold a contact, team member, or meeting attendee to open its contact card menu.
+
+- **Email Contact…** opens the iOS Mail compose sheet with the person's vCard (`.vcf`) attached and the subject `Contact: <name>`. Add the recipients before you send. If Mail has no account set up, the share sheet opens instead so you can pick another mail app.
+- **Export Contact…** opens the iOS share sheet. Save the card to Files, AirDrop it, send it in Messages, or open it in another app.
+
+The card holds the name, company, role, email, office phone and cell phone.
 
 ### Contact Detail Page
 
@@ -214,7 +233,7 @@ The mobile app synchronizes data with **Project Notes Pro** hosting using [Sqlit
 | :--- | :--- |
 | Enable Sync | Master on/off toggle for cloud synchronization. When off, the app operates in local-only mode and no network requests are made. |
 | Email | The email address for your Project Notes Pro account. |
-| Password | The password for your Project Notes Pro account. |
+| Password | The password for your Project Notes Pro account. It is kept in the iOS Keychain along with the encryption phrase. |
 | Encryption Phrase | An optional passphrase used to encrypt your data before it is sent to the server. If set, the same phrase must be configured on every device that syncs this account. Leave blank to disable encryption. |
 
 The page also shows your current **subscription status** and a link to [www.projectnotespro.com](https://www.projectnotespro.com), where you manage your subscription, along with the Project ID your data is associated with.
@@ -232,9 +251,25 @@ Tap **Back to Settings** to stay and fix the field, or **Leave Anyway** to conti
 **Sync behavior:**
 
 - The app syncs automatically in the background on a 30-second interval when **Enable Sync** is on.
-- Use **≡ → Sync All…** to trigger an immediate full sync at any time.
+- Use **≡ → Sync All** to trigger an immediate full sync at any time.
 - A thin progress bar below the navigation bar indicates sync activity: green while syncing, red if an error occurs.
 - Sync errors are written to `error.log` in the app's data container.
+
+---
+
+## Appearance
+
+Choose how the app picks between light and dark colors. Tap one of the three tiles:
+
+| Tile | Effect |
+| :--- | :--- |
+| System | Follow the light or dark setting of your iPhone or iPad |
+| Day | Always use light colors |
+| Night | Always use dark colors |
+
+The change applies right away and is remembered the next time you open the app.
+
+**Text Size:** drag the slider between the small and large **A** to make the text throughout the app smaller or larger. It has seven steps, matching the iOS text sizes, with the middle step as the default. The preview below the slider shows a list row and a field at the chosen size, and the rest of the app changes along with it.
 
 ---
 

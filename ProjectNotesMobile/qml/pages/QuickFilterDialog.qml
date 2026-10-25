@@ -123,10 +123,10 @@ Popup {
             Label {
                 anchors.centerIn: parent
                 text: qsTr("Quick Filter")
-                font.pixelSize: 17
+                font.pixelSize: Theme.headline; font.letterSpacing: Theme.tracking(Theme.headline)
                 font.weight: Font.DemiBold
             }
-            ToolButton {
+            BarButton {
                 anchors { right: parent.right; rightMargin: 4; verticalCenter: parent.verticalCenter }
                 icon.name: "xmark"
                 focusPolicy: Qt.NoFocus
