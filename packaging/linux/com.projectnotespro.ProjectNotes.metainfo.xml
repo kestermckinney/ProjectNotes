@@ -32,7 +32,10 @@
 
   <releases>
     <release version="6.5.0" date="2026-10-18"/>
-    <release version="6.4.0" date="2026-10-08"/>
+    <release version="6.4.3" date="2026-10-17"/>
+    <release version="6.4.2" date="2026-10-16"/>
+    <release version="6.4.1" date="2026-10-16"/>
+    <release version="6.4.0" date="2026-10-12"/>
     <release version="6.3.0" date="2026-09-24"/>
     <release version="6.2.0" date="2026-09-19"/>
     <release version="6.1.0" date="2026-08-28"/>

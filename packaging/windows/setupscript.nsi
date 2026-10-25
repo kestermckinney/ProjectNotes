@@ -22,7 +22,9 @@ RequestExecutionLevel user
 
 ; Run the cmake deploy target now so the staging directory exists before NSIS
 ; tries to reference any files inside it.
-!system 'cmake --build "${BUILD_DIR}" --target deploy' = 0
+!ifndef PN_DEPLOY_STAGED
+  !system 'cmake --build "${BUILD_DIR}" --target deploy' = 0
+!endif
 
 !include MUI2.nsh
 !include FileFunc.nsh   ; GetParameters / GetOptions for unattended-update flags
@@ -114,52 +116,12 @@ Section "MainSection" SEC01
   CreateShortCut  "$DESKTOP\Project Notes.lnk"                              "$INSTDIR\Project Notes.exe"
 
   ; ── Qt libraries (populated by windeployqt during cmake deploy) ─────────────
-  ; Charts/OpenGLWidgets are pulled in transitively via SqliteSyncProLib (sync
-  ; stats chart), not the QML UI itself. The Qml/Quick/QuickControls2 family
-  ; below is new for the QML desktop frontend.
+  ; Include every Qt library staged by windeployqt. Keeping a hand-maintained
+  ; list here omitted Qt6Positioning.dll even though it was in deploy/.
   File "${DEPLOY_DIR}\D3Dcompiler_47.dll"
   File "${DEPLOY_DIR}\icuuc.dll"
   File "${DEPLOY_DIR}\opengl32sw.dll"
-  File "${DEPLOY_DIR}\Qt6Charts.dll"
-  File "${DEPLOY_DIR}\Qt6Core.dll"
-  File "${DEPLOY_DIR}\Qt6Gui.dll"
-  File "${DEPLOY_DIR}\Qt6LabsFolderListModel.dll"
-  File "${DEPLOY_DIR}\Qt6LabsQmlModels.dll"
-  File "${DEPLOY_DIR}\Qt6Network.dll"
-  File "${DEPLOY_DIR}\Qt6OpenGL.dll"
-  File "${DEPLOY_DIR}\Qt6OpenGLWidgets.dll"
-  File "${DEPLOY_DIR}\Qt6Pdf.dll"
-  File "${DEPLOY_DIR}\Qt6Qml.dll"
-  File "${DEPLOY_DIR}\Qt6QmlMeta.dll"
-  File "${DEPLOY_DIR}\Qt6QmlModels.dll"
-  File "${DEPLOY_DIR}\Qt6QmlCore.dll"
-  File "${DEPLOY_DIR}\Qt6QmlWorkerScript.dll"
-  File "${DEPLOY_DIR}\Qt6Quick.dll"
-  File "${DEPLOY_DIR}\Qt6QuickControls2.dll"
-  File "${DEPLOY_DIR}\Qt6QuickControls2Basic.dll"
-  File "${DEPLOY_DIR}\Qt6QuickControls2BasicStyleImpl.dll"
-  File "${DEPLOY_DIR}\Qt6QuickControls2FluentWinUI3StyleImpl.dll"
-  File "${DEPLOY_DIR}\Qt6QuickControls2Fusion.dll"
-  File "${DEPLOY_DIR}\Qt6QuickControls2FusionStyleImpl.dll"
-  File "${DEPLOY_DIR}\Qt6QuickControls2Imagine.dll"
-  File "${DEPLOY_DIR}\Qt6QuickControls2ImagineStyleImpl.dll"
-  File "${DEPLOY_DIR}\Qt6QuickControls2Impl.dll"
-  File "${DEPLOY_DIR}\Qt6QuickControls2Material.dll"
-  File "${DEPLOY_DIR}\Qt6QuickControls2MaterialStyleImpl.dll"
-  File "${DEPLOY_DIR}\Qt6QuickControls2Universal.dll"
-  File "${DEPLOY_DIR}\Qt6QuickControls2UniversalStyleImpl.dll"
-  File "${DEPLOY_DIR}\Qt6QuickControls2WindowsStyleImpl.dll"
-  File "${DEPLOY_DIR}\Qt6QuickDialogs2.dll"
-  File "${DEPLOY_DIR}\Qt6QuickDialogs2QuickImpl.dll"
-  File "${DEPLOY_DIR}\Qt6QuickDialogs2Utils.dll"
-  File "${DEPLOY_DIR}\Qt6QuickEffects.dll"
-  File "${DEPLOY_DIR}\Qt6QuickLayouts.dll"
-  File "${DEPLOY_DIR}\Qt6QuickShapes.dll"
-  File "${DEPLOY_DIR}\Qt6QuickTemplates2.dll"
-  File "${DEPLOY_DIR}\Qt6Sql.dll"
-  File "${DEPLOY_DIR}\Qt6Svg.dll"
-  File "${DEPLOY_DIR}\Qt6Widgets.dll"
-  File "${DEPLOY_DIR}\Qt6Xml.dll"
+  File "${DEPLOY_DIR}\Qt6*.dll"
 
   SetOutPath "$INSTDIR"
 
@@ -358,46 +320,7 @@ Section Uninstall
   Delete "$INSTDIR\D3Dcompiler_47.dll"
   Delete "$INSTDIR\icuuc.dll"
   Delete "$INSTDIR\opengl32sw.dll"
-  Delete "$INSTDIR\Qt6Charts.dll"
-  Delete "$INSTDIR\Qt6Core.dll"
-  Delete "$INSTDIR\Qt6Gui.dll"
-  Delete "$INSTDIR\Qt6LabsFolderListModel.dll"
-  Delete "$INSTDIR\Qt6LabsQmlModels.dll"
-  Delete "$INSTDIR\Qt6Network.dll"
-  Delete "$INSTDIR\Qt6OpenGL.dll"
-  Delete "$INSTDIR\Qt6OpenGLWidgets.dll"
-  Delete "$INSTDIR\Qt6Pdf.dll"
-  Delete "$INSTDIR\Qt6Qml.dll"
-  Delete "$INSTDIR\Qt6QmlMeta.dll"
-  Delete "$INSTDIR\Qt6QmlModels.dll"
-  Delete "$INSTDIR\Qt6QmlCore.dll"
-  Delete "$INSTDIR\Qt6QmlWorkerScript.dll"
-  Delete "$INSTDIR\Qt6Quick.dll"
-  Delete "$INSTDIR\Qt6QuickControls2.dll"
-  Delete "$INSTDIR\Qt6QuickControls2Basic.dll"
-  Delete "$INSTDIR\Qt6QuickControls2BasicStyleImpl.dll"
-  Delete "$INSTDIR\Qt6QuickControls2FluentWinUI3StyleImpl.dll"
-  Delete "$INSTDIR\Qt6QuickControls2Fusion.dll"
-  Delete "$INSTDIR\Qt6QuickControls2FusionStyleImpl.dll"
-  Delete "$INSTDIR\Qt6QuickControls2Imagine.dll"
-  Delete "$INSTDIR\Qt6QuickControls2ImagineStyleImpl.dll"
-  Delete "$INSTDIR\Qt6QuickControls2Impl.dll"
-  Delete "$INSTDIR\Qt6QuickControls2Material.dll"
-  Delete "$INSTDIR\Qt6QuickControls2MaterialStyleImpl.dll"
-  Delete "$INSTDIR\Qt6QuickControls2Universal.dll"
-  Delete "$INSTDIR\Qt6QuickControls2UniversalStyleImpl.dll"
-  Delete "$INSTDIR\Qt6QuickControls2WindowsStyleImpl.dll"
-  Delete "$INSTDIR\Qt6QuickDialogs2.dll"
-  Delete "$INSTDIR\Qt6QuickDialogs2QuickImpl.dll"
-  Delete "$INSTDIR\Qt6QuickDialogs2Utils.dll"
-  Delete "$INSTDIR\Qt6QuickEffects.dll"
-  Delete "$INSTDIR\Qt6QuickLayouts.dll"
-  Delete "$INSTDIR\Qt6QuickShapes.dll"
-  Delete "$INSTDIR\Qt6QuickTemplates2.dll"
-  Delete "$INSTDIR\Qt6Sql.dll"
-  Delete "$INSTDIR\Qt6Svg.dll"
-  Delete "$INSTDIR\Qt6Widgets.dll"
-  Delete "$INSTDIR\Qt6Xml.dll"
+  Delete "$INSTDIR\Qt6*.dll"
 
   RMDir /r "$INSTDIR\qml"
 

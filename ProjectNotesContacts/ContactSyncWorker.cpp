@@ -43,7 +43,8 @@ bool ContactSyncWorker::prepareClientReviews(){
     const auto books=m_config.value("sourceBooks").toStringList();int pending=0;
     for(const auto &contact:m_snapshot.contacts){
         if((!books.isEmpty()&&!books.contains(contact.book))||contact.company.trimmed().isEmpty()||
-           m_journal["ignored"].toObject()[sourceKey(m_scope,contact)].toBool())continue;
+           m_journal["ignored"].toObject()[sourceKey(m_scope,contact)].toBool()||
+           m_journal["ignoredCompanies"].toObject()[clientKey(m_scope,contact.company)].toBool())continue;
         const auto match=companyMatch(contact.company,m_clients);if(!match.review)continue;
         const auto key=clientKey(m_scope,contact.company);if(entries.contains(key))continue;
         QJsonArray candidates;for(const auto &candidate:match.candidates)candidates<<QJsonObject{
@@ -368,7 +369,9 @@ void ContactSyncWorker::importNext(){
         if(slice.elapsed()>=10){auto generation=m_generation;QTimer::singleShot(0,this,[this,generation]{if(generation==m_generation)importNext();});return;}
         const auto c=m_snapshot.contacts[m_importIndex++];
         if(!sourceBooks.isEmpty()&&!sourceBooks.contains(c.book))continue;
-        QString key=sourceKey(m_scope,c);present.insert(key);if(m_journal["ignored"].toObject()[key].toBool())continue;
+        QString key=sourceKey(m_scope,c);present.insert(key);
+        if(m_journal["ignored"].toObject()[key].toBool()||
+           m_journal["ignoredCompanies"].toObject()[clientKey(m_scope,c.company)].toBool())continue;
         if(c.id.isEmpty()||c.name.trimmed().isEmpty()){addReview(key,c,{}, {},"Contact is missing a name or stable identity.");continue;}
         QString linked=m_journal["links"].toObject()[key].toString();
         if(linked.isEmpty()&&m_config.value("provider")=="icloud"&&m_journal["legacyICloudAccount"].toString()==m_snapshot.account){
@@ -474,7 +477,22 @@ void ContactSyncWorker::resolve(const QString&key,const QString&action,const QSt
         QString clientAction=action;
         if(clientAction=="clientLink")clientAction="clientUseRight";
         if(clientAction=="clientCreate")clientAction="clientUseBoth";
-        if(!QStringList{"clientUseLeft","clientUseRight","clientUseBoth"}.contains(clientAction))return;
+        if(!QStringList{"clientUseLeft","clientUseRight","clientUseBoth","clientSkip"}.contains(clientAction))return;
+        if(clientAction=="clientSkip"){
+            auto ignored=m_journal["ignoredCompanies"].toObject();ignored[key]=true;m_journal["ignoredCompanies"]=ignored;
+            entries.remove(key);
+            for(auto it=entries.begin();it!=entries.end();)
+                if(it.value().toObject()["scope"].toString()==m_scope &&
+                   clientKey(m_scope,it.value().toObject()["contact"].toObject()["company"].toString())==key)
+                    it=entries.erase(it);
+                else ++it;
+            m_journal["reviews"]=entries;
+            if(!persist())return;
+            bool pending=false;for(auto it=entries.begin();it!=entries.end();++it)
+                if(it.value().toObject()["stage"]=="client"&&it.value().toObject()["scope"].toString()==m_scope)pending=true;
+            if(!pending){syncNow();return;}
+            m_status="Resolve the remaining client matches before reviewing contact duplicates.";emit changed();return;
+        }
         QList<Person> people;QList<Client> clients;QString error;
         if(!m_repository.read(people,clients,error)){m_status=error;emit changed();return;}
         QString chosen=clientId;
@@ -534,5 +552,15 @@ void ContactSyncWorker::rejectCandidate(const QString&key,const QString&id){
     auto reviews=m_journal["reviews"].toObject();auto entry=reviews[key].toObject();QJsonArray candidates;
     for(const auto&v:entry["people"].toArray())if(v.toObject()["id"].toString()!=id)candidates<<v;
     entry["people"]=candidates;reviews[key]=entry;m_journal["reviews"]=reviews;persist();emit changed();
+}
+void ContactSyncWorker::resetDuplicateItems(){
+    if(m_busy||m_path.isEmpty())return;
+    const QJsonObject previous=m_journal;
+    for(const QString &field:QStringList{"clientDecisions","decisions","rejected","ignored",
+                                        "ignoredCompanies","reviews","links","imports","clientImports"})
+        m_journal[field]=QJsonObject{};
+    if(!persist()){m_journal=previous;emit changed();return;}
+    m_status="Saved duplicate decisions cleared. Sync Now will compare contacts again.";
+    emit changed();
 }
 }

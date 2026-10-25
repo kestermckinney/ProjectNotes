@@ -21,6 +21,7 @@
 #include "SpellCheck.h"
 #include "TextFormatter.h"
 #include "ProjectNotesIntegrations/CommunicationTypes.h"
+#include "version.h"
 
 // Defined in the two test translation units.
 int runParityTests(int argc, char** argv);
@@ -47,7 +48,7 @@ int main(int argc, char* argv[])
     QApplication::setOrganizationDomain("projectnotespro.com");
     QApplication::setApplicationName("projectnotes");
     QApplication::setApplicationDisplayName("Project Notes");
-    QApplication::setApplicationVersion("6.5.0");
+    QApplication::setApplicationVersion(QStringLiteral(APP_VERSION_STRING));
 
     DesktopAppController::setDeveloperProfile("qmltest");
     DesktopAppController::setUpdateChecksEnabled(false);   // no network in tests

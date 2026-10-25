@@ -46,7 +46,6 @@ bool DatabaseStructure::UpgradeDatabase()
     QString targetversion = QString("%1.%2.%3")
         .arg(APP_VERSION_MAJOR).arg(APP_VERSION_MINOR).arg(APP_VERSION_PATCH);
 
-    // Do not downgrade a database opened by a newer application.
     if (QVersionNumber::fromString(currentversion) > QVersionNumber::fromString(targetversion)) {
         global_DBObjects.setLastSaveError(QString("Database version %1 is newer than this application (%2).")
                                              .arg(currentversion, targetversion));

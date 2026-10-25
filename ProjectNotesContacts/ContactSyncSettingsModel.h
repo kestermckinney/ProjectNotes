@@ -45,6 +45,7 @@ public:
     Q_INVOKABLE void resolve(const QString &key,const QString &action,const QString &personId,
                              const QString &clientId,const QString &displayName);
     Q_INVOKABLE void rejectCandidate(const QString &key,const QString &personId);
+    Q_INVOKABLE void resetDuplicateItems();
     Q_INVOKABLE void installThunderbirdHost();
     void setProviderForTesting(ContactProvider *provider);
 signals:

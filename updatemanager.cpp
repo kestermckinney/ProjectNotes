@@ -77,18 +77,22 @@ QString UpdateManager::selectInstallerLink(const QJsonArray &assets,
     {
         const QJsonObject asset = v.toObject();
         const QString name = asset.value("name").toString();
-        if (!name.contains(nameFragment, Qt::CaseInsensitive)
-            || !name.endsWith(nameSuffix, Qt::CaseInsensitive))
-            continue;
-
-        // Direct release links retain the installer filename even when the
-        // backing storage URL has an opaque path. Plain links are valid too.
+        // Release link names may be descriptive labels rather than filenames.
+        // GitLab's direct asset URL still carries the actual installer name.
         QString url = asset.value("direct_asset_url").toString();
         if (url.isEmpty())
             url = asset.value("url").toString();
         const QUrl downloadUrl(url);
-        if (downloadUrl.isValid() && downloadUrl.scheme() == "https"
-            && !downloadUrl.host().isEmpty())
+        if (!downloadUrl.isValid() || downloadUrl.scheme() != "https"
+            || downloadUrl.host().isEmpty())
+            continue;
+
+        const QString fileName = downloadUrl.fileName(QUrl::FullyDecoded);
+        const auto matches = [&](const QString &candidate) {
+            return candidate.contains(nameFragment, Qt::CaseInsensitive)
+                   && candidate.endsWith(nameSuffix, Qt::CaseInsensitive);
+        };
+        if (matches(name) || matches(fileName))
             return url;
     }
 
@@ -98,7 +102,8 @@ QString UpdateManager::selectInstallerLink(const QJsonArray &assets,
 QString UpdateManager::selectPlatformAsset(const QJsonArray &assets)
 {
 #if defined(Q_OS_WIN)
-    return selectInstallerLink(assets, QString(), QStringLiteral("-Windows-x64-Setup.exe"));
+    return selectInstallerLink(assets, QStringLiteral("ProjectNotes-"),
+                               QStringLiteral("-Windows-x64-Setup.exe"));
 #elif defined(Q_OS_MACOS)
     // Only the self-contained .app zip supports unattended installation.
     return selectInstallerLink(assets, QStringLiteral("macOS"), QStringLiteral(".zip"));

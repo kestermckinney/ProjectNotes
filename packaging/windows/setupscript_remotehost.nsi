@@ -19,7 +19,9 @@ RequestExecutionLevel user
 !define BUILD_DIR    "..\..\build\${BUILD_CONFIG}"
 !define DEPLOY_DIR   "${BUILD_DIR}\deploy"
 
-!system 'cmake --build "${BUILD_DIR}" --target deploy' = 0
+!ifndef PN_DEPLOY_STAGED
+  !system 'cmake --build "${BUILD_DIR}" --target deploy' = 0
+!endif
 
 !include MUI2.nsh
 

@@ -30,7 +30,7 @@ if errorlevel 1 (
 )
 
 rem Compile the Project Notes installer (deploy target already ran above, !system in NSI is a no-op)
-makensis "%~dp0setupscript.nsi"
+makensis /DPN_DEPLOY_STAGED "%~dp0setupscript.nsi"
 if errorlevel 1 (
     echo.
     echo ERROR: makensis failed for Project Notes installer.
@@ -38,7 +38,7 @@ if errorlevel 1 (
 )
 
 rem Compile the Remote Host installer
-makensis "%~dp0setupscript_remotehost.nsi"
+makensis /DPN_DEPLOY_STAGED "%~dp0setupscript_remotehost.nsi"
 if errorlevel 1 (
     echo.
     echo ERROR: makensis failed for Remote Host installer.

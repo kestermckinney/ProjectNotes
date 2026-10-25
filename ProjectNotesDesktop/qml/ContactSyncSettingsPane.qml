@@ -268,6 +268,12 @@ ColumnLayout {
             onClicked: pane.syncModel.syncNow()
         }
         Button {
+            objectName: "resetDuplicateItemsButton"
+            text: qsTr("Reset Duplicate Items")
+            enabled: pane.syncModel && !pane.syncModel.busy
+            onClicked: resetDuplicatesDialog.open()
+        }
+        Button {
             text: qsTr("Cancel")
             visible: pane.syncModel && pane.syncModel.busy
             onClicked: pane.syncModel.cancelSync()
@@ -302,5 +308,14 @@ ColumnLayout {
         id: conflictDialog
         objectName: "contactConflictReviewDialog"
         syncModel: pane.syncModel
+    }
+    ThemedMessageDialog {
+        id: resetDuplicatesDialog
+        title: qsTr("Reset Duplicate Items")
+        message: qsTr("Clear saved contact and company match choices? The next sync will compare them again.")
+        iconName: "warning"
+        confirmText: qsTr("Reset")
+        destructive: true
+        onConfirmed: if (pane.syncModel) pane.syncModel.resetDuplicateItems()
     }
 }

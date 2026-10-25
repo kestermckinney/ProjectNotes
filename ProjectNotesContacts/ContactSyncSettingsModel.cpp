@@ -147,6 +147,10 @@ void ContactSyncSettingsModel::resolve(const QString &key,const QString &action,
     post([key,action,person,client,name](auto &worker){worker.resolve(key,action,person,client,name);});
 }
 void ContactSyncSettingsModel::rejectCandidate(const QString &key,const QString &person){post([key,person](auto &worker){worker.rejectCandidate(key,person);});}
+void ContactSyncSettingsModel::resetDuplicateItems(){
+    if(m_busy)return;
+    post([](auto &worker){worker.resetDuplicateItems();});
+}
 void ContactSyncSettingsModel::setProviderForTesting(ContactProvider *provider){
     QMetaObject::invokeMethod(m_worker,[this,provider]{m_worker->setProviderForTesting(new QueuedContactProvider(provider,m_worker));},Qt::BlockingQueuedConnection);
 }

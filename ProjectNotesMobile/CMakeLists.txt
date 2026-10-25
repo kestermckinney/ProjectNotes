@@ -45,6 +45,10 @@ set(OPENSSL_INCLUDE_DIR   "${_OPENSSL_TRIPLET}/include" CACHE PATH   "OpenSSL in
 set(OPENSSL_CRYPTO_LIBRARY "${_OPENSSL_TRIPLET}/lib/libcrypto.a" CACHE FILEPATH "OpenSSL crypto library" FORCE)
 set(OPENSSL_SSL_LIBRARY    "${_OPENSSL_TRIPLET}/lib/libssl.a"    CACHE FILEPATH "OpenSSL ssl library"    FORCE)
 
+if(NOT EXISTS "${OPENSSL_CRYPTO_LIBRARY}")
+    message(FATAL_ERROR "OpenSSL not found at ${_OPENSSL_TRIPLET}. Build it with vcpkg first.")
+endif()
+
 message(STATUS "OpenSSL triplet: ${_OPENSSL_TRIPLET}")
 
 # ── Qt modules ───────────────────────────────────────────────────────────────
@@ -68,6 +72,7 @@ add_subdirectory(../ProjectNotesCore ProjectNotesCore)
 
 # ── Application target ────────────────────────────────────────────────────────
 qt_add_executable(ProjectNotesMobile
+    MANUAL_FINALIZATION
     main.cpp
 )
 target_compile_definitions(ProjectNotesMobile PRIVATE

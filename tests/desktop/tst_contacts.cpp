@@ -482,6 +482,28 @@ private slots:
         auto key=model.reviews().first().toMap().value("key").toString();model.rejectCandidate(key,"person");model.syncNow();QTRY_VERIFY(!model.busy());
         QVERIFY(model.reviews().first().toMap().value("people").toList().isEmpty());
         model.resolve(key,"ignore","","","");model.syncNow();QTRY_VERIFY(!model.busy());QVERIFY(model.reviews().isEmpty());QCOMPARE(count("people"),1);
+        model.resetDuplicateItems();
+        QTRY_VERIFY(model.status().contains("cleared"));
+        model.syncNow();QTRY_VERIFY(!model.busy());
+        QCOMPARE(model.reviews().size(),1);
+        QVERIFY(!model.reviews().first().toMap().value("people").toList().isEmpty());
+    }
+    void skippedCompanyIsReconsideredAfterReset(){
+        seed();QTemporaryDir state;FakeContacts provider;
+        QSqlQuery q(global_DBObjects.getDb());
+        QVERIFY(q.exec("UPDATE clients SET client_name='Consolidated Grain & Barge'"));
+        auto c=incoming("Brian Two","brian@example.test","Consolidated Grain & Barge - Boston");
+        c.phones.clear();c.fields["office_phone"]="";provider.snapshot.contacts={c};
+        ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);
+        model.syncNow();QTRY_VERIFY(!model.busy());QCOMPARE(model.reviews().size(),1);
+        const QString key=model.reviews().first().toMap().value("key").toString();
+        model.resolve(key,"clientSkip","","","");
+        QTRY_VERIFY(model.reviews().isEmpty());QCOMPARE(count("people"),1);
+        model.syncNow();QTRY_VERIFY(!model.busy());QVERIFY(model.reviews().isEmpty());
+        model.resetDuplicateItems();QTRY_VERIFY(model.status().contains("cleared"));
+        model.syncNow();QTRY_VERIFY(!model.busy());
+        QCOMPARE(model.reviews().size(),1);
+        QCOMPARE(model.reviews().first().toMap().value("stage").toString(),QString("client"));
     }
     void repeatImportUsesIds(){
         QTemporaryDir state;FakeContacts provider;provider.snapshot.contacts={incoming()};ContactSyncSettingsModel model(&global_DBObjects,nullptr,"ContactTest",state.path());configure(model,provider);

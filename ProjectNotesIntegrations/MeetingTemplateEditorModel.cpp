@@ -178,6 +178,14 @@ bool MeetingTemplateEditorModel::deleteSelected()
     return true;
 }
 
+bool MeetingTemplateEditorModel::resetDefaults()
+{
+    const ValidationResult result = MeetingTemplateStore().resetDefaults();
+    if (!result.ok()) { setDiagnostic(result); return false; }
+    reload();
+    return true;
+}
+
 bool MeetingTemplateEditorModel::draftIsBlank() const
 {
     return m_draft.name.trimmed().isEmpty() && m_draft.subject.trimmed().isEmpty()

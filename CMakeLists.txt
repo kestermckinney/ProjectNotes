@@ -249,6 +249,12 @@ if(WIN32)
             --dir "${DEPLOY_DIR}"
             "${DEPLOY_DIR}/Project Notes.exe"
 
+        # The installer includes this Qt plugin for touch-capable Windows devices.
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${DEPLOY_DIR}/generic"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${_qt_bin}/../plugins/generic/qtuiotouchplugin.dll"
+            "${DEPLOY_DIR}/generic/qtuiotouchplugin.dll"
+
         # 4. ProjectNotes vcpkg runtime DLLs
         COMMAND ${CMAKE_COMMAND} -E copy
             "${CMAKE_BINARY_DIR}/vcpkg_installed/x64-windows/bin/hunspell-1.7-0.dll"

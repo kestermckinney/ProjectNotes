@@ -37,6 +37,7 @@ public:
     Q_INVOKABLE void resolve(const QString &key,const QString &action,const QString &personId,
                              const QString &clientId,const QString &displayName);
     Q_INVOKABLE void rejectCandidate(const QString &key,const QString &personId);
+    Q_INVOKABLE void resetDuplicateItems();
     // Test seam: injected provider remains owned by its caller.
     void setProviderForTesting(ContactProvider *provider) {m_testProvider=provider;}
     void setOfficeAccount(PN::Comm::Office365Account account, bool inProgress);
