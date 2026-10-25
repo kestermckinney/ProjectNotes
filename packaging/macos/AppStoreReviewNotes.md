@@ -1,6 +1,6 @@
 # Mac App Store review notes
 
-Notes for App Review and for whoever submits the Mac App Store build. The build comes from `cmake -DPN_APP_STORE=ON` and `packaging/macos/build_appstore.sh`.
+Notes for App Review and for whoever submits the Mac App Store build. The build comes from `packaging/macos/build_appstore.sh`, which configures with `-DPN_APP_STORE=ON`. `AppStoreReleasing.md` covers the certificates, profile and upload.
 
 ## What reviewers should know
 

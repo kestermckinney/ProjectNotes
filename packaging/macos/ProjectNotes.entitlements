@@ -2,12 +2,13 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <!-- Hardened runtime entitlements for the Developer ID (direct download)
+         build. It is not sandboxed, so sandbox entitlements (network, files)
+         would have no effect and are left out. The Mac App Store build uses
+         ProjectNotes-AppStore.entitlements. -->
+
     <!-- The QML and JavaScript (plugin) engines compile to native code -->
     <key>com.apple.security.cs.allow-jit</key>
-    <true/>
-
-    <!-- Network access for cloud sync, Office 365 and plugins -->
-    <key>com.apple.security.network.client</key>
     <true/>
 
     <!-- Apple Events to Calendar.app (and System Events) for the "MacOS Email
@@ -23,16 +24,10 @@
     <key>com.apple.security.personal-information.calendars</key>
     <true/>
 
-    <!-- Read/write access to user-selected files (open/save dialogs) -->
-    <key>com.apple.security.files.user-selected.read-write</key>
+    <!-- Contact synchronization with the Contacts app (MacContactsProvider).
+         Under the hardened runtime the Contacts prompt never appears without
+         this. -->
+    <key>com.apple.security.personal-information.addressbook</key>
     <true/>
-
-    <!-- Access to the user's Documents folder (default database location) -->
-    <key>com.apple.security.files.downloads.read-write</key>
-    <true/>
-
-    <!-- Note: com.apple.security.app-sandbox is not set here. This file is for
-         the Developer ID (direct download) build; the Mac App Store build uses
-         ProjectNotes-AppStore.entitlements. -->
 </dict>
 </plist>

@@ -4,111 +4,250 @@
 #
 # build_appstore.sh
 #
-# Signs the Mac App Store flavor of Project Notes and packs it for App Store
-# Connect, optionally uploading it.
-#
-# Build the app first with the App Store flavor:
-#   cmake -S . -B build/appstore -DCMAKE_BUILD_TYPE=Release -DPN_APP_STORE=ON
-#   cmake --build build/appstore
+# Builds, signs, packages and (optionally) uploads the Mac App Store flavor of
+# Project Notes (cmake -DPN_APP_STORE=ON). Targets the App ID
+# com.projectnotespro.ProjectNotes under Apple Team 2PY624KHXH. The direct
+# download (GitLab) build is unaffected; it still comes from build_installer.sh.
 #
 # Usage:
-#   PN_BUILD_DIR=build/appstore PN_PROVISIONING_PROFILE=~/ProjectNotes_Mac_AppStore.provisionprofile \
-#       packaging/macos/build_appstore.sh
+#   ./build_appstore.sh [BUILD_NUMBER] [options]
 #
-# Environment:
-#   PN_BUILD_DIR             CMake build dir holding ProjectNotesDesktop/Project Notes.app
-#   PN_PROVISIONING_PROFILE  Mac App Store provisioning profile for com.projectnotespro.ProjectNotes
-#   APP_IDENTITY             default "3rd Party Mac Developer Application: Paul McKinney (2PY624KHXH)"
-#   INSTALLER_IDENTITY       default "3rd Party Mac Developer Installer: Paul McKinney (2PY624KHXH)"
-#   ASC_API_KEY_ID, ASC_API_ISSUER
-#                            App Store Connect API key; when both are set the
-#                            package is uploaded (the .p8 must be in
-#                            ~/.appstoreconnect/private_keys/)
+# Options:
+#   --build-number <N>   CFBundleVersion (build number). App Store Connect rejects
+#                        an upload that reuses a build number, so this must be
+#                        unique and increasing. May also be given as the first
+#                        bare argument. Defaults to a UTC timestamp.
+#   --api-key <KEYID>    App Store Connect API Key ID    (enables upload)
+#   --api-issuer <ID>    App Store Connect API Issuer ID (enables upload)
+#   --validate-only      With an API key, validate the package but do not upload.
+#   --skip-build         Package the existing build in PN_BUILD_DIR as is.
+#   --no-user-plugins    Build with PN_APP_STORE_USER_PLUGINS=OFF (only if App
+#                        Review objects to user-installed plugins).
+#   -h, --help           Show this help.
 #
-# Unlike build_installer.sh there are no installer scripts (the App Store does
-# not run them) and no updater archive (the App Store updates the app).
+# The API key/issuer can also come from ASC_API_KEY_ID / ASC_API_ISSUER. Without
+# them the script stops after building the .pkg.
+#
+# Configuration (override via environment variables):
+#   QT_MACOS                 Qt macOS kit (contains bin/qt-cmake)
+#   VCPKG_ROOT               vcpkg checkout used for static Hunspell and OpenSSL
+#   PN_BUILD_DIR             CMake build directory for the App Store flavor
+#   TEAM_ID                  10-character Apple Team ID
+#   APP_IDENTITY             App signing identity. Default: the first
+#                            "Apple Distribution" or "3rd Party Mac Developer
+#                            Application" identity for TEAM_ID in the keychain
+#   INSTALLER_IDENTITY       Package signing identity. Default: the first
+#                            "3rd Party Mac Developer Installer" or "Mac
+#                            Installer Distribution" identity for TEAM_ID
+#   PN_PROVISIONING_PROFILE  Mac App Store provisioning profile. Default: the
+#                            newest matching one Xcode has downloaded
+#
+# Prerequisites: see packaging/macos/AppStoreReleasing.md.
+
 set -euo pipefail
 
+usage() { sed -n '12,45p' "$0" | sed 's/^# \{0,1\}//'; }
+
+# ── Configuration ─────────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
+# shellcheck source=build_common.sh
+source "${SCRIPT_DIR}/build_common.sh"
+
 PN_BUILD_DIR="${PN_BUILD_DIR:-${PROJECT_ROOT}/build/appstore}"
-PN_APP="${PN_BUILD_DIR}/ProjectNotesDesktop/Project Notes.app"
+TEAM_ID="${TEAM_ID:-2PY624KHXH}"
+APP_IDENTITY="${APP_IDENTITY:-}"
+INSTALLER_IDENTITY="${INSTALLER_IDENTITY:-}"
 PN_PROVISIONING_PROFILE="${PN_PROVISIONING_PROFILE:-}"
-APP_IDENTITY="${APP_IDENTITY:-3rd Party Mac Developer Application: Paul McKinney (2PY624KHXH)}"
-INSTALLER_IDENTITY="${INSTALLER_IDENTITY:-3rd Party Mac Developer Installer: Paul McKinney (2PY624KHXH)}"
-ENTITLEMENTS="${SCRIPT_DIR}/ProjectNotes-AppStore.entitlements"
-PN_VERSION="$(sed -n 's/.*project(ProjectNotes VERSION \([0-9.]*\).*/\1/p' "${PROJECT_ROOT}/CMakeLists.txt")"
+ASC_API_KEY_ID="${ASC_API_KEY_ID:-}"
+ASC_API_ISSUER="${ASC_API_ISSUER:-}"
 
+BUNDLE_ID="com.projectnotespro.ProjectNotes"
+PN_APP="${PN_BUILD_DIR}/ProjectNotesDesktop/Project Notes.app"
+BASE_ENTITLEMENTS="${SCRIPT_DIR}/ProjectNotes-AppStore.entitlements"
 STAGING_DIR="${SCRIPT_DIR}/staging-appstore"
-OUTPUT_DIR="${SCRIPT_DIR}/output"
-PKG="${OUTPUT_DIR}/ProjectNotes-${PN_VERSION}-AppStore.pkg"
+OUTPUT_DIR="${SCRIPT_DIR}/output-appstore"
 
-log() { echo "[$(date '+%H:%M:%S')] $*"; }
-die() { echo "ERROR: $*" >&2; exit 1; }
+# ── Argument parsing ──────────────────────────────────────────────────────────
+BUILD_NUMBER=""
+DO_BUILD=true
+VALIDATE_ONLY=false
+USER_PLUGINS=ON
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --build-number)    BUILD_NUMBER="$2"; shift 2 ;;
+        --api-key)         ASC_API_KEY_ID="$2"; shift 2 ;;
+        --api-issuer)      ASC_API_ISSUER="$2"; shift 2 ;;
+        --validate-only)   VALIDATE_ONLY=true; shift ;;
+        --skip-build)      DO_BUILD=false; shift ;;
+        --no-user-plugins) USER_PLUGINS=OFF; shift ;;
+        -h|--help)         usage; exit 0 ;;
+        -*)                echo "ERROR: unknown option: $1" >&2; usage; exit 2 ;;
+        *)
+            if [[ -z "${BUILD_NUMBER}" ]]; then
+                BUILD_NUMBER="$1"; shift
+            else
+                echo "ERROR: unexpected argument: $1" >&2; usage; exit 2
+            fi
+            ;;
+    esac
+done
+BUILD_NUMBER="${BUILD_NUMBER:-$(date -u +%Y%m%d%H%M)}"
+[[ "${BUILD_NUMBER}" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]] || {
+    echo "ERROR: build number must be one to three dot-separated integers: ${BUILD_NUMBER}" >&2; exit 2; }
 
-[[ -d "${PN_APP}" ]] || die "App bundle not found: ${PN_APP}
-Build with -DPN_APP_STORE=ON first, or set PN_BUILD_DIR."
-[[ -n "${PN_PROVISIONING_PROFILE}" && -f "${PN_PROVISIONING_PROFILE}" ]] || \
-    die "Set PN_PROVISIONING_PROFILE to the Mac App Store provisioning profile."
+PKG="${OUTPUT_DIR}/ProjectNotes-${PN_VERSION}-${BUILD_NUMBER}-AppStore.pkg"
 
-# A standard build contains the Thunderbird helper executable, which the App
-# Store flavor leaves out. Refuse a bundle built without the flavor.
-if [[ -e "${PN_APP}/Contents/MacOS/ProjectNotesThunderbirdContacts" ]]; then
-    die "${PN_APP} looks like a standard build (it contains the Thunderbird helper). Rebuild with -DPN_APP_STORE=ON."
+# First keychain identity (policy $1) whose name matches the regex $2.
+find_identity() {
+    security find-identity -v -p "$1" 2>/dev/null | \
+        sed -n 's/^.*"\(.*\)"$/\1/p' | grep -E -m 1 "$2" || true
+}
+
+# Newest unexpired Mac App Store profile for TEAM_ID.BUNDLE_ID. Development
+# profiles list devices and Developer ID profiles cover all devices; an App
+# Store profile does neither.
+find_profile() {
+    local want="${TEAM_ID}.${BUNDLE_ID}" now best="" best_created="" tmp p dir created
+    now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    tmp="$(mktemp)"
+    for dir in "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" \
+               "$HOME/Library/MobileDevice/Provisioning Profiles"; do
+        [[ -d "${dir}" ]] || continue
+        for p in "${dir}"/*.provisionprofile; do
+            [[ -f "${p}" ]] || continue
+            security cms -D -i "${p}" > "${tmp}" 2>/dev/null || continue
+            [[ "$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.application-identifier' "${tmp}" 2>/dev/null)" == "${want}" ]] || continue
+            /usr/libexec/PlistBuddy -c 'Print :Platform' "${tmp}" 2>/dev/null | grep -q OSX || continue
+            /usr/libexec/PlistBuddy -c 'Print :ProvisionedDevices' "${tmp}" >/dev/null 2>&1 && continue
+            [[ "$(/usr/libexec/PlistBuddy -c 'Print :ProvisionsAllDevices' "${tmp}" 2>/dev/null)" == "true" ]] && continue
+            [[ "$(plutil -extract ExpirationDate raw -o - "${tmp}")" > "${now}" ]] || continue
+            created="$(plutil -extract CreationDate raw -o - "${tmp}")"
+            if [[ -z "${best}" || "${created}" > "${best_created}" ]]; then
+                best="${p}"; best_created="${created}"
+            fi
+        done
+    done
+    rm -f "${tmp}"
+    echo "${best}"
+}
+
+# ── Sanity checks ─────────────────────────────────────────────────────────────
+if ${DO_BUILD}; then
+    pn_require_tools
 fi
 
-log "=== Project Notes Mac App Store package ${PN_VERSION} ==="
+APP_IDENTITY="${APP_IDENTITY:-$(find_identity codesigning "^(Apple Distribution|3rd Party Mac Developer Application): .*\(${TEAM_ID}\)$")}"
+INSTALLER_IDENTITY="${INSTALLER_IDENTITY:-$(find_identity basic "^(3rd Party Mac Developer Installer|Mac Installer Distribution): .*\(${TEAM_ID}\)$")}"
+[[ -n "${APP_IDENTITY}" ]] || die "No Apple Distribution certificate for team ${TEAM_ID} in the keychain.
+Create one in Xcode > Settings > Accounts > Manage Certificates, or set APP_IDENTITY."
+[[ -n "${INSTALLER_IDENTITY}" ]] || die "No Mac Installer Distribution certificate for team ${TEAM_ID} in the keychain.
+Create one in Xcode > Settings > Accounts > Manage Certificates, or set INSTALLER_IDENTITY."
+
+PN_PROVISIONING_PROFILE="${PN_PROVISIONING_PROFILE:-$(find_profile)}"
+[[ -n "${PN_PROVISIONING_PROFILE}" && -f "${PN_PROVISIONING_PROFILE}" ]] || die "No Mac App Store provisioning profile for ${TEAM_ID}.${BUNDLE_ID}.
+Download it in Xcode > Settings > Accounts > Download Manual Profiles, or set PN_PROVISIONING_PROFILE."
+
+echo "==> Project Notes Mac App Store build"
+echo "    Version      : ${PN_VERSION} (${BUILD_NUMBER})"
+echo "    Bundle ID    : ${BUNDLE_ID}"
+echo "    Runs on      : macOS ${MIN_MACOS}+, ${PN_ARCHS[*]}"
+echo "    Build dir    : ${PN_BUILD_DIR}"
+echo "    App identity : ${APP_IDENTITY}"
+echo "    Pkg identity : ${INSTALLER_IDENTITY}"
+echo "    Profile      : ${PN_PROVISIONING_PROFILE}"
+echo
+
+# ── Steps 1-3: static Hunspell and OpenSSL, configure, build ──────────────────
+if ${DO_BUILD}; then
+    log "==> [1/6] Building Hunspell and OpenSSL with vcpkg..."
+    pn_build_static_deps
+    log "==> [2/6] Configuring and [3/6] building..."
+    pn_configure_and_build "${PN_BUILD_DIR}" \
+        -DPN_APP_STORE=ON \
+        -DPN_APP_STORE_USER_PLUGINS="${USER_PLUGINS}"
+else
+    log "==> [1-3/6] Skipped (--skip-build)"
+fi
+
+[[ -d "${PN_APP}" ]] || die "App bundle not found: ${PN_APP}"
+# A standard build contains the Thunderbird helper, which the App Store flavor
+# leaves out. Refuse a bundle built without the flavor.
+[[ ! -e "${PN_APP}/Contents/MacOS/ProjectNotesThunderbirdContacts" ]] || \
+    die "${PN_APP} is a standard build (it contains the Thunderbird helper). Configure with -DPN_APP_STORE=ON."
+
+# ── Step 4: stage and check the bundle ────────────────────────────────────────
+log "==> [4/6] Staging..."
 rm -rf "${STAGING_DIR}"
 mkdir -p "${STAGING_DIR}" "${OUTPUT_DIR}"
 STAGED="${STAGING_DIR}/Project Notes.app"
 ditto "${PN_APP}" "${STAGED}"
+PLIST="${STAGED}/Contents/Info.plist"
 
-# Windows-only plugins never belong in a Mac bundle.
-rm -rf "${STAGED}/Contents/Resources/plugins/office-tools"
-# Build-system artifacts cannot be signed and are not needed at runtime.
-find "${STAGED}/Contents" \( -name "*.a" -o -name "*.o" -o -name "*.pc" -o -name "*.prl" \) -delete 2>/dev/null || true
+pn_prune_bundle "${STAGED}"
+
+# App Store Connect needs a unique build number per upload, and a marketing
+# version that grows with each release (the CMake template uses major.minor).
+/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${BUILD_NUMBER}" "${PLIST}"
+/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${PN_VERSION}" "${PLIST}"
+pn_check_bundle "${STAGED}"
 
 cp "${PN_PROVISIONING_PROFILE}" "${STAGED}/Contents/embedded.provisionprofile"
 
-# ── Sign: every nested Mach-O first (deepest path first), then frameworks and
-#    plug-in bundles, then the app with the sandbox entitlements. Only the main
-#    executable carries entitlements; Qt's frameworks and plug-ins are libraries.
-log "Signing nested code..."
-find "${STAGED}/Contents" -type f -print0 | xargs -0 file 2>/dev/null | \
-    grep "Mach-O" | grep -v "(for architecture" | sed -E 's/:[[:space:]]+Mach-O.*$//' | \
-    grep -v "/Contents/MacOS/" | \
-    while IFS= read -r item; do printf '%d\t%s\n' "${#item}" "$item"; done | sort -rn | cut -f2- | \
+# ── Step 5: sign and package ──────────────────────────────────────────────────
+log "==> [5/6] Signing..."
+# TestFlight and the App Store check that the signature carries the same
+# application identifier as the embedded profile. Xcode adds these two keys
+# itself; a build without Xcode must add them.
+ENTITLEMENTS="${STAGING_DIR}/ProjectNotes-AppStore.entitlements"
+cp "${BASE_ENTITLEMENTS}" "${ENTITLEMENTS}"
+/usr/libexec/PlistBuddy -c "Add :com.apple.application-identifier string ${TEAM_ID}.${BUNDLE_ID}" "${ENTITLEMENTS}"
+/usr/libexec/PlistBuddy -c "Add :com.apple.developer.team-identifier string ${TEAM_ID}" "${ENTITLEMENTS}"
+
+# Every nested Mach-O first (deepest path first), then frameworks and plug-in
+# bundles, then the app with the sandbox entitlements. Only the main executable
+# carries entitlements; Qt's frameworks and plug-ins are libraries.
+macho_files "${STAGED}/Contents" | grep -v "/Contents/MacOS/" | \
+    while IFS= read -r item; do printf '%d\t%s\n' "${#item}" "${item}"; done | sort -rn | cut -f2- | \
     while IFS= read -r item; do
-        codesign --force --sign "${APP_IDENTITY}" --timestamp "${item}"
+        codesign --force --sign "${APP_IDENTITY}" --timestamp "${item}" 2>&1 | \
+            grep -v "replacing existing signature" || true
     done
 find "${STAGED}/Contents" \( -name "*.framework" -o -name "*.bundle" \) -prune -print | \
-    while IFS= read -r item; do printf '%d\t%s\n' "${#item}" "$item"; done | sort -rn | cut -f2- | \
+    while IFS= read -r item; do printf '%d\t%s\n' "${#item}" "${item}"; done | sort -rn | cut -f2- | \
     while IFS= read -r item; do
-        codesign --force --sign "${APP_IDENTITY}" --timestamp "${item}"
+        codesign --force --sign "${APP_IDENTITY}" --timestamp "${item}" 2>&1 | \
+            grep -v "replacing existing signature" || true
     done
-
-log "Signing the app with the sandbox entitlements..."
 codesign --force --sign "${APP_IDENTITY}" --timestamp \
     --entitlements "${ENTITLEMENTS}" "${STAGED}"
 codesign --verify --deep --strict --verbose=2 "${STAGED}"
-codesign -d --entitlements - "${STAGED}" | grep -q "com.apple.security.app-sandbox" || \
+codesign -d --entitlements - --xml "${STAGED}" 2>/dev/null | grep -q "com.apple.security.app-sandbox" || \
     die "The signed app does not carry the App Sandbox entitlement."
 
-# ── Package ───────────────────────────────────────────────────────────────────
 log "Building ${PKG}..."
 rm -f "${PKG}"
 productbuild --component "${STAGED}" /Applications \
     --sign "${INSTALLER_IDENTITY}" \
     "${PKG}"
+pkgutil --check-signature "${PKG}" >/dev/null || die "The package signature does not verify."
 log "Built: ${PKG}"
 
-# ── Upload (optional) ─────────────────────────────────────────────────────────
-if [[ -n "${ASC_API_KEY_ID:-}" && -n "${ASC_API_ISSUER:-}" ]]; then
-    log "Uploading to App Store Connect..."
-    xcrun altool --upload-app -f "${PKG}" -t macos \
-        --apiKey "${ASC_API_KEY_ID}" --apiIssuer "${ASC_API_ISSUER}"
-    log "Uploaded. Check App Store Connect > TestFlight for processing."
+# ── Step 6: upload (optional) ─────────────────────────────────────────────────
+log "==> [6/6] Upload..."
+if [[ -n "${ASC_API_KEY_ID}" && -n "${ASC_API_ISSUER}" ]]; then
+    UPLOAD_ARGS=(--api-key "${ASC_API_KEY_ID}" --api-issuer "${ASC_API_ISSUER}")
+    ${VALIDATE_ONLY} && UPLOAD_ARGS+=(--validate-only)
+    "${SCRIPT_DIR}/upload_appstore.sh" "${UPLOAD_ARGS[@]}" "${PKG}"
 else
-    log "Set ASC_API_KEY_ID and ASC_API_ISSUER to upload, or upload ${PKG} with Transporter."
+    cat <<EOF
+    Skipping upload (ASC_API_KEY_ID / ASC_API_ISSUER not set).
+    Upload the package with either:
+      - Transporter.app: drag in ${PKG}
+      - packaging/macos/upload_appstore.sh --api-key <KEYID> --api-issuer <ISSUER> "${PKG}"
+EOF
 fi
+
+echo
+echo "Done."

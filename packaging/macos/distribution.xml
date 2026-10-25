@@ -6,7 +6,10 @@
 
     <!-- Always install to /Applications on the system volume. -->
     <domains enable_localSystem="true" enable_userDomain="false"/>
-    <options customize="allow" require-scripts="false" rootVolumeOnly="true"/>
+    <!-- Universal app: without hostArchitectures, Apple silicon Macs are
+         asked to install Rosetta before the installer runs. -->
+    <options customize="allow" require-scripts="false" rootVolumeOnly="true"
+             hostArchitectures="arm64,x86_64"/>
 
     <!-- Minimum macOS version (must match CMAKE_OSX_DEPLOYMENT_TARGET) -->
     <volume-check>

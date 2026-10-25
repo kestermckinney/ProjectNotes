@@ -417,6 +417,15 @@ if(APPLE)
     set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
     set(MACOSX_BUNDLE_ICON_FILE projectnotes.icns)
     set(MACOSX_BUNDLE_EXECUTABLE_NAME "Project Notes")
+    # An empty deployment target (Qt Creator passes one) means the compiler
+    # targets the SDK's macOS, so the bundle must not claim anything older.
+    if(CMAKE_OSX_DEPLOYMENT_TARGET)
+        set(MACOSX_BUNDLE_MIN_SYSTEM_VERSION "${CMAKE_OSX_DEPLOYMENT_TARGET}")
+    else()
+        execute_process(COMMAND xcrun --sdk macosx --show-sdk-version
+            OUTPUT_VARIABLE MACOSX_BUNDLE_MIN_SYSTEM_VERSION
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+    endif()
 
     set_target_properties(ProjectNotes PROPERTIES
         MACOSX_BUNDLE_GUI_IDENTIFIER "com.projectnotespro.ProjectNotes"

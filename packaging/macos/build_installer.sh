@@ -4,7 +4,11 @@
 # Builds a signed, notarized macOS installer (.pkg wrapped in .dmg) containing
 # the QML desktop frontend's "Project Notes.app" (ProjectNotesDesktop target),
 # plus a self-contained ProjectNotes-<ver>-macOS.zip consumed by the in-app
-# auto-updater (UpdateManager on macOS).
+# auto-updater (UpdateManager on macOS). These are the direct-download assets
+# published on GitLab; the Mac App Store build comes from build_appstore.sh.
+#
+# The app is built here, as a universal (Apple silicon and Intel) Release build
+# that runs on macOS 13 or later. build_common.sh explains how.
 #
 # Usage:
 #   ./build_installer.sh [options]
@@ -14,6 +18,8 @@
 #   --notarize    Submit the final .pkg for Apple notarization (implies --sign)
 #   --dmg         Wrap the signed .pkg in a distributable .dmg
 #   --all         Equivalent to --sign --notarize --dmg
+#   --skip-build  Package the existing build in PN_BUILD_DIR as is. It must
+#                 still pass the macOS 13 / universal checks.
 #
 # Configuration (override via environment variables or edit the defaults below):
 #   SIGN_IDENTITY            Developer ID Application certificate CN
@@ -22,11 +28,13 @@
 #   APPLE_ID                 Apple ID email for notarytool
 #   NOTARIZE_KEYCHAIN_PROFILE Keychain profile name created with:
 #                              xcrun notarytool store-credentials <profile>
-#   PN_BUILD_DIR             Path to the CMake Release build dir for ProjectNotes
+#   PN_BUILD_DIR             CMake build directory (default build/release)
+#   QT_MACOS                 Qt macOS kit (contains bin/qt-cmake)
+#   VCPKG_ROOT               vcpkg checkout used for static Hunspell and OpenSSL
 #
 # Prerequisites:
 #   - Xcode Command Line Tools (codesign, pkgbuild, productbuild, hdiutil, xcrun)
-#   - Both apps must be built in Release before running this script.
+#   - The Qt macOS kit and a vcpkg checkout (see build_common.sh)
 
 set -euo pipefail
 
@@ -44,16 +52,15 @@ NOTARIZE_KEYCHAIN_PROFILE="${NOTARIZE_KEYCHAIN_PROFILE:-ProjectNotes-Notarize}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-# Adjust these to match your Qt Creator build directory names. PN_BUILD_DIR is
-# the top-level CMake build dir. The QML frontend is the only desktop target and
-# builds to its own subdirectory (ProjectNotesDesktop's CMakeLists.txt pins its
-# RUNTIME_OUTPUT_DIRECTORY there):
-#   ${PN_BUILD_DIR}/ProjectNotesDesktop/Project Notes.app — the shipped app
-PN_BUILD_DIR="${PN_BUILD_DIR:-${PROJECT_ROOT}/build/Qt_6_11_1_for_macOS_Release}"
+# shellcheck source=build_common.sh
+source "${SCRIPT_DIR}/build_common.sh"
+
+# Not the Qt Creator build directory: Qt Creator leaves the deployment target
+# empty, and the result only runs on the build machine's macOS.
+PN_BUILD_DIR="${PN_BUILD_DIR:-${PROJECT_ROOT}/build/release}"
 
 PN_APP="${PN_BUILD_DIR}/ProjectNotesDesktop/Project Notes.app"
 
-PN_VERSION="6.5.0"
 INSTALLER_VERSION="${PN_VERSION}"
 
 STAGING_DIR="${SCRIPT_DIR}/staging"
@@ -65,6 +72,7 @@ RESOURCES_DIR="${SCRIPT_DIR}/resources"
 DO_SIGN=false
 DO_NOTARIZE=false
 DO_DMG=false
+DO_BUILD=true
 
 for arg in "$@"; do
     case "$arg" in
@@ -72,18 +80,20 @@ for arg in "$@"; do
         --notarize)  DO_SIGN=true; DO_NOTARIZE=true ;;
         --dmg)       DO_DMG=true ;;
         --all)       DO_SIGN=true; DO_NOTARIZE=true; DO_DMG=true ;;
+        --skip-build) DO_BUILD=false ;;
         *)           echo "Unknown option: $arg"; exit 1 ;;
     esac
 done
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
-log()  { echo "[$(date '+%H:%M:%S')] $*"; }
-die()  { echo "ERROR: $*" >&2; exit 1; }
-
 require_app() {
     [[ -d "$1" ]] || die "App bundle not found: $1
-Build the project in Release first, or set PN_BUILD_DIR / SA_BUILD_DIR."
+Run without --skip-build, or set PN_BUILD_DIR."
+    # The App Store flavor is sandboxed and leaves out the updater and the
+    # Thunderbird helper; it must not ship as the direct download.
+    [[ -e "$1/Contents/MacOS/ProjectNotesThunderbirdContacts" ]] || \
+        die "$1 is the Mac App Store flavor. Build without -DPN_APP_STORE."
 }
 
 # Deep-sign an app bundle with hardened runtime.
@@ -176,10 +186,21 @@ sign_bundle() {
     log "Signed successfully: $(basename "${bundle}")"
 }
 
-# ── Step 1: Validate inputs ────────────────────────────────────────────────────
+# ── Step 1: Build ─────────────────────────────────────────────────────────────
 
-log "=== Project Notes macOS Installer Build ==="
+log "=== Project Notes ${PN_VERSION} macOS Installer Build ==="
 log "Project Notes: ${PN_APP}"
+
+if [[ "${DO_BUILD}" == true ]]; then
+    pn_require_tools
+    log "=== Building Hunspell and OpenSSL with vcpkg ==="
+    pn_build_static_deps
+    log "=== Building Project Notes (macOS ${MIN_MACOS}+, ${PN_ARCHS[*]}) ==="
+    # PN_APP_STORE=OFF in case the build directory was ever configured with it.
+    pn_configure_and_build "${PN_BUILD_DIR}" -DPN_APP_STORE=OFF
+else
+    log "Skipping build (--skip-build)"
+fi
 
 require_app "${PN_APP}"
 
@@ -208,13 +229,15 @@ log "Copying app bundle..."
 ditto "${PN_APP}" "${STAGING_DIR}/projectnotes/Project Notes.app"
 
 PN_STAGED="${STAGING_DIR}/projectnotes/Project Notes.app"
-PN_RESOURCES="${PN_STAGED}/Contents/Resources"
+pn_prune_bundle "${PN_STAGED}"
+pn_check_bundle "${PN_STAGED}"
 
 # Second copy for the in-app auto-updater asset.  Signed/notarized/zipped in
 # Step 8.
 UPDATER_APP="${STAGING_DIR}/updater/Project Notes.app"
 mkdir -p "${STAGING_DIR}/updater"
 ditto "${PN_APP}" "${UPDATER_APP}"
+pn_prune_bundle "${UPDATER_APP}"
 
 # ── Step 3: Code signing ──────────────────────────────────────────────────────
 
