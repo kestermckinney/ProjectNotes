@@ -4,6 +4,7 @@
 #include "FileFinderService.h"
 #include "FileFinderWorker.h"
 #include "ProjectNotesIntegrations/Office365Service.h"
+#include "../appidentity.h"
 #include "../credentialstore.h"
 
 #include <QDir>
@@ -163,7 +164,7 @@ void FileFinderService::initialize(const QString &databasePath, QReadWriteLock *
     m_settingsOrganization = settingsOrganization;
     // Existing production credentials used only tenant/client. Keep that exact
     // key while ensuring any developer profile cannot read or delete them.
-    m_office365Service->setSecretNamespace(settingsOrganization == QLatin1String("ProjectNotes")
+    m_office365Service->setSecretNamespace(settingsOrganization == PN::Identity::settingsOrganization()
         ? QString() : settingsOrganization);
     loadAndMigrateSettings();
     m_office365Service->configureIdentity(m_settingsOrganization, m_tenantId, m_clientId);

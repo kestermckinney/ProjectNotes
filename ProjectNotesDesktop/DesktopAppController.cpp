@@ -257,7 +257,7 @@ DesktopAppController::DesktopAppController(QObject* parent)
 #endif
     m_graphMeetingBackend = std::make_unique<PN::Comm::GraphMeetingBackend>(m_office365Service);
     m_meetingService->registerBackend(PN::Comm::BackendId::Graph, m_graphMeetingBackend.get());
-    QSettings emailSettings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings emailSettings(localSettingsOrganization(), QStringLiteral("AppSettings"));
     registerThunderbirdBackends(PN::Comm::EmailSettingsStore(emailSettings).thunderbirdPath());
     m_communicationsController = std::make_unique<PN::Comm::CommunicationsController>(m_emailService.get());
     connect(m_communicationsController.get(), &PN::Comm::CommunicationsController::sourceRevalidationCancelled,
@@ -294,12 +294,12 @@ DesktopAppController::DesktopAppController(QObject* parent)
     });
     m_recipientSelectionModel = std::make_unique<PN::Comm::RecipientSelectionModel>();
     m_templateEditorModel = std::make_unique<PN::Comm::TemplateEditorModel>(
-        QStringLiteral("ProjectNotes") + s_developerProfile);
+        localSettingsOrganization());
     m_meetingTemplateEditorModel = std::make_unique<PN::Comm::MeetingTemplateEditorModel>();
     m_office365SettingsModel = std::make_unique<Office365SettingsModel>(
         m_fileFinder, m_office365Service, this);
     m_contactSyncSettingsModel = std::make_unique<PN::Contacts::ContactSyncSettingsModel>(
-        &global_DBObjects, m_office365Service, QStringLiteral("ProjectNotes") + s_developerProfile,
+        &global_DBObjects, m_office365Service, localSettingsOrganization(),
         dataLocation(), this);
     const auto iCloudCredentials = [this] {
         return m_contactSyncSettingsModel ? m_contactSyncSettingsModel->iCloudCredentials()
@@ -341,16 +341,16 @@ DesktopAppController::DesktopAppController(QObject* parent)
     // s_localSave/s_localLoad, so setShowInternalItems() was a no-op and
     // getShowInternalItems() always returned false — the Show Internal / closed /
     // resolved toggles never took effect. We use the same QSettings the Widgets
-    // app uses ("ProjectNotes"[+profile] / "AppSettings") so both frontends share
+    // app uses (localSettingsOrganization() / "AppSettings") so both frontends share
     // the same view-option state.
     DatabaseObjects::setLocalSettingsCallbacks(
         [](const QString& key, const QString& val) {
-            QSettings s(QStringLiteral("ProjectNotes") + s_developerProfile,
+            QSettings s(localSettingsOrganization(),
                         QStringLiteral("AppSettings"));
             s.setValue(key, val);
         },
         [](const QString& key) -> QString {
-            QSettings s(QStringLiteral("ProjectNotes") + s_developerProfile,
+            QSettings s(localSettingsOrganization(),
                         QStringLiteral("AppSettings"));
             return s.value(key).toString();
         });
@@ -379,10 +379,7 @@ DesktopAppController::DesktopAppController(QObject* parent)
 
 QString DesktopAppController::dataLocation()
 {
-    QString base = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    if (!s_developerProfile.isEmpty())
-        base += "/" + s_developerProfile;
-    return base;
+    return PN::Identity::dataLocation(s_developerProfile);
 }
 
 DesktopAppController::~DesktopAppController()
@@ -516,7 +513,7 @@ bool DesktopAppController::openOrCreateDatabase()
     // dialog (errorOccurred → Main.qml). Suppress the models' native
     // QMessageBox popups so a single blocked edit doesn't stack two dialogs.
     global_DBObjects.setGuiDialogsEnabled(false);
-    QSettings localSettings(QStringLiteral("ProjectNotes") + s_developerProfile,
+    QSettings localSettings(localSettingsOrganization(),
                             QStringLiteral("AppSettings"));
     PN::LegacyWidgetSettings::cleanupLocal(localSettings);
 
@@ -600,7 +597,7 @@ bool DesktopAppController::openOrCreateDatabase()
     invalidateFolderSnapshot();
 
     m_fileFinder->initialize(dbPath, &db_rwlock,
-                             QStringLiteral("ProjectNotes") + s_developerProfile);
+                             localSettingsOrganization());
 
     // Snapshot workers always get a fresh read-only connection. A newly opened
     // database receives a new generation so a later action cannot use a stale
@@ -656,7 +653,7 @@ QObject* DesktopAppController::contactSyncSettingsModel() const
 
 QString DesktopAppController::preferredEmailBackend() const
 {
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
     return PN::Comm::toStableString(PN::Comm::EmailSettingsStore(settings).preferredBackend());
 }
 
@@ -664,7 +661,7 @@ void DesktopAppController::setPreferredEmailBackend(const QString &backend)
 {
     const auto parsed = PN::Comm::backendIdFromStableString(backend);
     if (!parsed || !PN::Comm::isBackendAvailableOnThisPlatform(*parsed)) return;
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
     PN::Comm::EmailSettingsStore(settings).setPreferredBackend(*parsed);
     m_contactSyncSettingsModel->setIntegrationBackend(PN::Comm::toStableString(*parsed));
     emit emailSettingsChanged();
@@ -672,13 +669,13 @@ void DesktopAppController::setPreferredEmailBackend(const QString &backend)
 
 QString DesktopAppController::thunderbirdExecutable() const
 {
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
     return PN::Comm::EmailSettingsStore(settings).thunderbirdPath();
 }
 
 void DesktopAppController::setThunderbirdExecutable(const QString &path)
 {
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
     PN::Comm::EmailSettingsStore(settings).setThunderbirdPath(path.trimmed());
     // Recreate the adapters so subsequent reviews use the newly saved command.
     registerThunderbirdBackends(path);
@@ -687,13 +684,13 @@ void DesktopAppController::setThunderbirdExecutable(const QString &path)
 
 QString DesktopAppController::emailSenderAddress() const
 {
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
     return PN::Comm::EmailSettingsStore(settings).senderAddress();
 }
 
 void DesktopAppController::setEmailSenderAddress(const QString &address)
 {
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
     PN::Comm::EmailSettingsStore(settings).setSenderAddress(address.trimmed());
     emit emailSettingsChanged();
 }
@@ -930,7 +927,7 @@ bool DesktopAppController::prepareProjectEmail(const QString &projectId, const Q
             ? std::optional<PN::Comm::CommunicationTemplate>(PN::Comm::CommunicationTemplate{})
             : self->resolveWorkflowTemplate(request.source.workflow);
         if (!contentTemplate) { fail(QStringLiteral("template-required"), self->tr("Configure this email type in Settings.")); return; }
-        QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+        QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
         PN::Comm::EmailSettingsStore emailSettings(settings);
         auto review = PN::Comm::ProjectEmailPreparationFactory::create(result.snapshot, request.source,
             emailSettings.preferredBackend(), *contentTemplate, attachment, contactCard);
@@ -1038,7 +1035,7 @@ bool DesktopAppController::prepareMeetingNotesReview(const QString& projectId, c
         // Persisted backend selection belongs in the immutable preparation so a
         // later, capability-checked handoff cannot silently switch clients.
         // This review path still registers no backend and therefore cannot send.
-        QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+        QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
         const PN::Comm::BackendId backend = PN::Comm::EmailSettingsStore(settings).preferredBackend();
         // Resolve the configured template here rather than asking at delivery
         // time so its subject and body are always applied to the prepared note.
@@ -1125,7 +1122,7 @@ bool DesktopAppController::prepareMeetingNotesReportReviewWithOptions(const QStr
             return;
         }
 
-        QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+        QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
         const PN::Comm::BackendId backend = PN::Comm::EmailSettingsStore(settings).preferredBackend();
         PN::Comm::ValidationResult validation;
         const auto contentTemplate =
@@ -1272,7 +1269,7 @@ bool DesktopAppController::prepareProjectReportReview(const QString &projectId, 
         options.displayPdf = displayPdf;
         if (workflow == PN::Comm::Workflow::TrackerItemsReport && trackerFilters)
             options.tracker = *trackerFilters;
-        QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+        QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
         const auto backend = PN::Comm::EmailSettingsStore(settings).preferredBackend();
         const auto contentTemplate = self->resolveWorkflowTemplate(workflow);
         const PN::Comm::CommunicationTemplate *templatePointer =
@@ -1638,7 +1635,7 @@ bool DesktopAppController::prepareMeetingReview(const QString &projectId, const 
             return;
         }
         // Meetings follow the Email, Contacts, and Calendar integration preference.
-        QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+        QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
         const PN::Comm::BackendId backend = PN::Comm::EmailSettingsStore(settings).preferredBackend();
         PN::Comm::ValidationResult validation;
         auto prepared = PN::Comm::MeetingPreparationFactory::create(
@@ -2158,7 +2155,7 @@ bool DesktopAppController::exportRecordXml(const QString& tableName, const QStri
 
 bool DesktopAppController::viewReportAfterSave() const
 {
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
     settings.setFallbacksEnabled(false);
     return settings.value(QStringLiteral("Reports/ViewAfterSave"), true).toBool();
 }
@@ -2167,7 +2164,7 @@ void DesktopAppController::setViewReportAfterSave(bool enabled)
 {
     if (viewReportAfterSave() == enabled)
         return;
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
     settings.setFallbacksEnabled(false);
     settings.setValue(QStringLiteral("Reports/ViewAfterSave"), enabled);
     emit viewReportAfterSaveChanged();
@@ -4723,18 +4720,18 @@ void DesktopAppController::sendLogsToSupport()
 // ── Cloud sync ────────────────────────────────────────────────────────────────
 //
 // Reads the same QSettings the Widgets app writes (organization
-// "ProjectNotes"[+profile], application "AppSettings"), so both apps share one
+// localSettingsOrganization(), application "AppSettings"), so both apps share one
 // sync configuration. The engine runs on its own thread to keep the UI responsive.
 
 QString DesktopAppController::syncSetting(const QString& key) const
 {
-    QSettings s(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings s(localSettingsOrganization(), QStringLiteral("AppSettings"));
     return s.value(key).toString();
 }
 
 void DesktopAppController::setSyncSetting(const QString& key, const QVariant& value)
 {
-    QSettings s(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings s(localSettingsOrganization(), QStringLiteral("AppSettings"));
     s.setValue(key, value);
 }
 
@@ -5055,10 +5052,7 @@ void DesktopAppController::syncNow()
     configureSyncApi();
 
     SqliteSyncPro* api = m_syncApi;
-    QString dataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    if (!s_developerProfile.isEmpty())
-        dataDir += "/" + s_developerProfile;
-    const QString dbPath = dataDir + "/ProjectNotes.db";
+    const QString dbPath = dataLocation() + "/ProjectNotes.db";
 
     m_syncSessionActive = true;     // keep the bar up until we reach 100%
     setSyncProgress(0.01, false);   // show the indicator immediately
@@ -5112,10 +5106,7 @@ void DesktopAppController::syncAll()
     configureSyncApi();
 
     SqliteSyncPro* api = m_syncApi;
-    QString dataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    if (!s_developerProfile.isEmpty())
-        dataDir += "/" + s_developerProfile;
-    const QString dbPath = dataDir + "/ProjectNotes.db";
+    const QString dbPath = dataLocation() + "/ProjectNotes.db";
 
     m_syncSessionActive = true;     // keep the bar up until we reach 100%
     setSyncProgress(0.01, false);   // show the indicator immediately

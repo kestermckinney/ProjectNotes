@@ -3,6 +3,8 @@
 
 #include "SpellCheck.h"
 
+#include "DesktopAppController.h"
+
 #include "hunspell/hunspell.hxx"
 
 #include <QCoreApplication>
@@ -35,7 +37,8 @@ DesktopSpellChecker::DesktopSpellChecker()
         m_hunspell = new Hunspell(m_affPath.constData(), m_dicPath.constData());
     }
 
-    const QString dataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    // Per developer profile, like the database.
+    const QString dataDir = DesktopAppController::dataLocation();
     QDir().mkpath(dataDir);
     m_personalPath = dataDir + "/personal_words.txt";
     loadPersonalWords();

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "MobileSettings.h"
+#include "appidentity.h"
 
 #include "credentialstore.h"
 #include "QLogger.h"
@@ -28,7 +29,7 @@ MobileSettings::MobileSettings()
 void MobileSettings::ensureSettings() const
 {
     if (!m_settings) {
-        m_settings = new QSettings("ProjectNotes", "MobileSettings");
+        m_settings = new QSettings(PN::Identity::settingsOrganization(), QStringLiteral("MobileSettings"));
         m_settings->setFallbacksEnabled(false);
     }
 }

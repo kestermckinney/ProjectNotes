@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "appidentity.h"
 #include "PluginManifest.h"
 #include "PluginTypes.h"
 
@@ -130,7 +131,7 @@ private:
     QPointer<PluginServices> m_services;
     Paths m_paths;
     QString m_databasePath;
-    QString m_organization = QStringLiteral("ProjectNotes");
+    QString m_organization = PN::Identity::settingsOrganization();
     QString m_profile;
     QString m_appVersion;
     QString m_buildFlavor = QStringLiteral("standard");

@@ -82,12 +82,14 @@ void DesktopAppController::ensureJsPlugins()
     m_pluginServices = new DesktopPluginServices(this, ui, this);
     m_jsPlugins = new PN::Plugins::PluginRegistry(m_pluginServices, this);
 
-    const QString organization = QStringLiteral("ProjectNotes") + s_developerProfile;
+    const QString organization = localSettingsOrganization();
     PN::Plugins::PluginRegistry::Paths paths;
     paths.bundled = appResourcesPath() + QStringLiteral("/plugins");
-    // User plugins sit beside the data folder, in the platform's application data
-    // location. That folder is writable under the App Sandbox and in Flatpak.
-    paths.user = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QStringLiteral("/plugins");
+    // User plugins sit in the data folder, which is writable under the App
+    // Sandbox and in Flatpak. A developer profile keeps its own plugins, plugin
+    // data and temporary files, as it keeps its own database and the record of
+    // which plugins the user approved.
+    paths.user = dataLocation() + QStringLiteral("/plugins");
     // Builds before 6.4 kept user plugins in ~/Project Notes/plugins. Those are copied over once.
     QString legacyUserPlugins = QDir::homePath() + QStringLiteral("/Project Notes/plugins");
     // Tests point both plugin folders somewhere disposable.
@@ -97,10 +99,8 @@ void DesktopAppController::ensureJsPlugins()
     }
     if (qEnvironmentVariableIsSet("PN_PLUGIN_BUNDLED_DIR"))
         paths.bundled = qEnvironmentVariable("PN_PLUGIN_BUNDLED_DIR");
-    // A developer profile keeps its own plugin data, as it keeps its own database.
-    const QString profileDir = s_developerProfile.isEmpty() ? QString() : QLatin1Char('/') + s_developerProfile;
-    paths.data = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + profileDir + QStringLiteral("/plugin-data");
-    paths.temp = QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + profileDir + QStringLiteral("/plugin-temp");
+    paths.data = dataLocation() + QStringLiteral("/plugin-data");
+    paths.temp = PN::Identity::cacheLocation(s_developerProfile) + QStringLiteral("/plugin-temp");
     QDir(paths.temp).removeRecursively();   // per-run temporary files
     m_jsPlugins->setPaths(paths);
     m_jsPlugins->setDatabasePath(global_DBObjects.getDatabaseFile());
@@ -267,7 +267,7 @@ PN::Comm::EmailAddress DesktopAppController::pluginRecipient(const QVariant& val
 
 QVariantList DesktopAppController::pluginEmailBackends() const
 {
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
     const PN::Comm::BackendId preferred = PN::Comm::EmailSettingsStore(settings).preferredBackend();
     const bool rich = preferred != PN::Comm::BackendId::DefaultApp;
     return {QVariantMap{{QStringLiteral("id"), PN::Comm::toStableString(preferred)},
@@ -283,7 +283,7 @@ void DesktopAppController::composePluginEmail(const PluginManifest& plugin, cons
         reply({}, PluginError::make(QStringLiteral("unavailable"), tr("Email is not available.")));
         return;
     }
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
     const PN::Comm::EmailSettingsStore emailSettings(settings);
 
     PN::Comm::EmailPreparation prep;
@@ -510,7 +510,7 @@ void DesktopAppController::renderPluginEmailTemplate(const QString& templateId, 
             reply({}, PluginError::make(QStringLiteral("not-found"), result.error.displayText.isEmpty() ? result.error.code : result.error.displayText));
             return;
         }
-        QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+        QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
         const auto review = PN::Comm::ProjectEmailPreparationFactory::create(result.snapshot, request.source,
             PN::Comm::EmailSettingsStore(settings).preferredBackend(), contentTemplate, false);
         if (!review.validation.ok()) {
@@ -581,7 +581,7 @@ void DesktopAppController::draftPluginMeeting(const PluginManifest& plugin, cons
         reply({}, error);
         return;
     }
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
     const PN::Comm::EmailSettingsStore emailSettings(settings);
     request.backend = emailSettings.preferredBackend();
     request.organizerAddress = emailSettings.senderAddress();

@@ -4,6 +4,8 @@
 #ifndef DESKTOPAPPCONTROLLER_H
 #define DESKTOPAPPCONTROLLER_H
 
+#include "appidentity.h"
+
 #include <QHash>
 #include <QObject>
 #include <QPointer>
@@ -173,7 +175,7 @@ public:
     // engine loads (from main.cpp).
     static void setDeveloperProfile(const QString& profile) { s_developerProfile = profile; }
     // Organization name of the local, per-user QSettings store.
-    static QString localSettingsOrganization() { return QStringLiteral("ProjectNotes") + s_developerProfile; }
+    static QString localSettingsOrganization() { return PN::Identity::settingsOrganization(s_developerProfile); }
 
     // --test-supabase: route cloud sync at the TEST Supabase instance instead of
     // production. Set from main.cpp before the engine loads.

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "credentialstore.h"
+#include "appidentity.h"
 
 #include <QByteArray>
 
@@ -54,7 +55,7 @@ Q_DECLARE_METATYPE(SecretServiceSecret)
 namespace {
 QString storeKey(const QString& service, const QString& account)
 {
-    return QStringLiteral("com.projectnotespro.ProjectNotes/%1/%2").arg(service, account);
+    return QStringLiteral("%1/%2/%3").arg(PN::Identity::credentialNamespace(), service, account);
 }
 
 #if defined(Q_OS_LINUX)

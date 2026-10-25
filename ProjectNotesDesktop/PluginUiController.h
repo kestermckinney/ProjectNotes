@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "appidentity.h"
 #include "ProjectNotesPlugins/PluginRegistry.h"
 #include "ProjectNotesPlugins/PluginTypes.h"
 
@@ -141,7 +142,7 @@ private:
     QHash<int, Request> m_requests;
     int m_nextRequest = 1;
     int m_settingsRevision = 0;
-    QString m_organization = QStringLiteral("ProjectNotes");
+    QString m_organization = PN::Identity::settingsOrganization();
     static SecretWriter s_secretWriter;
 };
 

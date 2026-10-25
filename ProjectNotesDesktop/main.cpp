@@ -124,14 +124,11 @@ int main(int argc, char* argv[])
     // derived from its executable basename, which its CMake sets per platform:
     //   Linux  -> "projectnotes"   (OUTPUT_NAME)
     //   Win/mac-> "Project Notes"  (OUTPUT_NAME / bundle name)
-    // We set applicationName explicitly to reproduce the identical path.
+    // We set applicationName explicitly to reproduce the identical path
+    // (PN::Identity::applicationName(), appidentity.h).
     QApplication::setOrganizationDomain("projectnotespro.com");
-#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
-    QApplication::setApplicationName("Project Notes");
-#else
-    QApplication::setApplicationName("projectnotes");
-#endif
-    QApplication::setApplicationDisplayName("Project Notes");
+    QApplication::setApplicationName(PN::Identity::applicationName());
+    QApplication::setApplicationDisplayName(PN::Identity::displayName());
     QApplication::setApplicationVersion(QStringLiteral(APP_VERSION_STRING));
 
     // --developer-profile PROFILENAME: use a separate data directory (same
@@ -162,8 +159,7 @@ int main(int argc, char* argv[])
     if (!parser.isSet(devProfileOption))
         DirectDownloadMigration::run();
     // Reopen the folders the user granted in earlier sessions (sandbox).
-    SecurityScopedBookmarks::setSettingsOrganization(
-        QStringLiteral("ProjectNotes") + (parser.isSet(devProfileOption) ? parser.value(devProfileOption) : QString()));
+    SecurityScopedBookmarks::setSettingsOrganization(DesktopAppController::localSettingsOrganization());
     SecurityScopedBookmarks::restoreAll();
 #else
     // Single-instance guard (critical dialog, then exit). The App Store build
@@ -239,7 +235,7 @@ int main(int argc, char* argv[])
 
         // Append to a startup log next to the app's data so failures on end-user
         // machines leave a trace even if the dialog is dismissed unread.
-        const QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+        const QString dir = DesktopAppController::dataLocation();
         QDir().mkpath(dir);
         QFile logFile(dir + QStringLiteral("/startup-error.log"));
         if (logFile.open(QFile::WriteOnly | QFile::Append | QFile::Text)) {

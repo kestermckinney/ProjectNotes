@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "AppController.h"
+#include "appidentity.h"
 #include "MobileSettings.h"
 #include "TextFormatter.h"
 
@@ -18,9 +19,12 @@ int main(int argc, char *argv[])
 #endif
 
     QGuiApplication app(argc, argv);
-    app.setOrganizationName("ProjectNotes");
+    // The organization name makes the data folder Application
+    // Support/ProjectNotes/Project Notes; it stays so existing installs keep
+    // their data (appidentity.h).
+    app.setOrganizationName(PN::Identity::settingsOrganization());
     app.setOrganizationDomain("projectnotespro.com");
-    app.setApplicationName("Project Notes");
+    app.setApplicationName(PN::Identity::displayName());
     app.setApplicationVersion(QStringLiteral(PROJECTNOTES_VERSION));
 
     QCommandLineParser parser;

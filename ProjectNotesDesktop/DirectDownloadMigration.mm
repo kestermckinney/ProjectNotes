@@ -4,6 +4,7 @@
 #include "DirectDownloadMigration.h"
 
 #include "QLogger.h"
+#include "appidentity.h"
 
 #include <QDir>
 #include <QDirIterator>
@@ -23,9 +24,8 @@ namespace DirectDownloadMigration {
 
 namespace {
 
-// Settings organization of the default profile, as in
-// DesktopAppController::localSettingsOrganization().
-const QString kOrganization = QStringLiteral("ProjectNotes");
+// Settings organization of the default profile.
+const QString kOrganization = PN::Identity::settingsOrganization();
 const QString kCheckedKey = QStringLiteral("Migration/DirectDownloadChecked");
 
 // The user's home folder. Inside the sandbox QDir::homePath() is the container.

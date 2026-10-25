@@ -89,6 +89,7 @@ Cell editors in table views are implemented as delegates: `CheckboxDelegate`, `C
 ### Other Key Utilities
 
 - `DesktopAppController` — QML bridge to the data layer; also owns the app's `QSettings` access ("ProjectNotes"[+profile] / "AppSettings")
+- `PN::Identity` (`appidentity.h`) — the names everything is stored under: `Project Notes` (display name; data/cache folder on Windows, macOS, iOS), `projectnotes` (Linux folders, temp files), `ProjectNotes` (QSettings organization), plus the developer-profile helpers (`settingsOrganization(profile)`, `dataLocation(profile)`, `cacheLocation(profile)`) and the fixed credential namespace. Use these rather than writing the names out; they cannot change without moving existing users' data.
 - `appResourcesPath()` (`appresourcespath.h`) — resolves the directory holding the bundled `plugins/` and `dictionary/`
 - `SpellCheck` — Hunspell spell-checking exposed to QML
 - `ImportExport` — XML-based data import/export

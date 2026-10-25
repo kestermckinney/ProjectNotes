@@ -4,6 +4,7 @@
 #include "SecurityScopedBookmarks.h"
 
 #include "QLogger.h"
+#include "appidentity.h"
 
 #include <QCryptographicHash>
 #include <QDir>
@@ -17,7 +18,7 @@ namespace SecurityScopedBookmarks {
 
 namespace {
 
-QString s_organization = QStringLiteral("ProjectNotes");
+QString s_organization = PN::Identity::settingsOrganization();
 
 QString cleanPath(const QString& pathOrFileUrl)
 {
