@@ -208,6 +208,26 @@ if(WIN32)
         message(WARNING "dxcompiler.dll not found in Windows SDK — Qt Quick may not render at runtime")
     endif()
 
+    # x64 MSVC runtime from the Visual Studio redistributable that matches the
+    # compiler in use (VC/Redist/MSVC/<ver>/x64/Microsoft.VC*.CRT).
+    get_filename_component(_msvc_bin "${CMAKE_CXX_COMPILER}" DIRECTORY)
+    file(GLOB _msvc_crt_dirs
+        "${_msvc_bin}/../../../../../../Redist/MSVC/*/x64/Microsoft.VC*.CRT")
+    if(_msvc_crt_dirs)
+        list(SORT _msvc_crt_dirs ORDER DESCENDING)
+        list(GET _msvc_crt_dirs 0 _msvc_crt_dir)
+        set(_msvc_crt_dlls "")
+        foreach(_dll vcruntime140 vcruntime140_1 msvcp140 msvcp140_1 msvcp140_2)
+            if(NOT EXISTS "${_msvc_crt_dir}/${_dll}.dll")
+                message(FATAL_ERROR "${_dll}.dll missing from ${_msvc_crt_dir}")
+            endif()
+            list(APPEND _msvc_crt_dlls "${_msvc_crt_dir}/${_dll}.dll")
+        endforeach()
+        message(STATUS "MSVC x64 runtime: ${_msvc_crt_dir}")
+    else()
+        message(FATAL_ERROR "x64 MSVC redistributable not found next to ${CMAKE_CXX_COMPILER}")
+    endif()
+
     set(DEPLOY_DIR  "${CMAKE_BINARY_DIR}/deploy")
     set(NSIS_DIR    "${CMAKE_CURRENT_SOURCE_DIR}/packaging/windows")
 
@@ -235,6 +255,19 @@ if(WIN32)
         COMMAND ${CMAKE_COMMAND} -E copy
             "${SQLITESYNCPRO_BUILD_DIR}/admin/Project Notes Remote Host.exe"
             "${DEPLOY_DIR}/Project Notes Remote Host.exe"
+
+        # The installers ship packaging/windows/LICENSE.txt.
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${CMAKE_SOURCE_DIR}/packaging/windows/LICENSE.txt"
+            "${DEPLOY_DIR}/LICENSE.txt"
+
+        # MSVC runtime (x64), staged from the Visual Studio redistributable.
+        # Not from System32: makensis is 32-bit, so a System32 path in the .nsi
+        # files is redirected to SysWOW64 (32-bit DLLs), and the System32 copies
+        # themselves are not guaranteed to be plain x64 builds.
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${_msvc_crt_dlls}
+            "${DEPLOY_DIR}"
 
         # 3. Qt DLLs and plugins via windeployqt
         # --qmldir points windeployqt at the QML sources so it can statically

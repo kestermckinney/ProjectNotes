@@ -31,3 +31,4 @@ packaging/linux/flatpak-build/
 # Packaged plugins (.pnplugin) from packaging/plugins/build-pnplugin.sh.
 /dist/
 packaging/plugins/dist/
+packaging/windows/store/output/

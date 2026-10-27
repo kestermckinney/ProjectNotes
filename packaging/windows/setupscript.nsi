@@ -119,7 +119,6 @@ Section "MainSection" SEC01
   ; Include every Qt library staged by windeployqt. Keeping a hand-maintained
   ; list here omitted Qt6Positioning.dll even though it was in deploy/.
   File "${DEPLOY_DIR}\D3Dcompiler_47.dll"
-  File "${DEPLOY_DIR}\icuuc.dll"
   File "${DEPLOY_DIR}\opengl32sw.dll"
   File "${DEPLOY_DIR}\Qt6*.dll"
 
@@ -177,11 +176,11 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\dxil.dll"
 
   ; ── MSVC runtime (sourced from the local Windows install) ────────────────────
-  File "C:\Windows\System32\vcruntime140.dll"
-  File "C:\Windows\System32\vcruntime140_1.dll"
-  File "C:\Windows\System32\msvcp140.dll"
-  File "C:\Windows\System32\msvcp140_1.dll"
-  File "C:\Windows\System32\msvcp140_2.dll"
+  File "${DEPLOY_DIR}\vcruntime140.dll"
+  File "${DEPLOY_DIR}\vcruntime140_1.dll"
+  File "${DEPLOY_DIR}\msvcp140.dll"
+  File "${DEPLOY_DIR}\msvcp140_1.dll"
+  File "${DEPLOY_DIR}\msvcp140_2.dll"
 
   ; ── Bundled JavaScript plugins ───────────────────────────────────────────────
   SetOutPath "$INSTDIR\plugins"

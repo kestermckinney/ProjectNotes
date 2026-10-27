@@ -31,6 +31,7 @@
 
 #if defined(_WIN32)
 #include <windows.h>
+#include <appmodel.h>
 #include <shobjidl.h>
 #include <string>
 
@@ -170,6 +171,17 @@ int main(int argc, char* argv[])
         QMessageBox::critical(nullptr, QStringLiteral("Only One Instance"),
             QObject::tr("Only one instance of Project Notes can be running at a time."));
         return 0;
+    }
+#endif
+
+#if defined(_WIN32)
+    // The Microsoft Store (MSIX) package carries the same executable as the
+    // direct download. Windows updates a packaged app, so the in-app updater
+    // stays off whenever the process has a package identity.
+    {
+        UINT32 packageNameLength = 0;
+        if (GetCurrentPackageFullName(&packageNameLength, nullptr) != APPMODEL_ERROR_NO_PACKAGE)
+            DesktopAppController::setUpdateChecksEnabled(false);
     }
 #endif
 

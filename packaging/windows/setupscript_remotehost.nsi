@@ -84,7 +84,6 @@ Section "MainSection" SEC01
 
   ; ── Qt libraries ─────────────────────────────────────────────────────────────
   File "${DEPLOY_DIR}\D3Dcompiler_47.dll"
-  File "${DEPLOY_DIR}\icuuc.dll"
   File "${DEPLOY_DIR}\opengl32sw.dll"
   File "${DEPLOY_DIR}\Qt6Core.dll"
   File "${DEPLOY_DIR}\Qt6Gui.dll"
@@ -116,15 +115,13 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\libcrypto-3-x64.dll"
   File "${DEPLOY_DIR}\legacy.dll"
   File "${DEPLOY_DIR}\libssl-3-x64.dll"
-  File "${DEPLOY_DIR}\libcrypto-3.dll"
-  File "${DEPLOY_DIR}\libssl-3.dll"
 
   ; ── MSVC runtime ─────────────────────────────────────────────────────────────
   File "${DEPLOY_DIR}\vcruntime140.dll"
   File "${DEPLOY_DIR}\vcruntime140_1.dll"
-  File "C:\Windows\System32\msvcp140.dll"
-  File "C:\Windows\System32\msvcp140_1.dll"
-  File "C:\Windows\System32\msvcp140_2.dll"
+  File "${DEPLOY_DIR}\msvcp140.dll"
+  File "${DEPLOY_DIR}\msvcp140_1.dll"
+  File "${DEPLOY_DIR}\msvcp140_2.dll"
 
 SectionEnd
 
