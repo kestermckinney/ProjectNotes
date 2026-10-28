@@ -589,13 +589,27 @@ bool DatabaseObjects::saveParameter(const QString& parametername, const QString&
             return false;
         };
         QSqlQuery select(m_sqliteDb);
-        if (!select.prepare("SELECT id FROM application_settings WHERE parameter_name = ? AND deleted = 0 "
+        if (!select.prepare("SELECT id, parameter_value FROM application_settings WHERE parameter_name = ? AND deleted = 0 "
                             "ORDER BY COALESCE(updateddate, 0) DESC, id LIMIT 1"))
             return fail(select.lastError());
         select.addBindValue(parametername);
         if (!select.exec()) return fail(select.lastError());
-        const QString id = select.next() ? select.value(0).toString() : QString();
+        QString id;
+        QVariant storedValue;
+        if (select.next()) {
+            id = select.value(0).toString();
+            storedValue = select.value(1);
+        }
         select.finish();
+
+        // Skip writes that change nothing. The update trigger stamps updateddate
+        // on every UPDATE, so rewriting the same value would queue the row for
+        // sync and send it to the server and every other device.
+        if (!id.isEmpty() && storedValue.isNull() == parametervalue.isNull()
+            && storedValue.toString() == parametervalue) {
+            if (!m_sqliteDb.commit()) return fail(m_sqliteDb.lastError());
+            return true;
+        }
 
         QSqlQuery write(m_sqliteDb);
         if (id.isEmpty()) {

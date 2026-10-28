@@ -208,6 +208,19 @@ private slots:
         QVERIFY(q.exec("SELECT parameter_value FROM application_settings WHERE id IN ('older','deleted')"));
         while (q.next()) QCOMPARE(q.value(0).toString(), QString("old"));
         q.finish();
+        // Saving the value already stored writes nothing, so the update trigger
+        // does not queue the row for sync.
+        QVERIFY(q.exec("CREATE TABLE settings_writes(id TEXT)"));
+        QVERIFY(q.exec("CREATE TRIGGER count_writes AFTER UPDATE ON application_settings "
+                       "BEGIN INSERT INTO settings_writes VALUES(NEW.id); END"));
+        QVERIFY(settings.saveParameter("key", "new"));
+        QCOMPARE(settings.loadParameter("key"), QString("new"));
+        QVERIFY(q.exec("SELECT COUNT(*) FROM settings_writes"));
+        QVERIFY(q.next());
+        QCOMPARE(q.value(0).toInt(), 0);
+        q.finish();
+        QVERIFY(q.exec("DROP TRIGGER count_writes"));
+        QVERIFY(q.exec("DROP TABLE settings_writes"));
         // The SQL statement succeeds, but a deferred constraint rejects commit.
         QVERIFY(!settings.saveParameter("key", "missing-parent"));
         QVERIFY(!settings.lastSaveError().isEmpty());
