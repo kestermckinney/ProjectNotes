@@ -28,6 +28,8 @@ When you create a new meeting, the current date is automatically populated and a
 4. Check **Internal item** if the meeting notes are not intended for company reports.
 5. Type meeting minutes in the note body — use the formatting toolbar above it for bold, lists, and other rich text.
 
+Pressing **Tab** in the note body types a tab character rather than moving to the next field. Press **Ctrl+Tab** to move on (**Control+Tab** on macOS), or **Shift+Tab** to go back. The email and meeting template editors in Preferences work the same way.
+
 
 
 ## Assigning Action Items

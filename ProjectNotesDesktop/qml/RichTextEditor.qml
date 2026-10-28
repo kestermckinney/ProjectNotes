@@ -100,7 +100,18 @@ ColumnLayout {
         border.color: textEdit.activeFocus ? Theme.accent : Theme.border
         TextArea {
             id: textEdit
-            Keys.onTabPressed: nextItemInFocusChain().forceActiveFocus(Qt.TabFocusReason)
+            // Tab types a tab character, as it does in a word processor.
+            // Declining the event hands it to the TextArea, which inserts the
+            // tab through the document cursor, so it survives in rich text.
+            // Ctrl+Tab and Shift+Tab still move focus out of the editor. On
+            // macOS Qt reports the physical Control key as MetaModifier
+            // (ControlModifier is Command, and Command+Tab is the app switcher).
+            Keys.onTabPressed: (event) => {
+                if (event.modifiers & (Qt.ControlModifier | Qt.MetaModifier))
+                    nextItemInFocusChain().forceActiveFocus(Qt.TabFocusReason)
+                else
+                    event.accepted = false
+            }
             Keys.onBacktabPressed: nextItemInFocusChain(false).forceActiveFocus(Qt.BacktabFocusReason)
             anchors.fill: parent
             anchors.margins: 9
