@@ -4,8 +4,8 @@ The Store build is an MSIX package of the same executable and files the GitLab i
 
 ## One-time setup
 
-1. Register a developer account in Partner Center and reserve the name "Project Notes".
-2. On the app's *Product identity* page, copy three values and keep them in the environment where you build:
+1. Register a developer account in Partner Center and reserve the name "Project Notes Pro".
+2. The build defaults to the identity assigned to Project Notes Pro in Partner Center, including publisher display name `Project Notes Pro`. To build for a different product identity, set all three values from its *Product identity* page:
 
    ```powershell
    $env:PN_MSIX_IDENTITY_NAME          = '<Package/Identity/Name>'
@@ -33,7 +33,7 @@ The Store build is an MSIX package of the same executable and files the GitLab i
 packaging\windows\store\build_store.ps1 -Local
 ```
 
-This signs with a throwaway certificate and prints the two commands that trust it and install the package. Remove an installed copy of the GitLab build first: both use the `Project Notes.exe` name and the same data folder logic, and the packaged app keeps its own copy of writes under `%LOCALAPPDATA%\Packages\`.
+This writes a package ending in `-local-test.msix`, signs it with a throwaway certificate and prints the two commands that trust it and install the package. It cannot be uploaded to the Store. Remove an installed copy of the GitLab build first: both use the `Project Notes.exe` name and the same data folder logic, and the packaged app keeps its own copy of writes under `%LOCALAPPDATA%\Packages\`.
 
 ## Things to know for review
 

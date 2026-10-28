@@ -7,7 +7,8 @@
   GitLab installer ships, minus the Remote Host. See Releasing.md next to this
   script for the one-time Partner Center setup.
 
-  Identity values come from Partner Center (Product identity page):
+  Store identity defaults to the Project Notes Pro Product identity in Partner
+  Center. These environment variables can override the defaults:
     PN_MSIX_IDENTITY_NAME           Package/Identity/Name
     PN_MSIX_PUBLISHER               Package/Identity/Publisher (CN=...)
     PN_MSIX_PUBLISHER_DISPLAY_NAME  Package/Properties/PublisherDisplayName
@@ -45,9 +46,9 @@ if ($Local) {
     $publisher    = 'CN=ProjectNotesLocalTest'
     $publisherDisplay = 'Project Notes (local test)'
 } else {
-    $identityName     = $env:PN_MSIX_IDENTITY_NAME
-    $publisher        = $env:PN_MSIX_PUBLISHER
-    $publisherDisplay = $env:PN_MSIX_PUBLISHER_DISPLAY_NAME
+    $identityName     = if ($env:PN_MSIX_IDENTITY_NAME) { $env:PN_MSIX_IDENTITY_NAME } else { 'ProjectNotesPro.ProjectNotesPro' }
+    $publisher        = if ($env:PN_MSIX_PUBLISHER) { $env:PN_MSIX_PUBLISHER } else { 'CN=33262805-4644-4CFE-9F20-931ECA1E1ACF' }
+    $publisherDisplay = if ($env:PN_MSIX_PUBLISHER_DISPLAY_NAME) { $env:PN_MSIX_PUBLISHER_DISPLAY_NAME } else { 'Project Notes Pro' }
     foreach ($pair in @(@('PN_MSIX_IDENTITY_NAME', $identityName), @('PN_MSIX_PUBLISHER', $publisher), @('PN_MSIX_PUBLISHER_DISPLAY_NAME', $publisherDisplay))) {
         if (-not $pair[1]) { throw "Set $($pair[0]) to the value on Partner Center's Product identity page, or pass -Local." }
     }
@@ -109,7 +110,8 @@ $manifest = $manifest.Replace('@IDENTITY_NAME@', [Security.SecurityElement]::Esc
 [IO.File]::WriteAllText((Join-Path $layout 'AppxManifest.xml'), $manifest, (New-Object Text.UTF8Encoding $false))
 
 # --- Pack
-$msix = Join-Path $outDir "ProjectNotes-$version-x64.msix"
+$suffix = if ($Local) { '-local-test' } else { '' }
+$msix = Join-Path $outDir "ProjectNotes-$version-x64$suffix.msix"
 if (Test-Path $msix) { Remove-Item $msix -Force }
 & $makeappx pack /d $layout /p $msix /o
 if ($LASTEXITCODE -ne 0) { throw 'makeappx failed.' }

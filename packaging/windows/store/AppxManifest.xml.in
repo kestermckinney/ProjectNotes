@@ -11,7 +11,7 @@
             ProcessorArchitecture="x64" />
 
   <Properties>
-    <DisplayName>Project Notes</DisplayName>
+    <DisplayName>Project Notes Pro</DisplayName>
     <PublisherDisplayName>@PUBLISHER_DISPLAY_NAME@</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
@@ -26,7 +26,7 @@
 
   <Applications>
     <Application Id="ProjectNotes" Executable="Project Notes.exe" EntryPoint="Windows.FullTrustApplication">
-      <uap:VisualElements DisplayName="Project Notes"
+      <uap:VisualElements DisplayName="Project Notes Pro"
                           Description="Project management notes, meeting minutes, risks, issues, action items and contacts."
                           BackgroundColor="transparent"
                           Square150x150Logo="Assets\Square150x150Logo.png"
