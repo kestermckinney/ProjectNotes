@@ -23,6 +23,19 @@ Controls.Button {
     leftPadding: 10
     rightPadding: 10
 
+    // Label colours follow the theme, not the system palette, which stays
+    // light-mode dark text when only the app is in dark mode. Same standard
+    // as the dialog buttons: Theme.text on the neutral card, white on an
+    // accent fill (primary, or any button while pressed). Setting the palette
+    // rather than replacing contentItem keeps the style's icon support.
+    font.pixelSize: Theme.fontBody
+    font.weight: Font.DemiBold
+    palette.buttonText: control.primary || control.down ? "#ffffff" : Theme.text
+    palette.brightText: "#ffffff"
+    palette.windowText: Theme.text
+    palette.highlight: Theme.accent
+    palette.disabled.buttonText: control.primary ? "#ffffff" : Theme.text3
+
     background: Rectangle {
         radius: control.radius
         color: control.primary
