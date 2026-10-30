@@ -989,6 +989,20 @@ private slots:
                 QTest::keyClick(window, Qt::Key_Tab);
             }
             window->resize(originalSize);
+            QTest::qWait(50);
+
+            // Typing a financial value and leaving the field stores it.
+            auto *budget = qobject_cast<QQuickItem*>(findVisualChild(window->contentItem(), "BudgetInput"));
+            QVERIFY(budget);
+            budget->forceActiveFocus();
+            QTest::keyClick(window, Qt::Key_A, Qt::ControlModifier);
+            for (char ch : QByteArray("12345"))
+                QTest::keyClick(window, ch);
+            QTest::keyClick(window, Qt::Key_Tab);
+            const int prow = c->projectRowForId(pid);
+            QVERIFY2(c->getProjectData(prow).value("budget").toString()
+                         .remove(QRegularExpression("[^0-9.]")).startsWith("12345"),
+                     qPrintable(c->getProjectData(prow).value("budget").toString()));
             c->setShowInternalItems(showInternal);
         }
 

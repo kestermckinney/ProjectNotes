@@ -484,6 +484,27 @@ private slots:
         m_projectId = id; m_projectName = name; m_projectNumber = num;
     }
 
+    // The detail page saves a stored project by reading every field back from
+    // getProjectData(), changing one, and handing them all to saveProject().
+    void test_03a_projectFinancialsUpdate()
+    {
+        QVERIFY(!m_projectId.isEmpty());
+        int r = c->projectRowForId(m_projectId);
+        QVERIFY(r >= 0);
+        QVariantMap d = c->getProjectData(r);
+        auto s = [&](const char* k) { return d.value(k).toString(); };
+        QVERIFY2(c->saveProject(r, s("project_number"), s("project_name"), s("project_status"),
+                                s("primary_contact"), s("client_id"),
+                                s("last_status_date"), s("last_invoice_date"),
+                                s("invoicing_period"), s("status_report_period"),
+                                "20000", s("actual"), s("bcwp"), s("bcws"), s("bac")),
+                 qPrintable(c->lastSaveError()));
+        r = c->projectRowForId(m_projectId);
+        d = c->getProjectData(r);
+        QVERIFY2(d.value("budget").toString().remove(QRegularExpression("[^0-9.]")).startsWith("20000"),
+                 qPrintable(d.value("budget").toString()));
+    }
+
     void test_03b_projectFolders()
     {
         FolderManager folders;

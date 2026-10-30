@@ -131,7 +131,10 @@ public:
                                     const QString& primaryContactId, const QString& companyId,
                                     const QString& lastStatusDate, const QString& lastInvoiceDate,
                                     const QString& invoicingPeriod,
-                                    const QString& statusReportPeriod);
+                                    const QString& statusReportPeriod,
+                                    const QString& budget, const QString& actual,
+                                    const QString& bcwp, const QString& bcws,
+                                    const QString& bac);
     Q_INVOKABLE bool    saveStatusItem(int row, const QString& category, const QString& description);
     Q_INVOKABLE bool    saveTeamMember(int row, const QString& contactId, const QString& role, bool receiveStatusReport);
     Q_INVOKABLE bool    saveProjectLocation(int row, const QString& locationType,

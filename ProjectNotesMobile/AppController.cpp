@@ -801,7 +801,10 @@ bool AppController::saveProject(int row, const QString& projectNumber,
                                  const QString& projectName, const QString& projectStatus,
                                  const QString& primaryContactId, const QString& companyId,
                                  const QString& lastStatusDate, const QString& lastInvoiceDate,
-                                 const QString& invoicingPeriod, const QString& statusReportPeriod)
+                                 const QString& invoicingPeriod, const QString& statusReportPeriod,
+                                 const QString& budget, const QString& actual,
+                                 const QString& bcwp, const QString& bcws,
+                                 const QString& bac)
 {
     global_DBObjects.setLastSaveError("");
     auto* proxy = global_DBObjects.projectinformationmodelproxy();
@@ -820,8 +823,10 @@ bool AppController::saveProject(int row, const QString& projectNumber,
     if (srcIdx.isValid() && src->isNewRecord(srcIdx))
         return insertStagedProject(srcIdx.row(),
                 { { 1, projectNumber},   { 2, projectName},      { 3, lastStatusDate},
-                  { 4, lastInvoiceDate}, { 5, primaryContactId}, {11, invoicingPeriod},
-                  {12, statusReportPeriod}, {13, companyId},     {14, projectStatus} });
+                  { 4, lastInvoiceDate}, { 5, primaryContactId}, { 6, budget},
+                  { 7, actual},          { 8, bcwp},             { 9, bcws},
+                  {10, bac},             {11, invoicingPeriod},  {12, statusReportPeriod},
+                  {13, companyId},       {14, projectStatus} });
 
     bool ok = true;
     ok &= model->setData(model->index(pIdx.row(),  1), projectNumber);
@@ -829,6 +834,11 @@ bool AppController::saveProject(int row, const QString& projectNumber,
     ok &= model->setData(model->index(pIdx.row(),  3), lastStatusDate);
     ok &= model->setData(model->index(pIdx.row(),  4), lastInvoiceDate);
     ok &= model->setData(model->index(pIdx.row(),  5), primaryContactId);
+    ok &= model->setData(model->index(pIdx.row(),  6), budget);
+    ok &= model->setData(model->index(pIdx.row(),  7), actual);
+    ok &= model->setData(model->index(pIdx.row(),  8), bcwp);
+    ok &= model->setData(model->index(pIdx.row(),  9), bcws);
+    ok &= model->setData(model->index(pIdx.row(), 10), bac);
     ok &= model->setData(model->index(pIdx.row(), 11), invoicingPeriod);
     ok &= model->setData(model->index(pIdx.row(), 12), statusReportPeriod);
     ok &= model->setData(model->index(pIdx.row(), 13), companyId);
@@ -837,6 +847,10 @@ bool AppController::saveProject(int row, const QString& projectNumber,
         const QString err = global_DBObjects.lastSaveError();
         emit errorOccurred(tr("Could Not Save"), err);
     }
+    // The EVM columns are computed in the SELECT, not stored — re-query the row
+    // so the page reads the recalculated values back.
+    if (pIdx.isValid())
+        src->reloadRecord(proxy->mapToSource(proxy->index(pIdx.row(), 0)));
     return ok;
 }
 
