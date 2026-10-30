@@ -71,7 +71,7 @@ Key tables: `projects`, `project_notes`, `item_tracker`, `item_tracker_updates`,
 - Data access goes through `DataService` with published names (`contacts`, `companies`, `project_team`; see `PublishedSchema`) and the `RecordTree` import/export rules shared with XML import.
 - Permissions are declared in `plugin.json`. User plugins need approval, and a change in what they ask for needs it again.
 - The application side is `DesktopPluginServices` (dialogs, email, calendar, contacts, Office 365, secrets) and `PluginUiController` + `PluginUiHost.qml` (QML dialogs, schema forms, settings tabs).
-- Bundled plugins live in `plugins/<name>/`; `extras/` holds plugins shipped separately as `.pnplugin` files (`packaging/plugins/build-pnplugin.sh`). Embedded Python has been removed.
+- Bundled plugins live in `plugins/<name>/`; `extras/` holds plugins shipped separately as `.pnplugin` files (`packaging/plugins/build-pnplugin.sh`, or `build-pnplugin.ps1` on Windows). Embedded Python has been removed.
 
 ### QML Context Menus & Navigation
 

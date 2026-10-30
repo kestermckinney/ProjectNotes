@@ -6,6 +6,14 @@ Plugins in this folder do not ship with Project Notes. Each one is packed into a
 packaging/plugins/build-pnplugin.sh extras/ifs-cloud dist
 ```
 
+On Windows, use the PowerShell version. It needs nothing beyond Windows PowerShell 5.1:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File packaging\plugins\build-pnplugin.ps1 extras\ifs-cloud dist
+```
+
+Both scripts check the `.mjs` files' syntax when `node` is on the PATH and skip that check otherwise.
+
 | Folder | Plugin |
 | --- | --- |
 | `ifs-cloud` | IFS Cloud: project, budget and team import, tracker item sync with the ISSUES activity, SSRS status reports, and IFS shortcut menus. |
