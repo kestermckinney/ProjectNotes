@@ -404,8 +404,13 @@ QVariantList PluginRegistry::globalMenus() const
 void PluginRegistry::runMenu(const QString& pluginId, const QString& menuId, const QString& entity, const QString& key)
 {
     PluginHost* h = host(pluginId);
-    if (!h)
+    if (!h) {
+        QLog_Warning(CONSOLELOG, QStringLiteral("[%1] menu %2 ignored: the plugin is not loaded.").arg(pluginId, menuId));
         return;
+    }
+    if (const qint64 since = h->busySince())
+        QLog_Info(CONSOLELOG, QStringLiteral("[%1] menu %2 waits: the plugin has been busy for %3 ms.")
+                                  .arg(pluginId, menuId).arg(QDateTime::currentMSecsSinceEpoch() - since));
     const PluginInfo info = plugin(pluginId);
     QStringList include;
     QString parameter;

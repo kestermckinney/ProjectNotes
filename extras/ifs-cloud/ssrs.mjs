@@ -4,6 +4,8 @@
 import * as pn from "projectnotes";
 import { replaceVariables, formatDate } from "projectnotes/common";
 
+import { trace } from "./sso.mjs";
+
 const { app, data, email, files, http, log, secrets, settings, ui } = pn;
 
 // What differs between the reports. The status report also records the
@@ -34,16 +36,24 @@ function reportUrl(template, project, reportDate) {
 }
 
 function* download(url, path) {
+    const user = settings.get("DomainUser", "") || "";
+    const password = (yield secrets.get("DomainPassword")) || "";
+    trace("ssrs", "downloading " + url + " as " + (user || "(no user)") + ", password " + (password ? "set" : "MISSING"));
     const response = yield http.fetch(url, {
-        auth: { type: "basic", username: settings.get("DomainUser", "") || "", password: (yield secrets.get("DomainPassword")) || "" },
+        auth: { type: "basic", username: user, password: password },
         timeoutSeconds: 300,
     });
+    const headers = response.headers || {};
+    const type = Object.keys(headers).filter(k => k.toLowerCase() === "content-type").map(k => headers[k])[0] || "";
+    trace("ssrs", "report server answered " + response.status + " " + type);
     if (!response.ok) {
         yield ui.message("The report server answered " + response.status + ".\n\n" + (yield response.text()).slice(0, 500),
                          { kind: "error", title: "Download Failed" });
         return false;
     }
-    yield files.writeBytes(path, yield response.arrayBuffer());
+    const bytes = yield response.arrayBuffer();
+    yield files.writeBytes(path, bytes);
+    trace("ssrs", "wrote " + bytes.byteLength + " bytes to " + path);
     return true;
 }
 
@@ -52,6 +62,7 @@ function* wordToHtml(docxPath, title) {
     const htmlPath = files.tempPath("ssrs-report.html");
     let word = null;
     try {
+        trace("ssrs", "converting " + docxPath + " to HTML with Word");
         word = pn.com.createObject("Word.Application");
         word.Visible = false;
         const doc = word.Documents.Open(docxPath.replace(/\//g, "\\"));
@@ -60,7 +71,13 @@ function* wordToHtml(docxPath, title) {
         doc.SaveAs(htmlPath.replace(/\//g, "\\"), 8);   // wdFormatHTML
         doc.Close(false);
         word.Quit();
+        trace("ssrs", "Word converted the report");
     } catch (e) {
+        trace("ssrs", "Word conversion failed: " + e.message);
+        // Don't leave a hidden Word running in the background.
+        if (word) {
+            try { word.Quit(false); } catch (quitError) { /* already gone */ }
+        }
         yield ui.message("Word could not convert the report: " + e.message, { kind: "error", title: "Generate " + title });
         return null;
     } finally {
@@ -100,6 +117,8 @@ export function* generateTrackerReport(context) {
 function* generateReport(context, report) {
     const project = context.record;
     const server = String(settings.get("ReportServer", "") || "").trim();
+    trace("ssrs", report.title + ": project " + (project ? project.project_number + " (" + project.$key + ")" : "MISSING")
+          + ", report server " + (server || "(none)") + ", Word available " + !!pn.com);
     if (!server) {
         yield ui.message("Enter the report server in Settings > IFS Cloud first.", { kind: "warning", title: "Report Server Not Configured" });
         return;
@@ -107,6 +126,7 @@ function* generateReport(context, report) {
     const canConvert = !!pn.com;
     const choices = [DELIVERY.pdf, DELIVERY.word, DELIVERY.none];
     if (canConvert) choices.unshift(DELIVERY.html);
+    trace("ssrs", "showing the report options form");
     const options = yield ui.showForm({ fields: [
         { key: "reportDate", label: "Report date", type: "date" },
         { key: "delivery", label: "Email", type: "choice", choices: choices },
@@ -114,6 +134,7 @@ function* generateReport(context, report) {
         { key: "display", label: "Open the PDF when it is ready", type: "checkbox" },
     ] }, { reportDate: today(), delivery: choices[0], keepWord: false, display: false },
        { title: "Generate " + report.title, okText: "Generate" });
+    trace("ssrs", "form answered " + JSON.stringify(options));
     if (!options) return;
 
     const reportDate = options.reportDate || today();
@@ -132,9 +153,11 @@ function* generateReport(context, report) {
         progress.update(0.5, "Downloading the PDF report...");
         return yield download(base + "&rs:Command=Render&rs:Format=PDF", pdfPath);
     }, { cancellable: false });
+    trace("ssrs", "downloads " + (ok ? "succeeded" : "failed"));
     if (!ok) return;
 
     let folder = yield app.projectFolder(project.$key);
+    trace("ssrs", "project folder " + (folder || "(none)"));
     if (folder) {
         const sub = String(settings.get(report.folderKey, "") || report.folder).replace(/^[\\/]+|[\\/]+$/g, "");
         folder = folder.replace(/[\\/]+$/, "") + "/" + sub;
@@ -148,6 +171,7 @@ function* generateReport(context, report) {
         shown = folder + "/" + stamp + ".pdf";
         yield files.copy(pdfPath, shown, { overwrite: true });
         if (options.keepWord) yield files.copy(docxPath, folder + "/" + stamp + ".docx", { overwrite: true });
+        trace("ssrs", "filed the report as " + shown);
     }
 
     if (delivery !== DELIVERY.none) {
@@ -161,7 +185,10 @@ function* generateReport(context, report) {
             message.attachments = [delivery === DELIVERY.word ? docxPath : pdfPath];
             message.text = "";
         }
-        yield email.compose(message);
+        trace("ssrs", "composing email: to " + (message.to || []).length + ", cc " + (message.cc || []).length
+              + ", " + (message.html ? "HTML body " + message.html.length + " chars" : "attachments " + JSON.stringify(message.attachments)));
+        const composed = yield email.compose(message);
+        trace("ssrs", "email compose returned " + JSON.stringify(composed));
     }
 
     if (options.display) yield files.openWithSystem(shown);

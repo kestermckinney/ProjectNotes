@@ -34,6 +34,21 @@ using PN::Plugins::Reply;
 namespace {
 PluginUiController* s_instance = nullptr;
 
+// A JavaScript object that QML passes to a QVariant parameter arrives as a
+// QJSValue of the GUI engine. It must become plain maps and lists here, on
+// the GUI thread: the plugin's own engine, on its own thread, cannot use it.
+QVariant plainVariant(const QVariant& value)
+{
+    if (value.metaType() != QMetaType::fromType<QJSValue>())
+        return value;
+    const QJSValue js = value.value<QJSValue>();
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+    return js.toVariant(QJSValue::ConvertJSObjects);
+#else
+    return js.toVariant();
+#endif
+}
+
 QVariantMap describe(const PluginInfo& info)
 {
     const auto& m = info.manifest;
@@ -177,8 +192,19 @@ int PluginUiController::openRequest(const QString& pluginId, const QString& kind
     if (m_registry)
         p.insert(QStringLiteral("pluginName"), m_registry->plugin(pluginId).manifest.name);
     m_requests.insert(id, {pluginId, kind, p, std::move(reply)});
+    QLog_Info(CONSOLELOG, QStringLiteral("[%1] opening %2 request %3 (%4).")
+                              .arg(pluginId, kind).arg(id).arg(p.value(QStringLiteral("title")).toString()));
     emit requestOpened(id, kind, p);
     return id;
+}
+
+void PluginUiController::logRequestProblem(int requestId, const QString& message)
+{
+    const auto it = m_requests.constFind(requestId);
+    QLog_Warning(CONSOLELOG, QStringLiteral("[%1] %2 request %3: %4")
+                                 .arg(it != m_requests.constEnd() ? it->pluginId : QString(),
+                                      it != m_requests.constEnd() ? it->kind : QString())
+                                 .arg(requestId).arg(message));
 }
 
 void PluginUiController::closeRequest(int requestId)
@@ -197,12 +223,16 @@ void PluginUiController::notify(const QString& text, const QString& kind, int se
     emit notificationRequested(text, kind, seconds);
 }
 
-void PluginUiController::respond(int requestId, const QVariant& result)
+void PluginUiController::respond(int requestId, const QVariant& answer)
 {
+    const QVariant result = plainVariant(answer);
     auto it = m_requests.find(requestId);
     if (it == m_requests.end())
         return;
     const Reply reply = it->reply;
+    QLog_Info(CONSOLELOG, QStringLiteral("[%1] %2 request %3 answered%4.")
+                              .arg(it->pluginId, it->kind).arg(requestId)
+                              .arg(result.isNull() || !result.isValid() ? QStringLiteral(" with nothing (cancelled)") : QString()));
     // A progress request stays open until the plugin ends it.
     const bool finished = it->kind != QLatin1String("progress");
     if (finished)

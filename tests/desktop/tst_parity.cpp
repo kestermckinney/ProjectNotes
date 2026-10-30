@@ -814,6 +814,33 @@ private slots:
         c->setProjectManagerId(previousManager);
     }
 
+    void test_10c_sendNotesGoesStraightToDraft()
+    {
+        // Send Notes skips the review dialog: the draft goes straight to the
+        // email integration, addressed to the attendees.
+        const QString previousManager = c->projectManagerId();
+        c->setProjectManagerId(QString());
+        QSignalSpy errors(c, &DesktopAppController::errorOccurred);
+        QVERIFY(c->sendMeetingNotes(m_projectId, m_noteId));
+        auto *review = qobject_cast<PN::Comm::CommunicationsController *>(c->communicationsController());
+        QTRY_VERIFY_WITH_TIMEOUT(review->stageName() == "completed" || review->stageName() == "failed", 5000);
+        QCOMPARE(review->preparation().source.workflow, PN::Comm::Workflow::SendMeetingNotes);
+        QCOMPARE(review->preparation().recipients.size(), 1);
+        QCOMPARE(review->preparation().recipients.first().role, PN::Comm::RecipientRole::To);
+        // The handoff reached the backend. Offscreen test runs can't open the
+        // .eml in a mail app, which is the only acceptable failure here.
+        if (review->stageName() == "failed") {
+            QCOMPARE(errors.count(), 1);
+            QCOMPARE(errors.first().at(0).toString(), QStringLiteral("Send Notes"));
+            QVERIFY2(review->lastResult().certainty != PN::Comm::OutcomeCertainty::NotStarted
+                         || review->lastResult().error.code.contains("open"),
+                     qPrintable(review->diagnostic()));
+        } else {
+            QCOMPARE(errors.count(), 0);
+        }
+        c->setProjectManagerId(previousManager);
+    }
+
     void test_11_projectLocations()
     {
         c->setProjectFilter(m_projectId);

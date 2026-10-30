@@ -198,6 +198,8 @@ private slots:
     void appInfoAndSecrets();
     void recordsUseNativeArrays();
     void dynamicMenus();
+    void comObjects();
+    void comWordConversion();
     void watchdogStopsRunawayCode();
     void exportXml();
     void changeEventsReachOtherPlugins();
@@ -253,8 +255,9 @@ void PluginHostTest::initTestCase()
               manifest(QStringLiteral("probe"),
                        {QStringLiteral("data.read:companies,contacts,projects,project_team,item_tracker,item_tracker_updates,project_notes"),
                         QStringLiteral("data.write:companies,contacts,projects,item_tracker"), QStringLiteral("files"),
-                        QStringLiteral("auth.browser")},
-                       QStringLiteral(R"(, "http": ["sso.example.test"], "contributes": {"menus": [{"id": "project", "title": "Probe", "context": "record",
+                        QStringLiteral("auth.browser"), QStringLiteral("com")},
+                       QStringLiteral(R"(, "http": ["sso.example.test"], "com": ["Scripting.FileSystemObject", "Word.Application"],
+                                       "contributes": {"menus": [{"id": "project", "title": "Probe", "context": "record",
                                        "entity": "projects", "include": ["project_team"]}]})")));
     writeFile(m_bundled + QStringLiteral("/probe/main.mjs"), fixture(QStringLiteral("probe.mjs")));
 
@@ -647,6 +650,32 @@ void PluginHostTest::dynamicMenus()
     QVERIFY2(r.value(QStringLiteral("menuId")).toString() == QLatin1String("dyn"),
              qPrintable(m_registry->plugin(QStringLiteral("probe")).lastError));
     QCOMPARE(r.value(QStringLiteral("result")).toString(), QStringLiteral("Mike Smith"));
+}
+
+void PluginHostTest::comObjects()
+{
+#ifndef Q_OS_WIN
+    QSKIP("COM automation is Windows only.");
+#endif
+    const QJsonObject r = run(QStringLiteral("comObjects"));
+    QVERIFY2(r.value(QStringLiteral("ok")).toBool(), qPrintable(QJsonDocument(r).toJson()));
+    const QJsonObject result = r.value(QStringLiteral("result")).toObject();
+    QVERIFY2(QDir(result.value(QStringLiteral("tempPath")).toString()).exists(), qPrintable(QJsonDocument(r).toJson()));
+    QVERIFY(result.value(QStringLiteral("drives")).toInt() > 0);
+    QVERIFY(result.value(QStringLiteral("tempName")).toString().endsWith(QLatin1String(".tmp")));
+}
+
+void PluginHostTest::comWordConversion()
+{
+#ifndef Q_OS_WIN
+    QSKIP("COM automation is Windows only.");
+#endif
+    const QJsonObject r = run(QStringLiteral("comWord"), {}, {}, 60000);
+    QVERIFY2(r.value(QStringLiteral("ok")).toBool(), qPrintable(QJsonDocument(r).toJson()));
+    const QJsonObject result = r.value(QStringLiteral("result")).toObject();
+    if (!result.value(QStringLiteral("word")).toBool())
+        QSKIP("Microsoft Word is not installed.");
+    QVERIFY(result.value(QStringLiteral("converted")).toBool());
 }
 
 void PluginHostTest::watchdogStopsRunawayCode()

@@ -57,6 +57,8 @@ public:
     // ── Dialog requests ────────────────────────────────────────────────────
     Q_INVOKABLE void respond(int requestId, const QVariant& result);
     Q_INVOKABLE void cancelRequest(int requestId);
+    // Records why a dialog could not be shown; QML warnings reach no log file.
+    Q_INVOKABLE void logRequestProblem(int requestId, const QString& message);
     // Creates a plugin QML file's root item inside `parent`, with the context
     // object `pluginDialog` (dialogs) or `pluginSettings` (Settings sections).
     Q_INVOKABLE QQuickItem* createDialogContent(int requestId, QQuickItem* parent);

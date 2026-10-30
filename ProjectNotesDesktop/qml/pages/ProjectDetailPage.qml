@@ -1597,18 +1597,10 @@ Item {
             }
         }
         onMoveToRecord: (id) => page.moveToRequested(id)
-        onSendNotesRequested: (id) => {
-            if (DesktopAppController.prepareMeetingNotesReview(page.projectId, id))
-                notesEmailReview.open()
-        }
+        // No review dialog: the draft opens in the email client.
+        onSendNotesRequested: (id) => DesktopAppController.sendMeetingNotes(page.projectId, id)
         onGoToContactRequested: (contactId) => page.goToContactRequested(contactId)
         onGoToCompanyRequested: (companyId) => page.goToCompanyRequested(companyId)
-    }
-
-    MeetingNotesReviewDialog {
-        id: notesEmailReview
-        controller: DesktopAppController.communicationsController
-        recipientModel: DesktopAppController.recipientSelectionModel
     }
 
     // The project's own record/plugin menu — opened by the title row's kebab

@@ -58,6 +58,29 @@ QString storeKey(const QString& service, const QString& account)
     return QStringLiteral("%1/%2/%3").arg(PN::Identity::credentialNamespace(), service, account);
 }
 
+#if defined(Q_OS_WIN)
+// Credential Manager keeps at most CRED_MAX_CREDENTIAL_BLOB_SIZE (2560) bytes
+// in one entry, less than an OAuth token response. A longer secret is split
+// across "<key>", "<key>#1", "<key>#2", ..., and the first entry's comment
+// holds the number of parts.
+const QString kPartsPrefix = QStringLiteral("parts=");
+
+QString partKey(const QString& key, int part)
+{
+    return part == 0 ? key : QStringLiteral("%1#%2").arg(key).arg(part);
+}
+
+// Deletes the parts from `from` on, which a shorter secret no longer uses.
+void removeParts(const QString& key, int from)
+{
+    for (int part = from;; ++part) {
+        const std::wstring target = partKey(key, part).toStdWString();
+        if (!CredDeleteW(target.c_str(), CRED_TYPE_GENERIC, 0))
+            break;
+    }
+}
+#endif
+
 #if defined(Q_OS_LINUX)
 const char kSecretService[] = "org.freedesktop.secrets";
 const char kServicePath[] = "/org/freedesktop/secrets";
@@ -144,18 +167,32 @@ QString CredentialStore::read(const QString& service, const QString& account, QS
 {
     if (error) error->clear();
 #if defined(Q_OS_WIN)
-    PCREDENTIALW credential = nullptr;
-    const std::wstring target = storeKey(service, account).toStdWString();
-    if (!CredReadW(target.c_str(), CRED_TYPE_GENERIC, 0, &credential))
+    const QString key = storeKey(service, account);
+    QByteArray bytes;
+    int parts = 1;
+    for (int part = 0; part < parts; ++part)
     {
-        if (GetLastError() != ERROR_NOT_FOUND && error)
-            *error = QStringLiteral("Windows Credential Manager error %1.").arg(GetLastError());
-        return {};
+        PCREDENTIALW credential = nullptr;
+        const std::wstring target = partKey(key, part).toStdWString();
+        if (!CredReadW(target.c_str(), CRED_TYPE_GENERIC, 0, &credential))
+        {
+            const DWORD code = GetLastError();
+            if (error && part > 0)
+                *error = QStringLiteral("Part %1 of the saved credential is missing.").arg(part + 1);
+            else if (error && code != ERROR_NOT_FOUND)
+                *error = QStringLiteral("Windows Credential Manager error %1.").arg(code);
+            return {};
+        }
+        if (part == 0 && credential->Comment)
+        {
+            const QString comment = QString::fromWCharArray(credential->Comment);
+            if (comment.startsWith(kPartsPrefix))
+                parts = qMax(1, comment.mid(kPartsPrefix.size()).toInt());
+        }
+        bytes.append(reinterpret_cast<const char*>(credential->CredentialBlob), credential->CredentialBlobSize);
+        CredFree(credential);
     }
-    const QString result = QString::fromUtf8(
-        reinterpret_cast<const char*>(credential->CredentialBlob), credential->CredentialBlobSize);
-    CredFree(credential);
-    return result;
+    return QString::fromUtf8(bytes);
 #elif defined(Q_OS_DARWIN)
     const QByteArray serviceUtf8 = service.toUtf8();
     const QByteArray accountUtf8 = account.toUtf8();
@@ -206,19 +243,31 @@ bool CredentialStore::write(const QString& service, const QString& account, cons
     if (error) error->clear();
 #if defined(Q_OS_WIN)
     const QByteArray bytes = secret.toUtf8();
-    const std::wstring target = storeKey(service, account).toStdWString();
-    CREDENTIALW credential{};
-    credential.Type = CRED_TYPE_GENERIC;
-    credential.TargetName = const_cast<LPWSTR>(target.c_str());
-    credential.CredentialBlobSize = bytes.size();
-    credential.CredentialBlob = reinterpret_cast<LPBYTE>(const_cast<char*>(bytes.constData()));
-    credential.Persist = CRED_PERSIST_LOCAL_MACHINE;
-    credential.UserName = const_cast<LPWSTR>(L"Project Notes");
-    if (!CredWriteW(&credential, 0))
+    const QString key = storeKey(service, account);
+    const int partSize = CRED_MAX_CREDENTIAL_BLOB_SIZE;
+    const int parts = qMax(1, int((bytes.size() + partSize - 1) / partSize));
+    const std::wstring comment = (kPartsPrefix + QString::number(parts)).toStdWString();
+    // The first entry, which names the part count, goes last, so a reader
+    // never sees a count whose parts are not written yet.
+    for (int part = parts - 1; part >= 0; --part)
     {
-        if (error) *error = QStringLiteral("Windows Credential Manager error %1.").arg(GetLastError());
-        return false;
+        const QByteArray chunk = bytes.mid(qsizetype(part) * partSize, partSize);
+        const std::wstring target = partKey(key, part).toStdWString();
+        CREDENTIALW credential{};
+        credential.Type = CRED_TYPE_GENERIC;
+        credential.TargetName = const_cast<LPWSTR>(target.c_str());
+        credential.Comment = part == 0 && parts > 1 ? const_cast<LPWSTR>(comment.c_str()) : nullptr;
+        credential.CredentialBlobSize = DWORD(chunk.size());
+        credential.CredentialBlob = reinterpret_cast<LPBYTE>(const_cast<char*>(chunk.constData()));
+        credential.Persist = CRED_PERSIST_LOCAL_MACHINE;
+        credential.UserName = const_cast<LPWSTR>(L"Project Notes");
+        if (!CredWriteW(&credential, 0))
+        {
+            if (error) *error = QStringLiteral("Windows Credential Manager error %1.").arg(GetLastError());
+            return false;
+        }
     }
+    removeParts(key, parts);
     return true;
 #elif defined(Q_OS_DARWIN)
     QString ignored;
@@ -272,7 +321,9 @@ bool CredentialStore::remove(const QString& service, const QString& account, QSt
 {
     if (error) error->clear();
 #if defined(Q_OS_WIN)
-    const std::wstring target = storeKey(service, account).toStdWString();
+    const QString key = storeKey(service, account);
+    const std::wstring target = key.toStdWString();
+    removeParts(key, 1);
     if (CredDeleteW(target.c_str(), CRED_TYPE_GENERIC, 0) || GetLastError() == ERROR_NOT_FOUND) return true;
     if (error) *error = QStringLiteral("Windows Credential Manager error %1.").arg(GetLastError());
     return false;

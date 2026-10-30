@@ -9,8 +9,8 @@ import ProjectNotesDesktop
 
 // Shows every dialog a JavaScript plugin asks for (PluginUiController
 // requestOpened): messages, confirmations, prompts, forms, plugin QML dialogs,
-// file pickers, progress, the contact picker, and the email and meeting review
-// steps. Each dialog answers through PluginUiController.respond(); closing it
+// file pickers, progress, the contact picker, and the meeting review step.
+// Plugin emails skip review and go straight to a draft. Each dialog answers through PluginUiController.respond(); closing it
 // any other way cancels (null). Popups use Theme.uiScale like the rest of the
 // app's dialogs, so zoom applies to plugin UI too.
 Item {
@@ -74,21 +74,24 @@ Item {
         case "pickFolder": component = folderComponent; break
         case "progress": component = progressComponent; break
         case "contactPicker": component = contactComponent; break
-        case "email": component = emailComponent; break
         case "meeting": component = meetingComponent; break
         }
         if (!component) {
+            PluginUiController.logRequestProblem(requestId, "no dialog handles this kind of request")
             PluginUiController.cancelRequest(requestId)
             return
         }
         var popup = component.createObject(host, props)
         if (!popup) {
+            PluginUiController.logRequestProblem(requestId, "the dialog could not be created: " + component.errorString())
             PluginUiController.cancelRequest(requestId)
             return
         }
         popup.objectName = "pluginRequest_" + kind
         _open[requestId] = popup
         popup.open()
+        if (popup.visible === false)
+            PluginUiController.logRequestProblem(requestId, "the dialog did not become visible")
     }
 
     function _forget(requestId) { delete _open[requestId] }
@@ -345,51 +348,6 @@ Item {
                 if (!answered) PluginUiController.cancelRequest(requestId)
                 host._forget(requestId)
                 destroy()
-            }
-        }
-    }
-
-    // ── email review ───────────────────────────────────────────────────────
-    Component {
-        id: emailComponent
-        PluginDialog {
-            id: email
-            width: Math.min(640, host.width - 40)
-            height: Math.min(600, host.height - 40)
-            iconName: "email"
-            title: qsTr("Email from %1").arg(params.pluginName || "")
-            contentItem: ScrollView {
-                id: emailScroll
-                clip: true
-                contentWidth: availableWidth
-                ColumnLayout {
-                    width: emailScroll.availableWidth
-                    spacing: 6
-                    Label { text: qsTr("Review the message, then create a draft in %1.").arg(email.params.backend || ""); color: Theme.text2; wrapMode: Text.Wrap; Layout.fillWidth: true }
-                    Label { text: qsTr("To: %1").arg((email.params.to || []).join(", ")); color: Theme.text; wrapMode: Text.Wrap; Layout.fillWidth: true }
-                    Label { visible: (email.params.cc || []).length > 0; text: qsTr("Cc: %1").arg((email.params.cc || []).join(", ")); color: Theme.text; wrapMode: Text.Wrap; Layout.fillWidth: true }
-                    Label { visible: (email.params.bcc || []).length > 0; text: qsTr("Bcc: %1").arg((email.params.bcc || []).join(", ")); color: Theme.text; wrapMode: Text.Wrap; Layout.fillWidth: true }
-                    Label { text: qsTr("Subject: %1").arg(email.params.subject || ""); color: Theme.text; font.weight: Font.DemiBold; wrapMode: Text.Wrap; Layout.fillWidth: true }
-                    Label { visible: (email.params.attachments || []).length > 0; text: qsTr("Attachments: %1").arg((email.params.attachments || []).join(", ")); color: Theme.text2; wrapMode: Text.Wrap; Layout.fillWidth: true }
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: body.implicitHeight + 16
-                        color: Theme.surface; border.color: Theme.border; radius: Theme.radiusSm
-                        Text {
-                            id: body
-                            anchors.fill: parent
-                            anchors.margins: 8
-                            textFormat: Text.RichText
-                            wrapMode: Text.Wrap
-                            color: Theme.text
-                            text: email.params.html || ""
-                        }
-                    }
-                }
-            }
-            footer: DialogButtonRow {
-                Button { text: qsTr("Cancel"); onClicked: email.answer(false) }
-                Button { text: qsTr("Create Email Draft"); primary: true; onClicked: email.answer(true) }
             }
         }
     }

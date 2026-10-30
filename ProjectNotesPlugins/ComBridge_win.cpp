@@ -174,6 +174,10 @@ public:
         IDispatch* object = find(handle, error);
         if (!object)
             return {};
+        // Reading a method would run it, and some servers (Word) answer a
+        // property get on a method with a plain exception, so ask first.
+        if (index.isEmpty() && isMethod(object, member))
+            return QVariantMap{{QStringLiteral("$method"), true}};
         QVariant result;
         HRESULT hr = S_OK;
         if (!invoke(object, member, DISPATCH_PROPERTYGET, index, nullptr, &result, error, &hr)) {
@@ -243,8 +247,40 @@ private:
     QVariant wrap(const ComPtr<IDispatch>& object)
     {
         const QString handle = QStringLiteral("com-%1").arg(++m_nextHandle);
-        m_objects.insert(handle, object);
+        m_objects.insert(handle, Held{object});
         return QVariantMap{{QStringLiteral("$handle"), handle}};
+    }
+
+    // True when the object's type information lists `member` as a method and
+    // not as a readable property. False when there is no type information.
+    static bool isMethod(IDispatch* object, const QString& member)
+    {
+        LPOLESTR name = const_cast<LPOLESTR>(reinterpret_cast<LPCOLESTR>(member.utf16()));
+        DISPID dispid = DISPID_UNKNOWN;
+        if (FAILED(object->GetIDsOfNames(IID_NULL, &name, 1, LOCALE_USER_DEFAULT, &dispid)))
+            return false;
+        ComPtr<ITypeInfo> info;
+        if (FAILED(object->GetTypeInfo(0, LOCALE_USER_DEFAULT, info.GetAddressOf())) || !info)
+            return false;
+        TYPEATTR* attr = nullptr;
+        if (FAILED(info->GetTypeAttr(&attr)) || !attr)
+            return false;
+        bool method = false;
+        bool property = false;
+        for (UINT i = 0; i < attr->cFuncs; ++i) {
+            FUNCDESC* desc = nullptr;
+            if (FAILED(info->GetFuncDesc(i, &desc)) || !desc)
+                continue;
+            if (desc->memid == dispid) {
+                if (desc->invkind == INVOKE_FUNC)
+                    method = true;
+                else if (desc->invkind == INVOKE_PROPERTYGET)
+                    property = true;
+            }
+            info->ReleaseFuncDesc(desc);
+        }
+        info->ReleaseTypeAttr(attr);
+        return method && !property;
     }
 
     IDispatch* find(const QString& handle, PluginError* error)
@@ -254,7 +290,7 @@ private:
             *error = PluginError::make(QStringLiteral("com-failed"), QStringLiteral("The COM object was released."));
             return nullptr;
         }
-        return it->Get();
+        return it->object.Get();
     }
 
     bool toVariant(const QVariant& value, VARIANT* out, PluginError* error)
@@ -463,7 +499,10 @@ private:
     bool m_initialized = false;
     RetryMessageFilter* m_filter = nullptr;
     IMessageFilter* m_previousFilter = nullptr;
-    QHash<QString, ComPtr<IDispatch>> m_objects;
+    // ComPtr overloads operator& to release what it holds, and QHash takes
+    // the address of its values, so the pointer lives inside a plain struct.
+    struct Held { ComPtr<IDispatch> object; };
+    QHash<QString, Held> m_objects;
     quint64 m_nextHandle = 0;
 };
 

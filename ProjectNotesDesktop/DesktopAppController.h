@@ -221,6 +221,11 @@ public:
     // loads/builds review state; callers must use the later handoff flow to
     // interact with a backend.
     Q_INVOKABLE bool prepareMeetingNotesReview(const QString& projectId, const QString& noteId);
+    // Send Notes: prepares the meeting notes and creates the draft straight
+    // away in the configured email client, with no review dialog. Attendees
+    // are the To recipients; with none, the user addresses it in the client.
+    // Failures are reported through errorOccurred().
+    Q_INVOKABLE bool sendMeetingNotes(const QString& projectId, const QString& noteId);
     Q_INVOKABLE bool prepareProjectEmailReview(const QString &projectId, const QString &contactId = {});
     Q_INVOKABLE bool prepareContactEmailReview(const QString &contactId);
     // Creates a draft with the contact's vCard attached and no recipients in
@@ -1040,9 +1045,10 @@ private:
     QUuid m_pendingMeetingNotesReportReview;
     QUuid m_pendingProjectReportReview;
     QUuid m_pendingProjectEmailReview;
-    // Set while emailContactCard() runs: the prepared review is handed off
-    // as soon as it is ready, and its outcome closes the flag.
-    bool m_autoDraftContactCard = false;
+    // Set while emailContactCard() or sendMeetingNotes() runs: the prepared
+    // review is handed off as soon as it is ready, with no review dialog.
+    // Holds the title for error messages; empty when no auto-draft runs.
+    QString m_autoDraftTitle;
     std::optional<PN::Comm::EmailPreparation> m_projectEmailReview;
     std::unique_ptr<PN::Comm::LocationAttachmentDownloader> m_locationAttachmentDownloader;
     QUuid m_pendingHandoffRevalidation;

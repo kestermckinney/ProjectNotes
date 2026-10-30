@@ -130,8 +130,11 @@ void HostBridge::log(const QString& level, const QString& message)
 
 void HostBridge::reportError(const QString& where, const QString& message, const QString& stack)
 {
-    QLog_Error(ERRORLOG, QStringLiteral("[%1] %2: %3%4").arg(m_runtime->config().manifest.id, where, message,
-                                                             stack.isEmpty() ? QString() : QStringLiteral("\n") + stack));
+    const QString line = QStringLiteral("[%1] %2: %3%4").arg(m_runtime->config().manifest.id, where, message,
+                                                            stack.isEmpty() ? QString() : QStringLiteral("\n") + stack);
+    QLog_Error(ERRORLOG, line);
+    // Also in the console log, so a plugin's activity and its errors read in order.
+    QLog_Warning(CONSOLELOG, line);
     emit m_runtime->errorReported(where, message);
 }
 
@@ -408,8 +411,14 @@ QJSValue PluginRuntime::callSync(const QString& method, const QVariantList& args
 {
     PluginError error;
     QVariant value;
+    // The watchdog stops runaway JavaScript. Time spent waiting on the host,
+    // such as Word starting up for a COM call, does not count against it.
+    const qint64 busySince = m_busySince.exchange(0);
+    const qint64 started = nowMs();
     if (checkPermission(method, args, &error))
         value = handleSync(method, args, &error);
+    if (busySince > 0)
+        m_busySince.store(busySince + (nowMs() - started));
     QJSValue result = m_engine->newObject();
     if (error.isError())
         result.setProperty(QStringLiteral("error"), toJs(error.toMap()));
@@ -991,8 +1000,12 @@ void PluginRuntime::browserSignIn(const QVariantMap& options, Reply reply)
 void PluginRuntime::dispatchMenu(const QString& menuId, const QString& entity, const QString& key,
                                  const QString& parameter, const QStringList& include)
 {
-    if (!m_started)
+    if (!m_started) {
+        QLog_Warning(CONSOLELOG, QStringLiteral("[%1] menu %2 ignored: the plugin has not started.").arg(m_config.manifest.id, menuId));
         return;
+    }
+    QLog_Info(CONSOLELOG, QStringLiteral("[%1] menu %2 received on the plugin thread (%3 %4); plugin %5 from %6.")
+                              .arg(m_config.manifest.id, menuId, entity, key, m_config.manifest.version, m_config.manifest.folder));
     QVariantMap context {{QStringLiteral("menuId"), menuId},
                          {QStringLiteral("kind"), entity.isEmpty() ? QStringLiteral("global") : QStringLiteral("record")},
                          {QStringLiteral("entity"), entity.isEmpty() ? QVariant::fromValue(nullptr) : QVariant(entity)},
@@ -1003,12 +1016,16 @@ void PluginRuntime::dispatchMenu(const QString& menuId, const QString& entity, c
         && m_config.manifest.canRead(entity)) {
         PluginError error;
         const QVariant record = m_data->get(entity, key, QVariantMap{{QStringLiteral("include"), include}}, &error);
-        if (error.isError())
+        if (error.isError()) {
             QLog_Error(ERRORLOG, QStringLiteral("[%1] menu %2: %3").arg(m_config.manifest.id, menuId, error.message));
-        else
+            QLog_Warning(CONSOLELOG, QStringLiteral("[%1] menu %2: could not read the record: %3").arg(m_config.manifest.id, menuId, error.message));
+        } else {
             context.insert(QStringLiteral("record"), record);
+        }
     }
-    callHook("menu", {QJSValue(menuId), toJs(context)});
+    const bool ok = callHook("menu", {QJSValue(menuId), toJs(context)});
+    QLog_Info(CONSOLELOG, QStringLiteral("[%1] menu %2 handed to the plugin%3.")
+                              .arg(m_config.manifest.id, menuId, ok ? QString() : QStringLiteral(" (the call failed; see error.log)")));
 }
 
 void PluginRuntime::invoke(const QString& token, const QString& name, const QVariantList& args, Reply reply)

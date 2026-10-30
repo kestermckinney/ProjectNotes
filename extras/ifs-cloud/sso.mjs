@@ -11,6 +11,7 @@ const COOLDOWN_MS = 3600 * 1000;   // after a failed browser sign-in, wait an ho
 let endpoints = null;
 let accessToken = null;
 let expiresAt = 0;
+let refreshToken = null;
 let currentUser = null;
 let cooldownUntil = 0;
 
@@ -20,10 +21,17 @@ function now() { return Date.now() / 1000; }
 
 export function user() { return currentUser; }
 
+// Troubleshooting trace, written to the console log. Never pass it a token or
+// password; describe them with tokenInfo() instead.
+export function trace(area, message) { console.log("[trace " + area + "] " + message); }
+function tokenInfo(value) { return value ? "present (" + String(value).length + " chars)" : "missing"; }
+function secondsLeft(at) { return Math.round((Number(at) || 0) - now()) + "s"; }
+
 export function reset() {
     endpoints = null;
     accessToken = null;
     expiresAt = 0;
+    refreshToken = null;
     currentUser = null;
     cooldownUntil = 0;
 }
@@ -68,8 +76,10 @@ function randomState() {
 
 function* discover() {
     const url = ifsUrl() + "/auth/realms/" + encodeURIComponent(realm()) + "/.well-known/openid-configuration";
+    trace("sso", "discovering sign-in endpoints at " + url);
     try {
         const response = yield http.fetch(url, { timeoutSeconds: 30 });
+        trace("sso", "discovery answered " + response.status);
         if (!response.ok) {
             log.warn("Could not read the IFS sign-in configuration (" + response.status + ") from " + url);
             return false;
@@ -80,6 +90,7 @@ function* discover() {
             return false;
         }
         endpoints = { authorize: config.authorization_endpoint, token: config.token_endpoint };
+        trace("sso", "token endpoint " + endpoints.token);
         return true;
     } catch (e) {
         log.warn("Cannot reach IFS Cloud at " + ifsUrl() + ": " + e.message);
@@ -88,21 +99,42 @@ function* discover() {
 }
 
 function* requestToken(form) {
+    trace("sso", "token request: " + form.grant_type);
     const response = yield http.fetch(endpoints.token, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: formEncode(form),
         timeoutSeconds: 60,
     });
+    trace("sso", "token request answered " + response.status);
     if (!response.ok) {
         log.warn("IFS token request failed (" + response.status + "): " + (yield response.text()));
         return null;
     }
     const token = yield response.json();
+    trace("sso", "received access token " + tokenInfo(token.access_token) + ", expires_in " + token.expires_in
+          + "s; refresh token " + tokenInfo(token.refresh_token) + ", refresh_expires_in " + token.refresh_expires_in
+          + "s; id token " + tokenInfo(token.id_token));
     token.expires_at = now() + (Number(token.expires_in) || 300) - 10;
-    yield secrets.set(TOKEN_ACCOUNT, JSON.stringify(token));
+    // A refresh that does not rotate the refresh token keeps the old one.
+    if (!token.refresh_token && form.refresh_token) {
+        trace("sso", "no new refresh token; keeping the old one");
+        token.refresh_token = form.refresh_token;
+    }
     accessToken = token.access_token;
     expiresAt = token.expires_at;
+    refreshToken = token.refresh_token || null;
+    // Only what token() reads back; the id token would only make it bigger.
+    const saved = { access_token: token.access_token, expires_at: token.expires_at, refresh_token: token.refresh_token };
+    const text = JSON.stringify(saved);
+    try {
+        yield secrets.set(TOKEN_ACCOUNT, text);
+        trace("sso", "saved the sign-in to the credential store (" + text.length + " chars)");
+        const check = yield secrets.get(TOKEN_ACCOUNT);
+        trace("sso", "read-back " + (check === text ? "matches" : "DOES NOT MATCH (" + tokenInfo(check) + ")"));
+    } catch (e) {
+        log.warn("Could not save the IFS sign-in; it lasts until Project Notes closes: " + e.message);
+    }
     return accessToken;
 }
 
@@ -118,9 +150,11 @@ function* lookupUser() {
         + encodeURIComponent("WebUser eq '" + email.toUpperCase().replace(/'/g, "''") + "'") + "&$select=Identity,WebUser";
     try {
         const response = yield http.fetch(url, { auth: { type: "bearer", token: accessToken }, timeoutSeconds: 60 });
+        trace("sso", "user lookup for " + email + " answered " + response.status);
         if (response.ok) {
             const users = (yield response.json()).value || [];
             currentUser = users.length ? users[0].Identity : null;
+            trace("sso", "IFS user is " + currentUser);
         } else {
             log.info("IFS user lookup failed (" + response.status + "); using the sign-in name.");
             currentUser = email ? email.toUpperCase() : null;
@@ -136,28 +170,47 @@ function* lookupUser() {
 export function* token() {
     if (!ifsUrl()) return null;
     if (accessToken && expiresAt > now()) return accessToken;
+    trace("sso", "need a token: in-memory access token " + tokenInfo(accessToken)
+          + (accessToken ? " (expired " + secondsLeft(expiresAt) + ")" : "") + ", in-memory refresh token " + tokenInfo(refreshToken));
     if (!endpoints && !(yield discover())) return null;
 
     let saved = null;
-    try { saved = JSON.parse((yield secrets.get(TOKEN_ACCOUNT)) || "null"); } catch (e) { saved = null; }
+    try {
+        const text = yield secrets.get(TOKEN_ACCOUNT);
+        trace("sso", "credential store sign-in " + tokenInfo(text));
+        saved = JSON.parse(text || "null");
+    } catch (e) {
+        trace("sso", "could not read the saved sign-in: " + e.message);
+        saved = null;
+    }
+    if (saved)
+        trace("sso", "saved access token " + tokenInfo(saved.access_token) + ", expires in " + secondsLeft(saved.expires_at)
+              + "; saved refresh token " + tokenInfo(saved.refresh_token));
     if (saved && saved.access_token && saved.expires_at > now()) {
+        trace("sso", "using the saved access token");
         accessToken = saved.access_token;
         expiresAt = saved.expires_at;
+        refreshToken = saved.refresh_token || refreshToken;
         if (!currentUser) yield lookupUser();
         return accessToken;
     }
-    if (saved && saved.refresh_token) {
-        const refreshed = yield requestToken({ grant_type: "refresh_token", refresh_token: saved.refresh_token, client_id: CLIENT_ID });
+    // The refresh token this session already holds, then the saved one.
+    const candidates = [refreshToken, saved && saved.refresh_token].filter((t, i, all) => t && all.indexOf(t) === i);
+    trace("sso", candidates.length + " refresh token(s) to try");
+    for (const candidate of candidates) {
+        const refreshed = yield requestToken({ grant_type: "refresh_token", refresh_token: candidate, client_id: CLIENT_ID });
         if (refreshed) {
             if (!currentUser) yield lookupUser();
             return refreshed;
         }
     }
+    refreshToken = null;
 
     if (Date.now() < cooldownUntil) {
         log.info("IFS browser sign-in is paused until " + new Date(cooldownUntil).toLocaleTimeString() + ".");
         return null;
     }
+    trace("sso", "opening the browser sign-in");
     const state = randomState();
     const authorizeUrl = endpoints.authorize + "?" + formEncode({
         response_type: "code", client_id: CLIENT_ID, redirect_uri: REDIRECT_URI, scope: "openid", state: state });
@@ -171,13 +224,19 @@ export function* token() {
         return null;
     }
     const params = queryParams(callback);
+    trace("sso", "browser sign-in returned; code " + tokenInfo(params.code) + ", state " + (params.state === state ? "matches" : "differs"));
     if (params.state !== state || !params.code) {
         cooldownUntil = Date.now() + COOLDOWN_MS;
         log.warn("IFS sign-in returned an unexpected response" + (params.error ? ": " + params.error : "."));
         return null;
     }
-    const signedIn = yield requestToken({ grant_type: "authorization_code", code: params.code,
-                                          redirect_uri: REDIRECT_URI, client_id: CLIENT_ID });
+    let signedIn = null;
+    try {
+        signedIn = yield requestToken({ grant_type: "authorization_code", code: params.code,
+                                        redirect_uri: REDIRECT_URI, client_id: CLIENT_ID });
+    } catch (e) {
+        log.warn("IFS token request failed: " + e.message);
+    }
     if (!signedIn) {
         cooldownUntil = Date.now() + COOLDOWN_MS;
         return null;

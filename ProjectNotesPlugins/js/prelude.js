@@ -707,9 +707,14 @@
         },
         menu: function (menuId, context) {
             const handler = menuHandlers.get(menuId);
-            if (handler) return safely("menu " + menuId, handler, [context]);
-            if (moduleNamespace && typeof moduleNamespace.onMenu === "function")
+            if (handler) {
+                host.log("info", "menu " + menuId + " goes to its registered handler");
+                return safely("menu " + menuId, handler, [context]);
+            }
+            if (moduleNamespace && typeof moduleNamespace.onMenu === "function") {
+                host.log("info", "menu " + menuId + " goes to onMenu");
                 return safely("onMenu", moduleNamespace.onMenu, [menuId, context]);
+            }
             report("menu", new PluginError("not-found", "No handler for menu \"" + menuId + "\"."));
         },
         // QML -> plugin calls (pluginDialog.invoke / pluginSettings.invoke).

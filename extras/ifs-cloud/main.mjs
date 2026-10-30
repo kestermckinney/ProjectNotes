@@ -5,7 +5,7 @@
 import { log, menus, secrets, settings, timers, ui } from "projectnotes";
 import { replaceVariables } from "projectnotes/common";
 import { hasSettings, importProjects, syncActivityTasks, syncTrackerItems } from "./ifs.mjs";
-import { ifsUrl, reset } from "./sso.mjs";
+import { ifsUrl, reset, trace } from "./sso.mjs";
 import { generateStatusReport, generateTrackerReport } from "./ssrs.mjs";
 
 const SYNC_MINUTES = 3;
@@ -112,8 +112,10 @@ function* runSync(all) {
 
 function* background() {
     if (stopped || !hasSettings()) return;
+    trace("sync", "background sync starting");
     try {
-        yield runSync(false);
+        const result = yield runSync(false);
+        trace("sync", "background sync finished: " + JSON.stringify(result));
     } catch (e) {
         log.warn("IFS sync failed: " + e.message);
     }
@@ -141,6 +143,8 @@ function* importNow() {
 }
 
 export function* onStart() {
+    trace("main", "starting; URL " + ifsUrl() + ", report server " + String(settings.get("ReportServer", "") || "(none)")
+          + ", domain user " + String(settings.get("DomainUser", "") || "(none)"));
     stopped = false;
     seedDefaults();
     yield movePasswordToSecrets();
@@ -161,7 +165,15 @@ export function onStop() {
 }
 
 export function* onMenu(menuId, context) {
-    if (menuId === "import") yield importNow();
-    else if (menuId === "status-report") yield generateStatusReport(context);
-    else if (menuId === "tracker-report") yield generateTrackerReport(context);
+    trace("menu", menuId + ": entity " + context.entity + ", key " + context.key
+          + ", record " + (context.record ? "loaded" : "MISSING") + ", parameter " + (context.parameter || "(none)"));
+    try {
+        if (menuId === "import") yield importNow();
+        else if (menuId === "status-report") yield generateStatusReport(context);
+        else if (menuId === "tracker-report") yield generateTrackerReport(context);
+        trace("menu", menuId + " finished");
+    } catch (e) {
+        trace("menu", menuId + " failed: " + e.message + (e.stack ? "\n" + e.stack : ""));
+        throw e;
+    }
 }

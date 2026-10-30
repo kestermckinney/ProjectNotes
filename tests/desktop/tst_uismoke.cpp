@@ -14,7 +14,9 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QQmlApplicationEngine>
+#include <QSettings>
 
+#include "appidentity.h"
 #include "PluginUiController.h"
 #include "ProjectNotesPlugins/PluginRegistry.h"
 #include <QQmlError>
@@ -1866,9 +1868,12 @@ private slots:
         PluginUiController* ui = PluginUiController::instance();
         const QString id = QStringLiteral("test.uitest");
 
-        // Install from the fixture folder, then approve its permissions.
+        // Install from the fixture folder, then approve its permissions. A run
+        // that stopped early leaves its copy installed and approved; drop it.
         QString installedId;
         QString error;
+        registry->uninstall(id, &error);
+        QSettings(PN::Identity::settingsOrganization(QStringLiteral("qmltest")), QStringLiteral("PluginState")).remove(id);
         QVERIFY2(registry->install(QStringLiteral(PN_TEST_FIXTURES) + QStringLiteral("/plugins/uitest"),
                                    &installedId, &error), qPrintable(error));
         QCOMPARE(installedId, id);
@@ -1944,6 +1949,18 @@ private slots:
                     QVariantMap{{QStringLiteral("name"), QStringLiteral("Zed")}, {QStringLiteral("kind"), QStringLiteral("B")}});
         QTRY_COMPARE_WITH_TIMEOUT(ui->settingValues(id).value(QStringLiteral("formResult")).toMap()
                                       .value(QStringLiteral("name")).toString(), QStringLiteral("Zed"), 10000);
+        QTRY_VERIFY(!root->findChild<QObject*>(QStringLiteral("pluginRequest_form")));
+
+        // The OK button answers with a JavaScript object of the app's QML
+        // engine; it reaches the plugin's engine as plain values.
+        registry->runMenu(id, QStringLiteral("form"), {}, {});
+        QTRY_VERIFY_WITH_TIMEOUT((form = root->findChild<QObject*>(QStringLiteral("pluginRequest_form"))) != nullptr, 10000);
+        QTRY_VERIFY(form->property("visible").toBool());
+        const QJSValue answer = engine->evaluate(QStringLiteral("({ name: 'From QML', kind: 'A', done: true })"));
+        QVERIFY(QMetaObject::invokeMethod(form, "answer", Q_ARG(QVariant, QVariant::fromValue(answer))));
+        QTRY_COMPARE_WITH_TIMEOUT(ui->settingValues(id).value(QStringLiteral("formResult")).toMap()
+                                      .value(QStringLiteral("name")).toString(), QStringLiteral("From QML"), 10000);
+        QCOMPARE(ui->settingValues(id).value(QStringLiteral("formResult")).toMap().value(QStringLiteral("done")).toBool(), true);
         QTRY_VERIFY(!root->findChild<QObject*>(QStringLiteral("pluginRequest_form")));
 
         // A plugin QML dialog that invokes a plugin handler and accepts itself.

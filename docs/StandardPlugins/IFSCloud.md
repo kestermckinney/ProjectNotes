@@ -75,7 +75,7 @@ If you depend on IFS and Project Notes agreeing, pick one side as the place you 
 
 ## Status reports
 
-Right-click a project and choose **Generate Status Report**. Choose the report date and how to send it: in the message body (Windows, using Word), as a PDF, as a Word document, or not at all. The plugin downloads the report from the report server with the domain account, saves the PDF (and a Word copy, if you ask) in the project's report folder, prepares the email for your review, and records the date as the project's last status date.
+Right-click a project and choose **Generate Status Report**. Choose the report date and how to send it: in the message body (Windows, using Word), as a PDF, as a Word document, or not at all. The plugin downloads the report from the report server with the domain account, saves the PDF (and a Word copy, if you ask) in the project's report folder, opens the email as a draft in your mail application, and records the date as the project's last status date.
 
 The email goes to the project's default status report audience, or to the team members marked to receive status reports when there is none.
 

@@ -228,7 +228,7 @@ A `contributes.settings` entry adds a section to Settings. With a `schema`, Proj
 
 | Namespace | What it does |
 | --- | --- |
-| `email` | `compose()` shows a review dialog and creates a draft in the user's email application. Plugins cannot send mail without the user. Also `audiences()`, `resolveAudience()`, `templates()` and `renderTemplate()`. |
+| `email` | `compose()` creates a draft in the user's email application straight away, with no review dialog. The user reviews and sends it there, so plugins cannot send mail without the user. Also `audiences()`, `resolveAudience()`, `templates()` and `renderTemplate()`. |
 | `calendar` | `draftMeeting()` shows a review and creates a draft meeting; `writeIcs()` saves an `.ics` file. |
 | `contacts` | `pick()` opens the contact picker; `syncNow()`, `sources()`, `toVCard()`, `fromVCard()`. |
 | `office365` | `graph()` calls Microsoft Graph with the user's Office 365 sign-in; `graphPages()` follows paging links. |

@@ -65,11 +65,6 @@ QString backendLabel(PN::Comm::BackendId id)
     return {};
 }
 
-QString addressLabel(const PN::Comm::EmailAddress& a)
-{
-    return a.displayName.isEmpty() ? a.address : QStringLiteral("%1 <%2>").arg(a.displayName, a.address);
-}
-
 } // namespace
 
 // ── Registry ─────────────────────────────────────────────────────────────────
@@ -294,7 +289,6 @@ void DesktopAppController::composePluginEmail(const PluginManifest& plugin, cons
     prep.mode = PN::Comm::EmailMode::InlineHtml;
     prep.senderAddress = emailSettings.senderAddress();
 
-    QStringList toLabels, ccLabels, bccLabels;
     const QList<QPair<QString, PN::Comm::RecipientRole>> roles {
         {QStringLiteral("to"), PN::Comm::RecipientRole::To}, {QStringLiteral("cc"), PN::Comm::RecipientRole::Cc},
         {QStringLiteral("bcc"), PN::Comm::RecipientRole::Bcc}};
@@ -308,8 +302,6 @@ void DesktopAppController::composePluginEmail(const PluginManifest& plugin, cons
                 return;
             }
             prep.recipients.append(address);
-            (role == PN::Comm::RecipientRole::To ? toLabels : role == PN::Comm::RecipientRole::Cc ? ccLabels : bccLabels)
-                .append(addressLabel(address));
         }
     }
     if (prep.recipients.isEmpty()) {
@@ -361,40 +353,31 @@ void DesktopAppController::composePluginEmail(const PluginManifest& plugin, cons
         prep.accountGeneration = account.generation;
     }
 
+    // No preview: the message goes straight to a draft in the email program,
+    // where the user reviews it before sending.
     const QString backendName = backendLabel(prep.backend);
+    const PN::Comm::EmailPreparationResult built = PN::Comm::EmailContentBuilder::prepare(prep);
+    if (!built.request) {
+        const QString text = built.validation.issues.isEmpty() ? tr("The email could not be prepared.")
+            : (built.validation.issues.first().displayText.isEmpty() ? built.validation.issues.first().code
+                                                                    : built.validation.issues.first().displayText);
+        reply({}, PluginError::make(QStringLiteral("email-failed"), text));
+        return;
+    }
+    QLog_Info(CONSOLELOG, QStringLiteral("[%1] email \"%2\" to %3 recipient(s), %4 attachment(s), handed to %5.")
+                              .arg(plugin.id, subject).arg(prep.recipients.size()).arg(attachmentNames.size()).arg(backendName));
     QPointer<DesktopAppController> self(this);
-    PluginUiController::instance()->openRequest(plugin.id, QStringLiteral("email"),
-        {{QStringLiteral("to"), toLabels}, {QStringLiteral("cc"), ccLabels}, {QStringLiteral("bcc"), bccLabels},
-         {QStringLiteral("subject"), subject}, {QStringLiteral("html"), html},
-         {QStringLiteral("attachments"), attachmentNames}, {QStringLiteral("backend"), backendName}},
-        [self, prep, reply, backendName](const QVariant& result, const PluginError& error) {
-            if (!self)
-                return;
-            if (error.isError()) { reply({}, error); return; }
-            if (result.isNull() || !result.toBool()) {
-                reply(QVariantMap{{QStringLiteral("status"), QStringLiteral("cancelled")}}, {});
-                return;
-            }
-            const PN::Comm::EmailPreparationResult built = PN::Comm::EmailContentBuilder::prepare(prep);
-            if (!built.request) {
-                const QString message = built.validation.issues.isEmpty() ? tr("The email could not be prepared.")
-                    : (built.validation.issues.first().displayText.isEmpty() ? built.validation.issues.first().code
-                                                                            : built.validation.issues.first().displayText);
-                reply({}, PluginError::make(QStringLiteral("email-failed"), message));
-                return;
-            }
-            self->m_emailService->handoff(*built.request, [self, reply, backendName](PN::Comm::EmailHandoffResult handoff) {
-                if (!handoff.error.code.isEmpty()) {
-                    reply({}, PluginError::make(QStringLiteral("email-failed"),
-                                                handoff.error.displayText.isEmpty() ? handoff.error.code : handoff.error.displayText));
-                    return;
-                }
-                if (handoff.presentationUrl.isValid())
-                    QDesktopServices::openUrl(handoff.presentationUrl);
-                reply(QVariantMap{{QStringLiteral("status"), QStringLiteral("handed-off")},
-                                  {QStringLiteral("backend"), backendName}}, {});
-            });
-        });
+    m_emailService->handoff(*built.request, [self, reply, backendName](PN::Comm::EmailHandoffResult handoff) {
+        if (!handoff.error.code.isEmpty()) {
+            reply({}, PluginError::make(QStringLiteral("email-failed"),
+                                        handoff.error.displayText.isEmpty() ? handoff.error.code : handoff.error.displayText));
+            return;
+        }
+        if (handoff.presentationUrl.isValid())
+            QDesktopServices::openUrl(handoff.presentationUrl);
+        reply(QVariantMap{{QStringLiteral("status"), QStringLiteral("handed-off")},
+                          {QStringLiteral("backend"), backendName}}, {});
+    });
 }
 
 QVariantList DesktopAppController::pluginEmailAudiences(const QString& projectId, const QString& workflow) const

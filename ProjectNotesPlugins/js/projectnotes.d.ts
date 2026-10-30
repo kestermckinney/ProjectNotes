@@ -222,7 +222,8 @@ declare module "projectnotes" {
     }
     export const email: {
         backends(): Promise<{ id: string; name: string; available: boolean; preferred: boolean; supportsHtml: boolean; supportsAttachments: boolean }[]>;
-        compose(message: EmailMessage): Promise<{ status: "handed-off" | "cancelled"; backend?: string }>;
+        /** Creates a draft in the user's email application straight away, with no review dialog. The user sends it from there. */
+        compose(message: EmailMessage): Promise<{ status: "handed-off"; backend?: string }>;
         audiences(projectKey: string, workflow?: string): Promise<{ id: string; name: string; workflow: string; isDefault: boolean }[]>;
         resolveAudience(projectKey: string, audienceId: string): Promise<{ to: Recipient[]; cc: Recipient[]; bcc: Recipient[] }>;
         templates(): Promise<{ id: string; name: string; workflow: string }[]>;

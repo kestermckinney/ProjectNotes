@@ -185,6 +185,23 @@ elseif(WIN32)
 endif()
 add_test(NAME filefinder COMMAND tst_filefinder)
 
+# The platform credential store, including secrets too long for one Windows
+# Credential Manager entry.
+add_executable(tst_credentialstore
+    tst_credentialstore.cpp
+    ${ROOT_DIR}/credentialstore.cpp ${ROOT_DIR}/credentialstore.h
+)
+target_include_directories(tst_credentialstore PRIVATE ${ROOT_DIR})
+target_link_libraries(tst_credentialstore PRIVATE Qt6::Core Qt6::Test)
+if(UNIX AND NOT APPLE AND NOT ANDROID)
+    target_link_libraries(tst_credentialstore PRIVATE Qt6::DBus)
+elseif(APPLE)
+    target_link_libraries(tst_credentialstore PRIVATE "-framework Security")
+elseif(WIN32)
+    target_link_libraries(tst_credentialstore PRIVATE Advapi32)
+endif()
+add_test(NAME credentialstore COMMAND tst_credentialstore)
+
 # Fast, headless coverage for the open-time Office deep-link builder used by
 # both DesktopAppController::openProjectLocation() and the mobile
 # AppController's equivalent.

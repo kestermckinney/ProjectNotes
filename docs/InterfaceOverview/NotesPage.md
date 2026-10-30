@@ -80,7 +80,7 @@ It is important to record who attended a meeting to make sure the team is commun
 
 ## Emailing the Notes
 
-Right-click a meeting note, on the project's **Notes** tab or on the note's own page, and choose **Send Notes**. Attendees are preselected as **To** recipients; the rest of the project team appears unchecked and defaults to **Cc**. The notes are formatted into the body of the email.
+Right-click a meeting note, on the project's **Notes** tab or on the note's own page, and choose **Send Notes**. A draft opens straight away in your mail application, addressed to the meeting attendees, with the notes formatted into the body. Add anyone else there before you send it.
 
 To send every meeting in one document instead of one note at a time, use the project's **Reports > Meeting Notes…** action.
 

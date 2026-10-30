@@ -662,15 +662,10 @@ Item {
         onExportRequested: page.exportRequested(page.exportTable, page.exportId)
         onRefreshRequested: page._reload()
         onReviewEmailRequested: {
-            if (page._saveNow() && DesktopAppController.prepareMeetingNotesReview(page.projectId, page.noteId))
-                emailReview.open()
+            // No review dialog: the draft opens in the email client.
+            if (page._saveNow())
+                DesktopAppController.sendMeetingNotes(page.projectId, page.noteId)
         }
-    }
-
-    MeetingNotesReviewDialog {
-        id: emailReview
-        controller: DesktopAppController.communicationsController
-        recipientModel: DesktopAppController.recipientSelectionModel
     }
 
     // Shared full-field spell-check dialog (opened by fields / the toolbar).
