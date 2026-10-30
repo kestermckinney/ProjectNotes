@@ -1,8 +1,13 @@
-// UI test plugin for tst_uismoke: opens a schema form and a plugin QML dialog
-// and records what each returned in its settings.
-import { ui, settings } from "projectnotes";
+// UI test plugin for tst_uismoke: opens a schema form, a plugin QML dialog and
+// the recipient panel, and records what each returned in its settings.
+import { email, ui, settings } from "projectnotes";
 
-export function* onMenu(menuId) {
+export function* onMenu(menuId, context) {
+    if (menuId === "recipients") {
+        const chosen = yield email.chooseRecipients(context.key, { workflow: "status-report", title: "Recipients Test" });
+        settings.set("recipientsResult", chosen === null ? "cancelled" : chosen);
+        return;
+    }
     if (menuId === "form") {
         const values = yield ui.showForm({ fields: [
             { key: "name", label: "Name", type: "text", required: true },

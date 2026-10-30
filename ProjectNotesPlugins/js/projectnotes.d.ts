@@ -224,8 +224,15 @@ declare module "projectnotes" {
         backends(): Promise<{ id: string; name: string; available: boolean; preferred: boolean; supportsHtml: boolean; supportsAttachments: boolean }[]>;
         /** Creates a draft in the user's email application straight away, with no review dialog. The user sends it from there. */
         compose(message: EmailMessage): Promise<{ status: "handed-off"; backend?: string }>;
-        audiences(projectKey: string, workflow?: string): Promise<{ id: string; name: string; workflow: string; isDefault: boolean }[]>;
+        /** Every saved audience of the project; audiences are shared by all reports. `isDefault` says whether `workflow` (such as "status-report") loads it automatically. */
+        audiences(projectKey: string, workflow?: string): Promise<{ id: string; name: string; workflow: string; isDefault: boolean; defaultFor: string[] }[]>;
         resolveAudience(projectKey: string, audienceId: string): Promise<{ to: Recipient[]; cc: Recipient[]; bcc: Recipient[] }>;
+        /** Opens the report recipient panel: checklist, To/Cc/Bcc, saved audiences and "Set as default" for `workflow` (default "project-email").
+         *  Starts from that workflow's default audience. Resolves null when the user cancels. `audienceId` is the saved audience last loaded or saved. */
+        chooseRecipients(projectKey: string, options?: {
+            workflow?: "status-report" | "tracker-items-report" | "meeting-notes-report" | "project-email";
+            title?: string; okText?: string;
+        }): Promise<{ to: Recipient[]; cc: Recipient[]; bcc: Recipient[]; audienceId: string | null } | null>;
         templates(): Promise<{ id: string; name: string; workflow: string }[]>;
         renderTemplate(templateId: string, context: { projectKey?: string; noteKey?: string }): Promise<{ subject: string; html: string }>;
     };

@@ -105,6 +105,8 @@ An audience is a named recipient selection stored on the project.
 
 Audiences are shared across a project. One saved while running a Status Report is offered for the Tracker Items Report, the Meeting Notes Report and the **Schedule Meeting** dialog on the same project. Defaults are not shared: each report keeps its own, and the dropdown marks the current report's default.
 
+Plugin reports that use the recipient panel, such as the IFS Cloud plugin's status and tracker reports, share the same saved audiences and the same per-report defaults.
+
 Because meetings use **Required** and **Optional** rather than To, Cc and Bcc, an audience crossing between the two stores Required as To and Optional as Cc. A report's Bcc recipients load as Optional.
 
 ## Templates

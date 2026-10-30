@@ -228,7 +228,7 @@ A `contributes.settings` entry adds a section to Settings. With a `schema`, Proj
 
 | Namespace | What it does |
 | --- | --- |
-| `email` | `compose()` creates a draft in the user's email application straight away, with no review dialog. The user reviews and sends it there, so plugins cannot send mail without the user. Also `audiences()`, `resolveAudience()`, `templates()` and `renderTemplate()`. |
+| `email` | `compose()` creates a draft in the user's email application straight away, with no review dialog. The user reviews and sends it there, so plugins cannot send mail without the user. `chooseRecipients(projectKey, { workflow, title, okText })` opens the recipient panel the built-in reports use, with To/Cc/Bcc, saved audiences and **Set as default** for `workflow` (`status-report`, `tracker-items-report`, `meeting-notes-report` or `project-email`). It resolves to `{ to, cc, bcc, audienceId }`, ready to spread into `compose()`, or `null` on Cancel. Audiences belong to the project: `audiences(projectKey, workflow)` lists all of them, with `isDefault` for that workflow, and `resolveAudience()` gives a saved audience's recipients. Also `templates()` and `renderTemplate()`. |
 | `calendar` | `draftMeeting()` shows a review and creates a draft meeting; `writeIcs()` saves an `.ics` file. |
 | `contacts` | `pick()` opens the contact picker; `syncNow()`, `sources()`, `toVCard()`, `fromVCard()`. |
 | `office365` | `graph()` calls Microsoft Graph with the user's Office 365 sign-in; `graphPages()` follows paging links. |

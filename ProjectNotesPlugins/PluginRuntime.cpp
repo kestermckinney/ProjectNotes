@@ -85,6 +85,7 @@ const QHash<QString, QString>& forwardedMethods()
         {QStringLiteral("email.compose"), QStringLiteral("email.compose")},
         {QStringLiteral("email.audiences"), QStringLiteral("email.compose")},
         {QStringLiteral("email.resolveAudience"), QStringLiteral("email.compose")},
+        {QStringLiteral("email.chooseRecipients"), QStringLiteral("email.compose")},
         {QStringLiteral("email.templates"), QStringLiteral("email.compose")},
         {QStringLiteral("email.renderTemplate"), QStringLiteral("email.compose")},
         {QStringLiteral("calendar.backends"), QStringLiteral("calendar.draft")},

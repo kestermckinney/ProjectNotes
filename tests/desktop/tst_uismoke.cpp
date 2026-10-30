@@ -1984,6 +1984,33 @@ private slots:
                                   10000);
         QTRY_VERIFY(!root->findChild<QObject*>(QStringLiteral("pluginRequest_dialog")));
 
+        // email.chooseRecipients(): the report recipient panel over its own
+        // session. Cancel answers null; OK answers the selection.
+        {
+            const QString projectId = projectWithNote();
+            QVERIFY(!projectId.isEmpty());
+            auto openPicker = [&]() -> QObject* {
+                registry->runMenu(id, QStringLiteral("recipients"), QStringLiteral("projects"), projectId);
+                QObject* picker = nullptr;
+                [&] { QTRY_VERIFY_WITH_TIMEOUT((picker = root->findChild<QObject*>(QStringLiteral("pluginRequest_recipientPicker"))) != nullptr, 10000); }();
+                return picker;
+            };
+            QObject* picker = openPicker();
+            QVERIFY(picker);
+            QTRY_VERIFY(picker->property("visible").toBool());
+            QVERIFY(QMetaObject::invokeMethod(picker, "answer", Q_ARG(QVariant, QVariant::fromValue(nullptr))));
+            QTRY_COMPARE_WITH_TIMEOUT(ui->settingValues(id).value(QStringLiteral("recipientsResult")).toString(), QStringLiteral("cancelled"), 10000);
+            QTRY_VERIFY(!root->findChild<QObject*>(QStringLiteral("pluginRequest_recipientPicker")));
+
+            picker = openPicker();
+            QVERIFY(picker);
+            QTRY_VERIFY(picker->property("visible").toBool());
+            QVERIFY(QMetaObject::invokeMethod(picker, "answer", Q_ARG(QVariant, QVariant(true))));
+            QTRY_VERIFY_WITH_TIMEOUT(ui->settingValues(id).value(QStringLiteral("recipientsResult")).toMap().contains(QStringLiteral("to")), 10000);
+            QTRY_VERIFY(!root->findChild<QObject*>(QStringLiteral("pluginRequest_recipientPicker")));
+            ui->setSetting(id, QStringLiteral("recipientsResult"), QVariant());
+        }
+
         QVERIFY2(registry->plugin(id).lastError.isEmpty(), qPrintable(registry->plugin(id).lastError));
         QVERIFY2(registry->uninstall(id, &error), qPrintable(error));
         assertClean("JavaScript plugin UI");

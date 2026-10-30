@@ -9,7 +9,8 @@ import ProjectNotesDesktop
 
 // Shows every dialog a JavaScript plugin asks for (PluginUiController
 // requestOpened): messages, confirmations, prompts, forms, plugin QML dialogs,
-// file pickers, progress, the contact picker, and the meeting review step.
+// file pickers, progress, the contact and recipient pickers, and the meeting
+// review step.
 // Plugin emails skip review and go straight to a draft. Each dialog answers through PluginUiController.respond(); closing it
 // any other way cancels (null). Popups use Theme.uiScale like the rest of the
 // app's dialogs, so zoom applies to plugin UI too.
@@ -74,6 +75,7 @@ Item {
         case "pickFolder": component = folderComponent; break
         case "progress": component = progressComponent; break
         case "contactPicker": component = contactComponent; break
+        case "recipientPicker": component = recipientComponent; break
         case "meeting": component = meetingComponent; break
         }
         if (!component) {
@@ -348,6 +350,49 @@ Item {
                 if (!answered) PluginUiController.cancelRequest(requestId)
                 host._forget(requestId)
                 destroy()
+            }
+        }
+    }
+
+    // ── recipient picker (email.chooseRecipients) ──────────────────────────
+    // The report recipient panel over an AudienceReviewSession. The answer is
+    // only true or null; the host reads the selection from the session.
+    Component {
+        id: recipientComponent
+        PluginDialog {
+            id: recipients
+            width: Math.min(560, host.width - 40)
+            iconName: "group"
+            title: params.title || qsTr("Choose Recipients")
+            property string error: ""
+            contentItem: ScrollView {
+                id: recipientScroll
+                implicitHeight: Math.min(recipientColumn.implicitHeight, host.height * 0.7)
+                contentWidth: availableWidth
+                clip: true
+                ColumnLayout {
+                    id: recipientColumn
+                    width: recipientScroll.availableWidth
+                    spacing: 8
+                    RecipientSelectionPane {
+                        Layout.fillWidth: true
+                        compact: true
+                        recipientModel: recipients.params.session ? recipients.params.session.recipientModel : null
+                        audienceController: recipients.params.session || null
+                    }
+                    Label { visible: recipients.error !== ""; text: recipients.error; color: Theme.red; wrapMode: Text.Wrap; Layout.fillWidth: true }
+                }
+            }
+            footer: DialogButtonRow {
+                Button { text: qsTr("Cancel"); onClicked: recipients.answer(null) }
+                Button {
+                    text: recipients.params.okText || qsTr("OK")
+                    primary: true
+                    onClicked: {
+                        recipients.error = recipients.params.session ? recipients.params.session.problem() : ""
+                        if (recipients.error === "") recipients.answer(true)
+                    }
+                }
             }
         }
     }

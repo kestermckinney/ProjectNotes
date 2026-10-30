@@ -88,8 +88,22 @@ function* wordToHtml(docxPath, title) {
     return html;
 }
 
-// The project's default audience for the report, or the team members marked
-// to receive status reports when the project has none.
+// The report recipient panel, starting from the project's default audience
+// for the report. Audiences and defaults are shared with the built-in report
+// of the same kind. Returns null when the user cancels, or undefined on a
+// Project Notes too old to show the panel.
+function* chooseRecipients(project, report) {
+    if (typeof email.chooseRecipients !== "function") return undefined;
+    const chosen = yield email.chooseRecipients(project.$key, {
+        workflow: report.workflow, title: report.title + " Recipients", okText: "Generate" });
+    trace("ssrs", chosen ? "recipients chosen: to " + chosen.to.length + ", cc " + chosen.cc.length + ", bcc " + chosen.bcc.length
+                         + ", audience " + (chosen.audienceId || "(none)")
+                         : "recipient choice cancelled");
+    return chosen ? { to: chosen.to, cc: chosen.cc, bcc: chosen.bcc } : null;
+}
+
+// Older Project Notes: the project's default audience for the report, or the
+// team members marked to receive status reports when the project has none.
 function* recipients(project, workflow) {
     try {
         const audiences = yield email.audiences(project.$key, workflow);
@@ -139,6 +153,12 @@ function* generateReport(context, report) {
 
     const reportDate = options.reportDate || today();
     const delivery = options.delivery;
+    // Choose the recipients before the slow download, so cancelling costs nothing.
+    let chosen;
+    if (delivery !== DELIVERY.none) {
+        chosen = yield chooseRecipients(project, report);
+        if (chosen === null) return;
+    }
     const stamp = reportDate.replace(/-/g, "") + " " + project.project_number + " " + report.title;
     const pdfPath = files.tempPath(stamp + ".pdf");
     const docxPath = files.tempPath(stamp + ".docx");
@@ -176,7 +196,8 @@ function* generateReport(context, report) {
 
     if (delivery !== DELIVERY.none) {
         const subject = project.project_number + " " + (project.project_name || "") + " " + report.title + " " + formatDate(reportDate, "MM/dd/yyyy");
-        const message = Object.assign({ subject: subject, projectKey: project.$key }, yield recipients(project, report.workflow));
+        const message = Object.assign({ subject: subject, projectKey: project.$key },
+                                      chosen || (yield recipients(project, report.workflow)));
         if (delivery === DELIVERY.html) {
             const html = yield wordToHtml(docxPath, report.title);
             if (html) message.html = html;

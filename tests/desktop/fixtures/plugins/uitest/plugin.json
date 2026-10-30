@@ -5,12 +5,13 @@
     "apiVersion": 1,
     "description": "Exercises plugin dialogs in tst_uismoke.",
     "main": "main.mjs",
-    "permissions": ["ui.dialogs"],
+    "permissions": ["ui.dialogs", "email.compose"],
     "legacySettings": [{ "group": "UI Test Legacy", "prefix": "Old" }],
     "contributes": {
         "menus": [
             { "id": "form", "title": "Form Test", "context": "global", "submenu": "Tests" },
-            { "id": "dialog", "title": "Dialog Test", "context": "global", "submenu": "Tests" }
+            { "id": "dialog", "title": "Dialog Test", "context": "global", "submenu": "Tests" },
+            { "id": "recipients", "title": "Recipients Test", "context": "record", "entity": "projects", "submenu": "Tests" }
         ],
         "settings": [
             { "id": "general", "title": "UI Test Plugin", "schema": "settings.schema.json" }

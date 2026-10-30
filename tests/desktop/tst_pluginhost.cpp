@@ -1108,15 +1108,22 @@ void PluginHostTest::ifsCloudPlugin()
     QHash<QString, QString> secretStore{{QStringLiteral("sso-token"), token}};
     const QString projectFolder = m_dir.filePath(QStringLiteral("ifs-project"));
     QDir().mkpath(projectFolder);
+    // What the report form and the recipient panel answer.
+    QString delivery = QStringLiteral("Email the PDF");
+    const QVariantMap jim {{QStringLiteral("name"), QStringLiteral("Jim Smith")}, {QStringLiteral("email"), QStringLiteral("jim@acme.example")}};
+    const QVariantMap pat {{QStringLiteral("name"), QStringLiteral("Pat Engineer")}, {QStringLiteral("email"), QStringLiteral("pat@acme.example")}};
+    QVariant chosenRecipients = QVariantMap{{QStringLiteral("to"), QVariantList{jim}}, {QStringLiteral("cc"), QVariantList{pat}},
+                                            {QStringLiteral("bcc"), QVariantList{}}, {QStringLiteral("audienceId"), QStringLiteral("aud-1")}};
     services.handler = [&](const QString& method, const QVariantList& args, const Reply& reply) {
         if (method == QLatin1String("secrets.get")) { reply(secretStore.value(args.value(0).toString()), {}); return true; }
         if (method == QLatin1String("secrets.set")) { secretStore.insert(args.value(0).toString(), args.value(1).toString()); reply({}, {}); return true; }
         if (method == QLatin1String("app.projectFolder")) { reply(projectFolder, {}); return true; }
         if (method == QLatin1String("ui.showForm")) {
-            reply(QVariantMap{{QStringLiteral("reportDate"), QStringLiteral("2026-10-01")}, {QStringLiteral("delivery"), QStringLiteral("Email the PDF")},
+            reply(QVariantMap{{QStringLiteral("reportDate"), QStringLiteral("2026-10-01")}, {QStringLiteral("delivery"), delivery},
                               {QStringLiteral("keepWord"), false}, {QStringLiteral("display"), false}}, {});
             return true;
         }
+        if (method == QLatin1String("email.chooseRecipients")) { reply(chosenRecipients, {}); return true; }
         if (method == QLatin1String("email.audiences")) { reply(QVariantList{}, {}); return true; }
         if (method == QLatin1String("email.compose")) { reply(QVariantMap{{QStringLiteral("status"), QStringLiteral("handed-off")}}, {}); return true; }
         if (method == QLatin1String("app.defaults")) { reply(QVariantMap{{QStringLiteral("projectManagerId"), QStringLiteral("person-mike")}}, {}); return true; }
@@ -1212,9 +1219,16 @@ void PluginHostTest::ifsCloudPlugin()
     QFile pdfFile(pdf);
     QVERIFY2(pdfFile.open(QIODevice::ReadOnly), qPrintable(pdf));
     QCOMPARE(pdfFile.readAll(), QByteArray("%PDF-1.4 fake"));
-    // Jim receives status reports; Mike is the project manager.
-    QCOMPARE(message.value(QStringLiteral("to")).toList().size(), 1);
-    QCOMPARE(message.value(QStringLiteral("to")).toList().first().toMap().value(QStringLiteral("email")).toString(), QStringLiteral("jim@acme.example"));
+    // The recipient panel opened for the status report's audiences, and its
+    // choice addressed the email.
+    const QList<QVariantList> picked = services.argsOf(id, QStringLiteral("email.chooseRecipients"));
+    QCOMPARE(picked.size(), 1);
+    QCOMPARE(picked.first().value(0).toString(), QStringLiteral("project-p4000"));
+    QCOMPARE(picked.first().value(1).toMap().value(QStringLiteral("workflow")).toString(), QStringLiteral("status-report"));
+    QCOMPARE(message.value(QStringLiteral("to")).toList(), QVariantList{jim});
+    QCOMPARE(message.value(QStringLiteral("cc")).toList(), QVariantList{pat});
+    QVERIFY(message.value(QStringLiteral("bcc")).toList().isEmpty());
+    QVERIFY(!message.contains(QStringLiteral("audienceId")));
     bool basicAuth = false;
     for (const FakeHttpServer::Request& r : std::as_const(ifs.requests))
         if (r.target.startsWith(QLatin1String("/ReportServer/")))
@@ -1235,6 +1249,25 @@ void PluginHostTest::ifsCloudPlugin()
     for (int i = trackerRequestsBefore; i < ifs.requests.size(); ++i)
         issuesList |= ifs.requests.at(i).target.contains(QLatin1String("Issues+List&ProjectId=P4000"));
     QVERIFY(issuesList);
+    QCOMPARE(services.argsOf(id, QStringLiteral("email.chooseRecipients")).last().value(1).toMap().value(QStringLiteral("workflow")).toString(),
+             QStringLiteral("tracker-items-report"));
+
+    // Cancelling the recipient panel stops before the download.
+    chosenRecipients = QVariant::fromValue(nullptr);
+    const int cancelRequestsBefore = ifs.requests.size();
+    registry.runMenu(id, QStringLiteral("status-report"), QStringLiteral("projects"), QStringLiteral("project-p4000"));
+    QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(id, QStringLiteral("email.chooseRecipients")).size(), 3, 15000);
+    QTest::qWait(300);
+    QCOMPARE(ifs.requests.size(), cancelRequestsBefore);
+    QCOMPARE(services.argsOf(id, QStringLiteral("email.compose")).size(), 2);
+    QCOMPARE(services.argsOf(id, QStringLiteral("ui.notify")).size(), 3);
+
+    // A report that is not emailed never asks for recipients.
+    delivery = QStringLiteral("Do not email");
+    registry.runMenu(id, QStringLiteral("status-report"), QStringLiteral("projects"), QStringLiteral("project-p4000"));
+    QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(id, QStringLiteral("ui.notify")).size(), 4, 15000);
+    QCOMPARE(services.argsOf(id, QStringLiteral("email.chooseRecipients")).size(), 3);
+    QCOMPARE(services.argsOf(id, QStringLiteral("email.compose")).size(), 2);
     QVERIFY(errors.isEmpty());
 }
 

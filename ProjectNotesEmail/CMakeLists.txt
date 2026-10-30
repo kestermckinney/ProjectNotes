@@ -19,6 +19,8 @@ add_library(ProjectNotesEmail STATIC
     RecipientSelectionModel.cpp
     AudiencePresetStore.h
     AudiencePresetStore.cpp
+    AudienceReviewSession.h
+    AudienceReviewSession.cpp
     reports/ReportFormatters.h
     reports/ReportFormatters.cpp
     CommunicationRepository.h

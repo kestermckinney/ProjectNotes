@@ -352,6 +352,7 @@
         compose: function (message) { return call("email.compose", [message || {}]); },
         audiences: function (projectKey, workflow) { return call("email.audiences", [String(projectKey), workflow || ""]); },
         resolveAudience: function (projectKey, audienceId) { return call("email.resolveAudience", [String(projectKey), String(audienceId)]); },
+        chooseRecipients: function (projectKey, options) { return call("email.chooseRecipients", [String(projectKey), options || {}]); },
         templates: function () { return call("email.templates", []); },
         renderTemplate: function (templateId, context) { return call("email.renderTemplate", [String(templateId), context || {}]); },
     });

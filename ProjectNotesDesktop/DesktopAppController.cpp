@@ -69,40 +69,11 @@
 
 #include <QDesktopServices>
 
-namespace {
+#include "ProjectNotesEmail/AudienceReviewSession.h"
 
-// Every generated report starts from the project team, excluding the project
-// manager, before any saved audience preset is applied.
-PN::Comm::AudienceRule projectTeamAudienceRule()
-{
-    PN::Comm::AudienceRule rule;
-    rule.source = PN::Comm::ContactSource::ProjectTeam;
-    rule.excludeProjectManager = true;
-    return rule;
-}
-
-PN::Comm::AudienceRule reviewPresetRule(PN::Comm::Workflow workflow,
-                                      const PN::Comm::CommunicationSnapshot &snapshot,
-                                      const PN::Comm::AudiencePreset &preset)
-{
-    auto rule = preset.rule;
-    if (workflow != PN::Comm::Workflow::ProjectEmail) return rule;
-    // Saved report audiences default to team members excluding the manager.
-    // Project emails can explicitly select a manager or meeting guest too;
-    // retain those IDs and their overrides without changing report behavior.
-    rule.source = PN::Comm::ContactSource::ChosenContacts;
-    rule.excludeProjectManager = false;
-    for (const auto &contact : snapshot.contacts) {
-        bool available = contact.projectTeamMember && contact.id != snapshot.projectManagerId;
-        for (const auto &overrideValue : preset.overrides)
-            available |= overrideValue.contactId == contact.id;
-        if (available) rule.chosenContactIds.append(contact.id);
-    }
-    rule.chosenContactIds.removeDuplicates();
-    return rule;
-}
-
-} // namespace
+// Shared with the plugin recipient picker (AudienceReviewSession).
+using PN::Comm::projectTeamAudienceRule;
+using PN::Comm::reviewPresetRule;
 
 #include "sqlitesyncpro.h"
 #include "syncresult.h"

@@ -898,7 +898,12 @@ public:
                             std::function<void(const QVariant&, const PN::Plugins::PluginError&)> reply);
     QVariantList pluginEmailBackends() const;
     QVariantList pluginEmailAudiences(const QString& projectId, const QString& workflow) const;
-    QVariant pluginResolveAudience(const QString& projectId, const QString& audienceId, PN::Plugins::PluginError* error) const;
+    void resolvePluginAudience(const QString& projectId, const QString& audienceId,
+                               std::function<void(const QVariant&, const PN::Plugins::PluginError&)> reply);
+    // email.chooseRecipients(): the report recipient panel in a plugin dialog.
+    void choosePluginRecipients(const PN::Plugins::PluginManifest& plugin, const QString& projectId,
+                                const QVariantMap& options,
+                                std::function<void(const QVariant&, const PN::Plugins::PluginError&)> reply);
     QVariantList pluginEmailTemplates();
     void renderPluginEmailTemplate(const QString& templateId, const QVariantMap& context,
                                    std::function<void(const QVariant&, const PN::Plugins::PluginError&)> reply);
@@ -967,6 +972,10 @@ private slots:
     void onSyncStatusUpdated(int percentComplete, qint64 pendingPush, qint64 pendingPull);
 
 private:
+    // Loads a project's communication snapshot for a plugin request; the
+    // callback gets nothing when the project cannot be read.
+    void loadPluginSnapshot(const QString& projectId, PN::Comm::Workflow workflow,
+                            std::function<void(std::optional<PN::Comm::CommunicationSnapshot>, const PN::Plugins::PluginError&)> done);
     bool applyDefaultReviewAudiencePreset();
     // The project and workflow whose saved audiences the review pane shows:
     // the open meeting review, or else the email/report review.

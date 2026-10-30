@@ -77,13 +77,21 @@ If you depend on IFS and Project Notes agreeing, pick one side as the place you 
 
 Right-click a project and choose **Generate Status Report**. Choose the report date and how to send it: in the message body (Windows, using Word), as a PDF, as a Word document, or not at all. The plugin downloads the report from the report server with the domain account, saves the PDF (and a Word copy, if you ask) in the project's report folder, opens the email as a draft in your mail application, and records the date as the project's last status date.
 
-The email goes to the project's default status report audience, or to the team members marked to receive status reports when there is none.
+### Choosing recipients
+
+If you email the report, a **Status Report Recipients** dialog opens before anything is downloaded. It's the same recipient panel the built-in reports use. Tick the people to include, set each one to **To**, **Cc** or **Bcc**, search the list, or use **Select all**, **Clear** and **Reset recipients**. Then choose **Generate**. **Cancel** stops there, and nothing is downloaded or saved.
+
+It starts with the project's default status report audience. Without one, it starts with the team members marked **Receive Status**, leaving out the project manager. The **Saved audience** dropdown, **Save audience** and **Set as report default** work as they do in the built-in reports. See [Saved audiences](<../InterfaceOverview/ReportsAndEmail.md#saved-audiences>).
+
+The plugin and the built-in Status Report share the same audiences and the same default. Set a default in either one and the other loads it too.
+
+Choosing **Do not email** skips the dialog.
 
 ## Tracker reports
 
 Right-click a project and choose **Generate Tracker Report** to file and send the SSRS **Issues List** report. The choices match the status report, including the Windows-only option that puts the Word version of the report in the message body. The report date only names the file (`20261001 P4000 Tracker Report.pdf`) and dates the subject; it doesn't change the project's last status date.
 
-The PDF and the optional Word copy go in the tracker report subfolder. The email goes to the project's default Tracker Items Report audience, falling back to the team members marked to receive status reports.
+The PDF and the optional Word copy go in the tracker report subfolder. Recipients are chosen the same way as for the status report. The panel starts with the project's default Tracker Items Report audience, a default it shares with the built-in Tracker Items Report.
 
 ## IFS shortcuts
 
