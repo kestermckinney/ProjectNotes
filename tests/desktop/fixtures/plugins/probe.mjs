@@ -98,6 +98,7 @@ const scenarios = {
     *filesDenied() { yield files.readText("/etc/hostname"); },
     *filesPackage() { return yield files.readText(files.packagePath("plugin.json")).then(t => JSON.parse(t).id); },
     *httpDenied() { yield http.fetch("https://not-listed.example/x"); },
+    *shortcutsDenied() { return pn.shortcuts.add([{ menu: "Probe", url: "https://example.test" }]); },
     *browserSignIn() {
         const r = yield auth.browserSignIn({ url: "https://sso.example.test/auth?client_id=probe",
                                              redirectUri: "http://127.0.0.1:" + settings.get("signInPort") + "/callback",

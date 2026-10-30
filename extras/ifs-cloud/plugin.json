@@ -1,15 +1,15 @@
 {
     "id": "com.projectnotespro.ifs-cloud",
     "name": "IFS Cloud",
-    "version": "2.1.0",
+    "version": "2.2.0",
     "apiVersion": 1,
-    "description": "Imports your IFS Cloud projects, budgets and team members, keeps tracker items in step with the ISSUES activity tasks, generates SSRS status and tracker reports, and adds IFS shortcut menus.",
+    "description": "Imports your IFS Cloud projects, budgets and team members, keeps tracker items in step with the ISSUES activity tasks, generates SSRS status and tracker reports, and adds IFS page and report menus to My Shortcuts.",
     "author": "Project Notes",
     "main": "main.mjs",
     "permissions": [
         "data.read:projects,project_team,item_tracker",
         "data.write:companies,contacts,projects,project_team,item_tracker",
-        "http", "auth.browser", "files", "email.compose", "ui.dialogs", "com"
+        "http", "auth.browser", "files", "email.compose", "ui.dialogs", "com", "shortcuts"
     ],
     "http": ["ifs.cornerstonecontrols.com", "indvifsbi05"],
     "com": ["Word.Application"],

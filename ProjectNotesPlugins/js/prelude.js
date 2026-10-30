@@ -310,6 +310,17 @@
         all: function () { return callSync("settings.all", []); },
         onChanged: function (handler) { return subscribe("settings.changed", { handler: handler }); },
     });
+    // My Shortcuts' table, so a plugin can offer its menus there.
+    const shortcuts = freeze({
+        list: function () { return callSync("shortcuts.list", []) || []; },
+        add: function (rows) {
+            const plain = (rows || []).map(function (r) {
+                return { menu: String(r.menu || ""), submenu: String(r.submenu || ""),
+                         entity: String(r.entity || ""), url: String(r.url || "") };
+            });
+            return callSync("shortcuts.add", [plain]);
+        },
+    });
     const secrets = freeze({
         get: function (account) { return call("secrets.get", [String(account)]); },
         set: function (account, secret) { return call("secrets.set", [String(account), String(secret)]); },
@@ -651,7 +662,7 @@
     });
 
     const api = {
-        plugin: plugin, data: data, app: app, menus: menus, ui: ui, settings: settings, secrets: secrets,
+        plugin: plugin, data: data, app: app, menus: menus, ui: ui, settings: settings, shortcuts: shortcuts, secrets: secrets,
         storage: storage, files: files, email: email, calendar: calendar, contacts: contacts,
         office365: office365, http: http, auth: auth, timers: timers, log: log, reports: reports, PluginError: PluginError,
     };

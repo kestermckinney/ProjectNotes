@@ -12,48 +12,5 @@
       "placeholder": "Project Management/Status Reports" },
     { "key": "TrackerExportSubFolder", "label": "Project subfolder for tracker reports", "type": "text",
       "placeholder": "Project Management/Issues List" },
-    { "key": "_shortcuts", "label": "Shortcuts", "type": "section" },
-    { "key": "_shortcutsHelp", "type": "note", "label": "Menus that open IFS pages and reports for the record you right-click. Leave Entity empty for a menu under Plugins in the application menu. A URL can use {{ ifs.address }} and {{ ifs.reportServer }} for the settings above, and {{ entity.column }} for a value of the clicked record. A shortcut that uses the IFS address or report server is hidden while that setting is empty." },
-    {
-        "key": "Shortcuts",
-        "label": "Shortcuts",
-        "type": "table",
-        "columns": [
-            {
-                "key": "menu",
-                "label": "Menu",
-                "type": "text"
-            },
-            {
-                "key": "submenu",
-                "label": "Submenu",
-                "type": "text"
-            },
-            {
-                "key": "entity",
-                "label": "Entity",
-                "type": "choice",
-                "choices": ["projects", "contacts", "companies", "project_team", "project_locations", "project_notes", "meeting_attendees", "item_tracker", "item_tracker_updates", "status_report_items"]
-            },
-            {
-                "key": "url",
-                "label": "URL",
-                "type": "text",
-                "variables": ["ifs.address", "ifs.reportServer"],
-                "variablesBy": "entity",
-                "variablesByValue": {
-                    "projects": ["projects.project_number", "projects.project_name", "projects.last_status_date", "projects.last_invoice_date", "projects.primary_contact", "projects.budget", "projects.actual", "projects.bcwp", "projects.bcws", "projects.bac", "projects.invoicing_period", "projects.status_report_period", "projects.company_id", "projects.project_status"],
-                    "contacts": ["contacts.name", "contacts.email", "contacts.office_phone", "contacts.cell_phone", "contacts.company_id", "contacts.role"],
-                    "companies": ["companies.company_name"],
-                    "project_team": ["project_team.contact_id", "project_team.project_id", "project_team.role", "project_team.receive_status_report"],
-                    "project_locations": ["project_locations.project_id", "project_locations.location_type", "project_locations.location_description", "project_locations.full_path"],
-                    "project_notes": ["project_notes.project_id", "project_notes.note_title", "project_notes.note_date", "project_notes.note", "project_notes.internal_item"],
-                    "meeting_attendees": ["meeting_attendees.note_id", "meeting_attendees.contact_id"],
-                    "item_tracker": ["item_tracker.item_number", "item_tracker.item_type", "item_tracker.item_name", "item_tracker.identified_by", "item_tracker.date_identified", "item_tracker.description", "item_tracker.assigned_to", "item_tracker.priority", "item_tracker.status", "item_tracker.date_due", "item_tracker.last_update", "item_tracker.date_resolved", "item_tracker.note_id", "item_tracker.project_id", "item_tracker.internal_item"],
-                    "item_tracker_updates": ["item_tracker_updates.item_id", "item_tracker_updates.lastupdated_date", "item_tracker_updates.update_note", "item_tracker_updates.updated_by"],
-                    "status_report_items": ["status_report_items.project_id", "status_report_items.task_category", "status_report_items.task_description"]
-                }
-            }
-        ]
-    }
+    { "key": "_shortcutsHelp", "type": "note", "label": "The IFS page and report menus are in Settings > My Shortcuts, where you can change or remove them. Shortcuts that need the report server are added once it is filled in." }
 ] }

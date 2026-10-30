@@ -181,6 +181,15 @@ declare module "projectnotes" {
         all(): { [key: string]: any };
         onChanged(handler: (keys: string[]) => void): Subscription;
     };
+    // The My Shortcuts table. Needs the "shortcuts" permission. add() skips a
+    // row whose entity, submenu and menu match one already there, and returns
+    // the number it added. A URL is opened as written, apart from the
+    // {{ entity.column }} and {{ preferences.* }} tokens My Shortcuts fills in.
+    export interface Shortcut { menu: string; submenu?: string; entity?: string; url: string; addedBy?: string; }
+    export const shortcuts: {
+        list(): Shortcut[];
+        add(rows: Shortcut[]): number;
+    };
     export const secrets: {
         get(account: string): Promise<string | null>;
         set(account: string, secret: string): Promise<void>;

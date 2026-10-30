@@ -1,6 +1,6 @@
 # IFS Cloud Integration
 
-The **IFS Cloud** plugin connects Project Notes to a customized IFS Cloud ERP system. It imports the projects you manage with their budgets and team members, keeps tracker items in step with IFS tasks, generates SSRS status and tracker reports, and adds menus that open IFS pages and reports.
+The **IFS Cloud** plugin connects Project Notes to a customized IFS Cloud ERP system. It imports the projects you manage with their budgets and team members, keeps tracker items in step with IFS tasks, generates SSRS status and tracker reports, and adds menus to My Shortcuts that open IFS pages and reports.
 
 The plugin is written for the custom fields of one IFS deployment (Cornerstone Controls) and will not work against an arbitrary IFS environment.
 
@@ -95,6 +95,10 @@ The PDF and the optional Word copy go in the tracker report subfolder. Recipient
 
 ## IFS shortcuts
 
-The plugin adds **IFS Cloud** menus to projects and contacts (Open Project, Open Gantt, Invoicing Plan, Open Time Entry and others) and a **Reports** menu of SSRS reports to projects. They are listed in the **Shortcuts** table at the bottom of **Settings > IFS Cloud**, where you can rename, change, add or remove them. The table works like the one in My Shortcuts.
+The plugin puts **IFS Cloud** menus on projects and contacts (Open Project, Open Gantt, Invoicing Plan, Open Time Entry and others) and a **Reports** menu of SSRS reports on projects. They live in **Settings > My Shortcuts**, so the My Shortcuts plugin must be enabled for them to appear. Rename, change or remove them there.
 
-A URL can use `{{ ifs.address }}` and `{{ ifs.reportServer }}` for the IFS address and report server, so changing either setting updates every shortcut that uses it. Clear one and its shortcuts disappear from the menus. Empty the table and it stays empty; the defaults come back only on a fresh install.
+Each shortcut is added once, with the IFS address and report server written into its URL. Delete one and it stays deleted. My Shortcuts keeps any entry it already had with the same menu, submenu and entity, such as the ones the Python plugin set up, and the IFS one is skipped. A Reports shortcut waits until the report server is filled in.
+
+Changing the IFS address or report server later does not update shortcuts that were already added. Edit their URLs in My Shortcuts.
+
+Before version 2.2 the shortcuts were kept in a table under **Settings > IFS Cloud**. On its first start, 2.2 moves your entries from that table, including any you changed, to My Shortcuts in place of the defaults.

@@ -236,6 +236,7 @@ A `contributes.settings` entry adds a section to Settings. With a `schema`, Proj
 | `auth` | `browserSignIn()` opens a sign-in page in the browser and returns the redirect to a `localhost` address, for OAuth sign-ins to services other than Office 365. |
 | `files` | Files inside the plugin folder (read only), its data folder, folders the user picked, and project folders from `app.projectFolder()`. |
 | `storage`, `settings`, `secrets` | Private files, settings, and credentials kept in the operating system's credential store. |
+| `shortcuts` | `list()` reads the My Shortcuts table. `add(rows)` appends rows of `{ menu, submenu, entity, url }` and returns how many it added. A row is skipped when My Shortcuts already has one with the same entity, submenu and menu, ignoring case. Write the URL out in full: My Shortcuts fills in only `{{ entity.column }}` and `{{ preferences.* }}` tokens. Added rows carry `addedBy` with the plugin's id. |
 | `com` | Windows only: automate Office and other COM applications (see below). |
 | `process` | Start another program (not in App Store builds). |
 
@@ -299,6 +300,7 @@ The page's host must be in the manifest's `http` array, and `redirectUri` must b
 | `app.navigate` | `app.navigate()`. |
 | `urls` | `ui.openUrl()` with schemes other than http, https and mailto. |
 | `auth.browser` | `auth.browserSignIn()`; the sign-in page's host must also be in `http`. |
+| `shortcuts` | `shortcuts.list()` and `shortcuts.add()`. |
 | `reports` | `reports.generate()` (planned). |
 
 A call without its permission fails with a `PluginError` whose `code` is `permission-denied` and whose `permission` names what to add to the manifest.

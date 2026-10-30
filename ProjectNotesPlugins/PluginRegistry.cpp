@@ -257,6 +257,7 @@ void PluginRegistry::startPlugin(const QString& id)
         emit menusChanged();
     });
     connect(pluginHost, &PluginHost::dynamicMenusChanged, this, &PluginRegistry::menusChanged);
+    connect(pluginHost, &PluginHost::foreignSettingsChanged, this, &PluginRegistry::notifySettingsChanged);
     connect(pluginHost, &PluginHost::errorReported, this, [this, id](const QString& where, const QString& message) {
         for (PluginInfo& p : m_plugins)
             if (p.manifest.id == id)

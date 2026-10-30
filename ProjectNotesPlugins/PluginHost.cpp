@@ -35,6 +35,7 @@ void PluginHost::start()
         emit dynamicMenusChanged();
     });
     connect(m_runtime, &PluginRuntime::rowsChanged, this, &PluginHost::rowsChanged);
+    connect(m_runtime, &PluginRuntime::foreignSettingsChanged, this, &PluginHost::foreignSettingsChanged);
     connect(m_runtime, &PluginRuntime::errorReported, this, &PluginHost::errorReported);
     connect(m_runtime, &PluginRuntime::logMessage, this, &PluginHost::logMessage);
     connect(m_runtime, &PluginRuntime::hung, this, &PluginHost::hung);

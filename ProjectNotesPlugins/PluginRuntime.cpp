@@ -460,6 +460,10 @@ bool PluginRuntime::checkPermission(const QString& method, const QVariantList& a
         *error = PluginError::denied(QStringLiteral("auth.browser"));
         return false;
     }
+    if (method.startsWith(QLatin1String("shortcuts.")) && !m.hasPermission(QStringLiteral("shortcuts"))) {
+        *error = PluginError::denied(QStringLiteral("shortcuts"));
+        return false;
+    }
     Q_UNUSED(args);
     return true;
 }
@@ -742,6 +746,49 @@ QVariant PluginRuntime::handleSync(const QString& method, const QVariantList& ar
         if (op == QLatin1String("set") || op == QLatin1String("remove"))
             m_settings->sync();
         return value;
+    }
+
+    // The My Shortcuts plugin keeps its table in its own settings. A plugin
+    // with the "shortcuts" permission can read it and add the rows it lacks;
+    // a row is already there when its entity, submenu and menu match.
+    if (method == QLatin1String("shortcuts.list") || method == QLatin1String("shortcuts.add")) {
+        const QString owner = QStringLiteral("com.projectnotespro.myshortcuts");
+        const QString key = owner + QStringLiteral("/shortcuts");
+        m_settings->sync();
+        QVariantList rows = m_settings->value(key).toList();
+        if (method == QLatin1String("shortcuts.list"))
+            return rows;
+
+        auto text = [](const QVariantMap& row, const char* name) {
+            return row.value(QLatin1String(name)).toString().trimmed();
+        };
+        auto identity = [&text](const QVariantMap& row) {
+            return QStringList{text(row, "entity"), text(row, "submenu"), text(row, "menu")}.join(QLatin1Char('\n')).toLower();
+        };
+        QSet<QString> existing;
+        for (const QVariant& row : std::as_const(rows))
+            existing.insert(identity(row.toMap()));
+        int added = 0;
+        for (const QVariant& item : arg(0).toList()) {
+            const QVariantMap in = item.toMap();
+            const QVariantMap row {
+                {QStringLiteral("menu"), text(in, "menu")}, {QStringLiteral("submenu"), text(in, "submenu")},
+                {QStringLiteral("entity"), text(in, "entity")}, {QStringLiteral("url"), text(in, "url")},
+                {QStringLiteral("addedBy"), pluginGroup},
+            };
+            if (text(row, "menu").isEmpty() || text(row, "url").isEmpty() || existing.contains(identity(row)))
+                continue;
+            existing.insert(identity(row));
+            rows.append(row);
+            ++added;
+        }
+        if (added) {
+            m_settings->setValue(key, rows);
+            m_settings->sync();
+            QLog_Info(CONSOLELOG, QStringLiteral("[%1] added %2 shortcut(s) to My Shortcuts.").arg(pluginGroup).arg(added));
+            emit foreignSettingsChanged(owner, {QStringLiteral("shortcuts")});
+        }
+        return added;
     }
 
     if (method == QLatin1String("menus.register")) {
