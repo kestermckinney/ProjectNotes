@@ -10,7 +10,7 @@ Project Notes installs a small set of JavaScript plugins. They add menus to reco
 | My Shortcuts | Menus that open web pages filled in from the record you right-click. See [My Shortcuts](<MyShortcuts.md>). | All |
 | Team Member Quick Add | Add a new contact to a project's team in one step. See [Team Member Quick Add](<TeamMemberQuickAdd.md>). | All |
 | Archive Mail | Archive project email into project folders. See [Archive Mail](<ArchiveMail.md>). | All (Outlook classic archiving on Windows) |
-| MS Office Templates | Documents from the Word, Excel and PowerPoint templates you configure, filled in from the record you right-click; Open MS Project; close stranded Excel and Word processes. See [Office Document Templates](<NewDocumentTemplates.md>). | Windows |
+| MS Office Templates | Documents and schedules from the Word, Excel, PowerPoint and MS Project templates you configure, filled in from the record you right-click; Open MS Project; close stranded Excel and Word processes. See [Office Document Templates](<NewDocumentTemplates.md>). | Windows |
 
 The IFS Cloud plugin is installed separately. See [IFS Cloud Integration](<IFSCloud.md>).
 

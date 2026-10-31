@@ -1,5 +1,5 @@
-// MS Office Templates (Windows): project documents from the Word, Excel and
-// PowerPoint templates configured in Settings > MS Office Templates, Open MS Project,
+// MS Office Templates (Windows): project documents from the Word, Excel,
+// PowerPoint and MS Project templates configured in Settings > MS Office Templates, Open MS Project,
 // and cleanup of stranded Excel and Word automation processes.
 import * as pn from "projectnotes";
 import { render, validFilename } from "projectnotes/common";
@@ -18,6 +18,14 @@ const DEFAULT_TEMPLATES = [
       template: "templates/Tracker Items Status Template.xlsx",
       folder: "Project Management/Tracker Items",
       filename: "{{ projects.project_number }} Tracker Items {{ current.isoDate }}" },
+    { menu: "Project Kickoff", submenu: "Templates", entity: "projects",
+      template: "templates/Project Kickoff Template.pptx",
+      folder: "Project Management/Kickoff",
+      filename: "{{ projects.project_number }} Project Kickoff" },
+    { menu: "Software Development Schedule", submenu: "Templates", entity: "projects",
+      template: "templates/Software Development Lifecycle Template.xml",
+      folder: "Project Management/Schedule",
+      filename: "{{ projects.project_number }} Schedule" },
 ];
 
 // What each template type opens with, the Office SaveAs format of the copy,
@@ -30,11 +38,16 @@ const KINDS = {
     xltx: { office: "excel", format: 51, ext: "xlsx" }, xltm: { office: "excel", format: 52, ext: "xlsm" },
     pptx: { office: "powerpoint", format: 24 }, pptm: { office: "powerpoint", format: 25 }, ppt: { office: "powerpoint", format: 1 },
     potx: { office: "powerpoint", format: 24, ext: "pptx" }, potm: { office: "powerpoint", format: 25, ext: "pptm" },
+    // MS Project saves every schedule as .mpp (pjMPP); .xml is Project's XML format.
+    mpp: { office: "project", format: 0 }, mpt: { office: "project", format: 0, ext: "mpp" },
+    xml: { office: "project", format: 0, ext: "mpp" },
 };
 const OFFICE = {
     word: { progId: "Word.Application", locationType: "Word Document", open: wordDocument },
     excel: { progId: "Excel.Application", locationType: "Excel Document", open: excelDocument },
     powerpoint: { progId: "PowerPoint.Application", locationType: "PowerPoint Document", open: powerPointDocument },
+    project: { progId: "MSProject.Application", locationType: "Microsoft Project", open: projectDocument,
+               needs: "Microsoft Project" },
 };
 
 function text(value) {
@@ -249,9 +262,9 @@ function tracked(object, held) {
     });
 }
 
-function* withOffice(progId, work) {
+function* withOffice(progId, work, needs) {
     if (!pn.com) {
-        yield ui.message("Creating documents from templates needs Microsoft Office on Windows.",
+        yield ui.message("Creating documents from templates needs " + (needs || "Microsoft Office") + " on Windows.",
                          { kind: "error", title: progId });
         return null;
     }
@@ -417,6 +430,40 @@ function* excelDocument(excel, template, kind, prepare) {
     }
 }
 
+// A table row with an entity.#.column placeholder becomes one row for each
+// row of that list, or goes away when the list is empty.
+function expandPptRows(presentation, source) {
+    for (const slide of presentation.Slides) {
+        for (const shape of slide.Shapes) {
+            if (!shape.HasTable) continue;
+            const table = shape.Table;
+            const columns = table.Columns.Count;
+            const cellRange = function (r, c) { return table.Cell(r, c).Shape.TextFrame.TextRange; };
+            for (let r = table.Rows.Count; r >= 1; --r) {
+                const cells = [];
+                for (let c = 1; c <= columns; ++c) cells.push(String(cellRange(r, c).Text || ""));
+                const entity = repeatEntity(cells.join("\n"));
+                if (!entity) continue;
+                const items = source.rows(entity);
+                if (!items.length) { table.Rows(r).Delete(); continue; }
+                const fillRow = function (target, n) {
+                    cells.forEach(function (template, i) {
+                        if (template.indexOf("{{") >= 0) cellRange(target, i + 1).Text = source.fill(template, n);
+                    });
+                };
+                // Rows.Add(n) inserts above row n, so each new row goes straight
+                // below the template row and the last item is added first.
+                for (let n = items.length; n >= 2; --n) {
+                    if (r < table.Rows.Count) table.Rows.Add(r + 1);
+                    else table.Rows.Add();
+                    fillRow(r + 1, n);
+                }
+                fillRow(r, 1);
+            }
+        }
+    }
+}
+
 // The text of every shape and table cell on the slides.
 function pptTextRanges(presentation) {
     const out = [];
@@ -441,7 +488,8 @@ function* powerPointDocument(powerpoint, template, kind, prepare) {
         const ranges = pptTextRanges(presentation);
         const plan = yield* prepare(ranges.map(function (r) { return String(r.Text || ""); }).join("\n"));
         if (!plan) return null;
-        for (const range of ranges) {
+        expandPptRows(presentation, plan.source);
+        for (const range of pptTextRanges(presentation)) {
             for (const token of unique(String(range.Text || "").match(TOKEN) || [])) {
                 const value = plan.source.fill(token);
                 for (let guard = 0; guard < 100 && range.Replace(token, value); ++guard) { /* next occurrence */ }
@@ -455,6 +503,60 @@ function* powerPointDocument(powerpoint, template, kind, prepare) {
     }
 }
 
+// Today at 8:00 as an OLE date number, which Project reads as a date whatever
+// the Windows date format.
+function oleToday() {
+    const now = new Date();
+    return Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86400000 + 25569 + 8 / 24;
+}
+
+// The schedule's title, subject, company, manager and comments, and every
+// task's name and notes. A property this version of Project lacks is skipped.
+function projectFields(schedule) {
+    const out = [];
+    const add = function (object, name) {
+        try {
+            const value = object[name];
+            if (typeof value === "string") out.push({ object: object, name: name, text: value });
+        } catch (e) { /* not in this version of Project */ }
+    };
+    for (const name of ["Title", "Subject", "Company", "Manager", "Comments"]) add(schedule, name);
+    const tasks = [schedule.ProjectSummaryTask];
+    for (const task of schedule.Tasks) tasks.push(task);
+    for (const task of tasks) {
+        if (!task) continue;   // a blank row
+        add(task, "Name");
+        add(task, "Notes");
+    }
+    return out;
+}
+
+function* projectDocument(msproject, template, kind, prepare) {
+    msproject.Visible = false;
+    msproject.DisplayAlerts = false;
+    // FileOpenEx(Name, ReadOnly): read-only, so the template itself never changes.
+    if (!msproject.FileOpenEx(windowsPath(template), true))
+        throw new Error("Microsoft Project could not open " + template + ".");
+    try {
+        const schedule = msproject.ActiveProject;
+        const fields = projectFields(schedule);
+        const plan = yield* prepare(fields.map(function (f) { return f.text; }).join("\n"));
+        if (!plan) return null;
+        for (const f of fields) {
+            if (f.text.indexOf("{{") < 0) continue;
+            f.object[f.name] = f.text.replace(TOKEN, function (token) { return plan.source.fill(token); })
+                                     .replace(/\r\n|\n/g, "\r");
+        }
+        // Tasks without fixed dates move with the project's start.
+        schedule.ProjectStart = oleToday();
+        msproject.FileSaveAs(windowsPath(plan.target), kind.format);
+        return plan;
+    } finally {
+        msproject.FileCloseEx(0);   // pjDoNotSave
+        if (msproject.Projects.Count === 0) msproject.Quit(0);
+    }
+}
+
 // ── Creating a document ────────────────────────────────────────────────────
 
 function* createDocument(context) {
@@ -465,7 +567,7 @@ function* createDocument(context) {
     const template = isAbsolute(templateSetting) ? templateSetting : files.packagePath(templateSetting);
     const kind = KINDS[suffix(template)];
     if (!kind) {
-        yield ui.message("MS Office Templates fills in Word, Excel and PowerPoint templates. " + template + " is none of those.",
+        yield ui.message("MS Office Templates fills in Word, Excel, PowerPoint and MS Project templates. " + template + " is none of those.",
                          { kind: "error", title: title });
         return;
     }
@@ -542,7 +644,7 @@ function* createDocument(context) {
 
     const plan = yield withOffice(office.progId, function* (application) {
         return yield* office.open(application, template, kind, prepare);
-    });
+    }, office.needs);
     if (existing) {
         if (yield ui.confirm(baseName(existing) + "." + suffix(existing) + " already exists. Open it?",
                              { title: title, okText: "Open" }))
