@@ -14,6 +14,7 @@
 #include "ProjectNotesPlugins/PluginRegistry.h"
 #include "ProjectNotesPlugins/PublishedSchema.h"
 #include "ProjectNotesEmail/ArtifactStore.h"
+#include "ProjectNotesEmail/AudienceReviewSession.h"
 #include "ProjectNotesEmail/CommunicationRepository.h"
 #include "ProjectNotesEmail/EmailService.h"
 #include "ProjectNotesEmail/EmailSettingsStore.h"
@@ -37,6 +38,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QPointer>
+#include <QQmlEngine>
 #include <QRegularExpression>
 #include <QSettings>
 #include <QSqlQuery>
@@ -63,11 +65,6 @@ QString backendLabel(PN::Comm::BackendId id)
     case PN::Comm::BackendId::ICloud: return QObject::tr("iCloud Mail");
     }
     return {};
-}
-
-QString addressLabel(const PN::Comm::EmailAddress& a)
-{
-    return a.displayName.isEmpty() ? a.address : QStringLiteral("%1 <%2>").arg(a.displayName, a.address);
 }
 
 } // namespace
@@ -294,7 +291,6 @@ void DesktopAppController::composePluginEmail(const PluginManifest& plugin, cons
     prep.mode = PN::Comm::EmailMode::InlineHtml;
     prep.senderAddress = emailSettings.senderAddress();
 
-    QStringList toLabels, ccLabels, bccLabels;
     const QList<QPair<QString, PN::Comm::RecipientRole>> roles {
         {QStringLiteral("to"), PN::Comm::RecipientRole::To}, {QStringLiteral("cc"), PN::Comm::RecipientRole::Cc},
         {QStringLiteral("bcc"), PN::Comm::RecipientRole::Bcc}};
@@ -308,8 +304,6 @@ void DesktopAppController::composePluginEmail(const PluginManifest& plugin, cons
                 return;
             }
             prep.recipients.append(address);
-            (role == PN::Comm::RecipientRole::To ? toLabels : role == PN::Comm::RecipientRole::Cc ? ccLabels : bccLabels)
-                .append(addressLabel(address));
         }
     }
     if (prep.recipients.isEmpty()) {
@@ -361,91 +355,155 @@ void DesktopAppController::composePluginEmail(const PluginManifest& plugin, cons
         prep.accountGeneration = account.generation;
     }
 
+    // No preview: the message goes straight to a draft in the email program,
+    // where the user reviews it before sending.
     const QString backendName = backendLabel(prep.backend);
+    const PN::Comm::EmailPreparationResult built = PN::Comm::EmailContentBuilder::prepare(prep);
+    if (!built.request) {
+        const QString text = built.validation.issues.isEmpty() ? tr("The email could not be prepared.")
+            : (built.validation.issues.first().displayText.isEmpty() ? built.validation.issues.first().code
+                                                                    : built.validation.issues.first().displayText);
+        reply({}, PluginError::make(QStringLiteral("email-failed"), text));
+        return;
+    }
+    QLog_Info(CONSOLELOG, QStringLiteral("[%1] email \"%2\" to %3 recipient(s), %4 attachment(s), handed to %5.")
+                              .arg(plugin.id, subject).arg(prep.recipients.size()).arg(attachmentNames.size()).arg(backendName));
     QPointer<DesktopAppController> self(this);
-    PluginUiController::instance()->openRequest(plugin.id, QStringLiteral("email"),
-        {{QStringLiteral("to"), toLabels}, {QStringLiteral("cc"), ccLabels}, {QStringLiteral("bcc"), bccLabels},
-         {QStringLiteral("subject"), subject}, {QStringLiteral("html"), html},
-         {QStringLiteral("attachments"), attachmentNames}, {QStringLiteral("backend"), backendName}},
-        [self, prep, reply, backendName](const QVariant& result, const PluginError& error) {
-            if (!self)
-                return;
-            if (error.isError()) { reply({}, error); return; }
-            if (result.isNull() || !result.toBool()) {
-                reply(QVariantMap{{QStringLiteral("status"), QStringLiteral("cancelled")}}, {});
-                return;
-            }
-            const PN::Comm::EmailPreparationResult built = PN::Comm::EmailContentBuilder::prepare(prep);
-            if (!built.request) {
-                const QString message = built.validation.issues.isEmpty() ? tr("The email could not be prepared.")
-                    : (built.validation.issues.first().displayText.isEmpty() ? built.validation.issues.first().code
-                                                                            : built.validation.issues.first().displayText);
-                reply({}, PluginError::make(QStringLiteral("email-failed"), message));
-                return;
-            }
-            self->m_emailService->handoff(*built.request, [self, reply, backendName](PN::Comm::EmailHandoffResult handoff) {
-                if (!handoff.error.code.isEmpty()) {
-                    reply({}, PluginError::make(QStringLiteral("email-failed"),
-                                                handoff.error.displayText.isEmpty() ? handoff.error.code : handoff.error.displayText));
-                    return;
-                }
-                if (handoff.presentationUrl.isValid())
-                    QDesktopServices::openUrl(handoff.presentationUrl);
-                reply(QVariantMap{{QStringLiteral("status"), QStringLiteral("handed-off")},
-                                  {QStringLiteral("backend"), backendName}}, {});
-            });
-        });
+    m_emailService->handoff(*built.request, [self, reply, backendName](PN::Comm::EmailHandoffResult handoff) {
+        if (!handoff.error.code.isEmpty()) {
+            reply({}, PluginError::make(QStringLiteral("email-failed"),
+                                        handoff.error.displayText.isEmpty() ? handoff.error.code : handoff.error.displayText));
+            return;
+        }
+        if (handoff.presentationUrl.isValid())
+            QDesktopServices::openUrl(handoff.presentationUrl);
+        reply(QVariantMap{{QStringLiteral("status"), QStringLiteral("handed-off")},
+                          {QStringLiteral("backend"), backendName}}, {});
+    });
 }
 
+// Saved audiences belong to the project and every report lists them all;
+// isDefault says whether the given report loads this one automatically.
 QVariantList DesktopAppController::pluginEmailAudiences(const QString& projectId, const QString& workflow) const
 {
     QVariantList out;
-    QSqlQuery query(global_DBObjects.getDb());
-    query.prepare(QStringLiteral("SELECT id, audience_name, workflow, is_default FROM project_email_audiences "
-                                 "WHERE project_id = ? AND (deleted IS NULL OR deleted = 0) ORDER BY audience_name"));
-    query.addBindValue(projectId);
-    if (!query.exec())
-        return out;
-    while (query.next()) {
-        if (!workflow.isEmpty() && query.value(2).toString() != workflow)
-            continue;
-        out.append(QVariantMap{{QStringLiteral("id"), query.value(0).toString()}, {QStringLiteral("name"), query.value(1).toString()},
-                               {QStringLiteral("workflow"), query.value(2).toString()},
-                               {QStringLiteral("isDefault"), query.value(3).toInt() != 0}});
+    const std::optional<PN::Comm::Workflow> report = PN::Comm::workflowFromStableString(workflow);
+    for (const PN::Comm::AudiencePreset& preset : PN::Comm::AudiencePresetStore().presets(projectId)) {
+        QStringList defaultFor;
+        for (PN::Comm::Workflow w : preset.defaultFor)
+            defaultFor.append(PN::Comm::toStableString(w));
+        out.append(QVariantMap{{QStringLiteral("id"), preset.id}, {QStringLiteral("name"), preset.name},
+                               {QStringLiteral("workflow"), QStringLiteral("project")},
+                               {QStringLiteral("isDefault"), report && preset.defaultFor.contains(*report)},
+                               {QStringLiteral("defaultFor"), defaultFor}});
     }
     return out;
 }
 
-QVariant DesktopAppController::pluginResolveAudience(const QString& projectId, const QString& audienceId, PluginError* error) const
+namespace {
+
+QVariantMap pluginRecipientLists(const PN::Comm::RecipientResolution& resolution)
 {
-    QSqlQuery query(global_DBObjects.getDb());
-    query.prepare(QStringLiteral("SELECT people_source, recipient_distribution_json FROM project_email_audiences "
-                                 "WHERE id = ? AND project_id = ? AND (deleted IS NULL OR deleted = 0)"));
-    query.addBindValue(audienceId);
-    query.addBindValue(projectId);
-    if (!query.exec() || !query.next()) {
-        *error = PluginError::make(QStringLiteral("not-found"), tr("No audience \"%1\" exists for this project.").arg(audienceId));
-        return {};
-    }
     QVariantList to, cc, bcc;
-    const QJsonArray distribution = QJsonDocument::fromJson(query.value(1).toString().toUtf8()).array();
-    for (const QJsonValue& entry : distribution) {
-        const QJsonObject o = entry.toObject();
-        if (!o.value(QStringLiteral("selected")).toBool(true))
-            continue;
-        const QVariantMap recipient {{QStringLiteral("contact"), o.value(QStringLiteral("personId")).toString()}};
-        const QString role = o.value(QStringLiteral("role")).toString(QStringLiteral("to"));
-        (role == QLatin1String("cc") ? cc : role == QLatin1String("bcc") ? bcc : to).append(recipient);
+    for (const PN::Comm::EmailAddress& address : resolution.recipients) {
+        const QVariantMap recipient {{QStringLiteral("name"), address.displayName}, {QStringLiteral("email"), address.address}};
+        (address.role == PN::Comm::RecipientRole::Cc ? cc : address.role == PN::Comm::RecipientRole::Bcc ? bcc : to).append(recipient);
     }
-    if (distribution.isEmpty() && query.value(0).toString() == QLatin1String("project-team")) {
-        QSqlQuery team(global_DBObjects.getDb());
-        team.prepare(QStringLiteral("SELECT people_id FROM project_people WHERE project_id = ? AND (deleted IS NULL OR deleted = 0)"));
-        team.addBindValue(projectId);
-        if (team.exec())
-            while (team.next())
-                to.append(QVariantMap{{QStringLiteral("contact"), team.value(0).toString()}});
+    return {{QStringLiteral("to"), to}, {QStringLiteral("cc"), cc}, {QStringLiteral("bcc"), bcc}};
+}
+
+} // namespace
+
+void DesktopAppController::loadPluginSnapshot(const QString& projectId, PN::Comm::Workflow workflow,
+    std::function<void(std::optional<PN::Comm::CommunicationSnapshot>, const PluginError&)> done)
+{
+    if (!m_databaseOpen || !m_communicationRepository || projectId.trimmed().isEmpty()) {
+        done({}, PluginError::make(QStringLiteral("unavailable"), tr("Email is not available.")));
+        return;
     }
-    return QVariantMap{{QStringLiteral("to"), to}, {QStringLiteral("cc"), cc}, {QStringLiteral("bcc"), bcc}};
+    PN::Comm::SnapshotRequest request;
+    request.operationId = QUuid::createUuid();
+    request.source = {global_DBObjects.getDatabaseFile(), m_communicationDatabaseGeneration, projectId, {}, workflow};
+    request.managingCompanyId = managingCompanyId();
+    request.projectManagerId = projectManagerId();
+    request.capturedAt = QDateTime::currentDateTimeUtc();
+    QPointer<DesktopAppController> self(this);
+    m_communicationRepository->loadSnapshot(request, [self, done](PN::Comm::SnapshotResult result) {
+        if (!self)
+            return;
+        if (!result.error.code.isEmpty()) {
+            done({}, PluginError::make(QStringLiteral("not-found"),
+                                       result.error.displayText.isEmpty() ? result.error.code : result.error.displayText));
+            return;
+        }
+        done(std::move(result.snapshot), {});
+    });
+}
+
+// Resolves a saved audience the way a report loading it would.
+void DesktopAppController::resolvePluginAudience(const QString& projectId, const QString& audienceId,
+                                                 std::function<void(const QVariant&, const PluginError&)> reply)
+{
+    std::optional<PN::Comm::AudiencePreset> found;
+    for (const PN::Comm::AudiencePreset& preset : PN::Comm::AudiencePresetStore().presets(projectId))
+        if (preset.id == audienceId)
+            found = preset;
+    if (!found) {
+        reply({}, PluginError::make(QStringLiteral("not-found"), tr("No audience \"%1\" exists for this project.").arg(audienceId)));
+        return;
+    }
+    loadPluginSnapshot(projectId, PN::Comm::Workflow::StatusReport,
+        [reply, preset = *found](std::optional<PN::Comm::CommunicationSnapshot> snapshot, const PluginError& error) {
+            if (!snapshot) { reply({}, error); return; }
+            const PN::Comm::AudienceRule rule = PN::Comm::reviewPresetRule(PN::Comm::Workflow::StatusReport, *snapshot, preset);
+            reply(pluginRecipientLists(PN::Comm::applyRecipientOverrides(PN::Comm::resolveAudience(*snapshot, rule),
+                                                                         preset.overrides)), {});
+        });
+}
+
+void DesktopAppController::choosePluginRecipients(const PluginManifest& plugin, const QString& projectId,
+                                                  const QVariantMap& options,
+                                                  std::function<void(const QVariant&, const PluginError&)> reply)
+{
+    const QString workflowName = options.value(QStringLiteral("workflow"), QStringLiteral("project-email")).toString();
+    const std::optional<PN::Comm::Workflow> workflow = PN::Comm::workflowFromStableString(workflowName);
+    if (!workflow || (*workflow != PN::Comm::Workflow::StatusReport && *workflow != PN::Comm::Workflow::TrackerItemsReport
+                      && *workflow != PN::Comm::Workflow::MeetingNotesReport && *workflow != PN::Comm::Workflow::ProjectEmail)) {
+        reply({}, PluginError::make(QStringLiteral("validation-failed"),
+                                    tr("chooseRecipients() does not support the workflow \"%1\".").arg(workflowName)));
+        return;
+    }
+    QPointer<DesktopAppController> self(this);
+    const QString pluginId = plugin.id;
+    loadPluginSnapshot(projectId, *workflow,
+        [self, pluginId, options, workflow = *workflow, reply](std::optional<PN::Comm::CommunicationSnapshot> snapshot,
+                                                                const PluginError& error) {
+            if (!self)
+                return;
+            if (!snapshot) { reply({}, error); return; }
+            // Parented to the controller and deleted once the dialog answers.
+            auto* session = new PN::Comm::AudienceReviewSession(std::move(*snapshot), workflow, self);
+            QQmlEngine::setObjectOwnership(session, QQmlEngine::CppOwnership);
+            QQmlEngine::setObjectOwnership(session->model(), QQmlEngine::CppOwnership);
+            QPointer<PN::Comm::AudienceReviewSession> guard(session);
+            QVariantMap params;
+            params.insert(QStringLiteral("title"), options.value(QStringLiteral("title")).toString());
+            params.insert(QStringLiteral("okText"), options.value(QStringLiteral("okText")).toString());
+            params.insert(QStringLiteral("session"), QVariant::fromValue(static_cast<QObject*>(session)));
+            PluginUiController::instance()->openRequest(pluginId, QStringLiteral("recipientPicker"), params,
+                [guard, reply](const QVariant& result, const PluginError& error) {
+                    if (!guard) { reply({}, error); return; }
+                    QVariant answer = QVariant::fromValue(nullptr);
+                    if (!error.isError() && !result.isNull() && result.toBool()) {
+                        QVariantMap chosen = pluginRecipientLists(guard->resolve());
+                        const QString presetId = guard->appliedPresetId();
+                        chosen.insert(QStringLiteral("audienceId"), presetId.isEmpty() ? QVariant::fromValue(nullptr) : QVariant(presetId));
+                        answer = chosen;
+                    }
+                    guard->deleteLater();
+                    reply(error.isError() ? QVariant() : answer, error);
+                });
+        });
 }
 
 QVariantList DesktopAppController::pluginEmailTemplates()

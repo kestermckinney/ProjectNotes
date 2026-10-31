@@ -1,39 +1,27 @@
 {
     "id": "com.projectnotespro.office-tools",
-    "name": "Office Tools",
-    "version": "2.0.0",
+    "name": "MS Office Templates",
+    "version": "3.0.0",
     "apiVersion": 1,
-    "description": "Creates project documents from Word, Excel, PowerPoint and Microsoft Project templates, opens a project's schedule, and closes Excel or Word processes left behind by automation.",
+    "description": "Creates documents from the Word, Excel and PowerPoint templates you configure, filled in from the record you right-click, opens a project's schedule, and closes Excel or Word processes left behind by automation.",
     "author": "Project Notes",
     "main": "main.mjs",
     "platforms": ["windows"],
     "permissions": [
-        "data.read:projects,project_locations",
+        "data.read:*",
         "data.write:project_locations",
-        "files", "com", "urls"
+        "files", "com", "urls", "ui.dialogs"
     ],
-    "com": ["Word.Application", "Excel.Application", "PowerPoint.Application", "MSProject.Application", "winmgmts:"],
-    "legacySettings": [
-        { "group": "New Change Order", "prefix": "ChangeOrder" },
-        { "group": "New PCR Register", "prefix": "PcrRegister" },
-        { "group": "New PowerPoint", "prefix": "PowerPoint" },
-        { "group": "New Risk Register", "prefix": "RiskRegister" },
-        { "group": "New MS Project", "prefix": "MsProject" }
-    ],
+    "com": ["Word.Application", "Excel.Application", "PowerPoint.Application", "winmgmts:"],
     "contributes": {
         "menus": [
-            { "id": "change-order", "title": "Change Order", "context": "record", "entity": "projects", "submenu": "Templates" },
-            { "id": "pcr-register", "title": "PCR Register", "context": "record", "entity": "projects", "submenu": "Templates" },
-            { "id": "powerpoint", "title": "PowerPoint", "context": "record", "entity": "projects", "submenu": "Templates" },
-            { "id": "risk-register", "title": "Risk Register", "context": "record", "entity": "projects", "submenu": "Templates" },
-            { "id": "ms-project", "title": "MS Project", "context": "record", "entity": "projects", "submenu": "Templates" },
             { "id": "open-ms-project", "title": "Open MS Project", "context": "record", "entity": "projects",
               "include": ["project_locations"] },
             { "id": "kill-excel", "title": "Close Stranded Excel", "context": "global", "submenu": "Utilities" },
             { "id": "kill-word", "title": "Close Stranded Word", "context": "global", "submenu": "Utilities" }
         ],
         "settings": [
-            { "id": "office", "title": "Office Tools", "schema": "settings.schema.json" }
+            { "id": "office", "title": "MS Office Templates", "schema": "settings.schema.json" }
         ]
     }
 }

@@ -1,6 +1,6 @@
 # IFS Cloud Integration
 
-The **IFS Cloud** plugin connects Project Notes to a customized IFS Cloud ERP system. It imports the projects you manage with their budgets and team members, keeps tracker items in step with IFS tasks, generates SSRS status and tracker reports, and adds menus that open IFS pages and reports.
+The **IFS Cloud** plugin connects Project Notes to a customized IFS Cloud ERP system. It imports the projects you manage with their budgets and team members, keeps tracker items in step with IFS tasks, generates SSRS status and tracker reports, and adds menus to My Shortcuts that open IFS pages and reports.
 
 The plugin is written for the custom fields of one IFS deployment (Cornerstone Controls) and will not work against an arbitrary IFS environment.
 
@@ -75,18 +75,30 @@ If you depend on IFS and Project Notes agreeing, pick one side as the place you 
 
 ## Status reports
 
-Right-click a project and choose **Generate Status Report**. Choose the report date and how to send it: in the message body (Windows, using Word), as a PDF, as a Word document, or not at all. The plugin downloads the report from the report server with the domain account, saves the PDF (and a Word copy, if you ask) in the project's report folder, prepares the email for your review, and records the date as the project's last status date.
+Right-click a project and choose **Generate Status Report**. Choose the report date and how to send it: in the message body (Windows, using Word), as a PDF, as a Word document, or not at all. The plugin downloads the report from the report server with the domain account, saves the PDF (and a Word copy, if you ask) in the project's report folder, opens the email as a draft in your mail application, and records the date as the project's last status date.
 
-The email goes to the project's default status report audience, or to the team members marked to receive status reports when there is none.
+### Choosing recipients
+
+If you email the report, a **Status Report Recipients** dialog opens before anything is downloaded. It's the same recipient panel the built-in reports use. Tick the people to include, set each one to **To**, **Cc** or **Bcc**, search the list, or use **Select all**, **Clear** and **Reset recipients**. Then choose **Generate**. **Cancel** stops there, and nothing is downloaded or saved.
+
+It starts with the project's default status report audience. Without one, it starts with the team members marked **Receive Status**, leaving out the project manager. The **Saved audience** dropdown, **Save audience** and **Set as report default** work as they do in the built-in reports. See [Saved audiences](<../InterfaceOverview/ReportsAndEmail.md#saved-audiences>).
+
+The plugin and the built-in Status Report share the same audiences and the same default. Set a default in either one and the other loads it too.
+
+Choosing **Do not email** skips the dialog.
 
 ## Tracker reports
 
 Right-click a project and choose **Generate Tracker Report** to file and send the SSRS **Issues List** report. The choices match the status report, including the Windows-only option that puts the Word version of the report in the message body. The report date only names the file (`20261001 P4000 Tracker Report.pdf`) and dates the subject; it doesn't change the project's last status date.
 
-The PDF and the optional Word copy go in the tracker report subfolder. The email goes to the project's default Tracker Items Report audience, falling back to the team members marked to receive status reports.
+The PDF and the optional Word copy go in the tracker report subfolder. Recipients are chosen the same way as for the status report. The panel starts with the project's default Tracker Items Report audience, a default it shares with the built-in Tracker Items Report.
 
 ## IFS shortcuts
 
-The plugin adds **IFS Cloud** menus to projects and contacts (Open Project, Open Gantt, Invoicing Plan, Open Time Entry and others) and a **Reports** menu of SSRS reports to projects. They are listed in the **Shortcuts** table at the bottom of **Settings > IFS Cloud**, where you can rename, change, add or remove them. The table works like the one in My Shortcuts.
+The plugin puts **IFS Cloud** menus on projects and contacts (Open Project, Open Gantt, Invoicing Plan, Open Time Entry and others) and a **Reports** menu of SSRS reports on projects. They live in **Settings > My Shortcuts**, so the My Shortcuts plugin must be enabled for them to appear. Rename, change or remove them there.
 
-A URL can use `{{ ifs.address }}` and `{{ ifs.reportServer }}` for the IFS address and report server, so changing either setting updates every shortcut that uses it. Clear one and its shortcuts disappear from the menus. Empty the table and it stays empty; the defaults come back only on a fresh install.
+Each shortcut is added once, with the IFS address and report server written into its URL. Delete one and it stays deleted. My Shortcuts keeps any entry it already had with the same menu, submenu and entity, such as the ones the Python plugin set up, and the IFS one is skipped. A Reports shortcut waits until the report server is filled in.
+
+Changing the IFS address or report server later does not update shortcuts that were already added. Edit their URLs in My Shortcuts.
+
+Before version 2.2 the shortcuts were kept in a table under **Settings > IFS Cloud**. On its first start, 2.2 moves your entries from that table, including any you changed, to My Shortcuts in place of the defaults.

@@ -124,7 +124,6 @@ set(DESKTOP_QML_FILES
     qml/SpellSquiggle.qml
     qml/SpellCheckDialog.qml
     qml/RecipientSelectionPane.qml
-    qml/MeetingNotesReviewDialog.qml
     qml/ProjectEmailReviewDialog.qml
     qml/MeetingNotesReportReviewDialog.qml
     qml/ScheduleMeetingDialog.qml

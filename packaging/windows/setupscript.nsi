@@ -28,7 +28,6 @@ RequestExecutionLevel user
 
 !include MUI2.nsh
 !include FileFunc.nsh   ; GetParameters / GetOptions for unattended-update flags
-!include Sections.nsh   ; SF_SELECTED
 
 ; Set to "1" (via the /relaunch command-line flag) when the in-app auto-updater
 ; runs this installer; it tells .onInstSuccess to relaunch the app afterward.
@@ -54,7 +53,7 @@ Var RelaunchFlag
 ; No directory page: Project Notes installs per-user only, under
 ; $LOCALAPPDATA\Programs\Project Notes. The location is enforced in .onInit so
 ; it can never be redirected to a system-wide path.
-!insertmacro MUI_PAGE_COMPONENTS
+; No components page either: everything is always installed.
 !insertmacro MUI_PAGE_INSTFILES
 !define MUI_FINISHPAGE_RUN "$INSTDIR\Project Notes.exe"
 !insertmacro MUI_PAGE_FINISH
@@ -62,9 +61,6 @@ Var RelaunchFlag
 !insertmacro MUI_UNPAGE_INSTFILES
 
 !insertmacro MUI_LANGUAGE "English"
-
-; ── Component descriptions ─────────────────────────────────────────────────────
-LangString DESC_SEC01   ${LANG_ENGLISH} "Install Project Notes, the standard plugins, and spell-check dictionaries."
 
 ; ── Installer metadata ────────────────────────────────────────────────────────
 Name    "${PRODUCT_NAME} ${PRODUCT_VERSION}"
@@ -75,7 +71,7 @@ ShowInstDetails   show
 ShowUnInstDetails show
 
 ; ══════════════════════════════════════════════════════════════════════════════
-Section "MainSection" SEC01
+Section "-MainSection" SEC01
   ; ── Unattended update: wait for a running instance to exit ───────────────────
   ; The in-app updater launches this installer silently while Project Notes is
   ; still running. Windows keeps the running executable locked, so wait until it
@@ -216,11 +212,6 @@ Section -Post
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "URLInfoAbout"      "${PRODUCT_WEB_SITE}"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "Publisher"         "${PRODUCT_PUBLISHER}"
 SectionEnd
-
-; ── Component description callbacks ───────────────────────────────────────────
-!insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC01}   $(DESC_SEC01)
-!insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 ; ══════════════════════════════════════════════════════════════════════════════
 Function un.onUninstSuccess

@@ -88,7 +88,11 @@ PluginRegistry::PluginRegistry(PluginServices* services, QObject* parent)
         // since a plugin was added or removed.
         for (const PluginInfo& info : std::as_const(m_plugins)) {
             if (path == info.folder || path.startsWith(info.folder + QLatin1Char('/'))) {
-                scheduleReload(info.manifest.id);
+                const QStringList files = sourceFiles(info.folder);
+                if (files != m_sourceFiles.value(info.folder)) {
+                    m_sourceFiles.insert(info.folder, files);
+                    scheduleReload(info.manifest.id);
+                }
                 return;
             }
         }
@@ -189,11 +193,26 @@ void PluginRegistry::watchPlugin(const PluginInfo& info)
     if (!m_hotReload)
         return;
     m_watcher->addPath(info.folder);
-    QDirIterator it(info.folder, {QStringLiteral("*.mjs"), QStringLiteral("*.js"), QStringLiteral("*.json"),
-                                  QStringLiteral("*.qml")},
+    const QStringList files = sourceFiles(info.folder);
+    m_sourceFiles.insert(info.folder, files);
+    for (const QString& entry : files)
+        m_watcher->addPath(entry.section(QLatin1Char('|'), 0, 0));
+}
+
+// The plugin's code and manifest files, each as "path|size|modified", sorted.
+QStringList PluginRegistry::sourceFiles(const QString& folder)
+{
+    QStringList out;
+    QDirIterator it(folder, {QStringLiteral("*.mjs"), QStringLiteral("*.js"), QStringLiteral("*.json"),
+                             QStringLiteral("*.qml")},
                     QDir::Files, QDirIterator::Subdirectories);
-    while (it.hasNext())
-        m_watcher->addPath(it.next());
+    while (it.hasNext()) {
+        const QFileInfo file(it.next());
+        out.append(file.filePath() + QLatin1Char('|') + QString::number(file.size()) + QLatin1Char('|')
+                   + QString::number(file.lastModified().toMSecsSinceEpoch()));
+    }
+    out.sort();
+    return out;
 }
 
 void PluginRegistry::loadAll()
@@ -257,6 +276,7 @@ void PluginRegistry::startPlugin(const QString& id)
         emit menusChanged();
     });
     connect(pluginHost, &PluginHost::dynamicMenusChanged, this, &PluginRegistry::menusChanged);
+    connect(pluginHost, &PluginHost::foreignSettingsChanged, this, &PluginRegistry::notifySettingsChanged);
     connect(pluginHost, &PluginHost::errorReported, this, [this, id](const QString& where, const QString& message) {
         for (PluginInfo& p : m_plugins)
             if (p.manifest.id == id)
@@ -404,8 +424,13 @@ QVariantList PluginRegistry::globalMenus() const
 void PluginRegistry::runMenu(const QString& pluginId, const QString& menuId, const QString& entity, const QString& key)
 {
     PluginHost* h = host(pluginId);
-    if (!h)
+    if (!h) {
+        QLog_Warning(CONSOLELOG, QStringLiteral("[%1] menu %2 ignored: the plugin is not loaded.").arg(pluginId, menuId));
         return;
+    }
+    if (const qint64 since = h->busySince())
+        QLog_Info(CONSOLELOG, QStringLiteral("[%1] menu %2 waits: the plugin has been busy for %3 ms.")
+                                  .arg(pluginId, menuId).arg(QDateTime::currentMSecsSinceEpoch() - since));
     const PluginInfo info = plugin(pluginId);
     QStringList include;
     QString parameter;

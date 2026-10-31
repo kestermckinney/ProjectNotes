@@ -221,6 +221,11 @@ public:
     // loads/builds review state; callers must use the later handoff flow to
     // interact with a backend.
     Q_INVOKABLE bool prepareMeetingNotesReview(const QString& projectId, const QString& noteId);
+    // Send Notes: prepares the meeting notes and creates the draft straight
+    // away in the configured email client, with no review dialog. Attendees
+    // are the To recipients; with none, the user addresses it in the client.
+    // Failures are reported through errorOccurred().
+    Q_INVOKABLE bool sendMeetingNotes(const QString& projectId, const QString& noteId);
     Q_INVOKABLE bool prepareProjectEmailReview(const QString &projectId, const QString &contactId = {});
     Q_INVOKABLE bool prepareContactEmailReview(const QString &contactId);
     // Creates a draft with the contact's vCard attached and no recipients in
@@ -893,7 +898,12 @@ public:
                             std::function<void(const QVariant&, const PN::Plugins::PluginError&)> reply);
     QVariantList pluginEmailBackends() const;
     QVariantList pluginEmailAudiences(const QString& projectId, const QString& workflow) const;
-    QVariant pluginResolveAudience(const QString& projectId, const QString& audienceId, PN::Plugins::PluginError* error) const;
+    void resolvePluginAudience(const QString& projectId, const QString& audienceId,
+                               std::function<void(const QVariant&, const PN::Plugins::PluginError&)> reply);
+    // email.chooseRecipients(): the report recipient panel in a plugin dialog.
+    void choosePluginRecipients(const PN::Plugins::PluginManifest& plugin, const QString& projectId,
+                                const QVariantMap& options,
+                                std::function<void(const QVariant&, const PN::Plugins::PluginError&)> reply);
     QVariantList pluginEmailTemplates();
     void renderPluginEmailTemplate(const QString& templateId, const QVariantMap& context,
                                    std::function<void(const QVariant&, const PN::Plugins::PluginError&)> reply);
@@ -962,6 +972,10 @@ private slots:
     void onSyncStatusUpdated(int percentComplete, qint64 pendingPush, qint64 pendingPull);
 
 private:
+    // Loads a project's communication snapshot for a plugin request; the
+    // callback gets nothing when the project cannot be read.
+    void loadPluginSnapshot(const QString& projectId, PN::Comm::Workflow workflow,
+                            std::function<void(std::optional<PN::Comm::CommunicationSnapshot>, const PN::Plugins::PluginError&)> done);
     bool applyDefaultReviewAudiencePreset();
     // The project and workflow whose saved audiences the review pane shows:
     // the open meeting review, or else the email/report review.
@@ -1040,9 +1054,10 @@ private:
     QUuid m_pendingMeetingNotesReportReview;
     QUuid m_pendingProjectReportReview;
     QUuid m_pendingProjectEmailReview;
-    // Set while emailContactCard() runs: the prepared review is handed off
-    // as soon as it is ready, and its outcome closes the flag.
-    bool m_autoDraftContactCard = false;
+    // Set while emailContactCard() or sendMeetingNotes() runs: the prepared
+    // review is handed off as soon as it is ready, with no review dialog.
+    // Holds the title for error messages; empty when no auto-draft runs.
+    QString m_autoDraftTitle;
     std::optional<PN::Comm::EmailPreparation> m_projectEmailReview;
     std::unique_ptr<PN::Comm::LocationAttachmentDownloader> m_locationAttachmentDownloader;
     QUuid m_pendingHandoffRevalidation;

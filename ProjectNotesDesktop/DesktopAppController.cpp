@@ -69,40 +69,11 @@
 
 #include <QDesktopServices>
 
-namespace {
+#include "ProjectNotesEmail/AudienceReviewSession.h"
 
-// Every generated report starts from the project team, excluding the project
-// manager, before any saved audience preset is applied.
-PN::Comm::AudienceRule projectTeamAudienceRule()
-{
-    PN::Comm::AudienceRule rule;
-    rule.source = PN::Comm::ContactSource::ProjectTeam;
-    rule.excludeProjectManager = true;
-    return rule;
-}
-
-PN::Comm::AudienceRule reviewPresetRule(PN::Comm::Workflow workflow,
-                                      const PN::Comm::CommunicationSnapshot &snapshot,
-                                      const PN::Comm::AudiencePreset &preset)
-{
-    auto rule = preset.rule;
-    if (workflow != PN::Comm::Workflow::ProjectEmail) return rule;
-    // Saved report audiences default to team members excluding the manager.
-    // Project emails can explicitly select a manager or meeting guest too;
-    // retain those IDs and their overrides without changing report behavior.
-    rule.source = PN::Comm::ContactSource::ChosenContacts;
-    rule.excludeProjectManager = false;
-    for (const auto &contact : snapshot.contacts) {
-        bool available = contact.projectTeamMember && contact.id != snapshot.projectManagerId;
-        for (const auto &overrideValue : preset.overrides)
-            available |= overrideValue.contactId == contact.id;
-        if (available) rule.chosenContactIds.append(contact.id);
-    }
-    rule.chosenContactIds.removeDuplicates();
-    return rule;
-}
-
-} // namespace
+// Shared with the plugin recipient picker (AudienceReviewSession).
+using PN::Comm::projectTeamAudienceRule;
+using PN::Comm::reviewPresetRule;
 
 #include "sqlitesyncpro.h"
 #include "syncresult.h"
@@ -279,16 +250,16 @@ DesktopAppController::DesktopAppController(QObject* parent)
             emit infoOccurred(tr("iCloud Draft Created"),
                               tr("The email was saved in iCloud Mail Drafts. iCloud does not provide a link to the new draft, so open iCloud Mail to review and send it."));
     });
-    // Email Contact has no review dialog to show its outcome.
+    // Email Contact and Send Notes have no review dialog to show their outcome.
     connect(m_communicationsController.get(), &PN::Comm::CommunicationsController::stateChanged, this, [this] {
-        if (!m_autoDraftContactCard) return;
+        if (m_autoDraftTitle.isEmpty()) return;
         const PN::Comm::PreparationStage stage = m_communicationsController->stage();
         if (stage == PN::Comm::PreparationStage::Completed) {
-            m_autoDraftContactCard = false;
+            m_autoDraftTitle.clear();
         } else if (stage == PN::Comm::PreparationStage::Failed) {
-            m_autoDraftContactCard = false;
+            const QString title = std::exchange(m_autoDraftTitle, QString());
             const QString diagnostic = m_communicationsController->diagnostic();
-            emit errorOccurred(tr("Email Contact"), diagnostic.isEmpty()
+            emit errorOccurred(title, diagnostic.isEmpty()
                 ? tr("The email draft could not be created.") : diagnostic);
         }
     });
@@ -874,7 +845,7 @@ void DesktopAppController::cancelProjectEmailReview()
     const bool pending = !m_pendingProjectEmailReview.isNull();
     const QUuid operationId = m_pendingProjectEmailReview;
     m_pendingProjectEmailReview = {};
-    m_autoDraftContactCard = false;
+    m_autoDraftTitle.clear();
     if (pending && m_communicationRepository) m_communicationRepository->cancel(operationId);
     if (m_locationAttachmentDownloader) m_locationAttachmentDownloader->cancel();
 }
@@ -885,7 +856,7 @@ bool DesktopAppController::prepareProjectEmail(const QString &projectId, const Q
     if (!m_databaseOpen || !m_communicationRepository
         || !m_communicationsController->beginReviewPreparation()) return false;
     cancelProjectEmailReview();
-    m_autoDraftContactCard = contactCard;
+    m_autoDraftTitle = contactCard ? tr("Email Contact") : QString();
     // Invalidate callbacks belonging to another review sharing this controller.
     if (!m_pendingPdfRender.isNull()) {
         const QUuid operationId = m_pendingPdfRender;
@@ -977,10 +948,9 @@ bool DesktopAppController::prepareProjectEmail(const QString &projectId, const Q
                     // never replace it automatically with the project default.
                     if (request.source.contactId.isEmpty())
                         self->applyDefaultReviewAudiencePreset();
-                    if (self->m_autoDraftContactCard && !self->handoffPreparedReview()) {
-                        self->m_autoDraftContactCard = false;
-                        emit self->errorOccurred(self->tr("Email Contact"), self->tr("The email draft could not be created."));
-                    }
+                    if (!self->m_autoDraftTitle.isEmpty() && !self->handoffPreparedReview())
+                        emit self->errorOccurred(std::exchange(self->m_autoDraftTitle, QString()),
+                                                 self->tr("The email draft could not be created."));
                 };
                 const QString cache = PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile);
                 if (attachmentUrl.isLocalFile()) {
@@ -1028,6 +998,7 @@ bool DesktopAppController::prepareMeetingNotesReview(const QString& projectId, c
             return;
         self->m_pendingMeetingNotesReview = {};
         if (!result.error.code.isEmpty()) {
+            self->m_autoDraftTitle.clear();
             emit self->errorOccurred(self->tr("Cannot Prepare Meeting Notes"),
                                      result.error.displayText.isEmpty() ? result.error.code : result.error.displayText);
             return;
@@ -1045,6 +1016,7 @@ bool DesktopAppController::prepareMeetingNotesReview(const QString& projectId, c
             result.snapshot, request.source, backend, PN::Comm::EmailMode::InlineHtml,
             contentTemplate ? &*contentTemplate : nullptr);
         if (!review) {
+            self->m_autoDraftTitle.clear();
             emit self->errorOccurred(self->tr("Cannot Prepare Meeting Notes"),
                                      self->tr("The selected note could not be prepared for review."));
             return;
@@ -1054,7 +1026,15 @@ bool DesktopAppController::prepareMeetingNotesReview(const QString& projectId, c
             [self, audience = review->audience, snapshot = result.snapshot, source = request.source]
             (std::optional<PN::Comm::EmailPreparation> prepared, PN::Comm::ValidationResult validation) mutable {
                 if (!self) return;
-                if (!prepared) { self->m_communicationsController->setReviewValidation(std::move(validation)); return; }
+                if (!prepared) {
+                    if (!self->m_autoDraftTitle.isEmpty()) {
+                        const QString text = validation.issues.isEmpty() || validation.issues.first().displayText.isEmpty()
+                            ? self->tr("The meeting notes could not be prepared.") : validation.issues.first().displayText;
+                        emit self->errorOccurred(std::exchange(self->m_autoDraftTitle, QString()), text);
+                    }
+                    self->m_communicationsController->setReviewValidation(std::move(validation));
+                    return;
+                }
                 self->m_recipientSelectionModel->setAudience(audience);
                 self->m_meetingNotesReview = *prepared;
                 self->m_meetingNotesSnapshot = snapshot;
@@ -1064,8 +1044,28 @@ bool DesktopAppController::prepareMeetingNotesReview(const QString& projectId, c
                 self->updateRecipientInternalReportContext();
                 if (!validation.issues.isEmpty())
                     self->m_communicationsController->setReviewValidation(std::move(validation));
+                if (self->m_autoDraftTitle.isEmpty())
+                    return;
+                // Send Notes: attendees are already selected as To. With none,
+                // the draft opens unaddressed for the user to fill in.
+                if (self->m_recipientSelectionModel->selectedRecipientCount() == 0)
+                    self->m_recipientSelectionModel->setAddressLaterExplicitlyChosen(true);
+                if (!self->handoffPreparedReview())
+                    emit self->errorOccurred(std::exchange(self->m_autoDraftTitle, QString()),
+                                             self->tr("The email draft could not be created."));
             });
     });
+    return true;
+}
+
+bool DesktopAppController::sendMeetingNotes(const QString& projectId, const QString& noteId)
+{
+    if (!prepareMeetingNotesReview(projectId, noteId)) {
+        emit errorOccurred(tr("Send Notes"), tr("Another email is still being prepared. Try again in a moment."));
+        return false;
+    }
+    // prepareMeetingNotesReview() clears any earlier auto-draft, so set it after.
+    m_autoDraftTitle = tr("Send Notes");
     return true;
 }
 
@@ -2721,11 +2721,23 @@ QVariantList DesktopAppController::pluginMenusForModel(QAbstractItemModel* model
 QVariantList DesktopAppController::pluginMenusForTable(const QString& table)
 {
     QVariantList out;
-    m_pluginMenuCache.clear();
     if (table.isEmpty())
         return out;
     appendJsRecordMenus(table, &out);
     return out;
+}
+
+// A menu's index into `cache`. Indexes never change once given out, so a
+// menu that is still open runs the right entry after another menu (a second
+// context menu, the app menu) has listed its own plugin entries.
+template <typename Cache>
+static int pluginMenuIndex(Cache& cache, const QString& pluginId, const QString& menuId)
+{
+    for (int i = 0; i < cache.size(); ++i)
+        if (cache.at(i).jsPluginId == pluginId && cache.at(i).jsMenuId == menuId)
+            return i;
+    cache.append(typename Cache::value_type{pluginId, menuId});
+    return int(cache.size()) - 1;
 }
 
 void DesktopAppController::appendJsRecordMenus(const QString& table, QVariantList* out)
@@ -2735,13 +2747,11 @@ void DesktopAppController::appendJsRecordMenus(const QString& table, QVariantLis
     const QString entity = PN::Plugins::PublishedSchema::instance().publishedEntity(table);
     for (const QVariant& m : m_jsPlugins->menusForEntity(entity)) {
         const QVariantMap menu = m.toMap();
-        PluginMenuRef ref;
-        ref.jsPluginId = menu.value(QStringLiteral("pluginId")).toString();
-        ref.jsMenuId = menu.value(QStringLiteral("menuId")).toString();
-        m_pluginMenuCache.append(ref);
+        const int index = pluginMenuIndex(m_pluginMenuCache, menu.value(QStringLiteral("pluginId")).toString(),
+                                          menu.value(QStringLiteral("menuId")).toString());
         out->append(QVariantMap{{QStringLiteral("title"), menu.value(QStringLiteral("title"))},
                                 {QStringLiteral("submenu"), menu.value(QStringLiteral("submenu"))},
-                                {QStringLiteral("index"), m_pluginMenuCache.size() - 1}});
+                                {QStringLiteral("index"), index}});
     }
 }
 
@@ -2761,9 +2771,13 @@ void DesktopAppController::runPluginMenu(QAbstractItemModel* model,
 void DesktopAppController::runPluginMenuForTable(const QString& table,
                                                  const QString& recordId, int index)
 {
-    if (index < 0 || index >= m_pluginMenuCache.size())
+    if (index < 0 || index >= m_pluginMenuCache.size()) {
+        QLog_Warning(CONSOLELOG, QStringLiteral("Plugin menu %1 on %2 %3 ignored: only %4 plugin menus are cached.")
+                                     .arg(index).arg(table, recordId).arg(m_pluginMenuCache.size()));
         return;
+    }
     const PluginMenuRef& ref = m_pluginMenuCache.at(index);
+    QLog_Info(CONSOLELOG, QStringLiteral("Plugin menu %1/%2 on %3 %4.").arg(ref.jsPluginId, ref.jsMenuId, table, recordId));
     if (m_jsPlugins)
         m_jsPlugins->runMenu(ref.jsPluginId, ref.jsMenuId,
                              PN::Plugins::PublishedSchema::instance().publishedEntity(table), recordId);
@@ -2772,17 +2786,14 @@ void DesktopAppController::runPluginMenuForTable(const QString& table,
 QVariantList DesktopAppController::globalPluginMenus()
 {
     QVariantList out;
-    m_globalPluginMenuCache.clear();
     if (m_jsPlugins) {
         for (const QVariant& m : m_jsPlugins->globalMenus()) {
             const QVariantMap menu = m.toMap();
-            PluginMenuRef ref;
-            ref.jsPluginId = menu.value(QStringLiteral("pluginId")).toString();
-            ref.jsMenuId = menu.value(QStringLiteral("menuId")).toString();
-            m_globalPluginMenuCache.append(ref);
+            const int index = pluginMenuIndex(m_globalPluginMenuCache, menu.value(QStringLiteral("pluginId")).toString(),
+                                              menu.value(QStringLiteral("menuId")).toString());
             out.append(QVariantMap{{QStringLiteral("title"), menu.value(QStringLiteral("title"))},
                                    {QStringLiteral("submenu"), menu.value(QStringLiteral("submenu"))},
-                                   {QStringLiteral("index"), m_globalPluginMenuCache.size() - 1}});
+                                   {QStringLiteral("index"), index}});
         }
     }
     return out;
@@ -2790,9 +2801,13 @@ QVariantList DesktopAppController::globalPluginMenus()
 
 void DesktopAppController::runGlobalPluginMenu(int index)
 {
-    if (index < 0 || index >= m_globalPluginMenuCache.size())
+    if (index < 0 || index >= m_globalPluginMenuCache.size()) {
+        QLog_Warning(CONSOLELOG, QStringLiteral("Global plugin menu %1 ignored: only %2 plugin menus are cached.")
+                                     .arg(index).arg(m_globalPluginMenuCache.size()));
         return;
+    }
     const PluginMenuRef& ref = m_globalPluginMenuCache.at(index);
+    QLog_Info(CONSOLELOG, QStringLiteral("Plugin menu %1/%2.").arg(ref.jsPluginId, ref.jsMenuId));
     if (m_jsPlugins)
         m_jsPlugins->runMenu(ref.jsPluginId, ref.jsMenuId, {}, {});
 }

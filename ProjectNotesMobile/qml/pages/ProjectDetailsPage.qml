@@ -101,9 +101,47 @@ Page {
         var wasStaged = root.projectId === ""
         var ok = AppController.saveProject(root.projectRow, numberField.text, nameField.text,
                                           status, primaryContactId, companyId, statusDateField.text,
-                                          invoiceDateField.text, invPeriod, srPeriod)
+                                          invoiceDateField.text, invPeriod, srPeriod,
+                                          budgetField.text, actualField.text, bcwpField.text,
+                                          bcwsField.text, bacField.text)
         if (ok && wasStaged) root._adoptSavedRecord()
         return ok
+    }
+
+    // Save after a financial entry and show the recalculated EVM values (or the
+    // stored values again, if the entry was rejected).
+    function _saveFinancials() {
+        root._saveNow()
+        if (root.projectId !== "") root._reloadFinancials()
+    }
+
+    function _reloadFinancials() {
+        var d = AppController.getProjectData(root.projectRow)
+        root.initialBudget      = (d.budget       || "").toString()
+        root.initialActual      = (d.actual       || "").toString()
+        root.initialBcwp        = (d.bcwp         || "").toString()
+        root.initialBcws        = (d.bcws         || "").toString()
+        root.initialBac         = (d.bac          || "").toString()
+        root.initialPctConsumed = (d.pct_consumed || "").toString()
+        root.initialEac         = (d.eac          || "").toString()
+        root.initialCv          = (d.cv           || "").toString()
+        root.initialSv          = (d.sv           || "").toString()
+        root.initialPctComplete = (d.pct_complete || "").toString()
+        root.initialCpi         = (d.cpi          || "").toString()
+        budgetField.text = root.initialBudget
+        actualField.text = root.initialActual
+        bcwpField.text   = root.initialBcwp
+        bcwsField.text   = root.initialBcws
+        bacField.text    = root.initialBac
+    }
+
+    // The model hands numbers back already formatted ("$1,234.00", "12.5%"),
+    // so strip that before parsing.
+    function _formatNumber(value, prefix, suffix) {
+        var s = (value || "").toString().replace(/[^0-9.\-]/g, "")
+        var v = parseFloat(s)
+        if (s === "" || isNaN(v)) return qsTr("—")
+        return prefix + v.toLocaleString(Qt.locale(), "f", 2) + suffix
     }
 
     // The staged row has just been written: take on its new id (the insert can
@@ -134,6 +172,7 @@ Page {
         invoiceDateField.text = (d.last_invoice_date    || "").toString()
         invoicingCombo.selectText((d.invoicing_period || "").toString())
         statusReportCombo.selectText((d.status_report_period || "").toString())
+        root._reloadFinancials()
     }
 
     Component.onCompleted: {
@@ -350,82 +389,76 @@ Page {
 
             // ── Earned Value ──────────────────────────────────────────────────
 
+            // Budget/Actual/BCWP/BCWS/BAC are entered; the rest are calculated
+            // from them. Each entry is saved when the field loses focus so the
+            // calculated values below update straight away.
             SectionHeader { text: qsTr("Budget") }
             FieldRow {
-                FormLabel {
-                    text: { var v = parseFloat(root.initialBudget); return (!isNaN(v) && root.initialBudget !== "") ? "$" + v.toLocaleString(Qt.locale(), "f", 2) : qsTr("—") }
+                FormField {
+                    id: budgetField
+                    text: root.initialBudget
+                    inputMethodHints: Qt.ImhFormattedNumbersOnly
+                    onEditingFinished: root._saveFinancials()
                 }
             }
 
             SectionHeader { text: qsTr("Actual") }
             FieldRow {
-                FormLabel {
-                    text: { var v = parseFloat(root.initialActual); return (!isNaN(v) && root.initialActual !== "") ? "$" + v.toLocaleString(Qt.locale(), "f", 2) : qsTr("—") }
+                FormField {
+                    id: actualField
+                    text: root.initialActual
+                    inputMethodHints: Qt.ImhFormattedNumbersOnly
+                    onEditingFinished: root._saveFinancials()
                 }
             }
 
             SectionHeader { text: qsTr("BCWP") }
             FieldRow {
-                FormLabel {
-                    text: { var v = parseFloat(root.initialBcwp); return (!isNaN(v) && root.initialBcwp !== "") ? "$" + v.toLocaleString(Qt.locale(), "f", 2) : qsTr("—") }
+                FormField {
+                    id: bcwpField
+                    text: root.initialBcwp
+                    inputMethodHints: Qt.ImhFormattedNumbersOnly
+                    onEditingFinished: root._saveFinancials()
                 }
             }
 
             SectionHeader { text: qsTr("BCWS") }
             FieldRow {
-                FormLabel {
-                    text: { var v = parseFloat(root.initialBcws); return (!isNaN(v) && root.initialBcws !== "") ? "$" + v.toLocaleString(Qt.locale(), "f", 2) : qsTr("—") }
+                FormField {
+                    id: bcwsField
+                    text: root.initialBcws
+                    inputMethodHints: Qt.ImhFormattedNumbersOnly
+                    onEditingFinished: root._saveFinancials()
                 }
             }
 
             SectionHeader { text: qsTr("BAC") }
             FieldRow {
-                FormLabel {
-                    text: { var v = parseFloat(root.initialBac); return (!isNaN(v) && root.initialBac !== "") ? "$" + v.toLocaleString(Qt.locale(), "f", 2) : qsTr("—") }
+                FormField {
+                    id: bacField
+                    text: root.initialBac
+                    inputMethodHints: Qt.ImhFormattedNumbersOnly
+                    onEditingFinished: root._saveFinancials()
                 }
             }
 
             SectionHeader { text: qsTr("% Consumed") }
-            FieldRow {
-                FormLabel {
-                    text: { var v = parseFloat(root.initialPctConsumed); return (!isNaN(v) && root.initialPctConsumed !== "") ? v.toLocaleString(Qt.locale(), "f", 2) + "%" : qsTr("—") }
-                }
-            }
+            FieldRow { FormLabel { text: root._formatNumber(root.initialPctConsumed, "", "%") } }
 
             SectionHeader { text: qsTr("EAC") }
-            FieldRow {
-                FormLabel {
-                    text: { var v = parseFloat(root.initialEac); return (!isNaN(v) && root.initialEac !== "") ? "$" + v.toLocaleString(Qt.locale(), "f", 2) : qsTr("—") }
-                }
-            }
+            FieldRow { FormLabel { text: root._formatNumber(root.initialEac, "$", "") } }
 
             SectionHeader { text: qsTr("CV") }
-            FieldRow {
-                FormLabel {
-                    text: { var v = parseFloat(root.initialCv); return (!isNaN(v) && root.initialCv !== "") ? v.toLocaleString(Qt.locale(), "f", 2) + "%" : qsTr("—") }
-                }
-            }
+            FieldRow { FormLabel { text: root._formatNumber(root.initialCv, "", "%") } }
 
             SectionHeader { text: qsTr("SV") }
-            FieldRow {
-                FormLabel {
-                    text: { var v = parseFloat(root.initialSv); return (!isNaN(v) && root.initialSv !== "") ? v.toLocaleString(Qt.locale(), "f", 2) + "%" : qsTr("—") }
-                }
-            }
+            FieldRow { FormLabel { text: root._formatNumber(root.initialSv, "", "%") } }
 
             SectionHeader { text: qsTr("% Complete") }
-            FieldRow {
-                FormLabel {
-                    text: { var v = parseFloat(root.initialPctComplete); return (!isNaN(v) && root.initialPctComplete !== "") ? v.toLocaleString(Qt.locale(), "f", 2) + "%" : qsTr("—") }
-                }
-            }
+            FieldRow { FormLabel { text: root._formatNumber(root.initialPctComplete, "", "%") } }
 
             SectionHeader { text: qsTr("CPI") }
-            FieldRow {
-                FormLabel {
-                    text: { var v = parseFloat(root.initialCpi); return (!isNaN(v) && root.initialCpi !== "") ? v.toLocaleString(Qt.locale(), "f", 2) : qsTr("—") }
-                }
-            }
+            FieldRow { FormLabel { text: root._formatNumber(root.initialCpi, "", "") } }
 
             Item { Layout.preferredHeight: 24 }
             // Room for the floating bottom bar below the last field.

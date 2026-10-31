@@ -39,8 +39,11 @@ function upgradeSaved() {
     if (changed) settings.set("shortcuts", rows);
 }
 
+// Another plugin may have added its rows (marked addedBy) before this first
+// start, so those alone don't mean the old shortcuts were already copied.
 function migrate() {
-    if (settings.get("shortcuts") !== null) return;
+    const current = settings.get("shortcuts");
+    if (current !== null && (current.length === 0 || current.some(function (r) { return !r || !r.addedBy; }))) return;
     const legacy = settings.get("MyShortcuts");
     if (!legacy) return;
     try {
@@ -49,6 +52,9 @@ function migrate() {
             return { menu: r.Menu || "", submenu: r.Submenu || "", entity: entityNames[table] || table,
                      url: translateUrl(r.URL) };
         });
+        const identity = function (r) { return [r.entity, r.submenu, r.menu].map(function (s) { return String(s || "").trim().toLowerCase(); }).join("\n"); };
+        const seen = rows.map(identity);
+        (current || []).forEach(function (r) { if (seen.indexOf(identity(r)) < 0) rows.push(r); });
         settings.set("shortcuts", rows);
         log.info("Migrated " + rows.length + " shortcut(s).");
     } catch (e) {

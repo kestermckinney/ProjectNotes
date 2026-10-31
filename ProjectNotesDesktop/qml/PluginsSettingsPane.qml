@@ -381,6 +381,7 @@ ColumnLayout {
         iconColor: Theme.accent
         confirmText: qsTr("Install")
         richMessage: true
+        preferredWidth: 600
         function openFor(i, url) {
             info = i
             source = url
@@ -401,6 +402,7 @@ ColumnLayout {
         iconName: "verified_user"
         iconColor: Theme.accent
         richMessage: true
+        preferredWidth: 600
         function openFor(p, readOnly) {
             plugin = p
             title = p.name

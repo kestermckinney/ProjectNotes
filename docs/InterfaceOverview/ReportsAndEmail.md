@@ -7,7 +7,7 @@ Project Notes builds communications from your saved project data:
 - **Project Email** for the project team or one contact attached to the project
 - **Share Location** to email a link or a file attachment
 
-Each one ends the same way. Project Notes prepares the content, you review it, and then it opens a draft in your mail application. Nothing leaves your machine until you press Send there.
+Each one ends in a draft in your mail application. Send Notes and plugin emails go there directly; the others first open a dialog where you pick the recipients and options. Nothing leaves your machine until you press Send in your mail application.
 
 Set the integration up once before using any of this. See [Email and Meeting Setup](<EmailAndMeetingSetup.md>).
 
@@ -21,8 +21,8 @@ Project Notes also checks again right before handing a draft to your mail applic
 
 1. Open the project note, or right-click its row in the project's **Notes** tab.
 2. Choose **Send Notes**.
-3. The **Send Notes** dialog opens with the note prepared. Meeting attendees are already checked as **To** recipients. Other team members appear unchecked and default to **Cc**.
-4. Adjust the list, then click **Send Email**.
+
+There is no review step. The draft opens in your mail application with the meeting attendees as **To** recipients. If the note has no attendees, the draft opens unaddressed, so add the recipients there.
 
 The notes are formatted into the body of the message. There is no attachment and no format choice.
 
@@ -104,6 +104,8 @@ An audience is a named recipient selection stored on the project.
 - **Set as report default** makes the chosen audience load automatically the next time you run this particular report on this project.
 
 Audiences are shared across a project. One saved while running a Status Report is offered for the Tracker Items Report, the Meeting Notes Report and the **Schedule Meeting** dialog on the same project. Defaults are not shared: each report keeps its own, and the dropdown marks the current report's default.
+
+Plugin reports that use the recipient panel, such as the IFS Cloud plugin's status and tracker reports, share the same saved audiences and the same per-report defaults.
 
 Because meetings use **Required** and **Optional** rather than To, Cc and Bcc, an audience crossing between the two stores Required as To and Optional as Cc. A report's Bcc recipients load as Optional.
 

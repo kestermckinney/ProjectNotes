@@ -19,6 +19,7 @@
 #include "ProjectNotesEmail/backends/OutlookHelperProtocol.h"
 #include "ProjectNotesEmail/EmailService.h"
 #include "ProjectNotesEmail/AudiencePresetStore.h"
+#include "ProjectNotesEmail/AudienceReviewSession.h"
 #include "ProjectNotesEmail/StatusReportBuilder.h"
 #include "ProjectNotesEmail/TrackerItemsReportBuilder.h"
 #include "ProjectNotesEmail/ReportService.h"
@@ -149,6 +150,7 @@ private slots:
     void scopesAudiencePresetsByDatabaseAndProject();
     void keepsAudienceDefaultsPerReport();
     void foldsReportScopedAudiencesIntoProjectAudiences();
+    void choosesPluginRecipientsWithSharedAudiences();
     void buildsStatusReportWithEvmAndEscapedIssues();
     void buildsFilteredAndSortedTrackerReport();
     void dispatchesAllNativeReportBuilders();
@@ -1575,6 +1577,67 @@ void CommunicationContractsTest::foldsReportScopedAudiencesIntoProjectAudiences(
     // Saving the folded name updates the surviving row instead of adding one.
     QVERIFY(store.save({"", "TEAM", "p"}).ok());
     QCOMPARE(store.presets("p").size(), 1);
+}
+
+// email.chooseRecipients(): the plugin's recipient panel starts like the
+// native report, and its audiences and defaults are the native ones.
+void CommunicationContractsTest::choosesPluginRecipientsWithSharedAudiences()
+{
+    CommunicationSnapshot snapshot;
+    snapshot.projectId = "p";
+    snapshot.projectManagerId = "mike";
+    snapshot.contacts = {{"jim", "Jim", "jim@example.test", {}, {}, true, false, true},
+                         {"pat", "Pat", "pat@example.test", {}, {}, false, false, true},
+                         {"mike", "Mike", "mike@example.test", {}, {}, true, false, true}};
+
+    // No saved default: the team without the project manager, with only the
+    // status recipients selected.
+    {
+        AudienceReviewSession session(snapshot, Workflow::StatusReport);
+        QCOMPARE(session.model()->recipientCount(), 2);
+        QCOMPARE(session.model()->selectedRecipientCount(), 1);
+        QVERIFY(session.appliedPresetId().isEmpty());
+        QVERIFY(session.problem().isEmpty());
+
+        // Save Pat as Cc and make it the status report default.
+        QVERIFY(session.model()->setSelected("pat", true));
+        QVERIFY(session.model()->setRecipientRole("pat", RecipientRole::Cc));
+        QSignalSpy changed(&session, &AudienceReviewSession::reviewAudiencePresetChanged);
+        QVERIFY(session.saveReviewAudiencePreset("Both"));
+        QCOMPARE(changed.size(), 1);
+        QVERIFY(!session.appliedPresetId().isEmpty());
+        QVERIFY(session.setReviewAudiencePresetDefault(session.appliedPresetId()));
+        const QVariantList presets = session.reviewAudiencePresets();
+        QCOMPARE(presets.size(), 1);
+        QVERIFY(presets.first().toMap().value("reportDefault").toBool());
+        QVERIFY(presets.first().toMap().value("applied").toBool());
+    }
+    // The native status report sees the same default.
+    QCOMPARE(AudiencePresetStore().defaultFor(Workflow::StatusReport, "p")->name, QStringLiteral("Both"));
+    QVERIFY(!AudiencePresetStore().defaultFor(Workflow::TrackerItemsReport, "p").has_value());
+
+    // A new session for the status report loads that default.
+    AudienceReviewSession status(snapshot, Workflow::StatusReport);
+    QCOMPARE(status.appliedPresetId(), AudiencePresetStore().presets("p").constFirst().id);
+    const RecipientResolution chosen = status.resolve();
+    QCOMPARE(chosen.recipients.size(), 2);
+    QCOMPARE(chosen.recipients.at(0).address, QStringLiteral("jim@example.test"));
+    QCOMPARE(chosen.recipients.at(0).role, RecipientRole::To);
+    QCOMPARE(chosen.recipients.at(1).address, QStringLiteral("pat@example.test"));
+    QCOMPARE(chosen.recipients.at(1).role, RecipientRole::Cc);
+
+    // The tracker report has no default yet, but lists the shared audience.
+    AudienceReviewSession tracker(snapshot, Workflow::TrackerItemsReport);
+    QVERIFY(tracker.appliedPresetId().isEmpty());
+    QCOMPARE(tracker.model()->selectedRecipientCount(), 1);
+    QCOMPARE(tracker.reviewAudiencePresets().size(), 1);
+    QVERIFY(!tracker.reviewAudiencePresets().first().toMap().value("reportDefault").toBool());
+    QVERIFY(tracker.applyReviewAudiencePreset(status.appliedPresetId()));
+    QCOMPARE(tracker.model()->selectedRecipientCount(), 2);
+
+    // Nothing selected cannot be used.
+    tracker.model()->clearSelection();
+    QVERIFY(!tracker.problem().isEmpty());
 }
 
 void CommunicationContractsTest::buildsStatusReportWithEvmAndEscapedIssues()

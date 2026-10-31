@@ -1,6 +1,7 @@
 // Probe plugin for tst_pluginhost: runs one scenario per menu id and reports
 // {menuId, ok, result | error} through ui.message.
 import { data, menus, settings, storage, files, http, auth, plugin, app, secrets, ui, PluginError } from "projectnotes";
+import * as pn from "projectnotes";
 import { render, replaceVariables, formatDate, parseDate, escapeHtml } from "projectnotes/common";
 
 function report(menuId, ok, value) {
@@ -97,6 +98,7 @@ const scenarios = {
     *filesDenied() { yield files.readText("/etc/hostname"); },
     *filesPackage() { return yield files.readText(files.packagePath("plugin.json")).then(t => JSON.parse(t).id); },
     *httpDenied() { yield http.fetch("https://not-listed.example/x"); },
+    *shortcutsDenied() { return pn.shortcuts.add([{ menu: "Probe", url: "https://example.test" }]); },
     *browserSignIn() {
         const r = yield auth.browserSignIn({ url: "https://sso.example.test/auth?client_id=probe",
                                              redirectUri: "http://127.0.0.1:" + settings.get("signInPort") + "/callback",
@@ -148,6 +150,45 @@ const scenarios = {
     *info() {
         return { id: plugin.id, platform: app.platform, email: app.capabilities.has("email.compose"),
                  com: app.capabilities.has("com"), secret: yield secrets.get("token") };
+    },
+    // Objects returned by COM calls, read through the Proxy: a method that
+    // returns an object, a property holding one, and a method read as a member.
+    *comObjects() {
+        const fso = pn.com.createObject("Scripting.FileSystemObject");
+        try {
+            const temp = fso.GetSpecialFolder(2);   // TemporaryFolder
+            return { tempPath: temp.Path, drives: fso.Drives.Count, tempName: fso.GetTempName() };
+        } finally {
+            pn.com.release(fso);
+        }
+    },
+    // The IFS status report's Word conversion, against real Word when it is
+    // installed. Starting Word takes longer than the test's watchdog budget.
+    *comWord() {
+        let word = null;
+        try {
+            word = pn.com.createObject("Word.Application");
+        } catch (e) {
+            return { word: false };
+        }
+        try {
+            word.Visible = false;
+            const docxPath = files.tempPath("probe.docx").replace(/\//g, "\\");
+            const htmlPath = files.tempPath("probe.html").replace(/\//g, "\\");
+            const created = word.Documents.Add();
+            created.Content.Text = "Probe report";
+            created.SaveAs(docxPath, 16);   // wdFormatDocumentDefault
+            created.Close(false);
+            const doc = word.Documents.Open(docxPath);
+            doc.SpellingChecked = false;
+            doc.SaveAs(htmlPath, 8);         // wdFormatHTML
+            doc.Close(false);
+            word.Quit();
+            const html = yield files.readText(htmlPath);
+            return { word: true, converted: html.indexOf("Probe report") >= 0 };
+        } finally {
+            pn.com.release(word);
+        }
     },
     *dynamicMenu() {
         menus.register({ id: "dyn", title: "Dynamic", context: "record", entity: "contacts", handler: ctx => report("dyn", true, ctx.record.name) });

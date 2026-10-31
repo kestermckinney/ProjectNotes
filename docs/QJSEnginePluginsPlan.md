@@ -633,7 +633,7 @@ const files: {
 
 ### `email`
 
-Every message goes through the existing review dialog and becomes a draft in the user's chosen backend. Plugins cannot send mail silently.
+Every message becomes a draft in the user's chosen backend straight away, with no review dialog. The user reviews and sends it there, so plugins cannot send mail silently.
 
 ```ts
 type Recipient = string | { name?: string; email: string } | { contact: string };   // contact key
@@ -643,14 +643,14 @@ interface EmailMessage {
   subject: string;
   html?: string; text?: string;
   attachments?: string[];       // file paths
-  projectKey?: string;          // lets the review dialog offer the project's audiences
+  projectKey?: string;          // the project the email belongs to
 }
 interface Audience { id: string; name: string; workflow: string; isDefault: boolean; }
 
 const email: {
   backends(): Promise<{ id: string; name: string; available: boolean; preferred: boolean;
                         supportsHtml: boolean; supportsAttachments: boolean }[]>;
-  compose(message: EmailMessage): Promise<{ status: "handed-off" | "cancelled"; backend?: string }>;
+  compose(message: EmailMessage): Promise<{ status: "handed-off"; backend?: string }>;
   audiences(projectKey: string, workflow?: string): Promise<Audience[]>;
   resolveAudience(projectKey: string, audienceId: string)
         : Promise<{ to: Recipient[]; cc: Recipient[]; bcc: Recipient[] }>;

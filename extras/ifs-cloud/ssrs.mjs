@@ -4,6 +4,8 @@
 import * as pn from "projectnotes";
 import { replaceVariables, formatDate } from "projectnotes/common";
 
+import { trace } from "./sso.mjs";
+
 const { app, data, email, files, http, log, secrets, settings, ui } = pn;
 
 // What differs between the reports. The status report also records the
@@ -34,16 +36,24 @@ function reportUrl(template, project, reportDate) {
 }
 
 function* download(url, path) {
+    const user = settings.get("DomainUser", "") || "";
+    const password = (yield secrets.get("DomainPassword")) || "";
+    trace("ssrs", "downloading " + url + " as " + (user || "(no user)") + ", password " + (password ? "set" : "MISSING"));
     const response = yield http.fetch(url, {
-        auth: { type: "basic", username: settings.get("DomainUser", "") || "", password: (yield secrets.get("DomainPassword")) || "" },
+        auth: { type: "basic", username: user, password: password },
         timeoutSeconds: 300,
     });
+    const headers = response.headers || {};
+    const type = Object.keys(headers).filter(k => k.toLowerCase() === "content-type").map(k => headers[k])[0] || "";
+    trace("ssrs", "report server answered " + response.status + " " + type);
     if (!response.ok) {
         yield ui.message("The report server answered " + response.status + ".\n\n" + (yield response.text()).slice(0, 500),
                          { kind: "error", title: "Download Failed" });
         return false;
     }
-    yield files.writeBytes(path, yield response.arrayBuffer());
+    const bytes = yield response.arrayBuffer();
+    yield files.writeBytes(path, bytes);
+    trace("ssrs", "wrote " + bytes.byteLength + " bytes to " + path);
     return true;
 }
 
@@ -52,6 +62,7 @@ function* wordToHtml(docxPath, title) {
     const htmlPath = files.tempPath("ssrs-report.html");
     let word = null;
     try {
+        trace("ssrs", "converting " + docxPath + " to HTML with Word");
         word = pn.com.createObject("Word.Application");
         word.Visible = false;
         const doc = word.Documents.Open(docxPath.replace(/\//g, "\\"));
@@ -60,7 +71,13 @@ function* wordToHtml(docxPath, title) {
         doc.SaveAs(htmlPath.replace(/\//g, "\\"), 8);   // wdFormatHTML
         doc.Close(false);
         word.Quit();
+        trace("ssrs", "Word converted the report");
     } catch (e) {
+        trace("ssrs", "Word conversion failed: " + e.message);
+        // Don't leave a hidden Word running in the background.
+        if (word) {
+            try { word.Quit(false); } catch (quitError) { /* already gone */ }
+        }
         yield ui.message("Word could not convert the report: " + e.message, { kind: "error", title: "Generate " + title });
         return null;
     } finally {
@@ -71,8 +88,22 @@ function* wordToHtml(docxPath, title) {
     return html;
 }
 
-// The project's default audience for the report, or the team members marked
-// to receive status reports when the project has none.
+// The report recipient panel, starting from the project's default audience
+// for the report. Audiences and defaults are shared with the built-in report
+// of the same kind. Returns null when the user cancels, or undefined on a
+// Project Notes too old to show the panel.
+function* chooseRecipients(project, report) {
+    if (typeof email.chooseRecipients !== "function") return undefined;
+    const chosen = yield email.chooseRecipients(project.$key, {
+        workflow: report.workflow, title: report.title + " Recipients", okText: "Generate" });
+    trace("ssrs", chosen ? "recipients chosen: to " + chosen.to.length + ", cc " + chosen.cc.length + ", bcc " + chosen.bcc.length
+                         + ", audience " + (chosen.audienceId || "(none)")
+                         : "recipient choice cancelled");
+    return chosen ? { to: chosen.to, cc: chosen.cc, bcc: chosen.bcc } : null;
+}
+
+// Older Project Notes: the project's default audience for the report, or the
+// team members marked to receive status reports when the project has none.
 function* recipients(project, workflow) {
     try {
         const audiences = yield email.audiences(project.$key, workflow);
@@ -100,6 +131,8 @@ export function* generateTrackerReport(context) {
 function* generateReport(context, report) {
     const project = context.record;
     const server = String(settings.get("ReportServer", "") || "").trim();
+    trace("ssrs", report.title + ": project " + (project ? project.project_number + " (" + project.$key + ")" : "MISSING")
+          + ", report server " + (server || "(none)") + ", Word available " + !!pn.com);
     if (!server) {
         yield ui.message("Enter the report server in Settings > IFS Cloud first.", { kind: "warning", title: "Report Server Not Configured" });
         return;
@@ -107,6 +140,7 @@ function* generateReport(context, report) {
     const canConvert = !!pn.com;
     const choices = [DELIVERY.pdf, DELIVERY.word, DELIVERY.none];
     if (canConvert) choices.unshift(DELIVERY.html);
+    trace("ssrs", "showing the report options form");
     const options = yield ui.showForm({ fields: [
         { key: "reportDate", label: "Report date", type: "date" },
         { key: "delivery", label: "Email", type: "choice", choices: choices },
@@ -114,10 +148,17 @@ function* generateReport(context, report) {
         { key: "display", label: "Open the PDF when it is ready", type: "checkbox" },
     ] }, { reportDate: today(), delivery: choices[0], keepWord: false, display: false },
        { title: "Generate " + report.title, okText: "Generate" });
+    trace("ssrs", "form answered " + JSON.stringify(options));
     if (!options) return;
 
     const reportDate = options.reportDate || today();
     const delivery = options.delivery;
+    // Choose the recipients before the slow download, so cancelling costs nothing.
+    let chosen;
+    if (delivery !== DELIVERY.none) {
+        chosen = yield chooseRecipients(project, report);
+        if (chosen === null) return;
+    }
     const stamp = reportDate.replace(/-/g, "") + " " + project.project_number + " " + report.title;
     const pdfPath = files.tempPath(stamp + ".pdf");
     const docxPath = files.tempPath(stamp + ".docx");
@@ -132,9 +173,11 @@ function* generateReport(context, report) {
         progress.update(0.5, "Downloading the PDF report...");
         return yield download(base + "&rs:Command=Render&rs:Format=PDF", pdfPath);
     }, { cancellable: false });
+    trace("ssrs", "downloads " + (ok ? "succeeded" : "failed"));
     if (!ok) return;
 
     let folder = yield app.projectFolder(project.$key);
+    trace("ssrs", "project folder " + (folder || "(none)"));
     if (folder) {
         const sub = String(settings.get(report.folderKey, "") || report.folder).replace(/^[\\/]+|[\\/]+$/g, "");
         folder = folder.replace(/[\\/]+$/, "") + "/" + sub;
@@ -148,11 +191,13 @@ function* generateReport(context, report) {
         shown = folder + "/" + stamp + ".pdf";
         yield files.copy(pdfPath, shown, { overwrite: true });
         if (options.keepWord) yield files.copy(docxPath, folder + "/" + stamp + ".docx", { overwrite: true });
+        trace("ssrs", "filed the report as " + shown);
     }
 
     if (delivery !== DELIVERY.none) {
         const subject = project.project_number + " " + (project.project_name || "") + " " + report.title + " " + formatDate(reportDate, "MM/dd/yyyy");
-        const message = Object.assign({ subject: subject, projectKey: project.$key }, yield recipients(project, report.workflow));
+        const message = Object.assign({ subject: subject, projectKey: project.$key },
+                                      chosen || (yield recipients(project, report.workflow)));
         if (delivery === DELIVERY.html) {
             const html = yield wordToHtml(docxPath, report.title);
             if (html) message.html = html;
@@ -161,7 +206,10 @@ function* generateReport(context, report) {
             message.attachments = [delivery === DELIVERY.word ? docxPath : pdfPath];
             message.text = "";
         }
-        yield email.compose(message);
+        trace("ssrs", "composing email: to " + (message.to || []).length + ", cc " + (message.cc || []).length
+              + ", " + (message.html ? "HTML body " + message.html.length + " chars" : "attachments " + JSON.stringify(message.attachments)));
+        const composed = yield email.compose(message);
+        trace("ssrs", "email compose returned " + JSON.stringify(composed));
     }
 
     if (options.display) yield files.openWithSystem(shown);

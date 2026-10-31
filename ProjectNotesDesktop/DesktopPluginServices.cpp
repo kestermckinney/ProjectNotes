@@ -127,9 +127,10 @@ void DesktopPluginServices::request(const PluginManifest& plugin, const QString&
         } else if (method == QLatin1String("email.audiences")) {
             reply(m_app->pluginEmailAudiences(arg(args, 0).toString(), arg(args, 1).toString()), {});
         } else if (method == QLatin1String("email.resolveAudience")) {
-            PluginError error;
-            const QVariant value = m_app->pluginResolveAudience(arg(args, 0).toString(), arg(args, 1).toString(), &error);
-            reply(value, error);
+            m_app->resolvePluginAudience(arg(args, 0).toString(), arg(args, 1).toString(), std::move(reply));
+        } else if (method == QLatin1String("email.chooseRecipients")) {
+            if (!m_ui) { reply({}, unavailable(tr("Dialogs are not available."))); return; }
+            m_app->choosePluginRecipients(plugin, arg(args, 0).toString(), arg(args, 1).toMap(), std::move(reply));
         } else if (method == QLatin1String("email.templates")) {
             reply(m_app->pluginEmailTemplates(), {});
         } else if (method == QLatin1String("email.renderTemplate")) {

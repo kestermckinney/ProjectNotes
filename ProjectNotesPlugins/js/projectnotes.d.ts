@@ -144,7 +144,8 @@ declare module "projectnotes" {
         type: "text" | "multiline" | "password" | "number" | "date" | "checkbox" | "choice" | "combo"
             | "file" | "folder" | "contact" | "table" | "section" | "note";
         required?: boolean; placeholder?: string; help?: string;
-        choices?: string[]; /* a "choice" table column is a drop-down with a blank entry */ filters?: string[]; columns?: FormField[];
+        choices?: string[]; /* a "choice" table column is a drop-down with a blank entry */
+        filters?: string[]; /* a "file" table column is a text cell with a browse button */ columns?: FormField[];
         visibleWhen?: { [key: string]: any };
         /** Text cells in a table: `{{ path }}` placeholders listed under Insert Field in the cell's right-click menu. */
         variables?: string[];
@@ -180,6 +181,15 @@ declare module "projectnotes" {
         keys(): string[];
         all(): { [key: string]: any };
         onChanged(handler: (keys: string[]) => void): Subscription;
+    };
+    // The My Shortcuts table. Needs the "shortcuts" permission. add() skips a
+    // row whose entity, submenu and menu match one already there, and returns
+    // the number it added. A URL is opened as written, apart from the
+    // {{ entity.column }} and {{ preferences.* }} tokens My Shortcuts fills in.
+    export interface Shortcut { menu: string; submenu?: string; entity?: string; url: string; addedBy?: string; }
+    export const shortcuts: {
+        list(): Shortcut[];
+        add(rows: Shortcut[]): number;
     };
     export const secrets: {
         get(account: string): Promise<string | null>;
@@ -222,9 +232,17 @@ declare module "projectnotes" {
     }
     export const email: {
         backends(): Promise<{ id: string; name: string; available: boolean; preferred: boolean; supportsHtml: boolean; supportsAttachments: boolean }[]>;
-        compose(message: EmailMessage): Promise<{ status: "handed-off" | "cancelled"; backend?: string }>;
-        audiences(projectKey: string, workflow?: string): Promise<{ id: string; name: string; workflow: string; isDefault: boolean }[]>;
+        /** Creates a draft in the user's email application straight away, with no review dialog. The user sends it from there. */
+        compose(message: EmailMessage): Promise<{ status: "handed-off"; backend?: string }>;
+        /** Every saved audience of the project; audiences are shared by all reports. `isDefault` says whether `workflow` (such as "status-report") loads it automatically. */
+        audiences(projectKey: string, workflow?: string): Promise<{ id: string; name: string; workflow: string; isDefault: boolean; defaultFor: string[] }[]>;
         resolveAudience(projectKey: string, audienceId: string): Promise<{ to: Recipient[]; cc: Recipient[]; bcc: Recipient[] }>;
+        /** Opens the report recipient panel: checklist, To/Cc/Bcc, saved audiences and "Set as default" for `workflow` (default "project-email").
+         *  Starts from that workflow's default audience. Resolves null when the user cancels. `audienceId` is the saved audience last loaded or saved. */
+        chooseRecipients(projectKey: string, options?: {
+            workflow?: "status-report" | "tracker-items-report" | "meeting-notes-report" | "project-email";
+            title?: string; okText?: string;
+        }): Promise<{ to: Recipient[]; cc: Recipient[]; bcc: Recipient[]; audienceId: string | null } | null>;
         templates(): Promise<{ id: string; name: string; workflow: string }[]>;
         renderTemplate(templateId: string, context: { projectKey?: string; noteKey?: string }): Promise<{ subject: string; html: string }>;
     };

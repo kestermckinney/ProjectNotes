@@ -42,6 +42,7 @@ signals:
     void started(bool ok, const QString& error);
     void dynamicMenusChanged();
     void rowsChanged(const QVariantList& changes);
+    void foreignSettingsChanged(const QString& pluginId, const QStringList& keys);
     void errorReported(const QString& where, const QString& message);
     void logMessage(const QString& level, const QString& message);
     void hung(const QString& where);

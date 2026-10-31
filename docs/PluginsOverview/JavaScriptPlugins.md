@@ -176,7 +176,7 @@ const values = yield ui.showForm({ fields: [
 ] }, { number: 1 }, { title: "New Change Order" });
 ```
 
-Field types: `text`, `multiline`, `password`, `number`, `date`, `checkbox`, `choice`, `combo`, `file`, `folder`, `contact`, `table` (rows with `columns`), `section` (a heading) and `note` (help text). Fields accept `required`, `placeholder`, `help`, `choices`, `filters` and `visibleWhen`.
+Field types: `text`, `multiline`, `password`, `number`, `date`, `checkbox`, `choice`, `combo`, `file`, `folder`, `contact`, `table` (rows with `columns`), `section` (a heading) and `note` (help text). Fields accept `required`, `placeholder`, `help`, `choices`, `filters` and `visibleWhen`. A table column is a text cell unless its type is `choice` (a drop-down) or `file` (a text cell with a browse button that uses the column's `filters`).
 
 Use `ui.pickFile()`, `ui.pickFolder()` and `ui.saveFile()` for file choosers, `ui.progress()` for long work, `ui.notify()` for a brief notice, and `ui.clipboard` for the clipboard.
 
@@ -228,7 +228,7 @@ A `contributes.settings` entry adds a section to Settings. With a `schema`, Proj
 
 | Namespace | What it does |
 | --- | --- |
-| `email` | `compose()` shows a review dialog and creates a draft in the user's email application. Plugins cannot send mail without the user. Also `audiences()`, `resolveAudience()`, `templates()` and `renderTemplate()`. |
+| `email` | `compose()` creates a draft in the user's email application straight away, with no review dialog. The user reviews and sends it there, so plugins cannot send mail without the user. `chooseRecipients(projectKey, { workflow, title, okText })` opens the recipient panel the built-in reports use, with To/Cc/Bcc, saved audiences and **Set as default** for `workflow` (`status-report`, `tracker-items-report`, `meeting-notes-report` or `project-email`). It resolves to `{ to, cc, bcc, audienceId }`, ready to spread into `compose()`, or `null` on Cancel. Audiences belong to the project: `audiences(projectKey, workflow)` lists all of them, with `isDefault` for that workflow, and `resolveAudience()` gives a saved audience's recipients. Also `templates()` and `renderTemplate()`. |
 | `calendar` | `draftMeeting()` shows a review and creates a draft meeting; `writeIcs()` saves an `.ics` file. |
 | `contacts` | `pick()` opens the contact picker; `syncNow()`, `sources()`, `toVCard()`, `fromVCard()`. |
 | `office365` | `graph()` calls Microsoft Graph with the user's Office 365 sign-in; `graphPages()` follows paging links. |
@@ -236,6 +236,7 @@ A `contributes.settings` entry adds a section to Settings. With a `schema`, Proj
 | `auth` | `browserSignIn()` opens a sign-in page in the browser and returns the redirect to a `localhost` address, for OAuth sign-ins to services other than Office 365. |
 | `files` | Files inside the plugin folder (read only), its data folder, folders the user picked, and project folders from `app.projectFolder()`. |
 | `storage`, `settings`, `secrets` | Private files, settings, and credentials kept in the operating system's credential store. |
+| `shortcuts` | `list()` reads the My Shortcuts table. `add(rows)` appends rows of `{ menu, submenu, entity, url }` and returns how many it added. A row is skipped when My Shortcuts already has one with the same entity, submenu and menu, ignoring case. Write the URL out in full: My Shortcuts fills in only `{{ entity.column }}` and `{{ preferences.* }}` tokens. Added rows carry `addedBy` with the plugin's id. |
 | `com` | Windows only: automate Office and other COM applications (see below). |
 | `process` | Start another program (not in App Store builds). |
 
@@ -299,6 +300,7 @@ The page's host must be in the manifest's `http` array, and `redirectUri` must b
 | `app.navigate` | `app.navigate()`. |
 | `urls` | `ui.openUrl()` with schemes other than http, https and mailto. |
 | `auth.browser` | `auth.browserSignIn()`; the sign-in page's host must also be in `http`. |
+| `shortcuts` | `shortcuts.list()` and `shortcuts.add()`. |
 | `reports` | `reports.generate()` (planned). |
 
 A call without its permission fails with a `PluginError` whose `code` is `permission-denied` and whose `permission` names what to add to the manifest.

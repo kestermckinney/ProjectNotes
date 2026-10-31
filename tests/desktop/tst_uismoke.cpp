@@ -14,7 +14,9 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QQmlApplicationEngine>
+#include <QSettings>
 
+#include "appidentity.h"
 #include "PluginUiController.h"
 #include "ProjectNotesPlugins/PluginRegistry.h"
 #include <QQmlError>
@@ -987,6 +989,20 @@ private slots:
                 QTest::keyClick(window, Qt::Key_Tab);
             }
             window->resize(originalSize);
+            QTest::qWait(50);
+
+            // Typing a financial value and leaving the field stores it.
+            auto *budget = qobject_cast<QQuickItem*>(findVisualChild(window->contentItem(), "BudgetInput"));
+            QVERIFY(budget);
+            budget->forceActiveFocus();
+            QTest::keyClick(window, Qt::Key_A, Qt::ControlModifier);
+            for (char ch : QByteArray("12345"))
+                QTest::keyClick(window, ch);
+            QTest::keyClick(window, Qt::Key_Tab);
+            const int prow = c->projectRowForId(pid);
+            QVERIFY2(c->getProjectData(prow).value("budget").toString()
+                         .remove(QRegularExpression("[^0-9.]")).startsWith("12345"),
+                     qPrintable(c->getProjectData(prow).value("budget").toString()));
             c->setShowInternalItems(showInternal);
         }
 
@@ -1866,9 +1882,12 @@ private slots:
         PluginUiController* ui = PluginUiController::instance();
         const QString id = QStringLiteral("test.uitest");
 
-        // Install from the fixture folder, then approve its permissions.
+        // Install from the fixture folder, then approve its permissions. A run
+        // that stopped early leaves its copy installed and approved; drop it.
         QString installedId;
         QString error;
+        registry->uninstall(id, &error);
+        QSettings(PN::Identity::settingsOrganization(QStringLiteral("qmltest")), QStringLiteral("PluginState")).remove(id);
         QVERIFY2(registry->install(QStringLiteral(PN_TEST_FIXTURES) + QStringLiteral("/plugins/uitest"),
                                    &installedId, &error), qPrintable(error));
         QCOMPARE(installedId, id);
@@ -1946,12 +1965,51 @@ private slots:
                                       .value(QStringLiteral("name")).toString(), QStringLiteral("Zed"), 10000);
         QTRY_VERIFY(!root->findChild<QObject*>(QStringLiteral("pluginRequest_form")));
 
+        // The OK button answers with a JavaScript object of the app's QML
+        // engine; it reaches the plugin's engine as plain values.
+        registry->runMenu(id, QStringLiteral("form"), {}, {});
+        QTRY_VERIFY_WITH_TIMEOUT((form = root->findChild<QObject*>(QStringLiteral("pluginRequest_form"))) != nullptr, 10000);
+        QTRY_VERIFY(form->property("visible").toBool());
+        const QJSValue answer = engine->evaluate(QStringLiteral("({ name: 'From QML', kind: 'A', done: true })"));
+        QVERIFY(QMetaObject::invokeMethod(form, "answer", Q_ARG(QVariant, QVariant::fromValue(answer))));
+        QTRY_COMPARE_WITH_TIMEOUT(ui->settingValues(id).value(QStringLiteral("formResult")).toMap()
+                                      .value(QStringLiteral("name")).toString(), QStringLiteral("From QML"), 10000);
+        QCOMPARE(ui->settingValues(id).value(QStringLiteral("formResult")).toMap().value(QStringLiteral("done")).toBool(), true);
+        QTRY_VERIFY(!root->findChild<QObject*>(QStringLiteral("pluginRequest_form")));
+
         // A plugin QML dialog that invokes a plugin handler and accepts itself.
         registry->runMenu(id, QStringLiteral("dialog"), {}, {});
         QTRY_VERIFY2_WITH_TIMEOUT(ui->settingValues(id).value(QStringLiteral("dialogResult")).toString() == QLatin1String("HI back"),
                                   qPrintable(m_warnings.join(QStringLiteral(" | ")) + QStringLiteral(" || ") + registry->plugin(id).lastError),
                                   10000);
         QTRY_VERIFY(!root->findChild<QObject*>(QStringLiteral("pluginRequest_dialog")));
+
+        // email.chooseRecipients(): the report recipient panel over its own
+        // session. Cancel answers null; OK answers the selection.
+        {
+            const QString projectId = projectWithNote();
+            QVERIFY(!projectId.isEmpty());
+            auto openPicker = [&]() -> QObject* {
+                registry->runMenu(id, QStringLiteral("recipients"), QStringLiteral("projects"), projectId);
+                QObject* picker = nullptr;
+                [&] { QTRY_VERIFY_WITH_TIMEOUT((picker = root->findChild<QObject*>(QStringLiteral("pluginRequest_recipientPicker"))) != nullptr, 10000); }();
+                return picker;
+            };
+            QObject* picker = openPicker();
+            QVERIFY(picker);
+            QTRY_VERIFY(picker->property("visible").toBool());
+            QVERIFY(QMetaObject::invokeMethod(picker, "answer", Q_ARG(QVariant, QVariant::fromValue(nullptr))));
+            QTRY_COMPARE_WITH_TIMEOUT(ui->settingValues(id).value(QStringLiteral("recipientsResult")).toString(), QStringLiteral("cancelled"), 10000);
+            QTRY_VERIFY(!root->findChild<QObject*>(QStringLiteral("pluginRequest_recipientPicker")));
+
+            picker = openPicker();
+            QVERIFY(picker);
+            QTRY_VERIFY(picker->property("visible").toBool());
+            QVERIFY(QMetaObject::invokeMethod(picker, "answer", Q_ARG(QVariant, QVariant(true))));
+            QTRY_VERIFY_WITH_TIMEOUT(ui->settingValues(id).value(QStringLiteral("recipientsResult")).toMap().contains(QStringLiteral("to")), 10000);
+            QTRY_VERIFY(!root->findChild<QObject*>(QStringLiteral("pluginRequest_recipientPicker")));
+            ui->setSetting(id, QStringLiteral("recipientsResult"), QVariant());
+        }
 
         QVERIFY2(registry->plugin(id).lastError.isEmpty(), qPrintable(registry->plugin(id).lastError));
         QVERIFY2(registry->uninstall(id, &error), qPrintable(error));

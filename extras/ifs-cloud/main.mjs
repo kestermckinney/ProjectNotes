@@ -1,20 +1,18 @@
 // IFS Cloud: project import, tracker item sync, SSRS status and tracker reports,
-// and IFS shortcut menus. Replaces threads/ifssync_thread.py,
+// and IFS shortcut menus in My Shortcuts. Replaces threads/ifssync_thread.py,
 // plugins/ifscloud_plugin_settings.py, plugins/ifs_ssrs_generate_plugin.py and
 // plugins/includes/ifs_tools.py. Ships separately from Project Notes.
-import { log, menus, secrets, settings, timers, ui } from "projectnotes";
-import { replaceVariables } from "projectnotes/common";
+import { log, secrets, settings, shortcuts, timers, ui } from "projectnotes";
 import { hasSettings, importProjects, syncActivityTasks, syncTrackerItems } from "./ifs.mjs";
-import { ifsUrl, reset } from "./sso.mjs";
+import { ifsUrl, reset, trace } from "./sso.mjs";
 import { generateStatusReport, generateTrackerReport } from "./ssrs.mjs";
 
 const SYNC_MINUTES = 3;
 
 // Shortcut menus that open IFS pages and SSRS reports for the record you
-// right-click. These were the default My Shortcuts entries; they start in the
-// IFS Cloud settings, where you can change, add or remove them. A URL can use
-// {{ ifs.address }} and {{ ifs.reportServer }} for those settings, so a new
-// address carries over to every shortcut.
+// right-click. They live in My Shortcuts: on start this plugin adds each one it
+// has not added before, with {{ ifs.address }} and {{ ifs.reportServer }}
+// written in. One the user deletes there stays deleted.
 const IFS_PAGE = "{{ ifs.address }}/main/ifsapplications/web/page/";
 const REPORT_VIEWER = "http://{{ ifs.reportServer }}/ReportServer/Pages/ReportViewer.aspx?";
 const DEFAULT_SHORTCUTS = [
@@ -51,40 +49,62 @@ const DEFAULT_SHORTCUTS = [
 let timer = null;
 let stopped = false;
 
-function shortcutValues() {
-    return { "ifs.address": ifsUrl(), "ifs.reportServer": String(settings.get("ReportServer", "") || "").trim() };
+function shortcutKey(row) {
+    return [row.entity, row.submenu, row.menu].map(function (s) { return String(s || "").trim().toLowerCase(); }).join("\n");
 }
 
-function* openShortcut(context) {
-    yield ui.openUrl(replaceVariables(context.parameter, context.record || {}, shortcutValues()));
+// Writes the IFS address and report server into a shortcut's URL. Returns
+// null while a setting it needs is empty.
+function resolveShortcut(row) {
+    const values = { "ifs.address": ifsUrl(), "ifs.reportServer": String(settings.get("ReportServer", "") || "").trim() };
+    let url = String(row.url || "");
+    for (const name of Object.keys(values)) {
+        const pattern = new RegExp("\\{\\{\\s*" + name.replace(".", "\\.") + "\\s*\\}\\}", "g");
+        if (url.search(pattern) < 0) continue;
+        if (!values[name]) return null;
+        url = url.replace(pattern, function () { return values[name]; });
+    }
+    return { menu: row.menu, submenu: row.submenu || "", entity: row.entity || "", url: url };
 }
 
-// A shortcut that needs the IFS address or report server stays hidden until
-// that setting has a value.
-function registerShortcuts() {
-    menus.clear();
-    const values = shortcutValues();
-    const items = [];
-    const rows = settings.get("Shortcuts", []) || [];
-    rows.forEach(function (row, i) {
-        if (!row || !row.menu || !row.url) return;
-        const missing = Object.keys(values).some(function (name) { return !values[name] && row.url.indexOf(name) >= 0; });
-        if (missing) return;
-        const entity = String(row.entity || "").trim();
-        items.push({ id: "shortcut-" + i, title: row.menu, submenu: row.submenu || "",
-                     context: entity ? "record" : "global", entity: entity || undefined,
-                     parameter: row.url, handler: openShortcut });
+// Adds to My Shortcuts the shortcuts this plugin has not added before.
+// Before 2.2 they lived in this plugin's own "Shortcuts" setting; that list,
+// which the user may have changed, is moved once in place of the defaults.
+function offerShortcuts() {
+    const own = settings.get("Shortcuts");
+    let seeded = settings.get("SeededShortcuts", []) || [];
+    const waiting = [];
+    const rows = [];
+    (own !== null ? own || [] : DEFAULT_SHORTCUTS).forEach(function (row) {
+        if (!row || !row.menu || !row.url || seeded.indexOf(shortcutKey(row)) >= 0) return;
+        const resolved = resolveShortcut(row);
+        if (resolved) rows.push(resolved);
+        else waiting.push(row);
     });
-    if (items.length) menus.register(items);
+    if (rows.length) {
+        const added = shortcuts.add(rows);
+        if (added) log.info("Added " + added + " IFS shortcut(s) to My Shortcuts.");
+        seeded = seeded.concat(rows.map(shortcutKey));
+    }
+    // The user's own list stands in for the defaults, so those never follow;
+    // the user's rows still waiting for a setting are not added yet.
+    if (own !== null) {
+        const pending = waiting.map(shortcutKey);
+        seeded = seeded.concat(DEFAULT_SHORTCUTS.map(shortcutKey).filter(function (key) { return pending.indexOf(key) < 0; }));
+    }
+    settings.set("SeededShortcuts", seeded.filter(function (key, i) { return seeded.indexOf(key) === i; }));
+    // Moved shortcuts that still need a setting wait here until it is filled in.
+    if (own !== null) {
+        if (waiting.length) settings.set("Shortcuts", waiting);
+        else settings.remove("Shortcuts");
+    }
 }
 
-// The Python plugin filled in the IFS address, the report server and the
-// shortcuts on first load. A value the user cleared, or a shortcut list the
-// user emptied, stays that way.
+// The Python plugin filled in the IFS address and the report server on first
+// load. A value the user cleared stays that way.
 function seedDefaults() {
     if (settings.get("URL") === null) settings.set("URL", "https://ifs.cornerstonecontrols.com");
     if (settings.get("ReportServer") === null) settings.set("ReportServer", "indvifsbi05");
-    if (settings.get("Shortcuts") === null) settings.set("Shortcuts", DEFAULT_SHORTCUTS);
 }
 
 // The domain password belongs in the credential store, not in settings.
@@ -112,8 +132,10 @@ function* runSync(all) {
 
 function* background() {
     if (stopped || !hasSettings()) return;
+    trace("sync", "background sync starting");
     try {
-        yield runSync(false);
+        const result = yield runSync(false);
+        trace("sync", "background sync finished: " + JSON.stringify(result));
     } catch (e) {
         log.warn("IFS sync failed: " + e.message);
     }
@@ -141,17 +163,19 @@ function* importNow() {
 }
 
 export function* onStart() {
+    trace("main", "starting; URL " + ifsUrl() + ", report server " + String(settings.get("ReportServer", "") || "(none)")
+          + ", domain user " + String(settings.get("DomainUser", "") || "(none)"));
     stopped = false;
     seedDefaults();
     yield movePasswordToSecrets();
-    registerShortcuts();
+    offerShortcuts();
     schedule();
 }
 
 export function* onSettingsChanged(keys) {
     yield movePasswordToSecrets();
     if (!keys || keys.indexOf("URL") >= 0 || keys.indexOf("Realm") >= 0) reset();
-    registerShortcuts();
+    offerShortcuts();
     schedule();
 }
 
@@ -161,7 +185,15 @@ export function onStop() {
 }
 
 export function* onMenu(menuId, context) {
-    if (menuId === "import") yield importNow();
-    else if (menuId === "status-report") yield generateStatusReport(context);
-    else if (menuId === "tracker-report") yield generateTrackerReport(context);
+    trace("menu", menuId + ": entity " + context.entity + ", key " + context.key
+          + ", record " + (context.record ? "loaded" : "MISSING") + ", parameter " + (context.parameter || "(none)"));
+    try {
+        if (menuId === "import") yield importNow();
+        else if (menuId === "status-report") yield generateStatusReport(context);
+        else if (menuId === "tracker-report") yield generateTrackerReport(context);
+        trace("menu", menuId + " finished");
+    } catch (e) {
+        trace("menu", menuId + " failed: " + e.message + (e.stack ? "\n" + e.stack : ""));
+        throw e;
+    }
 }

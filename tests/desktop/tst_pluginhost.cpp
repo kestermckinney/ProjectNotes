@@ -21,6 +21,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QRegularExpression>
 #include <QSettings>
 #include <QSqlDatabase>
 #include <QSqlError>
@@ -31,6 +32,7 @@
 #include <QTemporaryDir>
 #include <QtTest/QtTest>
 
+#include <private/qzipreader_p.h>
 #include <private/qzipwriter_p.h>
 
 #include <functional>
@@ -198,6 +200,8 @@ private slots:
     void appInfoAndSecrets();
     void recordsUseNativeArrays();
     void dynamicMenus();
+    void comObjects();
+    void comWordConversion();
     void watchdogStopsRunawayCode();
     void exportXml();
     void changeEventsReachOtherPlugins();
@@ -207,6 +211,7 @@ private slots:
     void bundledPluginsRun();
     void ifsCloudPlugin();
     void ifsCloudDefaultShortcuts();
+    void ifsCloudMovesShortcuts();
 
 private:
     QJsonObject run(const QString& menuId, const QString& entity = {}, const QString& key = {}, int timeoutMs = 10000);
@@ -253,8 +258,9 @@ void PluginHostTest::initTestCase()
               manifest(QStringLiteral("probe"),
                        {QStringLiteral("data.read:companies,contacts,projects,project_team,item_tracker,item_tracker_updates,project_notes"),
                         QStringLiteral("data.write:companies,contacts,projects,item_tracker"), QStringLiteral("files"),
-                        QStringLiteral("auth.browser")},
-                       QStringLiteral(R"(, "http": ["sso.example.test"], "contributes": {"menus": [{"id": "project", "title": "Probe", "context": "record",
+                        QStringLiteral("auth.browser"), QStringLiteral("com")},
+                       QStringLiteral(R"(, "http": ["sso.example.test"], "com": ["Scripting.FileSystemObject", "Word.Application"],
+                                       "contributes": {"menus": [{"id": "project", "title": "Probe", "context": "record",
                                        "entity": "projects", "include": ["project_team"]}]})")));
     writeFile(m_bundled + QStringLiteral("/probe/main.mjs"), fixture(QStringLiteral("probe.mjs")));
 
@@ -533,6 +539,10 @@ void PluginHostTest::filesAndHttpPermissions()
     r = run(QStringLiteral("httpDenied"));
     QVERIFY(!r.value(QStringLiteral("ok")).toBool());
     QCOMPARE(r.value(QStringLiteral("error")).toObject().value(QStringLiteral("permission")).toString(), QStringLiteral("http"));
+
+    r = run(QStringLiteral("shortcutsDenied"));
+    QVERIFY(!r.value(QStringLiteral("ok")).toBool());
+    QCOMPARE(r.value(QStringLiteral("error")).toObject().value(QStringLiteral("permission")).toString(), QStringLiteral("shortcuts"));
 }
 
 void PluginHostTest::browserSignIn()
@@ -647,6 +657,32 @@ void PluginHostTest::dynamicMenus()
     QVERIFY2(r.value(QStringLiteral("menuId")).toString() == QLatin1String("dyn"),
              qPrintable(m_registry->plugin(QStringLiteral("probe")).lastError));
     QCOMPARE(r.value(QStringLiteral("result")).toString(), QStringLiteral("Mike Smith"));
+}
+
+void PluginHostTest::comObjects()
+{
+#ifndef Q_OS_WIN
+    QSKIP("COM automation is Windows only.");
+#endif
+    const QJsonObject r = run(QStringLiteral("comObjects"));
+    QVERIFY2(r.value(QStringLiteral("ok")).toBool(), qPrintable(QJsonDocument(r).toJson()));
+    const QJsonObject result = r.value(QStringLiteral("result")).toObject();
+    QVERIFY2(QDir(result.value(QStringLiteral("tempPath")).toString()).exists(), qPrintable(QJsonDocument(r).toJson()));
+    QVERIFY(result.value(QStringLiteral("drives")).toInt() > 0);
+    QVERIFY(result.value(QStringLiteral("tempName")).toString().endsWith(QLatin1String(".tmp")));
+}
+
+void PluginHostTest::comWordConversion()
+{
+#ifndef Q_OS_WIN
+    QSKIP("COM automation is Windows only.");
+#endif
+    const QJsonObject r = run(QStringLiteral("comWord"), {}, {}, 60000);
+    QVERIFY2(r.value(QStringLiteral("ok")).toBool(), qPrintable(QJsonDocument(r).toJson()));
+    const QJsonObject result = r.value(QStringLiteral("result")).toObject();
+    if (!result.value(QStringLiteral("word")).toBool())
+        QSKIP("Microsoft Word is not installed.");
+    QVERIFY(result.value(QStringLiteral("converted")).toBool());
 }
 
 void PluginHostTest::watchdogStopsRunawayCode()
@@ -770,6 +806,19 @@ void PluginHostTest::hotReload()
     writeFile(m_bundled + QStringLiteral("/reloader/main.mjs"),
               "import { ui } from 'projectnotes'; export function onStart() { ui.message('{\"v\":2}'); }");
     QTRY_COMPARE_WITH_TIMEOUT(m_services.lastMessage(QStringLiteral("reloader")).value(QStringLiteral("v")).toInt(), 2, 10000);
+
+    // Other files coming and going in the plugin's folders, such as the lock
+    // file Word leaves next to a template it opens, don't restart a run.
+    QTest::qWait(500);
+    const int starts = m_services.messageCount(QStringLiteral("reloader"));
+    writeFile(m_bundled + QStringLiteral("/reloader/templates/Report.docx"), "template");
+    QTest::qWait(1000);
+    writeFile(m_bundled + QStringLiteral("/reloader/templates/~$Report.docx"), "lock");
+    writeFile(m_bundled + QStringLiteral("/reloader/notes.txt"), "notes");
+    QTest::qWait(1000);
+    QVERIFY(QFile::remove(m_bundled + QStringLiteral("/reloader/templates/~$Report.docx")));
+    QTest::qWait(1000);
+    QCOMPARE(m_services.messageCount(QStringLiteral("reloader")), starts);
 }
 
 // The plugins that ship in the repository's plugins/ folder start cleanly and
@@ -935,9 +984,16 @@ void PluginHostTest::bundledPluginsRun()
     QVERIFY(emlFile.readAll().contains("<p>Shipped.</p>"));
     QVERIFY(QFileInfo::exists(projectFolder + QStringLiteral("/Mail/Received/download_state.json")));
 
-    // Office Tools is Windows-only. A copy without the platform limit checks
-    // the parts that do not need Office: a template copied into the project
-    // folder and recorded as a location, and clear errors where COM is missing.
+    // MS Office Templates is Windows-only. A copy without the platform limit checks
+    // the parts that do not need Office: the two example templates configured
+    // on first start, their menus on the right tables, and a clear error when
+    // Office can't be reached. Set PN_TEST_OFFICE=1 on a Windows machine with
+    // Office to also create both documents through Word and Excel.
+#ifdef Q_OS_WIN
+    const bool realOffice = qEnvironmentVariableIntValue("PN_TEST_OFFICE") == 1;
+#else
+    const bool realOffice = false;
+#endif
     const QString officeRoot = m_dir.filePath(QStringLiteral("office-root"));
     const QString officeCopy = officeRoot + QStringLiteral("/office-tools");
     QDir().mkpath(officeCopy + QStringLiteral("/templates"));
@@ -945,12 +1001,22 @@ void PluginHostTest::bundledPluginsRun()
     QVERIFY(manifestFile.open(QIODevice::ReadOnly));
     QJsonObject officeManifest = QJsonDocument::fromJson(manifestFile.readAll()).object();
     officeManifest.remove(QStringLiteral("platforms"));
+    if (!realOffice) {
+        // COM is always there on Windows; without the permission the copy
+        // can't start Word or Excel.
+        QJsonArray permissions = officeManifest.value(QStringLiteral("permissions")).toArray();
+        for (qsizetype i = permissions.size() - 1; i >= 0; --i)
+            if (permissions.at(i).toString() == QLatin1String("com"))
+                permissions.removeAt(i);
+        officeManifest.insert(QStringLiteral("permissions"), permissions);
+    }
     writeFile(officeCopy + QStringLiteral("/plugin.json"), QJsonDocument(officeManifest).toJson());
     for (const QString& name : {QStringLiteral("main.mjs"), QStringLiteral("settings.schema.json"),
-                                QStringLiteral("templates/Risk Register Template.xlsx")})
+                                QStringLiteral("templates/Change Request Template.docx"),
+                                QStringLiteral("templates/Tracker Items Status Template.xlsx")})
         QVERIFY(QFile::copy(QStringLiteral(PN_REPO_PLUGINS) + QStringLiteral("/office-tools/") + name, officeCopy + QLatin1Char('/') + name));
-    services.replies.insert(QStringLiteral("ui.pickFile"), officeCopy + QStringLiteral("/templates/Risk Register Template.xlsx"));
     services.replies.insert(QStringLiteral("ui.choose"), QVariant::fromValue(nullptr));
+    services.replies.insert(QStringLiteral("ui.showForm"), QVariantMap{{QStringLiteral("change_number"), QStringLiteral("03")}});
 
     PluginRegistry officeRegistry(&services);
     officeRegistry.setPaths({officeRoot, m_dir.filePath(QStringLiteral("office-user")),
@@ -964,31 +1030,91 @@ void PluginHostTest::bundledPluginsRun()
     const QString office = QStringLiteral("com.projectnotespro.office-tools");
     QTRY_VERIFY2_WITH_TIMEOUT(officeRegistry.isRunning(office), qPrintable(officeRegistry.plugin(office).lastError), 10000);
 
-    officeRegistry.runMenu(office, QStringLiteral("pcr-register"), QStringLiteral("projects"), QStringLiteral("project-p4000"));
-    QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(office, QStringLiteral("ui.openUrl")).size(), 1, 10000);
-    const QString copied = projectFolder + QStringLiteral("/Project Management/PCR's/P4000 Risk Register.xlsx");
-    QVERIFY2(QFileInfo::exists(copied), qPrintable(officeRegistry.plugin(office).lastError));
+    // The default templates: Change Request and Tracker Items Status, both on
+    // projects under Templates.
+    auto templateMenu = [&](const QString& entity, const QString& title) {
+        for (const QVariant& m : officeRegistry.menusForEntity(entity)) {
+            const QVariantMap menu = m.toMap();
+            if (menu.value(QStringLiteral("pluginId")).toString() == office && menu.value(QStringLiteral("title")).toString() == title
+                && menu.value(QStringLiteral("submenu")).toString() == QLatin1String("Templates"))
+                return menu.value(QStringLiteral("menuId")).toString();
+        }
+        return QString();
+    };
+    QString changeRequest;
+    QTRY_VERIFY_WITH_TIMEOUT(!(changeRequest = templateMenu(QStringLiteral("projects"), QStringLiteral("Change Request"))).isEmpty(), 10000);
+    const QString trackerList = templateMenu(QStringLiteral("projects"), QStringLiteral("Tracker Items Status"));
+    QVERIFY2(!trackerList.isEmpty(), qPrintable(QJsonDocument::fromVariant(officeRegistry.menusForEntity(QStringLiteral("projects"))).toJson()));
+    QVERIFY(templateMenu(QStringLiteral("item_tracker"), QStringLiteral("Tracker Items Status")).isEmpty());
+    auto officeMessage = [&] {
+        const QList<QVariantList> messages = services.argsOf(office, QStringLiteral("ui.message"));
+        return messages.isEmpty() ? QString() : messages.last().value(0).toString();
+    };
+
+    if (!realOffice) {
+        // Without Office the templates report the problem instead of failing silently.
+        const int before = services.messageCount(office);
+        officeRegistry.runMenu(office, changeRequest, QStringLiteral("projects"), QStringLiteral("project-p4000"));
+        QTRY_VERIFY_WITH_TIMEOUT(services.messageCount(office) > before, 10000);
+        QVERIFY(services.argsOf(office, QStringLiteral("ui.openUrl")).isEmpty());
+        QVERIFY(!QFileInfo::exists(projectFolder + QStringLiteral("/Project Management/Change Requests")));
+
+        const int officeMessages = services.messageCount(office);
+        officeRegistry.runMenu(office, QStringLiteral("kill-excel"), {}, {});
+        QTRY_VERIFY_WITH_TIMEOUT(services.messageCount(office) > officeMessages, 10000);
+    } else {
+        // The text of a part, without markup: Word splits a line into runs.
+        auto zipText = [](const QString& path, const QString& member) {
+            QZipReader zip(path);
+            return QString::fromUtf8(zip.fileData(member)).remove(QRegularExpression(QStringLiteral("<[^>]*>")));
+        };
+        const QString changeFile = projectFolder + QStringLiteral("/Project Management/Change Requests/P4000 Change Request 03.docx");
+        officeRegistry.runMenu(office, changeRequest, QStringLiteral("projects"), QStringLiteral("project-p4000"));
+        QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(office, QStringLiteral("ui.openUrl")).size(), 1, 60000);
+        QVERIFY2(QFileInfo::exists(changeFile), qPrintable(officeRegistry.plugin(office).lastError + QLatin1Char(' ')
+                                                          + officeMessage()));
+        const QString body = zipText(changeFile, QStringLiteral("word/document.xml"));
+        QVERIFY2(body.contains(QStringLiteral("P4000-03")) && body.contains(QStringLiteral("IT New Server Install"))
+                 && body.contains(QStringLiteral("$2,090.00")) && !body.contains(QStringLiteral("{{")), qPrintable(body.left(4000)));
+        QVERIFY(zipText(changeFile, QStringLiteral("word/footer1.xml")).contains(QStringLiteral("P4000-03")));
+
+        // From the project: every tracker item, one row each.
+        const QString trackerFile = projectFolder + QStringLiteral("/Project Management/Tracker Items/P4000 Tracker Items %1.xlsx")
+                                        .arg(QDate::currentDate().toString(Qt::ISODate));
+        officeRegistry.runMenu(office, trackerList, QStringLiteral("projects"), QStringLiteral("project-p4000"));
+        QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(office, QStringLiteral("ui.openUrl")).size(), 2, 60000);
+        QVERIFY2(QFileInfo::exists(trackerFile), qPrintable(officeRegistry.plugin(office).lastError + QLatin1Char(' ')
+                                                           + officeMessage()));
+        const QString strings = zipText(trackerFile, QStringLiteral("xl/sharedStrings.xml"));
+        QVERIFY2(strings.contains(QStringLiteral("Rack delivery")) && strings.contains(QStringLiteral("Order cables"))
+                 && strings.contains(QStringLiteral("Acme Corp")) && !strings.contains(QStringLiteral("{{")), qPrintable(strings));
+        QZipReader workbook(trackerFile);
+        const QString sheet = QString::fromUtf8(workbook.fileData(QStringLiteral("xl/worksheets/sheet1.xml")));
+        QVERIFY2(sheet.contains(QStringLiteral("<row r=\"11\"")) && !sheet.contains(QStringLiteral("<row r=\"12\"")), qPrintable(sheet.left(4000)));
+
+        {
+            QSqlDatabase db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), QStringLiteral("office-check"));
+            db.setDatabaseName(database);
+            QVERIFY(db.open());
+            QSqlQuery q(db);
+            QVERIFY(q.exec(QStringLiteral("SELECT location_type, full_path FROM project_locations "
+                                          "WHERE location_description = 'P4000 Change Request 03.docx'")) && q.next());
+            QCOMPARE(q.value(0).toString(), QStringLiteral("Word Document"));
+            QCOMPARE(q.value(1).toString(), QString(changeFile).replace(QLatin1Char('/'), QLatin1Char('\\')));
+            q.finish();
+            db.close();
+        }
+        QSqlDatabase::removeDatabase(QStringLiteral("office-check"));
+
+        // A second run finds the file and offers to open it.
+        const int confirms = services.argsOf(office, QStringLiteral("ui.confirm")).size();
+        services.nextConfirm = false;
+        officeRegistry.runMenu(office, changeRequest, QStringLiteral("projects"), QStringLiteral("project-p4000"));
+        QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(office, QStringLiteral("ui.confirm")).size(), confirms + 1, 60000);
+        services.nextConfirm = true;
+    }
     QTRY_VERIFY2(officeRegistry.plugin(office).lastError.isEmpty() && officeErrors.isEmpty(),
                  qPrintable(officeRegistry.plugin(office).lastError));
-    {
-        QSqlDatabase db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), QStringLiteral("office-check"));
-        db.setDatabaseName(database);
-        QVERIFY(db.open());
-        QSqlQuery q(db);
-        QTRY_VERIFY(q.exec(QStringLiteral("SELECT location_type, full_path FROM project_locations "
-                                          "WHERE location_description = 'P4000 Risk Register.xlsx'")) && q.next());
-        QCOMPARE(q.value(0).toString(), QStringLiteral("Excel Document"));
-        QCOMPARE(q.value(1).toString(), QString(copied).replace(QLatin1Char('/'), QLatin1Char('\\')));
-        q.finish();
-        db.close();
-    }
-    QSqlDatabase::removeDatabase(QStringLiteral("office-check"));
-
-    // Without COM the Office commands report the problem instead of failing silently.
-    const int officeMessages = services.messageCount(office);
-    officeRegistry.runMenu(office, QStringLiteral("kill-excel"), {}, {});
-    QTRY_VERIFY_WITH_TIMEOUT(services.messageCount(office) > officeMessages, 10000);
-    QVERIFY(officeErrors.isEmpty());
 
     QVERIFY2(errors.isEmpty(), qPrintable(errors.isEmpty() ? QString() : errors.first().at(1).toString()));
 }
@@ -1079,15 +1205,22 @@ void PluginHostTest::ifsCloudPlugin()
     QHash<QString, QString> secretStore{{QStringLiteral("sso-token"), token}};
     const QString projectFolder = m_dir.filePath(QStringLiteral("ifs-project"));
     QDir().mkpath(projectFolder);
+    // What the report form and the recipient panel answer.
+    QString delivery = QStringLiteral("Email the PDF");
+    const QVariantMap jim {{QStringLiteral("name"), QStringLiteral("Jim Smith")}, {QStringLiteral("email"), QStringLiteral("jim@acme.example")}};
+    const QVariantMap pat {{QStringLiteral("name"), QStringLiteral("Pat Engineer")}, {QStringLiteral("email"), QStringLiteral("pat@acme.example")}};
+    QVariant chosenRecipients = QVariantMap{{QStringLiteral("to"), QVariantList{jim}}, {QStringLiteral("cc"), QVariantList{pat}},
+                                            {QStringLiteral("bcc"), QVariantList{}}, {QStringLiteral("audienceId"), QStringLiteral("aud-1")}};
     services.handler = [&](const QString& method, const QVariantList& args, const Reply& reply) {
         if (method == QLatin1String("secrets.get")) { reply(secretStore.value(args.value(0).toString()), {}); return true; }
         if (method == QLatin1String("secrets.set")) { secretStore.insert(args.value(0).toString(), args.value(1).toString()); reply({}, {}); return true; }
         if (method == QLatin1String("app.projectFolder")) { reply(projectFolder, {}); return true; }
         if (method == QLatin1String("ui.showForm")) {
-            reply(QVariantMap{{QStringLiteral("reportDate"), QStringLiteral("2026-10-01")}, {QStringLiteral("delivery"), QStringLiteral("Email the PDF")},
+            reply(QVariantMap{{QStringLiteral("reportDate"), QStringLiteral("2026-10-01")}, {QStringLiteral("delivery"), delivery},
                               {QStringLiteral("keepWord"), false}, {QStringLiteral("display"), false}}, {});
             return true;
         }
+        if (method == QLatin1String("email.chooseRecipients")) { reply(chosenRecipients, {}); return true; }
         if (method == QLatin1String("email.audiences")) { reply(QVariantList{}, {}); return true; }
         if (method == QLatin1String("email.compose")) { reply(QVariantMap{{QStringLiteral("status"), QStringLiteral("handed-off")}}, {}); return true; }
         if (method == QLatin1String("app.defaults")) { reply(QVariantMap{{QStringLiteral("projectManagerId"), QStringLiteral("person-mike")}}, {}); return true; }
@@ -1105,18 +1238,22 @@ void PluginHostTest::ifsCloudPlugin()
     const QString id = QStringLiteral("com.projectnotespro.ifs-cloud");
     QTRY_VERIFY2_WITH_TIMEOUT(registry.isRunning(id), qPrintable(registry.plugin(id).loadError + registry.plugin(id).lastError), 10000);
 
-    // The password moved to the credential store; shortcut menus appeared.
+    // The password moved to the credential store; the shortcuts went to My
+    // Shortcuts with the report server written in.
     QTRY_COMPARE(secretStore.value(QStringLiteral("DomainPassword")), QStringLiteral("hunter2"));
     QVERIFY(!QSettings(organization, QStringLiteral("PluginSettings")).contains(id + QStringLiteral("/DomainPassword")));
     // The Python plugin's group, with its clear-text copy, is gone too.
     QVERIFY(!QSettings(organization, QStringLiteral("PluginSettings")).childGroups().contains(QStringLiteral("IFS Cloud")));
-    auto shortcutMenus = [&registry, &id] {
-        int n = 0;
-        for (const QVariant& menu : registry.menusForEntity(QStringLiteral("projects")))
-            n += menu.toMap().value(QStringLiteral("pluginId")).toString() == id;
-        return n;
-    };
-    QTRY_COMPARE(shortcutMenus(), 6 + 7 + 2);   // IFS pages (one more is on contacts), reports, Generate Status/Tracker Report
+    QTRY_COMPARE(QSettings(organization, QStringLiteral("PluginSettings"))
+                     .value(QStringLiteral("com.projectnotespro.myshortcuts/shortcuts")).toList().size(), 14);
+    const QString reportUrl = QSettings(organization, QStringLiteral("PluginSettings"))
+                                  .value(QStringLiteral("com.projectnotespro.myshortcuts/shortcuts")).toList().last().toMap()
+                                  .value(QStringLiteral("url")).toString();
+    QVERIFY2(reportUrl.startsWith(QStringLiteral("http://127.0.0.1:%1/ReportServer/").arg(ifs.port())), qPrintable(reportUrl));
+    int ifsMenus = 0;
+    for (const QVariant& menu : registry.menusForEntity(QStringLiteral("projects")))
+        ifsMenus += menu.toMap().value(QStringLiteral("pluginId")).toString() == id;
+    QCOMPARE(ifsMenus, 2);   // Generate Status/Tracker Report
 
     registry.runMenu(id, QStringLiteral("import"), {}, {});
     QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(id, QStringLiteral("ui.notify")).size(), 1, 15000);
@@ -1183,9 +1320,16 @@ void PluginHostTest::ifsCloudPlugin()
     QFile pdfFile(pdf);
     QVERIFY2(pdfFile.open(QIODevice::ReadOnly), qPrintable(pdf));
     QCOMPARE(pdfFile.readAll(), QByteArray("%PDF-1.4 fake"));
-    // Jim receives status reports; Mike is the project manager.
-    QCOMPARE(message.value(QStringLiteral("to")).toList().size(), 1);
-    QCOMPARE(message.value(QStringLiteral("to")).toList().first().toMap().value(QStringLiteral("email")).toString(), QStringLiteral("jim@acme.example"));
+    // The recipient panel opened for the status report's audiences, and its
+    // choice addressed the email.
+    const QList<QVariantList> picked = services.argsOf(id, QStringLiteral("email.chooseRecipients"));
+    QCOMPARE(picked.size(), 1);
+    QCOMPARE(picked.first().value(0).toString(), QStringLiteral("project-p4000"));
+    QCOMPARE(picked.first().value(1).toMap().value(QStringLiteral("workflow")).toString(), QStringLiteral("status-report"));
+    QCOMPARE(message.value(QStringLiteral("to")).toList(), QVariantList{jim});
+    QCOMPARE(message.value(QStringLiteral("cc")).toList(), QVariantList{pat});
+    QVERIFY(message.value(QStringLiteral("bcc")).toList().isEmpty());
+    QVERIFY(!message.contains(QStringLiteral("audienceId")));
     bool basicAuth = false;
     for (const FakeHttpServer::Request& r : std::as_const(ifs.requests))
         if (r.target.startsWith(QLatin1String("/ReportServer/")))
@@ -1206,11 +1350,46 @@ void PluginHostTest::ifsCloudPlugin()
     for (int i = trackerRequestsBefore; i < ifs.requests.size(); ++i)
         issuesList |= ifs.requests.at(i).target.contains(QLatin1String("Issues+List&ProjectId=P4000"));
     QVERIFY(issuesList);
+    QCOMPARE(services.argsOf(id, QStringLiteral("email.chooseRecipients")).last().value(1).toMap().value(QStringLiteral("workflow")).toString(),
+             QStringLiteral("tracker-items-report"));
+
+    // Cancelling the recipient panel stops before the download.
+    chosenRecipients = QVariant::fromValue(nullptr);
+    const int cancelRequestsBefore = ifs.requests.size();
+    registry.runMenu(id, QStringLiteral("status-report"), QStringLiteral("projects"), QStringLiteral("project-p4000"));
+    QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(id, QStringLiteral("email.chooseRecipients")).size(), 3, 15000);
+    QTest::qWait(300);
+    QCOMPARE(ifs.requests.size(), cancelRequestsBefore);
+    QCOMPARE(services.argsOf(id, QStringLiteral("email.compose")).size(), 2);
+    QCOMPARE(services.argsOf(id, QStringLiteral("ui.notify")).size(), 3);
+
+    // A report that is not emailed never asks for recipients.
+    delivery = QStringLiteral("Do not email");
+    registry.runMenu(id, QStringLiteral("status-report"), QStringLiteral("projects"), QStringLiteral("project-p4000"));
+    QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(id, QStringLiteral("ui.notify")).size(), 4, 15000);
+    QCOMPARE(services.argsOf(id, QStringLiteral("email.chooseRecipients")).size(), 3);
+    QCOMPARE(services.argsOf(id, QStringLiteral("email.compose")).size(), 2);
     QVERIFY(errors.isEmpty());
 }
 
-// A fresh install, with no settings from the Python plugin, still gets every
-// shortcut menu: the IFS address and report server start filled in.
+// Copies the IFS Cloud and My Shortcuts plugins into a fresh plugin folder.
+static bool copyIfsAndMyShortcuts(const QString& root)
+{
+    const QList<QPair<QString, QString>> plugins {{QStringLiteral("/extras/ifs-cloud"), QStringLiteral("/ifs-cloud")},
+                                                  {QStringLiteral("/plugins/myshortcuts"), QStringLiteral("/myshortcuts")}};
+    for (const auto& [from, to] : plugins) {
+        const QString source = QStringLiteral(PN_REPO_ROOT) + from;
+        QDir().mkpath(root + to);
+        for (const QString& name : QDir(source).entryList(QDir::Files))
+            if (!QFile::copy(source + QLatin1Char('/') + name, root + to + QLatin1Char('/') + name))
+                return false;
+    }
+    return true;
+}
+
+// A fresh install, with no settings from the Python plugin, gets every IFS
+// shortcut in My Shortcuts, with the default address and report server
+// written in. Each is added once: one the user deletes stays deleted.
 void PluginHostTest::ifsCloudDefaultShortcuts()
 {
     const QString database = m_dir.filePath(QStringLiteral("ifs-defaults.db"));
@@ -1220,10 +1399,7 @@ void PluginHostTest::ifsCloudDefaultShortcuts()
     QSettings(organization, QStringLiteral("PluginSettings")).clear();
 
     const QString root = m_dir.filePath(QStringLiteral("ifs-defaults-root"));
-    const QString copy = root + QStringLiteral("/ifs-cloud");
-    QDir().mkpath(copy);
-    for (const QString& name : QDir(QStringLiteral(PN_REPO_ROOT) + QStringLiteral("/extras/ifs-cloud")).entryList(QDir::Files))
-        QVERIFY(QFile::copy(QStringLiteral(PN_REPO_ROOT) + QStringLiteral("/extras/ifs-cloud/") + name, copy + QLatin1Char('/') + name));
+    QVERIFY(copyIfsAndMyShortcuts(root));
 
     FakeServices services;
     PluginRegistry registry(&services);
@@ -1235,32 +1411,107 @@ void PluginHostTest::ifsCloudDefaultShortcuts()
     registry.setHotReload(false);
     registry.loadAll();
     const QString id = QStringLiteral("com.projectnotespro.ifs-cloud");
+    const QString shortcutsId = QStringLiteral("com.projectnotespro.myshortcuts");
     QTRY_VERIFY2_WITH_TIMEOUT(registry.isRunning(id), qPrintable(registry.plugin(id).loadError + registry.plugin(id).lastError), 10000);
+    QTRY_VERIFY2_WITH_TIMEOUT(registry.isRunning(shortcutsId), qPrintable(registry.plugin(shortcutsId).loadError), 10000);
 
-    auto shortcutMenus = [&registry, &id](const QString& entity) {
+    auto menusOf = [&registry](const QString& pluginId, const QString& entity) {
         int n = 0;
         for (const QVariant& menu : registry.menusForEntity(entity))
-            n += menu.toMap().value(QStringLiteral("pluginId")).toString() == id;
+            n += menu.toMap().value(QStringLiteral("pluginId")).toString() == pluginId;
         return n;
     };
-    QTRY_COMPARE(shortcutMenus(QStringLiteral("projects")), 6 + 7 + 2);   // IFS pages, reports, Generate Status/Tracker Report
-    QCOMPARE(shortcutMenus(QStringLiteral("contacts")), 1);                // Open Time Entry
+    QTRY_COMPARE(menusOf(shortcutsId, QStringLiteral("projects")), 6 + 7);   // IFS pages, reports
+    QCOMPARE(menusOf(shortcutsId, QStringLiteral("contacts")), 1);            // Open Time Entry
+    QCOMPARE(menusOf(id, QStringLiteral("projects")), 2);                     // Generate Status/Tracker Report
+    QCOMPARE(menusOf(id, QStringLiteral("contacts")), 0);
 
     QSettings stored(organization, QStringLiteral("PluginSettings"));
     QCOMPARE(stored.value(id + QStringLiteral("/URL")).toString(), QStringLiteral("https://ifs.cornerstonecontrols.com"));
     QCOMPARE(stored.value(id + QStringLiteral("/ReportServer")).toString(), QStringLiteral("indvifsbi05"));
-    // The shortcuts are saved to the plugin's settings, so its Settings
-    // section lists them for editing.
-    const QVariantList rows = stored.value(id + QStringLiteral("/Shortcuts")).toList();
+    QVERIFY(!stored.contains(id + QStringLiteral("/Shortcuts")));
+    QVariantList rows = stored.value(shortcutsId + QStringLiteral("/shortcuts")).toList();
     QCOMPARE(rows.size(), 14);
-    QCOMPARE(rows.first().toMap().value(QStringLiteral("menu")).toString(), QStringLiteral("Open Time Entry"));
+    const QVariantMap first = rows.first().toMap();
+    QCOMPARE(first.value(QStringLiteral("menu")).toString(), QStringLiteral("Open Time Entry"));
+    QCOMPARE(first.value(QStringLiteral("addedBy")).toString(), id);
+    QVERIFY2(first.value(QStringLiteral("url")).toString().startsWith(QStringLiteral("https://ifs.cornerstonecontrols.com/main/")),
+             qPrintable(first.value(QStringLiteral("url")).toString()));
+    QVERIFY(first.value(QStringLiteral("url")).toString().contains(QStringLiteral("{{ contacts.name }}")));
+    QVERIFY(rows.last().toMap().value(QStringLiteral("url")).toString().startsWith(QStringLiteral("http://indvifsbi05/ReportServer/")));
 
-    // Without a report server the Reports shortcuts are hidden; the IFS pages stay.
-    stored.setValue(id + QStringLiteral("/ReportServer"), QString());
+    // The user deletes one in My Shortcuts; IFS starting over does not add it back.
+    rows.removeFirst();
+    stored.setValue(shortcutsId + QStringLiteral("/shortcuts"), rows);
+    stored.sync();
+    registry.notifySettingsChanged(shortcutsId, {QStringLiteral("shortcuts")});
+    QTRY_COMPARE(menusOf(shortcutsId, QStringLiteral("contacts")), 0);
+    registry.notifySettingsChanged(id, {QStringLiteral("ReportServer")});
+    QTest::qWait(300);
+    QCOMPARE(stored.value(shortcutsId + QStringLiteral("/shortcuts")).toList().size(), 13);
+    QCOMPARE(menusOf(shortcutsId, QStringLiteral("contacts")), 0);
+}
+
+// IFS Cloud 2.1 kept its shortcuts in its own settings. They move to My
+// Shortcuts once: the user's list replaces the defaults, a row My Shortcuts
+// already has is not repeated, and a row that needs the empty report server
+// waits until it is filled in.
+void PluginHostTest::ifsCloudMovesShortcuts()
+{
+    const QString database = m_dir.filePath(QStringLiteral("ifs-moves.db"));
+    QVERIFY(QFile::copy(m_pristine, database));
+    const QString organization = QStringLiteral("ProjectNotesIfsMovesTest");
+    QSettings(organization, QStringLiteral("PluginState")).clear();
+    const QString id = QStringLiteral("com.projectnotespro.ifs-cloud");
+    const QString shortcutsId = QStringLiteral("com.projectnotespro.myshortcuts");
+    auto row = [](const QString& menu, const QString& submenu, const QString& url) {
+        return QVariantMap{{QStringLiteral("menu"), menu}, {QStringLiteral("submenu"), submenu},
+                           {QStringLiteral("entity"), QStringLiteral("projects")}, {QStringLiteral("url"), url}};
+    };
+    {
+        QSettings stored(organization, QStringLiteral("PluginSettings"));
+        stored.clear();
+        stored.setValue(id + QStringLiteral("/URL"), QStringLiteral("https://ifs.example.test/"));
+        stored.setValue(id + QStringLiteral("/ReportServer"), QString());
+        stored.setValue(id + QStringLiteral("/Shortcuts"), QVariantList{
+            row(QStringLiteral("Open Project"), QStringLiteral("IFS Cloud"), QStringLiteral("{{ ifs.address }}/project?{{ projects.project_number }}")),
+            row(QStringLiteral("Custom Page"), QStringLiteral("IFS Cloud"), QStringLiteral("{{ ifs.address }}/custom")),
+            row(QStringLiteral("Project Report"), QStringLiteral("Reports"), QStringLiteral("http://{{ ifs.reportServer }}/report"))});
+        // The same menu, from the Python My Shortcuts defaults.
+        stored.setValue(shortcutsId + QStringLiteral("/shortcuts"), QVariantList{
+            row(QStringLiteral("open project"), QStringLiteral("IFS Cloud"), QStringLiteral("https://old.example.test/project"))});
+        stored.sync();
+    }
+
+    const QString root = m_dir.filePath(QStringLiteral("ifs-moves-root"));
+    QVERIFY(copyIfsAndMyShortcuts(root));
+    FakeServices services;
+    PluginRegistry registry(&services);
+    registry.setPaths({root, m_dir.filePath(QStringLiteral("ifs-moves-user")), m_dir.filePath(QStringLiteral("ifs-moves-data")),
+                       m_dir.filePath(QStringLiteral("ifs-moves-temp"))});
+    registry.setDatabasePath(database);
+    registry.setSettingsOrganization(organization);
+    registry.setAppVersion(QStringLiteral("6.5.0"));
+    registry.setHotReload(false);
+    registry.loadAll();
+    QTRY_VERIFY2_WITH_TIMEOUT(registry.isRunning(id), qPrintable(registry.plugin(id).loadError + registry.plugin(id).lastError), 10000);
+
+    QSettings stored(organization, QStringLiteral("PluginSettings"));
+    auto urls = [&stored, &shortcutsId] {
+        QStringList out;
+        for (const QVariant& r : stored.value(shortcutsId + QStringLiteral("/shortcuts")).toList())
+            out << r.toMap().value(QStringLiteral("url")).toString();
+        return out;
+    };
+    QTRY_COMPARE(urls(), (QStringList{QStringLiteral("https://old.example.test/project"), QStringLiteral("https://ifs.example.test/custom")}));
+    QTRY_COMPARE(stored.value(id + QStringLiteral("/Shortcuts")).toList().size(), 1);   // Project Report waits
+
+    stored.setValue(id + QStringLiteral("/ReportServer"), QStringLiteral("reports.example.test"));
     stored.sync();
     registry.notifySettingsChanged(id, {QStringLiteral("ReportServer")});
-    QTRY_COMPARE(shortcutMenus(QStringLiteral("projects")), 6 + 2);
-    QCOMPARE(shortcutMenus(QStringLiteral("contacts")), 1);
+    QTRY_COMPARE(urls().size(), 3);
+    QCOMPARE(urls().last(), QStringLiteral("http://reports.example.test/report"));
+    QTRY_VERIFY(!stored.contains(id + QStringLiteral("/Shortcuts")));
 }
 
 int main(int argc, char** argv)

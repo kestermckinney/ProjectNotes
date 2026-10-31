@@ -90,6 +90,8 @@ signals:
     void dynamicMenusChanged(const QVariantList& menus);
     // Row changes this plugin wrote, after the write or commit.
     void rowsChanged(const QVariantList& changes);
+    // This plugin changed another plugin's settings (see shortcuts.add).
+    void foreignSettingsChanged(const QString& pluginId, const QStringList& keys);
     void hung(const QString& where);
 
 private:

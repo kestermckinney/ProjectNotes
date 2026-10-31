@@ -22,11 +22,21 @@ Dialog {
     property color iconColor: Theme.red
     property string confirmText: ""
     property bool destructive: false
+    // Wider for long content such as plugin details; never wider than the window.
+    property int preferredWidth: 380
     signal confirmed()
+
+    // The window size in the dialog's own (unscaled) units, less a margin, so
+    // the dialog always fits.  The message scrolls; the buttons stay visible.
+    readonly property real fitWidth: (parent ? parent.width / Theme.uiScale : 800) - 48
+    readonly property real fitHeight: (parent ? parent.height / Theme.uiScale : 600) - 48
+    readonly property real maxMessageHeight:
+        Math.max(80, fitHeight - headerRow.implicitHeight - 28 - 1
+                     - buttonRow.implicitHeight - 18 * 2 - 16)
 
     parent: Overlay.overlay
     anchors.centerIn: parent
-    width: 380
+    width: Math.max(280, Math.min(preferredWidth, fitWidth))
     scale: Theme.uiScale   // match the zoomed workspace (centered origin)
     modal: true
     padding: 0
@@ -40,6 +50,7 @@ Dialog {
         spacing: 0
 
         RowLayout {
+            id: headerRow
             Layout.fillWidth: true
             Layout.margins: 14
             spacing: 8
@@ -60,25 +71,31 @@ Dialog {
             Layout.fillWidth: true
             Layout.margins: 18
             spacing: 16
-            Text {
-                visible: !dialog.selectableMessage
-                Layout.fillWidth: true
-                wrapMode: Text.Wrap
-                color: Theme.text
-                font.pixelSize: Theme.fontLg
-                textFormat: dialog.richMessage ? Text.RichText : Text.PlainText
-                text: dialog.message
-            }
             ScrollView {
                 id: messageScroll
-                visible: dialog.selectableMessage
                 Layout.fillWidth: true
-                Layout.preferredHeight: Math.min(messageText.implicitHeight, 360)
+                Layout.preferredHeight: Math.min(contentHeight, dialog.maxMessageHeight)
                 contentWidth: availableWidth
+                contentHeight: dialog.selectableMessage ? messageText.implicitHeight
+                                                        : messageLabel.implicitHeight
                 clip: true
+                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                Text {
+                    id: messageLabel
+                    visible: !dialog.selectableMessage
+                    width: messageScroll.availableWidth
+                    rightPadding: 10   // room for the scroll bar
+                    wrapMode: Text.Wrap
+                    color: Theme.text
+                    font.pixelSize: Theme.fontLg
+                    textFormat: dialog.richMessage ? Text.RichText : Text.PlainText
+                    text: dialog.message
+                }
                 TextArea {
                     id: messageText
+                    visible: dialog.selectableMessage
                     width: messageScroll.availableWidth
+                    rightPadding: 10
                     text: dialog.message
                     textFormat: TextEdit.PlainText
                     readOnly: true
@@ -92,6 +109,7 @@ Dialog {
                 }
             }
             RowLayout {
+                id: buttonRow
                 Layout.fillWidth: true
                 spacing: 10
                 Item { Layout.fillWidth: true }

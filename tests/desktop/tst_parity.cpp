@@ -484,6 +484,27 @@ private slots:
         m_projectId = id; m_projectName = name; m_projectNumber = num;
     }
 
+    // The detail page saves a stored project by reading every field back from
+    // getProjectData(), changing one, and handing them all to saveProject().
+    void test_03a_projectFinancialsUpdate()
+    {
+        QVERIFY(!m_projectId.isEmpty());
+        int r = c->projectRowForId(m_projectId);
+        QVERIFY(r >= 0);
+        QVariantMap d = c->getProjectData(r);
+        auto s = [&](const char* k) { return d.value(k).toString(); };
+        QVERIFY2(c->saveProject(r, s("project_number"), s("project_name"), s("project_status"),
+                                s("primary_contact"), s("client_id"),
+                                s("last_status_date"), s("last_invoice_date"),
+                                s("invoicing_period"), s("status_report_period"),
+                                "20000", s("actual"), s("bcwp"), s("bcws"), s("bac")),
+                 qPrintable(c->lastSaveError()));
+        r = c->projectRowForId(m_projectId);
+        d = c->getProjectData(r);
+        QVERIFY2(d.value("budget").toString().remove(QRegularExpression("[^0-9.]")).startsWith("20000"),
+                 qPrintable(d.value("budget").toString()));
+    }
+
     void test_03b_projectFolders()
     {
         FolderManager folders;
@@ -811,6 +832,33 @@ private slots:
         QCOMPARE(recipients->selectedRecipientCount(), 1);
         QCOMPARE(recipients->toRecipientCount(), 1);
         QCOMPARE(recipients->ccRecipientCount(), 0);
+        c->setProjectManagerId(previousManager);
+    }
+
+    void test_10c_sendNotesGoesStraightToDraft()
+    {
+        // Send Notes skips the review dialog: the draft goes straight to the
+        // email integration, addressed to the attendees.
+        const QString previousManager = c->projectManagerId();
+        c->setProjectManagerId(QString());
+        QSignalSpy errors(c, &DesktopAppController::errorOccurred);
+        QVERIFY(c->sendMeetingNotes(m_projectId, m_noteId));
+        auto *review = qobject_cast<PN::Comm::CommunicationsController *>(c->communicationsController());
+        QTRY_VERIFY_WITH_TIMEOUT(review->stageName() == "completed" || review->stageName() == "failed", 5000);
+        QCOMPARE(review->preparation().source.workflow, PN::Comm::Workflow::SendMeetingNotes);
+        QCOMPARE(review->preparation().recipients.size(), 1);
+        QCOMPARE(review->preparation().recipients.first().role, PN::Comm::RecipientRole::To);
+        // The handoff reached the backend. Offscreen test runs can't open the
+        // .eml in a mail app, which is the only acceptable failure here.
+        if (review->stageName() == "failed") {
+            QCOMPARE(errors.count(), 1);
+            QCOMPARE(errors.first().at(0).toString(), QStringLiteral("Send Notes"));
+            QVERIFY2(review->lastResult().certainty != PN::Comm::OutcomeCertainty::NotStarted
+                         || review->lastResult().error.code.contains("open"),
+                     qPrintable(review->diagnostic()));
+        } else {
+            QCOMPARE(errors.count(), 0);
+        }
         c->setProjectManagerId(previousManager);
     }
 
