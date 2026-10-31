@@ -195,27 +195,65 @@ Item {
                 SettingsSection {
                 title: "Appearance"
                 subtitle: "Theme used across the application."
+                // Icon tiles with the name underneath, as on the mobile app's
+                // Appearance page: the chosen tile is filled, the others are
+                // outlined and dimmed.
                 RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 6
+                    spacing: 10
                     Repeater {
                         model: [
-                            { key: "system", label: "System" },
-                            { key: "light",  label: "Light" },
-                            { key: "dark",   label: "Dark" }
+                            { key: "system", label: qsTr("System"), icon: "contrast" },
+                            { key: "light",  label: qsTr("Light"),  icon: "light_mode" },
+                            { key: "dark",   label: qsTr("Dark"),   icon: "dark_mode" }
                         ]
-                        delegate: Button {
+                        delegate: ColumnLayout {
+                            id: modeTile
                             required property var modelData
-                            primary: Theme.mode === modelData.key
-                            implicitHeight: 28
-                            leftPadding: 12; rightPadding: 12; topPadding: 0; bottomPadding: 0
-                            contentItem: Text {
-                                text: modelData.label
-                                color: Theme.mode === modelData.key ? "#ffffff" : Theme.text
-                                font.pixelSize: Theme.fontBody
-                                verticalAlignment: Text.AlignVCenter
+                            readonly property bool selected: Theme.mode === modelData.key
+                            function choose() { Theme.mode = modelData.key }
+                            spacing: 6
+
+                            Rectangle {
+                                objectName: "appearanceTile_" + modeTile.modelData.key
+                                Layout.preferredWidth: 104
+                                Layout.preferredHeight: 68
+                                radius: 14
+                                color: modeTile.selected ? Theme.accentSoft
+                                       : (tileHover.hovered ? Theme.surface2 : "transparent")
+                                border.width: modeTile.selected || activeFocus ? 1.5 : 1
+                                border.color: modeTile.selected || activeFocus ? Theme.accent : Theme.border
+                                scale: tileTap.pressed ? 0.96 : 1
+                                activeFocusOnTab: true
+                                Accessible.role: Accessible.RadioButton
+                                Accessible.name: modeTile.modelData.label
+                                Accessible.checked: modeTile.selected
+                                Keys.onSpacePressed: modeTile.choose()
+                                Keys.onReturnPressed: modeTile.choose()
+                                Keys.onEnterPressed: modeTile.choose()
+                                Behavior on scale { NumberAnimation { duration: 120 } }
+                                Behavior on color { ColorAnimation { duration: 150 } }
+
+                                MaterialIcon {
+                                    anchors.centerIn: parent
+                                    name: modeTile.modelData.icon
+                                    size: 26
+                                    color: modeTile.selected ? Theme.accent : Theme.text3
+                                }
+                                HoverHandler { id: tileHover; cursorShape: Qt.PointingHandCursor }
+                                TapHandler {
+                                    id: tileTap
+                                    gesturePolicy: TapHandler.ReleaseWithinBounds
+                                    onTapped: modeTile.choose()
+                                }
                             }
-                            onClicked: Theme.mode = modelData.key
+
+                            Text {
+                                Layout.alignment: Qt.AlignHCenter
+                                text: modeTile.modelData.label
+                                color: modeTile.selected ? Theme.text : Theme.text3
+                                font.pixelSize: Theme.fontBody
+                                font.weight: modeTile.selected ? Font.DemiBold : Font.Normal
+                            }
                         }
                     }
                 }

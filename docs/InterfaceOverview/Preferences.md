@@ -23,7 +23,7 @@ enough to have their own documentation:
 
 ## Appearance
 
-**Appearance**, near the bottom of the **Preferences** tab, controls the app's theme: **System**, **Light**, or **Dark**. **System** follows your operating system's current theme and switches automatically if it changes. Click a button to switch immediately — there is nothing to save. The same choice, as a quick two-way toggle, is also available as **Dark Mode** in the [Application Menu](<ApplicationMenu.md>)'s **View** group.
+**Appearance**, near the bottom of the **Preferences** tab, controls the app's theme. Three tiles, each with an icon and a name, offer **System**, **Light**, and **Dark**; the current choice is highlighted. **System** follows your operating system's current theme and switches automatically if it changes. Click a tile (or Tab to it and press Space) to switch immediately — there is nothing to save. The same choice, as a quick two-way toggle, is also available as **Dark Mode** in the [Application Menu](<ApplicationMenu.md>)'s **View** group.
 
 ## Project Manager
 
