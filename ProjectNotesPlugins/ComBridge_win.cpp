@@ -171,16 +171,24 @@ public:
 
     QVariant get(const QString& handle, const QString& member, const QVariantList& index, PluginError* error) override
     {
-        IDispatch* object = find(handle, error);
-        if (!object)
+        Held* held = findHeld(handle, error);
+        if (!held)
             return {};
+        IDispatch* object = held->object.Get();
+        // Look the name up once; the property get below reuses the DISPID.
+        DISPID dispid = DISPID_UNKNOWN;
+        if (!member.isEmpty()) {
+            LPOLESTR name = const_cast<LPOLESTR>(reinterpret_cast<LPCOLESTR>(member.utf16()));
+            if (FAILED(object->GetIDsOfNames(IID_NULL, &name, 1, LOCALE_USER_DEFAULT, &dispid)))
+                dispid = DISPID_UNKNOWN;
+        }
         // Reading a method would run it, and some servers (Word) answer a
         // property get on a method with a plain exception, so ask first.
-        if (index.isEmpty() && isMethod(object, member))
+        if (index.isEmpty() && dispid != DISPID_UNKNOWN && isMethod(*held, dispid))
             return QVariantMap{{QStringLiteral("$method"), true}};
         QVariant result;
         HRESULT hr = S_OK;
-        if (!invoke(object, member, DISPATCH_PROPERTYGET, index, nullptr, &result, error, &hr)) {
+        if (!invoke(object, member, DISPATCH_PROPERTYGET, index, nullptr, &result, error, &hr, dispid)) {
             // The member exists but is a method (or needs arguments): let the
             // script call it.
             if (hr == DISP_E_MEMBERNOTFOUND || hr == DISP_E_BADPARAMCOUNT || hr == DISP_E_PARAMNOTOPTIONAL
@@ -244,6 +252,17 @@ public:
     void releaseAll() override { m_objects.clear(); }
 
 private:
+    // ComPtr overloads operator& to release what it holds, and QHash takes
+    // the address of its values, so the pointer lives inside a plain struct.
+    struct Held {
+        ComPtr<IDispatch> object;
+        QUuid type;                 // key into m_types; null when unknown
+        bool typeResolved = false;
+    };
+
+    // DISPID -> true when the member is a method and not a readable property.
+    using MemberKinds = QHash<DISPID, bool>;
+
     QVariant wrap(const ComPtr<IDispatch>& object)
     {
         const QString handle = QStringLiteral("com-%1").arg(++m_nextHandle);
@@ -251,46 +270,125 @@ private:
         return QVariantMap{{QStringLiteral("$handle"), handle}};
     }
 
-    // True when the object's type information lists `member` as a method and
+    // True when the object's type information lists `dispid` as a method and
     // not as a readable property. False when there is no type information.
-    static bool isMethod(IDispatch* object, const QString& member)
+    //
+    // Office runs out of process, so each call on its ITypeInfo is a round
+    // trip, and types like Shape, TextRange or Task have hundreds of members.
+    // Scanning them on every property read made PowerPoint and Project
+    // templates crawl. Each interface is now scanned once, from its type
+    // library loaded in this process when that works, and kept by GUID.
+    bool isMethod(Held& held, DISPID dispid)
     {
-        LPOLESTR name = const_cast<LPOLESTR>(reinterpret_cast<LPCOLESTR>(member.utf16()));
-        DISPID dispid = DISPID_UNKNOWN;
-        if (FAILED(object->GetIDsOfNames(IID_NULL, &name, 1, LOCALE_USER_DEFAULT, &dispid)))
-            return false;
+        if (!held.typeResolved) {
+            held.typeResolved = true;
+            held.type = typeKey(held.object.Get());
+        }
+        if (!held.type.isNull()) {
+            const MemberKinds& kinds = m_types[held.type];
+            const auto it = kinds.constFind(dispid);
+            return it != kinds.constEnd() && it.value();
+        }
+        // No type information with a GUID to cache under: scan it directly.
         ComPtr<ITypeInfo> info;
-        if (FAILED(object->GetTypeInfo(0, LOCALE_USER_DEFAULT, info.GetAddressOf())) || !info)
+        if (FAILED(held.object->GetTypeInfo(0, LOCALE_USER_DEFAULT, info.GetAddressOf())) || !info)
             return false;
+        return scanMembers(info.Get()).value(dispid, false);
+    }
+
+    static MemberKinds scanMembers(ITypeInfo* info)
+    {
+        MemberKinds out;
         TYPEATTR* attr = nullptr;
         if (FAILED(info->GetTypeAttr(&attr)) || !attr)
-            return false;
-        bool method = false;
-        bool property = false;
+            return out;
+        QHash<DISPID, int> seen;   // 1: has a method, 2: has a property get
         for (UINT i = 0; i < attr->cFuncs; ++i) {
             FUNCDESC* desc = nullptr;
             if (FAILED(info->GetFuncDesc(i, &desc)) || !desc)
                 continue;
-            if (desc->memid == dispid) {
-                if (desc->invkind == INVOKE_FUNC)
-                    method = true;
-                else if (desc->invkind == INVOKE_PROPERTYGET)
-                    property = true;
-            }
+            if (desc->invkind == INVOKE_FUNC)
+                seen[desc->memid] |= 1;
+            else if (desc->invkind == INVOKE_PROPERTYGET)
+                seen[desc->memid] |= 2;
             info->ReleaseFuncDesc(desc);
         }
         info->ReleaseTypeAttr(attr);
-        return method && !property;
+        for (auto it = seen.constBegin(); it != seen.constEnd(); ++it)
+            out.insert(it.key(), it.value() == 1);
+        return out;
+    }
+
+    // The GUID of the object's interface, with its member kinds in m_types.
+    // Null when the object has no type information or the GUID is empty.
+    QUuid typeKey(IDispatch* object)
+    {
+        ComPtr<ITypeInfo> remote;
+        if (FAILED(object->GetTypeInfo(0, LOCALE_USER_DEFAULT, remote.GetAddressOf())) || !remote)
+            return {};
+        TYPEATTR* attr = nullptr;
+        if (FAILED(remote->GetTypeAttr(&attr)) || !attr)
+            return {};
+        const GUID guid = attr->guid;
+        const TYPEKIND kind = attr->typekind;
+        remote->ReleaseTypeAttr(attr);
+        const QUuid key(guid);
+        if (key.isNull())
+            return {};
+        if (!m_types.contains(key)) {
+            const ComPtr<ITypeInfo> local = localTypeInfo(remote.Get(), guid, kind);
+            m_types.insert(key, scanMembers(local ? local.Get() : remote.Get()));
+        }
+        return key;
+    }
+
+    // The same interface's type info from its registered type library, loaded
+    // in this process so reading it makes no calls into the server. Null when
+    // the library is not registered here.
+    static ComPtr<ITypeInfo> localTypeInfo(ITypeInfo* remote, const GUID& guid, TYPEKIND kind)
+    {
+        ComPtr<ITypeLib> lib;
+        UINT index = 0;
+        if (FAILED(remote->GetContainingTypeLib(lib.GetAddressOf(), &index)) || !lib)
+            return {};
+        TLIBATTR* libAttr = nullptr;
+        if (FAILED(lib->GetLibAttr(&libAttr)) || !libAttr)
+            return {};
+        const GUID libGuid = libAttr->guid;
+        const WORD major = libAttr->wMajorVerNum;
+        const WORD minor = libAttr->wMinorVerNum;
+        const LCID lcid = libAttr->lcid;
+        lib->ReleaseTLibAttr(libAttr);
+        ComPtr<ITypeLib> localLib;
+        if (FAILED(LoadRegTypeLib(libGuid, major, minor, lcid, localLib.GetAddressOf())) || !localLib)
+            return {};
+        ComPtr<ITypeInfo> info;
+        if (FAILED(localLib->GetTypeInfoOfGuid(guid, info.GetAddressOf())) || !info)
+            return {};
+        // A dual interface has a dispatch and a vtable flavor under one GUID.
+        // Use the local one only when it is the flavor the server handed out.
+        TYPEATTR* attr = nullptr;
+        if (FAILED(info->GetTypeAttr(&attr)) || !attr)
+            return {};
+        const bool same = attr->typekind == kind;
+        info->ReleaseTypeAttr(attr);
+        return same ? info : ComPtr<ITypeInfo>();
+    }
+
+    Held* findHeld(const QString& handle, PluginError* error)
+    {
+        const auto it = m_objects.find(handle);
+        if (it == m_objects.end()) {
+            *error = PluginError::make(QStringLiteral("com-failed"), QStringLiteral("The COM object was released."));
+            return nullptr;
+        }
+        return &it.value();
     }
 
     IDispatch* find(const QString& handle, PluginError* error)
     {
-        const auto it = m_objects.constFind(handle);
-        if (it == m_objects.constEnd()) {
-            *error = PluginError::make(QStringLiteral("com-failed"), QStringLiteral("The COM object was released."));
-            return nullptr;
-        }
-        return it->object.Get();
+        Held* held = findHeld(handle, error);
+        return held ? held->object.Get() : nullptr;
     }
 
     bool toVariant(const QVariant& value, VARIANT* out, PluginError* error)
@@ -438,10 +536,11 @@ private:
     }
 
     bool invoke(IDispatch* object, const QString& member, WORD flags, const QVariantList& args,
-                const QVariant* putValue, QVariant* result, PluginError* error, HRESULT* status = nullptr)
+                const QVariant* putValue, QVariant* result, PluginError* error, HRESULT* status = nullptr,
+                DISPID known = DISPID_UNKNOWN)
     {
-        DISPID dispid = DISPID_VALUE;
-        if (!member.isEmpty()) {
+        DISPID dispid = member.isEmpty() ? DISPID_VALUE : known;
+        if (dispid == DISPID_UNKNOWN) {
             LPOLESTR name = const_cast<LPOLESTR>(reinterpret_cast<LPCOLESTR>(member.utf16()));
             const HRESULT hr = object->GetIDsOfNames(IID_NULL, &name, 1, LOCALE_USER_DEFAULT, &dispid);
             if (FAILED(hr)) {
@@ -499,10 +598,8 @@ private:
     bool m_initialized = false;
     RetryMessageFilter* m_filter = nullptr;
     IMessageFilter* m_previousFilter = nullptr;
-    // ComPtr overloads operator& to release what it holds, and QHash takes
-    // the address of its values, so the pointer lives inside a plain struct.
-    struct Held { ComPtr<IDispatch> object; };
     QHash<QString, Held> m_objects;
+    QHash<QUuid, MemberKinds> m_types;
     quint64 m_nextHandle = 0;
 };
 
