@@ -21,6 +21,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QRegularExpression>
 #include <QSettings>
 #include <QSqlDatabase>
 #include <QSqlError>
@@ -31,6 +32,7 @@
 #include <QTemporaryDir>
 #include <QtTest/QtTest>
 
+#include <private/qzipreader_p.h>
 #include <private/qzipwriter_p.h>
 
 #include <functional>
@@ -804,6 +806,19 @@ void PluginHostTest::hotReload()
     writeFile(m_bundled + QStringLiteral("/reloader/main.mjs"),
               "import { ui } from 'projectnotes'; export function onStart() { ui.message('{\"v\":2}'); }");
     QTRY_COMPARE_WITH_TIMEOUT(m_services.lastMessage(QStringLiteral("reloader")).value(QStringLiteral("v")).toInt(), 2, 10000);
+
+    // Other files coming and going in the plugin's folders, such as the lock
+    // file Word leaves next to a template it opens, don't restart a run.
+    QTest::qWait(500);
+    const int starts = m_services.messageCount(QStringLiteral("reloader"));
+    writeFile(m_bundled + QStringLiteral("/reloader/templates/Report.docx"), "template");
+    QTest::qWait(1000);
+    writeFile(m_bundled + QStringLiteral("/reloader/templates/~$Report.docx"), "lock");
+    writeFile(m_bundled + QStringLiteral("/reloader/notes.txt"), "notes");
+    QTest::qWait(1000);
+    QVERIFY(QFile::remove(m_bundled + QStringLiteral("/reloader/templates/~$Report.docx")));
+    QTest::qWait(1000);
+    QCOMPARE(m_services.messageCount(QStringLiteral("reloader")), starts);
 }
 
 // The plugins that ship in the repository's plugins/ folder start cleanly and
@@ -969,9 +984,16 @@ void PluginHostTest::bundledPluginsRun()
     QVERIFY(emlFile.readAll().contains("<p>Shipped.</p>"));
     QVERIFY(QFileInfo::exists(projectFolder + QStringLiteral("/Mail/Received/download_state.json")));
 
-    // Office Tools is Windows-only. A copy without the platform limit checks
-    // the parts that do not need Office: a template copied into the project
-    // folder and recorded as a location, and clear errors where COM is missing.
+    // MS Office Templates is Windows-only. A copy without the platform limit checks
+    // the parts that do not need Office: the two example templates configured
+    // on first start, their menus on the right tables, and a clear error when
+    // Office can't be reached. Set PN_TEST_OFFICE=1 on a Windows machine with
+    // Office to also create both documents through Word and Excel.
+#ifdef Q_OS_WIN
+    const bool realOffice = qEnvironmentVariableIntValue("PN_TEST_OFFICE") == 1;
+#else
+    const bool realOffice = false;
+#endif
     const QString officeRoot = m_dir.filePath(QStringLiteral("office-root"));
     const QString officeCopy = officeRoot + QStringLiteral("/office-tools");
     QDir().mkpath(officeCopy + QStringLiteral("/templates"));
@@ -979,12 +1001,22 @@ void PluginHostTest::bundledPluginsRun()
     QVERIFY(manifestFile.open(QIODevice::ReadOnly));
     QJsonObject officeManifest = QJsonDocument::fromJson(manifestFile.readAll()).object();
     officeManifest.remove(QStringLiteral("platforms"));
+    if (!realOffice) {
+        // COM is always there on Windows; without the permission the copy
+        // can't start Word or Excel.
+        QJsonArray permissions = officeManifest.value(QStringLiteral("permissions")).toArray();
+        for (qsizetype i = permissions.size() - 1; i >= 0; --i)
+            if (permissions.at(i).toString() == QLatin1String("com"))
+                permissions.removeAt(i);
+        officeManifest.insert(QStringLiteral("permissions"), permissions);
+    }
     writeFile(officeCopy + QStringLiteral("/plugin.json"), QJsonDocument(officeManifest).toJson());
     for (const QString& name : {QStringLiteral("main.mjs"), QStringLiteral("settings.schema.json"),
-                                QStringLiteral("templates/Risk Register Template.xlsx")})
+                                QStringLiteral("templates/Change Request Template.docx"),
+                                QStringLiteral("templates/Tracker Items Status Template.xlsx")})
         QVERIFY(QFile::copy(QStringLiteral(PN_REPO_PLUGINS) + QStringLiteral("/office-tools/") + name, officeCopy + QLatin1Char('/') + name));
-    services.replies.insert(QStringLiteral("ui.pickFile"), officeCopy + QStringLiteral("/templates/Risk Register Template.xlsx"));
     services.replies.insert(QStringLiteral("ui.choose"), QVariant::fromValue(nullptr));
+    services.replies.insert(QStringLiteral("ui.showForm"), QVariantMap{{QStringLiteral("change_number"), QStringLiteral("03")}});
 
     PluginRegistry officeRegistry(&services);
     officeRegistry.setPaths({officeRoot, m_dir.filePath(QStringLiteral("office-user")),
@@ -998,31 +1030,91 @@ void PluginHostTest::bundledPluginsRun()
     const QString office = QStringLiteral("com.projectnotespro.office-tools");
     QTRY_VERIFY2_WITH_TIMEOUT(officeRegistry.isRunning(office), qPrintable(officeRegistry.plugin(office).lastError), 10000);
 
-    officeRegistry.runMenu(office, QStringLiteral("pcr-register"), QStringLiteral("projects"), QStringLiteral("project-p4000"));
-    QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(office, QStringLiteral("ui.openUrl")).size(), 1, 10000);
-    const QString copied = projectFolder + QStringLiteral("/Project Management/PCR's/P4000 Risk Register.xlsx");
-    QVERIFY2(QFileInfo::exists(copied), qPrintable(officeRegistry.plugin(office).lastError));
+    // The default templates: Change Request and Tracker Items Status, both on
+    // projects under Templates.
+    auto templateMenu = [&](const QString& entity, const QString& title) {
+        for (const QVariant& m : officeRegistry.menusForEntity(entity)) {
+            const QVariantMap menu = m.toMap();
+            if (menu.value(QStringLiteral("pluginId")).toString() == office && menu.value(QStringLiteral("title")).toString() == title
+                && menu.value(QStringLiteral("submenu")).toString() == QLatin1String("Templates"))
+                return menu.value(QStringLiteral("menuId")).toString();
+        }
+        return QString();
+    };
+    QString changeRequest;
+    QTRY_VERIFY_WITH_TIMEOUT(!(changeRequest = templateMenu(QStringLiteral("projects"), QStringLiteral("Change Request"))).isEmpty(), 10000);
+    const QString trackerList = templateMenu(QStringLiteral("projects"), QStringLiteral("Tracker Items Status"));
+    QVERIFY2(!trackerList.isEmpty(), qPrintable(QJsonDocument::fromVariant(officeRegistry.menusForEntity(QStringLiteral("projects"))).toJson()));
+    QVERIFY(templateMenu(QStringLiteral("item_tracker"), QStringLiteral("Tracker Items Status")).isEmpty());
+    auto officeMessage = [&] {
+        const QList<QVariantList> messages = services.argsOf(office, QStringLiteral("ui.message"));
+        return messages.isEmpty() ? QString() : messages.last().value(0).toString();
+    };
+
+    if (!realOffice) {
+        // Without Office the templates report the problem instead of failing silently.
+        const int before = services.messageCount(office);
+        officeRegistry.runMenu(office, changeRequest, QStringLiteral("projects"), QStringLiteral("project-p4000"));
+        QTRY_VERIFY_WITH_TIMEOUT(services.messageCount(office) > before, 10000);
+        QVERIFY(services.argsOf(office, QStringLiteral("ui.openUrl")).isEmpty());
+        QVERIFY(!QFileInfo::exists(projectFolder + QStringLiteral("/Project Management/Change Requests")));
+
+        const int officeMessages = services.messageCount(office);
+        officeRegistry.runMenu(office, QStringLiteral("kill-excel"), {}, {});
+        QTRY_VERIFY_WITH_TIMEOUT(services.messageCount(office) > officeMessages, 10000);
+    } else {
+        // The text of a part, without markup: Word splits a line into runs.
+        auto zipText = [](const QString& path, const QString& member) {
+            QZipReader zip(path);
+            return QString::fromUtf8(zip.fileData(member)).remove(QRegularExpression(QStringLiteral("<[^>]*>")));
+        };
+        const QString changeFile = projectFolder + QStringLiteral("/Project Management/Change Requests/P4000 Change Request 03.docx");
+        officeRegistry.runMenu(office, changeRequest, QStringLiteral("projects"), QStringLiteral("project-p4000"));
+        QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(office, QStringLiteral("ui.openUrl")).size(), 1, 60000);
+        QVERIFY2(QFileInfo::exists(changeFile), qPrintable(officeRegistry.plugin(office).lastError + QLatin1Char(' ')
+                                                          + officeMessage()));
+        const QString body = zipText(changeFile, QStringLiteral("word/document.xml"));
+        QVERIFY2(body.contains(QStringLiteral("P4000-03")) && body.contains(QStringLiteral("IT New Server Install"))
+                 && body.contains(QStringLiteral("$2,090.00")) && !body.contains(QStringLiteral("{{")), qPrintable(body.left(4000)));
+        QVERIFY(zipText(changeFile, QStringLiteral("word/footer1.xml")).contains(QStringLiteral("P4000-03")));
+
+        // From the project: every tracker item, one row each.
+        const QString trackerFile = projectFolder + QStringLiteral("/Project Management/Tracker Items/P4000 Tracker Items %1.xlsx")
+                                        .arg(QDate::currentDate().toString(Qt::ISODate));
+        officeRegistry.runMenu(office, trackerList, QStringLiteral("projects"), QStringLiteral("project-p4000"));
+        QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(office, QStringLiteral("ui.openUrl")).size(), 2, 60000);
+        QVERIFY2(QFileInfo::exists(trackerFile), qPrintable(officeRegistry.plugin(office).lastError + QLatin1Char(' ')
+                                                           + officeMessage()));
+        const QString strings = zipText(trackerFile, QStringLiteral("xl/sharedStrings.xml"));
+        QVERIFY2(strings.contains(QStringLiteral("Rack delivery")) && strings.contains(QStringLiteral("Order cables"))
+                 && strings.contains(QStringLiteral("Acme Corp")) && !strings.contains(QStringLiteral("{{")), qPrintable(strings));
+        QZipReader workbook(trackerFile);
+        const QString sheet = QString::fromUtf8(workbook.fileData(QStringLiteral("xl/worksheets/sheet1.xml")));
+        QVERIFY2(sheet.contains(QStringLiteral("<row r=\"11\"")) && !sheet.contains(QStringLiteral("<row r=\"12\"")), qPrintable(sheet.left(4000)));
+
+        {
+            QSqlDatabase db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), QStringLiteral("office-check"));
+            db.setDatabaseName(database);
+            QVERIFY(db.open());
+            QSqlQuery q(db);
+            QVERIFY(q.exec(QStringLiteral("SELECT location_type, full_path FROM project_locations "
+                                          "WHERE location_description = 'P4000 Change Request 03.docx'")) && q.next());
+            QCOMPARE(q.value(0).toString(), QStringLiteral("Word Document"));
+            QCOMPARE(q.value(1).toString(), QString(changeFile).replace(QLatin1Char('/'), QLatin1Char('\\')));
+            q.finish();
+            db.close();
+        }
+        QSqlDatabase::removeDatabase(QStringLiteral("office-check"));
+
+        // A second run finds the file and offers to open it.
+        const int confirms = services.argsOf(office, QStringLiteral("ui.confirm")).size();
+        services.nextConfirm = false;
+        officeRegistry.runMenu(office, changeRequest, QStringLiteral("projects"), QStringLiteral("project-p4000"));
+        QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(office, QStringLiteral("ui.confirm")).size(), confirms + 1, 60000);
+        services.nextConfirm = true;
+    }
     QTRY_VERIFY2(officeRegistry.plugin(office).lastError.isEmpty() && officeErrors.isEmpty(),
                  qPrintable(officeRegistry.plugin(office).lastError));
-    {
-        QSqlDatabase db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), QStringLiteral("office-check"));
-        db.setDatabaseName(database);
-        QVERIFY(db.open());
-        QSqlQuery q(db);
-        QTRY_VERIFY(q.exec(QStringLiteral("SELECT location_type, full_path FROM project_locations "
-                                          "WHERE location_description = 'P4000 Risk Register.xlsx'")) && q.next());
-        QCOMPARE(q.value(0).toString(), QStringLiteral("Excel Document"));
-        QCOMPARE(q.value(1).toString(), QString(copied).replace(QLatin1Char('/'), QLatin1Char('\\')));
-        q.finish();
-        db.close();
-    }
-    QSqlDatabase::removeDatabase(QStringLiteral("office-check"));
-
-    // Without COM the Office commands report the problem instead of failing silently.
-    const int officeMessages = services.messageCount(office);
-    officeRegistry.runMenu(office, QStringLiteral("kill-excel"), {}, {});
-    QTRY_VERIFY_WITH_TIMEOUT(services.messageCount(office) > officeMessages, 10000);
-    QVERIFY(officeErrors.isEmpty());
 
     QVERIFY2(errors.isEmpty(), qPrintable(errors.isEmpty() ? QString() : errors.first().at(1).toString()));
 }

@@ -176,7 +176,7 @@ const values = yield ui.showForm({ fields: [
 ] }, { number: 1 }, { title: "New Change Order" });
 ```
 
-Field types: `text`, `multiline`, `password`, `number`, `date`, `checkbox`, `choice`, `combo`, `file`, `folder`, `contact`, `table` (rows with `columns`), `section` (a heading) and `note` (help text). Fields accept `required`, `placeholder`, `help`, `choices`, `filters` and `visibleWhen`.
+Field types: `text`, `multiline`, `password`, `number`, `date`, `checkbox`, `choice`, `combo`, `file`, `folder`, `contact`, `table` (rows with `columns`), `section` (a heading) and `note` (help text). Fields accept `required`, `placeholder`, `help`, `choices`, `filters` and `visibleWhen`. A table column is a text cell unless its type is `choice` (a drop-down) or `file` (a text cell with a browse button that uses the column's `filters`).
 
 Use `ui.pickFile()`, `ui.pickFolder()` and `ui.saveFile()` for file choosers, `ui.progress()` for long work, `ui.notify()` for a brief notice, and `ui.clipboard` for the clipboard.
 

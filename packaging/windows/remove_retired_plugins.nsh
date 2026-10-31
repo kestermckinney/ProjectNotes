@@ -125,6 +125,11 @@ Delete "$INSTDIR\plugins\people.xml"
 Delete "$INSTDIR\plugins\plugintest.db"
 Delete "$INSTDIR\plugins\TestExcel.xlsx"
 
+; ── Retired Office Tools templates (replaced by the configurable templates) ────
+Delete "$INSTDIR\plugins\office-tools\templates\Lessons Learned Template.xlsx"
+Delete "$INSTDIR\plugins\office-tools\templates\Meeting Template.xlsx"
+Delete "$INSTDIR\plugins\office-tools\templates\Risk Register Template.xlsx"
+
 ; ── Retired threads ────────────────────────────────────────────────────────────
 Delete "$INSTDIR\threads\filefinder_thread.py"
 Delete "$INSTDIR\threads\tester_thread_1.py"

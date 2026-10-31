@@ -119,6 +119,7 @@ private:
     void startPlugin(const QString& id);
     void stopPlugin(const QString& id);
     void watchPlugin(const PluginInfo& info);
+    static QStringList sourceFiles(const QString& folder);
     void scheduleReload(const QString& id);
     void checkWatchdog();
     void broadcast(const QVariantList& changes, const QString& source, const QString& fromPlugin);
@@ -142,6 +143,10 @@ private:
     QList<PluginInfo> m_plugins;
     QHash<QString, PluginHost*> m_hosts;
     QFileSystemWatcher* m_watcher = nullptr;
+    // Per plugin folder: its source files with size and modification time, so
+    // a folder change that only touched other files (a template, an Office
+    // lock file) doesn't reload the plugin.
+    QHash<QString, QStringList> m_sourceFiles;
     QHash<QString, QTimer*> m_reloadTimers;
     QTimer* m_rootRescan = nullptr;
     QTimer* m_watchdog = nullptr;

@@ -341,7 +341,11 @@ ColumnLayout {
                             implicitHeight: 30
                             TextField {
                                 id: cell
-                                anchors.fill: parent
+                                anchors.left: parent.left
+                                anchors.top: parent.top
+                                anchors.bottom: parent.bottom
+                                anchors.right: browseLoader.active ? browseLoader.left : parent.right
+                                anchors.rightMargin: browseLoader.active ? 2 : 0
                                 visible: cellRoot.modelData.type !== "choice"
                                 color: Theme.text
                                 selectByMouse: true
@@ -367,6 +371,29 @@ ColumnLayout {
                                         cell.insert(start, token)
                                         cell.cursorPosition = start + token.length
                                         table.setCell(tableRow.index, cellRoot.modelData.key, cell.text)
+                                    }
+                                }
+                            }
+                            // A "file" column has a browse button that fills in the path.
+                            Loader {
+                                id: browseLoader
+                                anchors.right: parent.right
+                                anchors.top: parent.top
+                                anchors.bottom: parent.bottom
+                                width: active ? 28 : 0
+                                active: cellRoot.modelData.type === "file"
+                                sourceComponent: ToolButton {
+                                    text: "…"
+                                    onClicked: cellPicker.open()
+                                    FileDialog {
+                                        id: cellPicker
+                                        nameFilters: cellRoot.modelData.filters && cellRoot.modelData.filters.length
+                                                     ? cellRoot.modelData.filters : [qsTr("All files (*)")]
+                                        onAccepted: {
+                                            DesktopAppController.rememberLocation(selectedFile)
+                                            table.setCell(tableRow.index, cellRoot.modelData.key,
+                                                          PluginUiController.urlToPath(selectedFile))
+                                        }
                                     }
                                 }
                             }

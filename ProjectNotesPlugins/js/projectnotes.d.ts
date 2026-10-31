@@ -144,7 +144,8 @@ declare module "projectnotes" {
         type: "text" | "multiline" | "password" | "number" | "date" | "checkbox" | "choice" | "combo"
             | "file" | "folder" | "contact" | "table" | "section" | "note";
         required?: boolean; placeholder?: string; help?: string;
-        choices?: string[]; /* a "choice" table column is a drop-down with a blank entry */ filters?: string[]; columns?: FormField[];
+        choices?: string[]; /* a "choice" table column is a drop-down with a blank entry */
+        filters?: string[]; /* a "file" table column is a text cell with a browse button */ columns?: FormField[];
         visibleWhen?: { [key: string]: any };
         /** Text cells in a table: `{{ path }}` placeholders listed under Insert Field in the cell's right-click menu. */
         variables?: string[];
