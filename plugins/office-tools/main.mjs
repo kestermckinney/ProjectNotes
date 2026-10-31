@@ -12,17 +12,17 @@ const { app, data, files, menus, settings, ui } = pn;
 const DEFAULT_TEMPLATES = [
     { menu: "Change Request", submenu: "Templates", entity: "projects",
       template: "templates/Change Request Template.docx",
-      folder: "Project Management/Change Requests",
+      folder: "Project Management/PCR's",
       filename: "{{ projects.project_number }} Change Request {{ input.change_number }}" },
     { menu: "Tracker Items Status", submenu: "Templates", entity: "projects",
       template: "templates/Tracker Items Status Template.xlsx",
-      folder: "Project Management/Tracker Items",
+      folder: "Project Management/Issues",
       filename: "{{ projects.project_number }} Tracker Items {{ current.isoDate }}" },
     { menu: "Project Kickoff", submenu: "Templates", entity: "projects",
       template: "templates/Project Kickoff Template.pptx",
-      folder: "Project Management/Kickoff",
+      folder: "Project Management/Meeting Minutes",
       filename: "{{ projects.project_number }} Project Kickoff" },
-    { menu: "Software Development Schedule", submenu: "Templates", entity: "projects",
+    { menu: "Project Schedule", submenu: "Templates", entity: "projects",
       template: "templates/Software Development Lifecycle Template.xml",
       folder: "Project Management/Schedule",
       filename: "{{ projects.project_number }} Schedule" },
@@ -531,6 +531,44 @@ function projectFields(schedule) {
     return out;
 }
 
+// A task whose name or notes has an entity.#.column placeholder becomes one
+// task for each row of that list, with the template task's outline level,
+// duration and predecessors, or goes away when the list is empty.
+function expandProjectTasks(schedule, source) {
+    const repeats = [];
+    for (const task of schedule.Tasks) {
+        if (!task) continue;   // a blank row
+        const name = String(task.Name || ""), notes = String(task.Notes || "");
+        const entity = repeatEntity(name + "\n" + notes);
+        if (entity) repeats.push({ task: task, name: name, notes: notes, entity: entity });
+    }
+    // The last first, so adding tasks below one never moves the ones above it.
+    for (let k = repeats.length - 1; k >= 0; --k) {
+        const r = repeats[k];
+        const items = source.rows(r.entity);
+        if (!items.length) { r.task.Delete(); continue; }
+        const level = r.task.OutlineLevel;
+        const duration = r.task.Duration;
+        const predecessors = String(r.task.Predecessors || "");
+        const fill = function (task, n) {
+            task.Name = source.fill(r.name, n);
+            if (r.notes) task.Notes = source.fill(r.notes, n).replace(/\r\n|\n/g, "\r");
+        };
+        // Tasks.Add(Name, Before) inserts at position Before, so each copy goes
+        // straight below the template task and the last item is added first.
+        const tasks = schedule.Tasks;
+        for (let n = items.length; n >= 2; --n) {
+            const id = r.task.ID;
+            const added = id < tasks.Count ? tasks.Add(source.fill(r.name, n), id + 1) : tasks.Add(source.fill(r.name, n));
+            if (added.OutlineLevel !== level) added.OutlineLevel = level;
+            added.Duration = duration;
+            if (predecessors) added.Predecessors = predecessors;
+            fill(added, n);
+        }
+        fill(r.task, 1);
+    }
+}
+
 function* projectDocument(msproject, template, kind, prepare) {
     msproject.Visible = false;
     msproject.DisplayAlerts = false;
@@ -539,10 +577,11 @@ function* projectDocument(msproject, template, kind, prepare) {
         throw new Error("Microsoft Project could not open " + template + ".");
     try {
         const schedule = msproject.ActiveProject;
-        const fields = projectFields(schedule);
-        const plan = yield* prepare(fields.map(function (f) { return f.text; }).join("\n"));
+        const plan = yield* prepare(projectFields(schedule).map(function (f) { return f.text; }).join("\n"));
         if (!plan) return null;
-        for (const f of fields) {
+        expandProjectTasks(schedule, plan.source);
+        // Read again: the repeated tasks are new, and an empty list's are gone.
+        for (const f of projectFields(schedule)) {
             if (f.text.indexOf("{{") < 0) continue;
             f.object[f.name] = f.text.replace(TOKEN, function (token) { return plan.source.fill(token); })
                                      .replace(/\r\n|\n/g, "\r");

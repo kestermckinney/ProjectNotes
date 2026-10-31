@@ -1033,7 +1033,7 @@ void PluginHostTest::bundledPluginsRun()
     QTRY_VERIFY2_WITH_TIMEOUT(officeRegistry.isRunning(office), qPrintable(officeRegistry.plugin(office).lastError), 10000);
 
     // The default templates: Change Request, Tracker Items Status, Project
-    // Kickoff and Software Development Schedule, all on projects under Templates.
+    // Kickoff and Project Schedule, all on projects under Templates.
     auto templateMenu = [&](const QString& entity, const QString& title) {
         for (const QVariant& m : officeRegistry.menusForEntity(entity)) {
             const QVariantMap menu = m.toMap();
@@ -1050,7 +1050,7 @@ void PluginHostTest::bundledPluginsRun()
     QVERIFY(templateMenu(QStringLiteral("item_tracker"), QStringLiteral("Tracker Items Status")).isEmpty());
     const QString kickoff = templateMenu(QStringLiteral("projects"), QStringLiteral("Project Kickoff"));
     QVERIFY(!kickoff.isEmpty());
-    const QString schedule = templateMenu(QStringLiteral("projects"), QStringLiteral("Software Development Schedule"));
+    const QString schedule = templateMenu(QStringLiteral("projects"), QStringLiteral("Project Schedule"));
     QVERIFY(!schedule.isEmpty());
     auto officeMessage = [&] {
         const QList<QVariantList> messages = services.argsOf(office, QStringLiteral("ui.message"));
@@ -1063,7 +1063,7 @@ void PluginHostTest::bundledPluginsRun()
         officeRegistry.runMenu(office, changeRequest, QStringLiteral("projects"), QStringLiteral("project-p4000"));
         QTRY_VERIFY_WITH_TIMEOUT(services.messageCount(office) > before, 10000);
         QVERIFY(services.argsOf(office, QStringLiteral("ui.openUrl")).isEmpty());
-        QVERIFY(!QFileInfo::exists(projectFolder + QStringLiteral("/Project Management/Change Requests")));
+        QVERIFY(!QFileInfo::exists(projectFolder + QStringLiteral("/Project Management/PCR's")));
 
         const int officeMessages = services.messageCount(office);
         officeRegistry.runMenu(office, QStringLiteral("kill-excel"), {}, {});
@@ -1074,7 +1074,7 @@ void PluginHostTest::bundledPluginsRun()
             QZipReader zip(path);
             return QString::fromUtf8(zip.fileData(member)).remove(QRegularExpression(QStringLiteral("<[^>]*>")));
         };
-        const QString changeFile = projectFolder + QStringLiteral("/Project Management/Change Requests/P4000 Change Request 03.docx");
+        const QString changeFile = projectFolder + QStringLiteral("/Project Management/PCR's/P4000 Change Request 03.docx");
         officeRegistry.runMenu(office, changeRequest, QStringLiteral("projects"), QStringLiteral("project-p4000"));
         QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(office, QStringLiteral("ui.openUrl")).size(), 1, 60000);
         QVERIFY2(QFileInfo::exists(changeFile), qPrintable(officeRegistry.plugin(office).lastError + QLatin1Char(' ')
@@ -1085,7 +1085,7 @@ void PluginHostTest::bundledPluginsRun()
         QVERIFY(zipText(changeFile, QStringLiteral("word/footer1.xml")).contains(QStringLiteral("P4000-03")));
 
         // From the project: every tracker item, one row each.
-        const QString trackerFile = projectFolder + QStringLiteral("/Project Management/Tracker Items/P4000 Tracker Items %1.xlsx")
+        const QString trackerFile = projectFolder + QStringLiteral("/Project Management/Issues/P4000 Tracker Items %1.xlsx")
                                         .arg(QDate::currentDate().toString(Qt::ISODate));
         officeRegistry.runMenu(office, trackerList, QStringLiteral("projects"), QStringLiteral("project-p4000"));
         QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(office, QStringLiteral("ui.openUrl")).size(), 2, 60000);
@@ -1120,7 +1120,7 @@ void PluginHostTest::bundledPluginsRun()
         services.nextConfirm = true;
 
         // The kickoff deck: the team table gets one row per team member.
-        const QString kickoffFile = projectFolder + QStringLiteral("/Project Management/Kickoff/P4000 Project Kickoff.pptx");
+        const QString kickoffFile = projectFolder + QStringLiteral("/Project Management/Meeting Minutes/P4000 Project Kickoff.pptx");
         officeRegistry.runMenu(office, kickoff, QStringLiteral("projects"), QStringLiteral("project-p4000"));
         QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(office, QStringLiteral("ui.openUrl")).size(), 3, 60000);
         QVERIFY2(QFileInfo::exists(kickoffFile), qPrintable(officeRegistry.plugin(office).lastError + QLatin1Char(' ')
