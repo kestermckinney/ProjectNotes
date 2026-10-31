@@ -20,10 +20,10 @@ Four examples come with Project Notes and are set up the first time MS Office Te
 
 | Menu | Right-click | Template | Saved as |
 | :--- | :--- | :--- | :--- |
-| **Templates > Change Request** | a project | `Change Request Template.docx` | `Project Management/Change Requests/P-100 Change Request 03.docx` |
-| **Templates > Tracker Items Status** | a project | `Tracker Items Status Template.xlsx` | `Project Management/Tracker Items/P-100 Tracker Items 2026-10-30.xlsx` |
-| **Templates > Project Kickoff** | a project | `Project Kickoff Template.pptx` | `Project Management/Kickoff/P-100 Project Kickoff.pptx` |
-| **Templates > Software Development Schedule** | a project | `Software Development Lifecycle Template.xml` | `Project Management/Schedule/P-100 Schedule.mpp` |
+| **Templates > Change Request** | a project | `Change Request Template.docx` | `Project Management/PCR's/P-100 Change Request 03.docx` |
+| **Templates > Tracker Items Status** | a project | `Tracker Items Status Template.xlsx` | `Project Management/Issues/P-100 Tracker Items 2026-10-30.xlsx` |
+| **Templates > Project Kickoff** | a project | `Project Kickoff Template.pptx` | `Project Management/Meeting Minutes/P-100 Project Kickoff.pptx` |
+| **Templates > Project Schedule** | a project | `Software Development Lifecycle Template.xml` | `Project Management/Schedule/P-100 Schedule.mpp` |
 
 The change request asks for the change number and fills in the project, client, contact, project manager and current budget. Description, reason, impact and approval sections are left for you to complete.
 
@@ -71,7 +71,9 @@ Templates written for the earlier fixed commands keep working: `{{ project.numbe
 
 ### Repeating rows
 
-Put `#` where the row number goes, and the whole row repeats once for each row of that list. In a Word table, that is the table row. In Excel, it is the worksheet row, copied with its formatting and conditional formatting. In a PowerPoint table, it is the table row. When the list is empty, the row is removed.
+Put `#` where the row number goes, and the whole row repeats once for each row of that list. In a Word table, that is the table row. In Excel, it is the worksheet row, copied with its formatting and conditional formatting. In a PowerPoint table, it is the table row. In MS Project, it is a task with `#` in its name or notes: each copy keeps the task's outline level, duration and predecessors. When the list is empty, the row or task is removed.
+
+The included schedule ends with a **Tracker Items for** the project summary task. The one task under it is named `{{ item_tracker.#.item_number }} {{ item_tracker.#.item_name }}`, and its notes hold the item's type, status, priority, assignee, due date and description, so the schedule lists every tracker item of the project. Several other tasks, such as the kickoff meeting and go-live, carry the project's name, number or company in their names.
 
 The included tracker workbook's row is:
 
