@@ -1,12 +1,12 @@
 # Office Document Templates
 
-The **MS Office Templates** plugin (Windows) creates documents from Word, Excel and PowerPoint templates that you set up, filled in from the record you right-click. It also opens a project's schedule and closes Excel or Word processes that automation left behind. It needs Microsoft Office, and Microsoft Project for the schedule command.
+The **MS Office Templates** plugin (Windows) creates documents from Word, Excel and PowerPoint templates that you set up, and project schedules from MS Project templates, filled in from the record you right-click. It also opens a project's schedule and closes Excel or Word processes that automation left behind. It needs Microsoft Office, and Microsoft Project for schedules.
 
 ## Creating a document
 
 Each template you configure adds a command to the right-click menu of one kind of record, such as projects or tracker items. Choose it, and MS Office Templates:
 
-1. opens the template in Word, Excel or PowerPoint, out of sight;
+1. opens the template in Word, Excel, PowerPoint or MS Project, out of sight;
 2. asks for any values the template needs typed in, such as a change request number;
 3. fills in the placeholders from the record and its project;
 4. saves the result in the project's folder and adds it to the project's **Files & Folders**;
@@ -16,18 +16,24 @@ A document that already exists is never overwritten. You are asked whether to op
 
 ## Included templates
 
-Two examples come with Project Notes and are set up the first time MS Office Templates starts.
+Four examples come with Project Notes and are set up the first time MS Office Templates starts.
 
 | Menu | Right-click | Template | Saved as |
 | :--- | :--- | :--- | :--- |
 | **Templates > Change Request** | a project | `Change Request Template.docx` | `Project Management/Change Requests/P-100 Change Request 03.docx` |
 | **Templates > Tracker Items Status** | a project | `Tracker Items Status Template.xlsx` | `Project Management/Tracker Items/P-100 Tracker Items 2026-10-30.xlsx` |
+| **Templates > Project Kickoff** | a project | `Project Kickoff Template.pptx` | `Project Management/Kickoff/P-100 Project Kickoff.pptx` |
+| **Templates > Software Development Schedule** | a project | `Software Development Lifecycle Template.xml` | `Project Management/Schedule/P-100 Schedule.mpp` |
 
 The change request asks for the change number and fills in the project, client, contact, project manager and current budget. Description, reason, impact and approval sections are left for you to complete.
 
 The tracker items workbook lists every tracker item of the project, one row each, with its type, owner, priority, status and dates, plus a count of items by status.
 
-Both files live in the plugin's `templates` folder. Copy one somewhere else before you change it, then point the template's row at your copy, so an update of Project Notes can't replace your edits.
+The kickoff presentation is a nine-slide deck for the first meeting with the client. The title slide, project overview and communication slides fill in the project name and number, client, contact, project manager, budget and reporting periods. The team slide lists every member of the project team with their role, and the risks slide lists the project's tracker items. Objectives, scope and target dates are prompts for you to replace.
+
+The software development schedule is a Microsoft Project plan with seven phases: initiation, requirements, design, development, testing, deployment and closure. Its 30 tasks and milestones are linked, so the plan starts on the day you create it and the dates follow from there. Adjust durations and add your own tasks once it opens. The schedule is saved as an `.mpp` file, so **Open MS Project** finds it. It needs Microsoft Project installed.
+
+All four files live in the plugin's `templates` folder. Copy one somewhere else before you change it, then point the template's row at your copy, so an update of Project Notes can't replace your edits. Open the schedule template in Microsoft Project to change it, and save it as `.xml`, `.mpp` or `.mpt`.
 
 ## Settings
 
@@ -38,7 +44,7 @@ Open **Settings > MS Office Templates**. Each row of the **Templates** table is 
 | **Menu** | The command's name. |
 | **Submenu** | The submenu it appears under, such as `Templates`. Leave it empty to list the command directly. |
 | **Entity** | The kind of record whose right-click menu shows the command, and whose values fill the document. |
-| **Template** | The Word (`.docx`, `.dotx`, `.doc`), Excel (`.xlsx`, `.xltx`, `.xls`) or PowerPoint (`.pptx`, `.potx`) file to start from. Use **…** to browse. A path that doesn't start with a drive or `\\` is inside the plugin's folder. |
+| **Template** | The Word (`.docx`, `.dotx`, `.doc`), Excel (`.xlsx`, `.xltx`, `.xls`), PowerPoint (`.pptx`, `.potx`) or MS Project (`.mpp`, `.mpt`, `.xml`) file to start from. Use **…** to browse. A path that doesn't start with a drive or `\\` is inside the plugin's folder. |
 | **Output Folder** | Where the document goes, relative to the project's folder. It can use placeholders: `Project Management/{{ projects.project_number }}`. |
 | **File Name** | The new file's name, without the extension. It can use placeholders. When empty, it's the project number and the menu name. |
 
@@ -46,7 +52,7 @@ Right-click the Output Folder or File Name box and choose **Insert Field** to pi
 
 ## Placeholders
 
-Templates use the same `{{ name }}` placeholders as email templates and My Shortcuts. See [Plugin Settings](<PluginSettings.md#placeholders>). Write them anywhere in the document: body text, tables, headers and footers in Word; any cell in Excel; text boxes and tables in PowerPoint.
+Templates use the same `{{ name }}` placeholders as email templates and My Shortcuts. See [Plugin Settings](<PluginSettings.md#placeholders>). Write them anywhere in the document: body text, tables, headers and footers in Word; any cell in Excel; text boxes and tables in PowerPoint; the title, subject, company, manager and comments, and task names and notes, in MS Project. A schedule also moves to start on the day it is created; tasks pinned to a date stay put.
 
 | Placeholder | Becomes |
 | :--- | :--- |
@@ -65,7 +71,7 @@ Templates written for the earlier fixed commands keep working: `{{ project.numbe
 
 ### Repeating rows
 
-Put `#` where the row number goes, and the whole row repeats once for each row of that list. In a Word table, that is the table row. In Excel, it is the worksheet row, copied with its formatting and conditional formatting. When the list is empty, the row is removed.
+Put `#` where the row number goes, and the whole row repeats once for each row of that list. In a Word table, that is the table row. In Excel, it is the worksheet row, copied with its formatting and conditional formatting. In a PowerPoint table, it is the table row. When the list is empty, the row is removed.
 
 The included tracker workbook's row is:
 

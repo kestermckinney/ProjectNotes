@@ -985,10 +985,10 @@ void PluginHostTest::bundledPluginsRun()
     QVERIFY(QFileInfo::exists(projectFolder + QStringLiteral("/Mail/Received/download_state.json")));
 
     // MS Office Templates is Windows-only. A copy without the platform limit checks
-    // the parts that do not need Office: the two example templates configured
+    // the parts that do not need Office: the four example templates configured
     // on first start, their menus on the right tables, and a clear error when
     // Office can't be reached. Set PN_TEST_OFFICE=1 on a Windows machine with
-    // Office to also create both documents through Word and Excel.
+    // Office to also create the Word, Excel and PowerPoint documents.
 #ifdef Q_OS_WIN
     const bool realOffice = qEnvironmentVariableIntValue("PN_TEST_OFFICE") == 1;
 #else
@@ -1013,7 +1013,9 @@ void PluginHostTest::bundledPluginsRun()
     writeFile(officeCopy + QStringLiteral("/plugin.json"), QJsonDocument(officeManifest).toJson());
     for (const QString& name : {QStringLiteral("main.mjs"), QStringLiteral("settings.schema.json"),
                                 QStringLiteral("templates/Change Request Template.docx"),
-                                QStringLiteral("templates/Tracker Items Status Template.xlsx")})
+                                QStringLiteral("templates/Tracker Items Status Template.xlsx"),
+                                QStringLiteral("templates/Project Kickoff Template.pptx"),
+                                QStringLiteral("templates/Software Development Lifecycle Template.xml")})
         QVERIFY(QFile::copy(QStringLiteral(PN_REPO_PLUGINS) + QStringLiteral("/office-tools/") + name, officeCopy + QLatin1Char('/') + name));
     services.replies.insert(QStringLiteral("ui.choose"), QVariant::fromValue(nullptr));
     services.replies.insert(QStringLiteral("ui.showForm"), QVariantMap{{QStringLiteral("change_number"), QStringLiteral("03")}});
@@ -1030,8 +1032,8 @@ void PluginHostTest::bundledPluginsRun()
     const QString office = QStringLiteral("com.projectnotespro.office-tools");
     QTRY_VERIFY2_WITH_TIMEOUT(officeRegistry.isRunning(office), qPrintable(officeRegistry.plugin(office).lastError), 10000);
 
-    // The default templates: Change Request and Tracker Items Status, both on
-    // projects under Templates.
+    // The default templates: Change Request, Tracker Items Status, Project
+    // Kickoff and Software Development Schedule, all on projects under Templates.
     auto templateMenu = [&](const QString& entity, const QString& title) {
         for (const QVariant& m : officeRegistry.menusForEntity(entity)) {
             const QVariantMap menu = m.toMap();
@@ -1046,6 +1048,10 @@ void PluginHostTest::bundledPluginsRun()
     const QString trackerList = templateMenu(QStringLiteral("projects"), QStringLiteral("Tracker Items Status"));
     QVERIFY2(!trackerList.isEmpty(), qPrintable(QJsonDocument::fromVariant(officeRegistry.menusForEntity(QStringLiteral("projects"))).toJson()));
     QVERIFY(templateMenu(QStringLiteral("item_tracker"), QStringLiteral("Tracker Items Status")).isEmpty());
+    const QString kickoff = templateMenu(QStringLiteral("projects"), QStringLiteral("Project Kickoff"));
+    QVERIFY(!kickoff.isEmpty());
+    const QString schedule = templateMenu(QStringLiteral("projects"), QStringLiteral("Software Development Schedule"));
+    QVERIFY(!schedule.isEmpty());
     auto officeMessage = [&] {
         const QList<QVariantList> messages = services.argsOf(office, QStringLiteral("ui.message"));
         return messages.isEmpty() ? QString() : messages.last().value(0).toString();
@@ -1112,6 +1118,32 @@ void PluginHostTest::bundledPluginsRun()
         officeRegistry.runMenu(office, changeRequest, QStringLiteral("projects"), QStringLiteral("project-p4000"));
         QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(office, QStringLiteral("ui.confirm")).size(), confirms + 1, 60000);
         services.nextConfirm = true;
+
+        // The kickoff deck: the team table gets one row per team member.
+        const QString kickoffFile = projectFolder + QStringLiteral("/Project Management/Kickoff/P4000 Project Kickoff.pptx");
+        officeRegistry.runMenu(office, kickoff, QStringLiteral("projects"), QStringLiteral("project-p4000"));
+        QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(office, QStringLiteral("ui.openUrl")).size(), 3, 60000);
+        QVERIFY2(QFileInfo::exists(kickoffFile), qPrintable(officeRegistry.plugin(office).lastError + QLatin1Char(' ')
+                                                           + officeMessage()));
+        QString slides;
+        {
+            QZipReader deck(kickoffFile);
+            for (const QZipReader::FileInfo& member : deck.fileInfoList())
+                if (member.filePath.startsWith(QLatin1String("ppt/slides/slide")))
+                    slides += QString::fromUtf8(deck.fileData(member.filePath)).remove(QRegularExpression(QStringLiteral("<[^>]*>")));
+        }
+        QVERIFY2(slides.contains(QStringLiteral("IT New Server Install")) && slides.contains(QStringLiteral("Jim Smith"))
+                 && slides.contains(QStringLiteral("Mike Smith")) && slides.contains(QStringLiteral("Rack delivery"))
+                 && !slides.contains(QStringLiteral("{{")), qPrintable(slides.left(4000)));
+
+        // The schedule needs Microsoft Project as well: set PN_TEST_MSPROJECT=1.
+        if (qEnvironmentVariableIntValue("PN_TEST_MSPROJECT") == 1) {
+            const QString scheduleFile = projectFolder + QStringLiteral("/Project Management/Schedule/P4000 Schedule.mpp");
+            officeRegistry.runMenu(office, schedule, QStringLiteral("projects"), QStringLiteral("project-p4000"));
+            QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(office, QStringLiteral("ui.openUrl")).size(), 4, 60000);
+            QVERIFY2(QFileInfo::exists(scheduleFile), qPrintable(officeRegistry.plugin(office).lastError + QLatin1Char(' ')
+                                                                + officeMessage()));
+        }
     }
     QTRY_VERIFY2(officeRegistry.plugin(office).lastError.isEmpty() && officeErrors.isEmpty(),
                  qPrintable(officeRegistry.plugin(office).lastError));

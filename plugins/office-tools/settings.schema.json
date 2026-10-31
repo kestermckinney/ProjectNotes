@@ -42,7 +42,7 @@
           "label": "Template",
           "type": "file",
           "filters": [
-            "Office templates (*.docx *.docm *.doc *.dotx *.dotm *.xlsx *.xlsm *.xls *.xltx *.xltm *.pptx *.pptm *.potx)"
+            "Office templates (*.docx *.docm *.doc *.dotx *.dotm *.xlsx *.xlsm *.xls *.xltx *.xltm *.pptx *.pptm *.potx *.potm *.mpp *.mpt *.xml)"
           ]
         },
         {
