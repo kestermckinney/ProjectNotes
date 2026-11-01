@@ -63,3 +63,23 @@ deploy-prepared-repository:
   pages:
     publish: public
     expire_in: never
+
+# Rebuild projectnotespro.com when the user guide changes. Its build pulls
+# docs/ from main (scripts/sync-docs.mjs in PN-AccountManager), so a redeploy
+# is all it takes. VERCEL_DOCS_DEPLOY_HOOK is a masked, protected CI/CD
+# variable holding the Vercel deploy hook URL.
+deploy-website-docs:
+  stage: publish
+  image: alpine:3.22
+  needs: []
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"'
+      changes:
+        - docs/**/*
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "web"'
+      when: manual
+  script:
+    - test -n "$VERCEL_DOCS_DEPLOY_HOOK" || { echo "VERCEL_DOCS_DEPLOY_HOOK is not set"; exit 1; }
+    - apk add --no-cache curl
+    - curl --fail --silent --show-error --request POST --output /dev/null "$VERCEL_DOCS_DEPLOY_HOOK"
+    - echo "Triggered a Vercel redeploy for $CI_COMMIT_SHORT_SHA"
