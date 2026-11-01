@@ -4,6 +4,8 @@
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
+// After QtQuick.Controls.Basic, so TextField is the app's (TextField.qml).
+import ProjectNotesDesktop
 
 // Labeled combo box. `options` is a string list; two-way value via currentText.
 //

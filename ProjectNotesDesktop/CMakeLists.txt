@@ -87,6 +87,7 @@ set(DESKTOP_QML_FILES
     qml/FolderGroup.qml
     qml/TopBar.qml
     qml/Button.qml
+    qml/TextField.qml
     qml/AppMenu.qml
     qml/MenuRow.qml
     qml/MenuFlyout.qml

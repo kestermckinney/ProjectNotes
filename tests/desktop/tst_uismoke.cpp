@@ -1655,6 +1655,99 @@ private slots:
         assertClean("schema form table insert field");
     }
 
+    // A value too long for its text field shows its start, not its end. Setting
+    // `text` puts TextInput's cursor at the end and it scrolls to keep the cursor
+    // in view, so a long template path once looked right-aligned. TextField.qml
+    // shadows the Controls TextField app-wide; check that every page's fields
+    // are that type, then load MS Office Templates' real settings with long
+    // values in narrow columns.
+    void test_09ab_longTextFieldsShowTheirStart()
+    {
+        clearWarnings();
+        nav("selectSection", "projects");
+        nav("handleMenuAction", "preferences");
+        nav("selectSection", "search");
+
+        auto isAppTextField = [](QQuickItem* item) {
+            return item->metaObject()->indexOfMethod("_showStart()") >= 0;
+        };
+        QStringList plain;
+        int textFields = 0;
+        for (QQuickItem* item : root->findChildren<QQuickItem*>()) {
+            if (!item->inherits("QQuickTextField"))
+                continue;
+            ++textFields;
+            if (!isAppTextField(item))
+                plain.append(describe(item));
+        }
+        plain.removeDuplicates();
+        QVERIFY2(textFields >= 5, qPrintable(QStringLiteral("only %1 text fields reached").arg(textFields)));
+        QVERIFY2(plain.isEmpty(), qPrintable(QStringLiteral("text fields that are not TextField.qml: %1")
+                                                 .arg(plain.join(QStringLiteral(", ")))));
+
+        QFile file(QStringLiteral(PN_TEST_FIXTURES) + QStringLiteral("/../../../plugins/office-tools/settings.schema.json"));
+        QVERIFY2(file.open(QIODevice::ReadOnly), qPrintable(file.fileName()));
+        QQmlComponent component(engine);
+        component.setData(R"(
+            import QtQuick
+            import ProjectNotesDesktop
+            SchemaForm {
+                width: 700
+                property string schemaJson: ""
+                fields: JSON.parse(schemaJson).fields
+                values: ({ templates: [{
+                    menu: "Software Development Schedule With A Long Name", submenu: "Templates", entity: "projects",
+                    template: "C:/Users/someone/Documents/Templates/Project Management/Software Development Lifecycle Template.xml",
+                    folder: "Project Management/Schedule/{{ projects.project_number }}/Working Copies",
+                    filename: "{{ projects.project_number }} {{ projects.project_name }} Schedule {{ current.isoDate }}" }] })
+            }
+        )", QUrl());
+        QScopedPointer<QObject> object(component.createWithInitialProperties(
+            {{QStringLiteral("schemaJson"), QString::fromUtf8(file.readAll())}}));
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* form = qobject_cast<QQuickItem*>(object.data());
+        QVERIFY(form);
+        QQuickWindow window;
+        form->setParentItem(window.contentItem());
+        window.resize(700, 500);
+        window.show();
+
+        // The text cells whose value is wider than the cell. Table cells are
+        // delegates, so walk the visual tree rather than QObject children.
+        auto overflowing = [&]() {
+            QList<QQuickItem*> out;
+            QList<QQuickItem*> pending{form};
+            while (!pending.isEmpty()) {
+                QQuickItem* item = pending.takeLast();
+                pending.append(item->childItems());
+                if (item->inherits("QQuickTextField") && item->isVisible()
+                    && item->property("contentWidth").toReal() > item->width() + 1)
+                    out.append(item);
+            }
+            return out;
+        };
+        QTRY_VERIFY_WITH_TIMEOUT(overflowing().size() >= 3, 3000);
+        for (QQuickItem* field : overflowing()) {
+            QVERIFY2(isAppTextField(field), qPrintable(describe(field)));
+            QVERIFY2(field->property("cursorPosition").toInt() == 0,
+                     qPrintable(QStringLiteral("%1 shows the end of \"%2\"")
+                                    .arg(describe(field), field->property("text").toString())));
+        }
+
+        // A value replaced later, as when a table row is reloaded, scrolls back too.
+        QQuickItem* field = overflowing().first();
+        field->setProperty("text", field->property("text").toString() + QStringLiteral(" (edited)"));
+        QCOMPARE(field->property("cursorPosition").toInt(), 0);
+
+        // Code that places the cursor after changing the text, as Insert Field
+        // does, keeps its position.
+        const QString token = QStringLiteral("{{ current.date }}");
+        QVERIFY(QMetaObject::invokeMethod(field, "insert", Q_ARG(int, 0), Q_ARG(QString, token)));
+        field->setProperty("cursorPosition", int(token.size()));
+        QCOMPARE(field->property("cursorPosition").toInt(), int(token.size()));
+        assertClean("long text fields show their start");
+    }
+
     // A plugin Settings section's table loads saved rows and saves edits. The
     // rows reach QML through PluginUiController::settingValues as a sequence
     // wrapper (Array.isArray false), which once left the table empty; an edit

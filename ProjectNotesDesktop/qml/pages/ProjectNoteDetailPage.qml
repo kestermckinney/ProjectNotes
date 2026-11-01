@@ -467,13 +467,8 @@ Item {
                                             selectByMouse: true
                                             placeholderText: qsTr("(unnamed item)")
                                             placeholderTextColor: Theme.text3
-                                            Component.onCompleted: {
-                                                text = (ai.model.item_name || "").toString()
-                                                // TextInput scrolls to keep the cursor visible; setting
-                                                // text moves the cursor to the end, which can leave a
-                                                // long name scrolled so it appears right-aligned.
-                                                cursorPosition = 0
-                                            }
+                                            // TextField.qml keeps a long name scrolled to its start.
+                                            Component.onCompleted: text = (ai.model.item_name || "").toString()
                                             onEditingFinished: ai._saveName()
                                             SpellCheckField { dialog: spellDialog }
                                         }
