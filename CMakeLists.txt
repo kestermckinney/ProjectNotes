@@ -282,6 +282,11 @@ if(WIN32)
             --dir "${DEPLOY_DIR}"
             "${DEPLOY_DIR}/Project Notes.exe"
 
+        # windeployqt copies the build machine's System32 icuuc.dll, which is
+        # ARM64 on an ARM64 build host. Windows provides icuuc.dll, so drop it
+        # here so no installer or package can pick it up again.
+        COMMAND ${CMAKE_COMMAND} -E remove -f "${DEPLOY_DIR}/icuuc.dll"
+
         # The installer includes this Qt plugin for touch-capable Windows devices.
         COMMAND ${CMAKE_COMMAND} -E make_directory "${DEPLOY_DIR}/generic"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different

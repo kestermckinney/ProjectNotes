@@ -74,6 +74,10 @@ Section "MainSection" SEC01
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
 
+  ; Earlier releases shipped the build machine's ARM64 icuuc.dll. Qt6Core.dll
+  ; would load that copy ahead of the one in System32 and fail with 0xc0000142.
+  Delete "$INSTDIR\icuuc.dll"
+
   ; ── Executables ─────────────────────────────────────────────────────────────
   File "${DEPLOY_DIR}\LICENSE.txt"
   File "${DEPLOY_DIR}\Project Notes Remote Host.exe"

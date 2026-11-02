@@ -195,6 +195,13 @@ Delete "$INSTDIR\libffi-8.dll"
 Delete "$INSTDIR\libssl-3.dll"
 Delete "$INSTDIR\sqlite3.dll"
 
+; ── ICU copied from the build machine (6.4.x and earlier) ──────────────────────
+; Those installers shipped the build machine's System32 icuuc.dll, which is an
+; ARM64 build. Qt6Core.dll imports icuuc.dll and the loader looks in $INSTDIR
+; before System32, so a leftover copy stops the x64 app at startup with
+; 0xc0000142. Windows provides the right icuuc.dll itself.
+Delete "$INSTDIR\icuuc.dll"
+
 ; ── Qt WebEngine (earlier releases printed reports with it) ────────────────────
 Delete "$INSTDIR\Qt6Positioning.dll"
 Delete "$INSTDIR\Qt6WebChannel.dll"
