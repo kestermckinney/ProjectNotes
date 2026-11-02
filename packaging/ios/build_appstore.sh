@@ -28,6 +28,8 @@
 #
 # Configuration (override via environment variables):
 #   QT_IOS           Path to the Qt iOS kit (contains bin/qt-cmake)
+#   QT_HOST          Path to the matching Qt macOS host kit (passed as QT_HOST_PATH;
+#                    the iOS kit's Gui config needs host tools such as Qt6GrpcTools)
 #   TEAM_ID          10-character Apple Team ID
 #   SCHEME           Xcode scheme to archive
 #   ASC_API_KEY_ID   App Store Connect API Key ID   (same as --api-key)
@@ -45,6 +47,7 @@ usage() { sed -n '13,40p' "$0" | sed 's/^# \{0,1\}//'; }
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 QT_IOS="${QT_IOS:-$HOME/Qt/6.11.1/ios}"
+QT_HOST="${QT_HOST:-$HOME/Qt/6.11.1/macos}"
 TEAM_ID="${TEAM_ID:-2PY624KHXH}"
 SCHEME="${SCHEME:-ProjectNotesMobile}"
 BUNDLE_ID="com.projectnotespro.projectnotesmobile"
@@ -92,16 +95,24 @@ if [[ ! -x "${QT_CMAKE}" ]]; then
     exit 1
 fi
 
+if [[ ! -d "${QT_HOST}/lib/cmake" ]]; then
+    echo "ERROR: Qt macOS host kit not found at ${QT_HOST}" >&2
+    echo "       Set QT_HOST to your Qt macOS kit, e.g. QT_HOST=\$HOME/Qt/6.11.1/macos" >&2
+    exit 1
+fi
+
 echo "==> ProjectNotesMobile App Store build"
 echo "    Bundle ID    : ${BUNDLE_ID}"
 echo "    Team         : ${TEAM_ID}"
 echo "    Build number : ${BUILD_NUMBER}"
 echo "    Qt iOS kit   : ${QT_IOS}"
+echo "    Qt host kit  : ${QT_HOST}"
 echo
 
 # ── Step 1: configure (Xcode generator, Release) ──────────────────────────────
 echo "==> [1/4] Configuring Xcode project..."
-"${QT_CMAKE}" -S "${SRC_DIR}" -B "${BUILD_DIR}" -G Xcode -DCMAKE_BUILD_TYPE=Release
+"${QT_CMAKE}" -S "${SRC_DIR}" -B "${BUILD_DIR}" -G Xcode -DCMAKE_BUILD_TYPE=Release \
+    -DQT_HOST_PATH="${QT_HOST}"
 
 # ── Step 2: archive (auto-creates distribution cert + App Store profile) ───────
 echo "==> [2/4] Archiving..."
