@@ -23,11 +23,13 @@ For contact synchronization and Full Contact Export:
 
 Importing contacts without ever exporting them needs only `Contacts.Read`. Project Notes asks for `Contacts.ReadWrite` whenever Office 365 is the contact provider, so grant that one unless you are sure nobody will export.
 
-For File Finder's Teams and SharePoint discovery:
+For File Finder's Teams and SharePoint discovery, and for saving into a Microsoft Teams project folder:
 
 - `Team.ReadBasic.All`
 - `Channel.ReadBasic.All`
-- `Files.Read.All`
+- `Files.ReadWrite.All`
+
+`Files.ReadWrite.All` lets Project Notes save documents made from templates, saved reports and archived email into a project's Teams folder. It replaces `Files.Read.All`, which earlier versions asked for and which only allows File Finder to read. If you signed in before, a save to a Teams folder reports that access was refused; grant `Files.ReadWrite.All` on the registration and sign in again. Teams keeps channel files in SharePoint, but `Sites.Read.All` and `Sites.ReadWrite.All` are not needed.
 
 `Mail.ReadWrite` creates and updates drafts. It also satisfies plugins that ask for `Mail.Read`, such as Archive Mail. Project Notes never requests `Mail.Send`, so it cannot send mail from your account.
 
@@ -39,7 +41,7 @@ Project Notes signs in with the device-code flow and has no client secret. On th
 
 The **Supported account types** setting must agree with the tenant ID you enter in Project Notes. The default tenant, `organizations`, needs a registration that accepts accounts in any organizational directory. A registration limited to your own directory works when you enter your specific tenant ID.
 
-Microsoft Graph marks `Team.ReadBasic.All`, `Channel.ReadBasic.All`, and `Files.Read.All` as requiring administrator consent. A tenant administrator must grant consent for these permissions on the dedicated app registration (Microsoft Entra admin center > **App registrations** > the app > **API permissions** > **Grant admin consent**) before sign-in will succeed. If sign-in appears to complete but File Finder then reports an error mentioning admin approval (AADSTS90094), consent has not been granted yet, or the tenant/client ID entered below points at an app registration that was never granted it.
+Microsoft Graph marks `Team.ReadBasic.All`, `Channel.ReadBasic.All`, and `Files.ReadWrite.All` as requiring administrator consent. A tenant administrator must grant consent for these permissions on the dedicated app registration (Microsoft Entra admin center > **App registrations** > the app > **API permissions** > **Grant admin consent**) before sign-in will succeed. If sign-in appears to complete but File Finder then reports an error mentioning admin approval (AADSTS90094), consent has not been granted yet, or the tenant/client ID entered below points at an app registration that was never granted it.
 
 ## Settings
 

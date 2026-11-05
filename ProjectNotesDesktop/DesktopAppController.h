@@ -24,6 +24,7 @@
 #include "ProjectNotesEmail/SnapshotTypes.h"
 #include "ProjectNotesMeetings/MeetingPreparationFactory.h"
 #include "ProjectNotesIntegrations/CommunicationTemplateStore.h"
+#include "ProjectNotesIntegrations/ProjectFolderStore.h"
 
 #include <initializer_list>
 #include <memory>
@@ -273,6 +274,18 @@ public:
     // Called after the native Save As picker confirms an overwrite and before
     // report preparation begins, so publication never races an old file.
     Q_INVOKABLE bool removeExistingReportSaveFile(const QString& destination);
+    // Saves a generated report into the project's primary project folder
+    // (local or Microsoft Teams), under `subfolder`. Finishes with
+    // reportSavedToProjectFolder(); returns false when it cannot start.
+    // The last subfolder and format used to save a report to the project folder.
+    Q_INVOKABLE QVariantMap reportProjectFolderOptions() const;
+    Q_INVOKABLE void setReportProjectFolderOptions(const QString& subfolder, const QString& format);
+    // Opens a location path (see openLocationPath()).
+    Q_INVOKABLE void openLocation(const QString& path);
+    Q_INVOKABLE bool saveReviewGeneratedAttachmentToProjectFolder(const QString& displayName,
+                                                                  const QString& projectId,
+                                                                  const QString& subfolder,
+                                                                  bool overwrite);
 
     // ── Schedule Meeting ─────────────────────────────────────────────────────
     // Meeting types from Settings > Meeting Templates: [{id, name, durationMinutes}].
@@ -767,11 +780,21 @@ public:
     // Open a location with the OS default handler (browser, Office deep link, or
     // local file), using desktop services like the Widgets app.
     Q_INVOKABLE void        openProjectLocation(int row);
+    // Opens a stored location path the same way: a local file or folder, a
+    // URL, or a SharePoint Office document in its desktop app.
+    void                    openLocationPath(const QString& path);
 
     // ── Primary project folder ───────────────────────────────────────────────
-    // The project's primary project folder: a live File Folder location, or ""
-    // when it has none. Re-read on projectFolderRev.
+    // The project's primary project folder: a live File Folder location or a
+    // Microsoft Teams folder (a SharePoint Web Link), or "" when it has none.
+    // Re-read on projectFolderRev.
     Q_INVOKABLE QString     primaryProjectLocationId(const QString& projectId) const;
+    // {kind: "local"|"teams", path} for the primary project folder, or {}.
+    Q_INVOKABLE QVariantMap projectFolderInfo(const QString& projectId) const;
+    // Whether a location row may be made the primary project folder.
+    Q_INVOKABLE bool        canBeProjectFolder(const QString& locationType, const QString& fullPath) const;
+    PN::Comm::ProjectFolder primaryProjectFolder(const QString& projectId) const;
+    PN::Comm::ProjectFolderStore* projectFolderStore() const { return m_projectFolderStore; }
     // True once the user has set or cleared the primary project folder, which
     // stops File Finder from choosing one.
     Q_INVOKABLE bool        projectFolderChosenByUser(const QString& projectId) const;
@@ -947,6 +970,10 @@ signals:
     void viewOptionsChanged();
     void sidebarRevChanged();
     void projectFolderRevChanged();
+    // A saveReviewGeneratedAttachmentToProjectFolder() call finished. `code`
+    // is "exists" when the file is there and overwrite was false.
+    void reportSavedToProjectFolder(bool ok, const QString& location, const QString& code,
+                                    const QString& message);
     void filterRevChanged();
     void sortRevChanged();
     void projectManagerChanged();
@@ -1017,6 +1044,8 @@ private:
     // its token stays private to the integration layer.
     PN::Comm::Office365Service *m_office365Service = nullptr;
     PN::Comm::QtNetworkHttpTransport *m_office365Transport = nullptr;
+    // Reads and writes project folders, local or Microsoft Teams.
+    PN::Comm::ProjectFolderStore *m_projectFolderStore = nullptr;
     std::unique_ptr<PN::Comm::GraphEmailBackend> m_graphEmailBackend;
     std::unique_ptr<PN::Comm::ICloudEmailBackend> m_iCloudEmailBackend;
     std::unique_ptr<PN::Comm::EmlFileEmailBackend> m_emlFileEmailBackend;

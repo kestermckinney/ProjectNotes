@@ -167,7 +167,7 @@ You can drag one or more files or folders from Finder (macOS) or File Explorer (
 
 **The primary project folder:**
 
-One **File Folder** location can be the project's primary project folder, marked with a star. Plugins, reports and Archive Mail save their files there. File Finder fills it in when it finds the project's folder, unless you have already made a choice. A project can also have no project folder at all.
+One folder location can be the project's primary project folder, marked with a star. It is either a **File Folder** on your computer or a Microsoft Teams channel folder, which is a **Web Link** to the team's SharePoint site. Plugins, reports and Archive Mail save their files there. Saving to a Teams folder needs the Office 365 account from **Settings > Office 365 Integration**. File Finder fills it in when it finds the project's folder, unless you have already made a choice. A project can also have no project folder at all.
 
 1. Click the **⋮** button on a **File Folder** location.
 2. Choose **Set as Primary Project Folder** to make it the project's folder, or **Clear Primary Project Folder** on the starred one to leave the project without a folder.

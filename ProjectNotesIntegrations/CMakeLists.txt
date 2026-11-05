@@ -13,6 +13,8 @@ add_library(ProjectNotesIntegrations STATIC
     HttpTransport.h
     QtNetworkHttpTransport.cpp
     QtNetworkHttpTransport.h
+    ProjectFolderStore.cpp
+    ProjectFolderStore.h
     TemplateTypes.h
     TemplateParser.h
     TemplateParser.cpp

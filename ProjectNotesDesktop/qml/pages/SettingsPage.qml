@@ -810,6 +810,13 @@ Item {
                         checked: page._finder ? page._finder.office365Enabled : false
                         onToggledValue: (v) => { if (page._finder) page._finder.office365Enabled = v }
                     }
+                    SettingsCheck {
+                        objectName: "preferTeamsProjectFolder"
+                        label: qsTr("Use the Microsoft Teams folder as the project folder when both are found")
+                        enabled: page._finder ? page._finder.office365Enabled : false
+                        checked: page._finder ? page._finder.preferTeamsProjectFolder : false
+                        onToggledValue: (v) => { if (page._finder) page._finder.preferTeamsProjectFolder = v }
+                    }
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: 8

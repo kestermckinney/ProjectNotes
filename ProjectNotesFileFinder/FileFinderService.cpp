@@ -278,6 +278,16 @@ void FileFinderService::setOffice365OpenLinksInDesktop(bool enabled)
     emit settingsChanged();
 }
 
+void FileFinderService::setPreferTeamsProjectFolder(bool enabled)
+{
+    if (m_preferTeamsProjectFolder == enabled)
+        return;
+    m_preferTeamsProjectFolder = enabled;
+    saveSettings();
+    applyConfiguration();
+    emit settingsChanged();
+}
+
 void FileFinderService::setOffice365TenantId(const QString &tenantId)
 {
     const QString value = tenantId.trimmed().isEmpty()
@@ -521,6 +531,8 @@ void FileFinderService::loadAndMigrateSettings()
     const QString office365Prefix = QString::fromLatin1(kOffice365SettingsPrefix);
     m_enabled = settings.value(prefix + QStringLiteral("enabled"), false).toBool();
     m_office365Enabled = settings.value(prefix + QStringLiteral("office365Enabled"), false).toBool();
+    m_preferTeamsProjectFolder = settings.value(
+        prefix + QStringLiteral("preferTeamsProjectFolder"), false).toBool();
     m_tenantId = settings.value(office365Prefix + QStringLiteral("tenantId"),
                                 QStringLiteral("organizations")).toString();
     m_clientId = settings.value(office365Prefix + QStringLiteral("clientId")).toString();
@@ -554,6 +566,7 @@ void FileFinderService::saveSettings() const
     const QString office365Prefix = QString::fromLatin1(kOffice365SettingsPrefix);
     settings.setValue(prefix + QStringLiteral("enabled"), m_enabled);
     settings.setValue(prefix + QStringLiteral("office365Enabled"), m_office365Enabled);
+    settings.setValue(prefix + QStringLiteral("preferTeamsProjectFolder"), m_preferTeamsProjectFolder);
     // tenantId/clientId are owned and persisted by Office365Service (see
     // persistIdentity() below), so a stale copy here can never overwrite them.
     settings.setValue(office365Prefix + QStringLiteral("openLinksInDesktop"),
@@ -585,6 +598,7 @@ void FileFinderService::applyConfiguration()
     configuration.rules = m_rules;
     configuration.enabled = m_enabled;
     configuration.office365Enabled = m_office365Enabled;
+    configuration.preferTeamsProjectFolder = m_preferTeamsProjectFolder;
     configuration.accessToken = m_accessToken;
     QMetaObject::invokeMethod(m_worker, "configure", Qt::QueuedConnection,
                               Q_ARG(FileFinderConfiguration, configuration));

@@ -2,7 +2,7 @@
 // (classic). Replaces threads/outlooksync_thread.py, the Outlook parts of
 // base_plugin.py, and the Outlook Integration settings dialog.
 import * as pn from "projectnotes";
-import { archiveFromGraph, archiveFromOutlook } from "./archive.mjs";
+import { archiveFromGraph, archiveFromOutlook, destination, projectDestination } from "./archive.mjs";
 
 const { app, log, menus, office365, settings, timers, ui } = pn;
 
@@ -73,11 +73,15 @@ function* downloadProjectGraph(context) {
 function* downloadProjectOutlook(context) {
     const ok = yield ui.confirm("This can take some time. Continue?", { title: "Download Emails from Outlook" });
     if (!ok) return;
-    let folder = yield app.projectFolder(context.key);
-    if (!folder) folder = yield ui.pickFolder({ title: "Select an output folder" });
-    if (!folder) return;
+    // The project folder, local or Microsoft Teams, or a folder the user picks.
+    let target = yield projectDestination(context.key);
+    if (!target) {
+        const folder = yield ui.pickFolder({ title: "Select an output folder" });
+        if (!folder) return;
+        target = destination(null, folder);
+    }
     const saved = yield ui.progress("Archiving project emails", function* (progress) {
-        return yield archiveFromOutlook(config(), context.record.project_number, folder, progress);
+        return yield archiveFromOutlook(config(), context.record.project_number, target, progress);
     }, { cancellable: false });
     ui.notify("Saved " + saved + " email(s).", { kind: "success" });
 }

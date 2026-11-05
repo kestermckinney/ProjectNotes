@@ -23,8 +23,16 @@ struct FileFinderConfiguration
     QList<FileFinderRule> rules;
     bool enabled = false;
     bool office365Enabled = false;
+    // When a project has both a local project folder and a Microsoft Teams
+    // channel folder, which one File Finder makes the primary project folder.
+    bool preferTeamsProjectFolder = false;
     QString accessToken;
 };
+
+// The description File Finder gives each kind of project folder row. They
+// differ so a project can list both its local folder and its Teams folder.
+inline QString localProjectFolderDescription() { return QStringLiteral("Project Folder"); }
+inline QString teamsProjectFolderDescription() { return QStringLiteral("Teams Project Folder"); }
 
 struct ActiveProject
 {

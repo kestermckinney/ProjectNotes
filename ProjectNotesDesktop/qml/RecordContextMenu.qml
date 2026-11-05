@@ -31,11 +31,13 @@ Popup {
     property string emailProjectId: ""
     property var saveEmailSource: null
     property string locationPath: ""
-    // A project location's type; "File Folder" rows offer the primary project
+    // A project location's type; "File Folder" rows and Microsoft Teams folder
+    // links (SharePoint Web Links) offer the primary project
     // folder actions for emailProjectId's project.
     property string locationType: ""
     readonly property bool canProjectFolder: emailTable === "project_locations" && emailProjectId !== ""
-                                             && recordId !== "" && locationType === "File Folder"
+                                             && recordId !== ""
+                                             && DesktopAppController.canBeProjectFolder(locationType, locationPath)
     readonly property bool _isProjectFolder: {
         var _rev = DesktopAppController.projectFolderRev
         return canProjectFolder && DesktopAppController.primaryProjectLocationId(emailProjectId) === recordId

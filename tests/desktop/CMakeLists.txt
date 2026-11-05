@@ -249,7 +249,8 @@ add_test(NAME recordtree COMMAND tst_recordtree)
 # install/approval and hot reload, against a throwaway database.
 add_executable(tst_pluginhost tst_pluginhost.cpp)
 target_include_directories(tst_pluginhost PRIVATE ${ROOT_DIR})
-target_link_libraries(tst_pluginhost PRIVATE Qt6::Core Qt6::Sql Qt6::Xml Qt6::Qml Qt6::Test Qt6::CorePrivate ProjectNotesPlugins ProjectNotesCore)
+target_link_libraries(tst_pluginhost PRIVATE Qt6::Core Qt6::Sql Qt6::Xml Qt6::Qml Qt6::Network Qt6::Test Qt6::CorePrivate
+                      ProjectNotesPlugins ProjectNotesIntegrations ProjectNotesCore)
 target_compile_definitions(tst_pluginhost PRIVATE PN_TEST_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/fixtures"
                                                 PN_REPO_PLUGINS="${ROOT_DIR}/plugins"
                                                 PN_REPO_ROOT="${ROOT_DIR}")
@@ -262,6 +263,12 @@ add_test(NAME communicationrepository COMMAND tst_communicationrepository)
 add_executable(tst_microsoftoauth tst_microsoftoauth.cpp)
 target_link_libraries(tst_microsoftoauth PRIVATE Qt6::Core Qt6::Network Qt6::Test ProjectNotesIntegrations ProjectNotesCore)
 add_test(NAME microsoftoauth COMMAND tst_microsoftoauth)
+
+# Project folders: local, and Microsoft Teams through a scripted Graph.
+add_executable(tst_projectfolderstore tst_projectfolderstore.cpp)
+target_include_directories(tst_projectfolderstore PRIVATE ${ROOT_DIR})
+target_link_libraries(tst_projectfolderstore PRIVATE Qt6::Core Qt6::Network Qt6::Test ProjectNotesIntegrations ProjectNotesCore)
+add_test(NAME projectfolderstore COMMAND tst_projectfolderstore)
 
 add_executable(tst_httptransport tst_httptransport.cpp)
 target_link_libraries(tst_httptransport PRIVATE Qt6::Core Qt6::Network Qt6::Test ProjectNotesIntegrations)

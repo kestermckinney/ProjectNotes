@@ -3,6 +3,7 @@
 
 #include "FileFinderWorker.h"
 #include "MicrosoftGraphSource.h"
+#include "projectfolderlocation.h"
 
 #include <QDateTime>
 #include <QDir>
@@ -329,7 +330,7 @@ QList<DiscoveredLocation> FileFinderWorker::scanLocalFolders(
         if (folder.isEmpty())
             continue;
         locations.append({project.id, QStringLiteral("File Folder"),
-                          QStringLiteral("Project Folder"), folder});
+                          localProjectFolderDescription(), folder});
         if (isFolderExcluded(folder, QFileInfo(folder).fileName()))
             continue;
         QList<QString> pending = {folder};
@@ -424,16 +425,23 @@ bool FileFinderWorker::commitLocations(const QList<DiscoveredLocation> &location
     // wins. Process all local entries first (in reverse, so later local
     // entries win among themselves), then remote entries, skipping any whose
     // key a local entry already claimed.
-    // The row each project's local folder landed in; it can become the
-    // project's primary project folder once every row is written.
-    QHash<QString, QString> projectFolderRows;
+    // The rows each project's local folder and Teams channel folder landed
+    // in; one of them can become the project's primary project folder once
+    // every row is written.
+    QHash<QString, QString> localFolderRows;
+    QHash<QString, QString> teamsFolderRows;
     auto noteProjectFolder = [&](const DiscoveredLocation &location, const QString &locationId) {
         if (!location.isRemote && location.locationType == QLatin1String("File Folder")
-            && location.description == QLatin1String("Project Folder"))
-            projectFolderRows.insert(location.projectId, locationId);
+            && location.description == localProjectFolderDescription())
+            localFolderRows.insert(location.projectId, locationId);
+        else if (location.isRemote && location.locationType == QLatin1String("Web Link")
+                 && location.description == teamsProjectFolderDescription()
+                 && PN::ProjectFolder::isTeamsFolderUrl(location.fullPath))
+            teamsFolderRows.insert(location.projectId, locationId);
     };
 
     QSet<QString> seen;
+    QSet<QString> claimed;
     QList<const DiscoveredLocation *> ordered;
     ordered.reserve(locations.size());
     for (auto it = locations.crbegin(); it != locations.crend(); ++it) {
@@ -463,6 +471,14 @@ bool FileFinderWorker::commitLocations(const QList<DiscoveredLocation> &location
             if (!candidates.isEmpty())
                 old = candidates.first();
         }
+        // An existing row is adopted by one discovery only. Without this an
+        // old Teams row still described as "Project Folder" could be claimed
+        // by the local project folder (by description) and then by the Teams
+        // folder (by URL) in the same pass.
+        if (!old.id.isEmpty() && claimed.contains(old.id))
+            old = {};
+        if (!old.id.isEmpty())
+            claimed.insert(old.id);
         if (!old.id.isEmpty()) {
             if (location.isRemote && !isRemoteLocationPath(old.path)
                 && QFileInfo(old.path).exists()) {
@@ -511,16 +527,58 @@ bool FileFinderWorker::commitLocations(const QList<DiscoveredLocation> &location
     }
 
     // Fill in the primary project folder only where the user hasn't set or
-    // cleared it, and only when the project has no live folder as primary.
+    // cleared it. A project with no live primary folder gets the preferred
+    // kind (local unless Settings prefer Teams), or the other kind when that
+    // is all this scan found. A primary of the other kind is switched once a
+    // folder of the preferred kind turns up.
+    QSet<QString> folderProjects;
+    for (auto it = localFolderRows.constBegin(); it != localFolderRows.constEnd(); ++it)
+        folderProjects.insert(it.key());
+    for (auto it = teamsFolderRows.constBegin(); it != teamsFolderRows.constEnd(); ++it)
+        folderProjects.insert(it.key());
+    QSqlQuery current(m_database);
+    current.prepare(QStringLiteral(
+        "SELECT COALESCE(p.primary_location_manual, 0), p.primary_location_id, "
+        "l.location_type, l.full_path, l.deleted "
+        "FROM projects p LEFT JOIN project_locations l ON l.id = p.primary_location_id "
+        "WHERE p.id = ?"));
     QSqlQuery primary(m_database);
     primary.prepare(QStringLiteral(
         "UPDATE projects SET primary_location_id = ? "
-        "WHERE id = ? AND COALESCE(primary_location_manual, 0) = 0 "
-        "AND (primary_location_id IS NULL OR primary_location_id NOT IN ("
-        "SELECT id FROM project_locations WHERE deleted = 0 AND location_type = 'File Folder'))"));
-    for (auto it = projectFolderRows.constBegin(); it != projectFolderRows.constEnd(); ++it) {
-        primary.bindValue(0, it.value());
-        primary.bindValue(1, it.key());
+        "WHERE id = ? AND COALESCE(primary_location_manual, 0) = 0"));
+    const bool preferTeams = m_configuration.preferTeamsProjectFolder;
+    for (const QString &projectId : std::as_const(folderProjects)) {
+        const QString local = localFolderRows.value(projectId);
+        const QString teams = teamsFolderRows.value(projectId);
+        const QString preferred = preferTeams ? teams : local;
+        const QString candidate = preferred.isEmpty() ? (preferTeams ? local : teams) : preferred;
+        const bool candidateIsTeams = candidate == teams;
+
+        current.bindValue(0, projectId);
+        if (!current.exec()) {
+            m_database.rollback();
+            if (error)
+                *error = current.lastError().text();
+            return false;
+        }
+        if (!current.next())
+            continue;
+        if (current.value(0).toInt() != 0)
+            continue;   // the user chose or cleared it
+        const QString currentId = current.value(1).toString();
+        if (currentId == candidate)
+            continue;
+        const QString currentType = current.value(2).toString();
+        const QString currentPath = current.value(3).toString();
+        const bool currentLive = !currentId.isEmpty() && !current.value(2).isNull()
+            && current.value(4).toInt() == 0
+            && PN::ProjectFolder::isEligibleLocation(currentType, currentPath);
+        const bool currentIsTeams = currentType != QLatin1String("File Folder");
+        if (currentLive && (currentIsTeams == candidateIsTeams || candidate != preferred))
+            continue;   // keep a live folder unless the preferred kind replaces the other kind
+
+        primary.bindValue(0, candidate);
+        primary.bindValue(1, projectId);
         if (!primary.exec()) {
             m_database.rollback();
             if (error)

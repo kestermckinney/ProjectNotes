@@ -5,7 +5,7 @@ import * as pn from "projectnotes";
 import { render, validFilename } from "projectnotes/common";
 
 // com exists only where the build provides it, so read it from the namespace.
-const { app, data, files, menus, settings, ui } = pn;
+const { app, data, files, menus, projectFiles, settings, ui } = pn;
 
 // The templates configured on first start. A relative template path is
 // inside this plugin's folder.
@@ -646,14 +646,22 @@ function* createDocument(context) {
     const source = makeSource(loaded.record, project, types, extras);
 
     // The project's folder plus the configured subfolder, or a folder the
-    // user picks when there is no project folder.
+    // user picks when there is no project folder. A Microsoft Teams project
+    // folder can't be written by Office directly: the document is saved to a
+    // temporary file and then uploaded into the Teams folder.
     let base = null;
+    let teams = false;
     let useSubfolder = true;
     if (project) {
-        const projectFolder = yield app.projectFolder(project.$key);
-        if (projectFolder && (yield files.exists(projectFolder))) base = projectFolder.replace(/[\\/]+$/, "");
+        const projectFolder = yield projectFiles.location(project.$key);
+        if (projectFolder && projectFolder.kind === "teams") {
+            teams = true;
+            base = "";
+        } else if (projectFolder && (yield files.exists(projectFolder.path))) {
+            base = projectFolder.path.replace(/[\\/]+$/, "");
+        }
     }
-    if (!base) {
+    if (base === null) {
         base = yield ui.pickFolder({ title: "Select a folder for the " + title });
         if (!base) return;
         base = base.replace(/[\\/]+$/, "");
@@ -670,13 +678,20 @@ function* createDocument(context) {
             names.forEach(function (n) { extras["input." + n] = answers[n] === null || answers[n] === undefined ? "" : String(answers[n]); });
         }
         const sub = useSubfolder ? subPath(source, row.folder || "") : "";
-        const folder = base + (sub ? "/" + sub : "");
         const ext = kind.ext || suffix(template);
         let name = validFilename(source.fill(String(row.filename || "").trim() || "{{ projects.project_number }} {{ template.name }}"));
         if (suffix(name) === ext) name = name.slice(0, -(ext.length + 1));
         name = name.trim() || baseName(template);
+        if (teams) {
+            const relative = (sub ? sub + "/" : "") + name + "." + ext;
+            if (yield projectFiles.exists(project.$key, relative)) { existing = { relative: relative }; return null; }
+            const target = files.tempPath(name + "." + ext);
+            if (yield files.exists(target)) yield files.remove(target);
+            return { source: source, target: target, name: name + "." + ext, relative: relative };
+        }
+        const folder = base + (sub ? "/" + sub : "");
         const target = folder + "/" + name + "." + ext;
-        if (yield files.exists(target)) { existing = target; return null; }
+        if (yield files.exists(target)) { existing = { target: target }; return null; }
         yield files.mkdir(folder);
         return { source: source, target: target, name: name + "." + ext };
     };
@@ -685,12 +700,28 @@ function* createDocument(context) {
         return yield* office.open(application, template, kind, prepare);
     }, office.needs);
     if (existing) {
-        if (yield ui.confirm(baseName(existing) + "." + suffix(existing) + " already exists. Open it?",
-                             { title: title, okText: "Open" }))
-            yield ui.openUrl(fileUrl(existing));
+        const shown = existing.relative || existing.target;
+        if (yield ui.confirm(baseName(shown) + "." + suffix(shown) + " already exists. Open it?",
+                             { title: title, okText: "Open" })) {
+            if (existing.relative) yield projectFiles.open(project.$key, existing.relative);
+            else yield ui.openUrl(fileUrl(existing.target));
+        }
         return;
     }
     if (!plan) return;
+    if (plan.relative) {
+        // Into the Teams project folder; the row stores the Teams URL.
+        const location = yield projectFiles.upload(project.$key, plan.target, plan.relative);
+        yield files.remove(plan.target);
+        yield data.save("project_locations", {
+            project_id: { id: project.$key },
+            location_type: office.locationType,
+            location_description: plan.name,
+            full_path: location,
+        });
+        yield projectFiles.open(project.$key, plan.relative);
+        return;
+    }
     if (project) {
         yield data.save("project_locations", {
             project_id: { id: project.$key },

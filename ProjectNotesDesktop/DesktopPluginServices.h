@@ -40,6 +40,7 @@ private:
                          const QVariantList& args, PN::Plugins::Reply reply);
     void requestOffice365(const PN::Plugins::PluginManifest& plugin, const QString& method,
                           const QVariantList& args, PN::Plugins::Reply reply);
+    void requestProjectFiles(const QString& method, const QVariantList& args, PN::Plugins::Reply reply);
 
     QPointer<DesktopAppController> m_app;
     QPointer<PluginUiController> m_ui;

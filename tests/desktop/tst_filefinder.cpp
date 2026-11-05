@@ -85,6 +85,7 @@ private slots:
     void reconcilesOnlyActiveProjectsAndAdoptsLegacyRows();
     void scanSurvivesDescriptionCollisionWithoutAbortingScan();
     void primaryProjectFolderRespectsTheUsersChoice();
+    void teamsProjectFolderCanBecomePrimary();
     void commitLocationsPrefersLocalOverRemoteOnDescriptionCollision();
     void commitLocationsKeepsExistingLocalRowWhenFileStillExists();
     void commitLocationsReplacesExistingLocalRowWhenFileNoLongerExists();
@@ -635,6 +636,102 @@ void FileFinderTest::primaryProjectFolderRespectsTheUsersChoice()
     found = primaries();
     QVERIFY(!found.value(QStringLiteral("cleared-id")).toString().isEmpty());
     QCOMPARE(found.value(QStringLiteral("chosen-id")).toString(), QStringLiteral("mine"));
+}
+
+void FileFinderTest::teamsProjectFolderCanBecomePrimary()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+    const QString databasePath = temporary.filePath(QStringLiteral("ProjectNotes.db"));
+    const QString localFolder = temporary.filePath(QStringLiteral("Projects/1001 - Active"));
+    QVERIFY(QDir().mkpath(localFolder));
+    const QString teamsUrl = QStringLiteral("https://contoso.sharepoint.com/sites/Projects/Shared%20Documents/1001%20Active");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), QStringLiteral("TeamsPrimarySetup"));
+        database.setDatabaseName(databasePath);
+        QVERIFY(database.open());
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE projects (id TEXT PRIMARY KEY, project_number TEXT, project_status TEXT, "
+            "deleted INTEGER DEFAULT 0, primary_location_id TEXT, primary_location_manual INTEGER DEFAULT 0)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE project_locations (id TEXT PRIMARY KEY, project_id TEXT, location_type TEXT, "
+            "location_description TEXT, full_path TEXT, updateddate INTEGER, syncdate INTEGER, deleted INTEGER DEFAULT 0)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO projects (id, project_number, project_status, deleted) VALUES ('active-id', '1001', 'Active', 0)")));
+        // A Teams folder found before this release, still described "Project Folder".
+        query.prepare(QStringLiteral("INSERT INTO project_locations VALUES "
+                                     "('old-teams-row', 'active-id', 'Web Link', 'Project Folder', ?, 1, NULL, 0)"));
+        query.addBindValue(teamsUrl);
+        QVERIFY(query.exec());
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(QStringLiteral("TeamsPrimarySetup"));
+
+    auto primary = [&]() {
+        QString value;
+        {
+            QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), QStringLiteral("TeamsPrimaryVerify"));
+            database.setDatabaseName(databasePath);
+            if (database.open()) {
+                QSqlQuery query(database);
+                query.exec(QStringLiteral("SELECT l.location_type FROM projects p "
+                                          "LEFT JOIN project_locations l ON l.id = p.primary_location_id WHERE p.id = 'active-id'"));
+                if (query.next())
+                    value = query.value(0).toString();
+                database.close();
+            }
+        }
+        QSqlDatabase::removeDatabase(QStringLiteral("TeamsPrimaryVerify"));
+        return value;
+    };
+    const DiscoveredLocation teams{QStringLiteral("active-id"), QStringLiteral("Web Link"),
+                                   teamsProjectFolderDescription(), teamsUrl, true};
+    const DiscoveredLocation local{QStringLiteral("active-id"), QStringLiteral("File Folder"),
+                                   localProjectFolderDescription(), localFolder, false};
+    auto commit = [&](const QList<DiscoveredLocation> &locations, bool preferTeams) {
+        QReadWriteLock lock;
+        FileFinderWorker worker;
+        worker.initializeDatabase(databasePath, &lock);
+        FileFinderConfiguration configuration;
+        configuration.preferTeamsProjectFolder = preferTeams;
+        worker.configure(configuration);
+        FileFinderScanSummary summary;
+        QString error;
+        const bool ok = worker.commitLocations(locations, &summary, &error);
+        worker.closeDatabase();
+        return ok && error.isEmpty() ? summary.primaryFolders : -1;
+    };
+
+    // Only the Teams folder: it becomes the primary even though local is preferred.
+    QCOMPARE(commit({teams}, false), 1);
+    QCOMPARE(primary(), QStringLiteral("Web Link"));
+
+    // A local folder turns up: local is preferred, so it replaces the Teams one,
+    // and both stay listed (the old Teams row was renamed, not overwritten).
+    QCOMPARE(commit({local, teams}, false), 1);
+    QCOMPARE(primary(), QStringLiteral("File Folder"));
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), QStringLiteral("TeamsPrimaryRows"));
+        database.setDatabaseName(databasePath);
+        QVERIFY(database.open());
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral("SELECT location_description, full_path FROM project_locations "
+                                          "WHERE id = 'old-teams-row'")));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toString(), teamsProjectFolderDescription());
+        QCOMPARE(query.value(1).toString(), teamsUrl);
+        QVERIFY(query.exec(QStringLiteral("SELECT count(*) FROM project_locations")));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toInt(), 2);
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(QStringLiteral("TeamsPrimaryRows"));
+
+    // Preferring Teams switches it back; an unchanged rescan leaves it alone.
+    QCOMPARE(commit({local, teams}, true), 1);
+    QCOMPARE(primary(), QStringLiteral("Web Link"));
+    QCOMPARE(commit({local, teams}, true), 0);
 }
 
 void FileFinderTest::scanSurvivesDescriptionCollisionWithoutAbortingScan()

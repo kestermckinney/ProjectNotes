@@ -81,6 +81,15 @@ const QHash<QString, QString>& forwardedMethods()
         {QStringLiteral("secrets.get"), {}}, {QStringLiteral("secrets.set"), {}}, {QStringLiteral("secrets.remove"), {}},
         {QStringLiteral("files.openWithSystem"), QStringLiteral("files")},
         {QStringLiteral("files.reveal"), QStringLiteral("files")},
+        // The project's primary project folder, local or Microsoft Teams.
+        {QStringLiteral("projectFiles.location"), QStringLiteral("files")},
+        {QStringLiteral("projectFiles.list"), QStringLiteral("files")},
+        {QStringLiteral("projectFiles.exists"), QStringLiteral("files")},
+        {QStringLiteral("projectFiles.mkdir"), QStringLiteral("files")},
+        {QStringLiteral("projectFiles.readText"), QStringLiteral("files")},
+        {QStringLiteral("projectFiles.writeText"), QStringLiteral("files")},
+        {QStringLiteral("projectFiles.upload"), QStringLiteral("files")},
+        {QStringLiteral("projectFiles.open"), QStringLiteral("files")},
         {QStringLiteral("email.backends"), QStringLiteral("email.compose")},
         {QStringLiteral("email.compose"), QStringLiteral("email.compose")},
         {QStringLiteral("email.audiences"), QStringLiteral("email.compose")},
@@ -485,9 +494,17 @@ void PluginRuntime::forward(const QString& method, const QVariantList& args, Rep
             // readable and writable for the rest of this run.
             if (self && !error.isError()
                 && (method == QLatin1String("ui.pickFile") || method == QLatin1String("ui.pickFolder")
-                    || method == QLatin1String("ui.saveFile") || method == QLatin1String("app.projectFolder"))) {
+                    || method == QLatin1String("ui.saveFile") || method == QLatin1String("app.projectFolder")
+                    || method == QLatin1String("projectFiles.location"))) {
                 QStringList paths = value.typeId() == QMetaType::QVariantList ? value.toStringList()
                                                                               : QStringList{value.toString()};
+                // A local project folder from projectFiles.location() is
+                // granted like app.projectFolder(); a Teams URL is not a path.
+                if (method == QLatin1String("projectFiles.location")) {
+                    const QVariantMap folder = value.toMap();
+                    paths = folder.value(QStringLiteral("kind")).toString() == QLatin1String("local")
+                        ? QStringList{folder.value(QStringLiteral("path")).toString()} : QStringList();
+                }
                 for (const QString& p : std::as_const(paths))
                     if (!p.isEmpty())
                         QMetaObject::invokeMethod(self, [self, p] { if (self) self->setGrantedPath(p); }, Qt::QueuedConnection);
@@ -668,6 +685,10 @@ void PluginRuntime::handleAsync(const QString& method, const QVariantList& args,
             return;
         }
         // Paths handed to integrations follow the same rules as files.*.
+        if (method == QLatin1String("projectFiles.upload") && !checkFilePath(arg(1).toString(), false, &error)) {
+            reply({}, error);
+            return;
+        }
         if (method == QLatin1String("email.compose")) {
             for (const QString& path : arg(0).toMap().value(QStringLiteral("attachments")).toStringList()) {
                 if (!checkFilePath(path, false, &error)) {

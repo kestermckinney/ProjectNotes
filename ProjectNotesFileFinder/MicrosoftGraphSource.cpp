@@ -251,7 +251,7 @@ QList<DiscoveredLocation> MicrosoftGraphSource::discover(
 #endif
 
                 result.append({project.id, QStringLiteral("Web Link"),
-                               QStringLiteral("Project Folder"), webUrl});
+                               teamsProjectFolderDescription(), webUrl});
                 const QString stateKey = folderStateKey(driveId, itemId);
                 const bool unchanged = !modified.isEmpty()
                     && m_previousFolderState.value(stateKey) == modified;

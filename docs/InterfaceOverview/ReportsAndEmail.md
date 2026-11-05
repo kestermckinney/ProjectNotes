@@ -69,6 +69,8 @@ Two choices:
 
 **Save the report** prepares the report and asks where to put it. Nothing is sent and no email client opens. The save dialog offers PDF or HTML, starting in your Documents folder with a filename built from the project number. Turn on **View report after save** in **Settings > Preferences** to have the saved file open once it is written.
 
+When the project has a primary project folder, **Save to Project Folder** puts the report straight into it instead. Pick PDF or HTML and, if you like, a subfolder such as `Project Management/Status Reports`; missing subfolders are created. Both choices are remembered for next time. This works the same for a folder on your computer and a Microsoft Teams folder, which is saved through the Office 365 account under **Settings > Office 365 Integration**. If a report with the same name is already there, Project Notes asks before replacing it.
+
 **Email the report** creates a draft for the recipients you select.
 
 ### Email details

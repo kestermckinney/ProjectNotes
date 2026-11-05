@@ -11,6 +11,7 @@
 #include "ProjectNotesPlugins/PluginRegistry.h"
 #include "ProjectNotesPlugins/PluginServices.h"
 #include "ProjectNotesPlugins/PublishedSchema.h"
+#include "ProjectNotesIntegrations/ProjectFolderStore.h"
 
 #include "databaseobjects.h"
 
@@ -93,6 +94,67 @@ public:
         return out;
     }
 };
+
+// Answers projectFiles.* the way DesktopPluginServices does, with the real
+// store over a local folder. `reportedKind` is what projectFiles.location()
+// says the folder is, so a test can make a plugin treat it as a Microsoft
+// Teams folder (reachable only through projectFiles) while it stays local.
+bool answerProjectFiles(PN::Comm::ProjectFolderStore& store, const QString& folderPath, const QString& reportedKind,
+                        const QString& method, const QVariantList& args, const Reply& reply)
+{
+    if (!method.startsWith(QLatin1String("projectFiles.")))
+        return false;
+    const PN::Comm::ProjectFolder folder{PN::Comm::ProjectFolder::Kind::Local, folderPath};
+    auto failed = [](const PN::Comm::ServiceError& error) { return PluginError::make(error.code, error.displayText); };
+    auto location = [reply, failed](QString value, PN::Comm::ServiceError error) {
+        if (!error.code.isEmpty()) reply({}, failed(error));
+        else reply(value, {});
+    };
+    const QString path = args.value(1).toString();
+    if (method == QLatin1String("projectFiles.location")) {
+        reply(QVariantMap{{QStringLiteral("kind"), reportedKind},
+                          {QStringLiteral("path"), reportedKind == QLatin1String("teams")
+                               ? QStringLiteral("https://contoso.sharepoint.com/sites/P4000/Shared%20Documents/General")
+                               : folderPath}}, {});
+    } else if (method == QLatin1String("projectFiles.list")) {
+        store.list(folder, path, [reply, failed](QList<PN::Comm::ProjectFileEntry> entries, PN::Comm::ServiceError error) {
+            if (!error.code.isEmpty()) { reply({}, failed(error)); return; }
+            QVariantList out;
+            for (const auto& entry : entries)
+                out.append(QVariantMap{{QStringLiteral("name"), entry.name}, {QStringLiteral("isDir"), entry.isDir},
+                                       {QStringLiteral("size"), entry.size}, {QStringLiteral("location"), entry.location}});
+            reply(out, {});
+        });
+    } else if (method == QLatin1String("projectFiles.exists")) {
+        store.exists(folder, path, [reply, failed](bool found, PN::Comm::ServiceError error) {
+            if (!error.code.isEmpty()) reply({}, failed(error));
+            else reply(found, {});
+        });
+    } else if (method == QLatin1String("projectFiles.mkdir")) {
+        store.mkdir(folder, path, location);
+    } else if (method == QLatin1String("projectFiles.readText")) {
+        store.read(folder, path, [reply, failed](std::optional<QByteArray> bytes, PN::Comm::ServiceError error) {
+            if (!error.code.isEmpty()) reply({}, failed(error));
+            else reply(bytes ? QVariant(QString::fromUtf8(*bytes)) : QVariant::fromValue(nullptr), {});
+        });
+    } else if (method == QLatin1String("projectFiles.writeText")) {
+        store.write(folder, path, args.value(2).toString().toUtf8(),
+                    args.value(3).toMap().value(QStringLiteral("overwrite"), true).toBool(), location);
+    } else if (method == QLatin1String("projectFiles.upload")) {
+        QFile source(args.value(1).toString());
+        if (!source.open(QIODevice::ReadOnly)) {
+            reply({}, PluginError::make(QStringLiteral("io-error"), source.errorString()));
+            return true;
+        }
+        store.write(folder, args.value(2).toString(), source.readAll(),
+                    args.value(3).toMap().value(QStringLiteral("overwrite"), false).toBool(), location);
+    } else if (method == QLatin1String("projectFiles.open")) {
+        reply(QVariant(), {});
+    } else {
+        return false;
+    }
+    return true;
+}
 
 void writeFile(const QString& path, const QByteArray& content)
 {
@@ -860,10 +922,14 @@ void PluginHostTest::bundledPluginsRun()
     const QString projectFolder = m_dir.filePath(QStringLiteral("P4000 folder"));
     QDir().mkpath(projectFolder);
     QVariantList graphCalls;
+    PN::Comm::ProjectFolderStore projectFolderStore(nullptr);
+    QString projectFolderKind = QStringLiteral("local");
     services.handler = [&](const QString& method, const QVariantList& args, const Reply& reply) {
         auto ok = [&](int status, const QVariantMap& body) {
             reply(QVariantMap{{QStringLiteral("status"), status}, {QStringLiteral("body"), body}}, {});
         };
+        if (answerProjectFiles(projectFolderStore, projectFolder, projectFolderKind, method, args, reply))
+            return true;
         if (method == QLatin1String("app.projectFolder")) {
             reply(projectFolder, {});
             return true;
@@ -982,7 +1048,24 @@ void PluginHostTest::bundledPluginsRun()
     QFile emlFile(eml);
     QVERIFY(emlFile.open(QIODevice::ReadOnly));
     QVERIFY(emlFile.readAll().contains("<p>Shipped.</p>"));
+    emlFile.close();
     QVERIFY(QFileInfo::exists(projectFolder + QStringLiteral("/Mail/Received/download_state.json")));
+
+    // A second run finds the message already archived and saves nothing.
+    registry.runMenu(outlook, QStringLiteral("download-graph"), QStringLiteral("projects"), QStringLiteral("project-p4000"));
+    QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(outlook, QStringLiteral("ui.notify")).size(), 2, 10000);
+    QCOMPARE(services.argsOf(outlook, QStringLiteral("ui.notify")).last().value(0).toString(), QStringLiteral("Saved 0 email(s)."));
+
+    // A Microsoft Teams project folder: the plugin reaches it only through
+    // projectFiles, never files.* on the folder's URL.
+    QVERIFY(QDir(projectFolder + QStringLiteral("/Mail")).removeRecursively());
+    projectFolderKind = QStringLiteral("teams");
+    registry.runMenu(outlook, QStringLiteral("download-graph"), QStringLiteral("projects"), QStringLiteral("project-p4000"));
+    QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(outlook, QStringLiteral("ui.notify")).size(), 3, 10000);
+    QVERIFY2(registry.plugin(outlook).lastError.isEmpty(), qPrintable(registry.plugin(outlook).lastError));
+    QCOMPARE(services.argsOf(outlook, QStringLiteral("ui.notify")).last().value(0).toString(), QStringLiteral("Saved 1 email(s)."));
+    QVERIFY(QFileInfo::exists(eml));
+    projectFolderKind = QStringLiteral("local");
 
     // MS Office Templates is Windows-only. A copy without the platform limit checks
     // the parts that do not need Office: the four example templates configured
@@ -1237,6 +1320,10 @@ void PluginHostTest::ifsCloudPlugin()
     QHash<QString, QString> secretStore{{QStringLiteral("sso-token"), token}};
     const QString projectFolder = m_dir.filePath(QStringLiteral("ifs-project"));
     QDir().mkpath(projectFolder);
+    // The status report is filed in this subfolder of a Teams project folder
+    // (reached only through projectFiles); the tracker report folder is missing.
+    QDir().mkpath(projectFolder + QStringLiteral("/Project Management/Status Reports"));
+    PN::Comm::ProjectFolderStore projectFolderStore(nullptr);
     // What the report form and the recipient panel answer.
     QString delivery = QStringLiteral("Email the PDF");
     const QVariantMap jim {{QStringLiteral("name"), QStringLiteral("Jim Smith")}, {QStringLiteral("email"), QStringLiteral("jim@acme.example")}};
@@ -1246,6 +1333,7 @@ void PluginHostTest::ifsCloudPlugin()
     services.handler = [&](const QString& method, const QVariantList& args, const Reply& reply) {
         if (method == QLatin1String("secrets.get")) { reply(secretStore.value(args.value(0).toString()), {}); return true; }
         if (method == QLatin1String("secrets.set")) { secretStore.insert(args.value(0).toString(), args.value(1).toString()); reply({}, {}); return true; }
+        if (answerProjectFiles(projectFolderStore, projectFolder, QStringLiteral("teams"), method, args, reply)) return true;
         if (method == QLatin1String("app.projectFolder")) { reply(projectFolder, {}); return true; }
         if (method == QLatin1String("ui.showForm")) {
             reply(QVariantMap{{QStringLiteral("reportDate"), QStringLiteral("2026-10-01")}, {QStringLiteral("delivery"), delivery},
@@ -1352,6 +1440,9 @@ void PluginHostTest::ifsCloudPlugin()
     QFile pdfFile(pdf);
     QVERIFY2(pdfFile.open(QIODevice::ReadOnly), qPrintable(pdf));
     QCOMPARE(pdfFile.readAll(), QByteArray("%PDF-1.4 fake"));
+    QFile filed(projectFolder + QStringLiteral("/Project Management/Status Reports/20261001 P4000 Status Report.pdf"));
+    QVERIFY2(filed.open(QIODevice::ReadOnly), qPrintable(QDir(projectFolder + QStringLiteral("/Project Management/Status Reports")).entryList().join(QLatin1Char(','))));
+    QCOMPARE(filed.readAll(), QByteArray("%PDF-1.4 fake"));
     // The recipient panel opened for the status report's audiences, and its
     // choice addressed the email.
     const QList<QVariantList> picked = services.argsOf(id, QStringLiteral("email.chooseRecipients"));

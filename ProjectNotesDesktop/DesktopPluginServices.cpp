@@ -20,6 +20,7 @@
 #include <QClipboard>
 #include <QDesktopServices>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QGuiApplication>
 #include <QJsonDocument>
@@ -60,7 +61,8 @@ QStringList DesktopPluginServices::capabilities() const
 {
     QStringList caps {QStringLiteral("ui.dialogs"), QStringLiteral("clipboard"), QStringLiteral("email.compose"),
                       QStringLiteral("calendar.draft"), QStringLiteral("contacts.pick"), QStringLiteral("contacts.sync"),
-                      QStringLiteral("office365"), QStringLiteral("secrets"), QStringLiteral("app.navigate")};
+                      QStringLiteral("office365"), QStringLiteral("secrets"), QStringLiteral("app.navigate"),
+                      QStringLiteral("projectFiles")};
 #ifndef PN_APP_STORE
     caps << QStringLiteral("process.launch");
 #endif
@@ -161,6 +163,10 @@ void DesktopPluginServices::request(const PluginManifest& plugin, const QString&
     }
     if (method.startsWith(QLatin1String("office365."))) {
         requestOffice365(plugin, method, args, std::move(reply));
+        return;
+    }
+    if (method.startsWith(QLatin1String("projectFiles."))) {
+        requestProjectFiles(method, args, std::move(reply));
         return;
     }
     if (method == QLatin1String("process.launch")) {
@@ -327,6 +333,99 @@ void DesktopPluginServices::requestApp(const PluginManifest& plugin, const QStri
         const QString folder = info.isDir() ? info.absoluteFilePath() : info.absolutePath();
         QDesktopServices::openUrl(QUrl::fromLocalFile(folder));
         reply(QVariant(), {});
+    } else {
+        reply({}, PluginError::make(QStringLiteral("not-found"), tr("Unknown method %1.").arg(method)));
+    }
+}
+
+void DesktopPluginServices::requestProjectFiles(const QString& method, const QVariantList& args, Reply reply)
+{
+    PN::Comm::ProjectFolderStore* store = m_app ? m_app->projectFolderStore() : nullptr;
+    if (!m_app || !store) {
+        reply({}, unavailable(tr("Project folders are not available.")));
+        return;
+    }
+    const QString projectKey = arg(args, 0).toString();
+    const PN::Comm::ProjectFolder folder = m_app->primaryProjectFolder(projectKey);
+    if (method == QLatin1String("projectFiles.location")) {
+        if (!folder.isValid()) {
+            reply(QVariant::fromValue(nullptr), {});
+            return;
+        }
+        reply(QVariantMap{{QStringLiteral("kind"), folder.kindName()}, {QStringLiteral("path"), folder.path}}, {});
+        return;
+    }
+    if (!folder.isValid()) {
+        reply({}, PluginError::make(QStringLiteral("no-project-folder"),
+                                    tr("The project has no project folder. Set one on the project's Files & Folders tab.")));
+        return;
+    }
+    // Errors from the store keep their codes ("exists", "teams-access-denied", ...).
+    auto failed = [](const PN::Comm::ServiceError& error) {
+        return PluginError::make(error.code.isEmpty() ? QStringLiteral("io-error") : error.code, error.displayText);
+    };
+    const QString path = arg(args, 1).toString();
+    if (method == QLatin1String("projectFiles.list")) {
+        store->list(folder, path, [reply, failed](QList<PN::Comm::ProjectFileEntry> entries, PN::Comm::ServiceError error) {
+            if (!error.code.isEmpty()) { reply({}, failed(error)); return; }
+            QVariantList out;
+            for (const PN::Comm::ProjectFileEntry& entry : entries)
+                out.append(QVariantMap{{QStringLiteral("name"), entry.name}, {QStringLiteral("isDir"), entry.isDir},
+                                       {QStringLiteral("size"), entry.size}, {QStringLiteral("location"), entry.location}});
+            reply(out, {});
+        });
+    } else if (method == QLatin1String("projectFiles.exists")) {
+        store->exists(folder, path, [reply, failed](bool found, PN::Comm::ServiceError error) {
+            if (!error.code.isEmpty()) reply({}, failed(error));
+            else reply(found, {});
+        });
+    } else if (method == QLatin1String("projectFiles.mkdir")) {
+        store->mkdir(folder, path, [reply, failed](QString location, PN::Comm::ServiceError error) {
+            if (!error.code.isEmpty()) reply({}, failed(error));
+            else reply(location, {});
+        });
+    } else if (method == QLatin1String("projectFiles.readText")) {
+        store->read(folder, path, [reply, failed](std::optional<QByteArray> bytes, PN::Comm::ServiceError error) {
+            if (!error.code.isEmpty()) reply({}, failed(error));
+            else reply(bytes ? QVariant(QString::fromUtf8(*bytes)) : QVariant::fromValue(nullptr), {});
+        });
+    } else if (method == QLatin1String("projectFiles.writeText")) {
+        const QVariantMap options = arg(args, 3).toMap();
+        store->write(folder, path, arg(args, 2).toString().toUtf8(),
+                     options.value(QStringLiteral("overwrite"), true).toBool(),
+                     [reply, failed](QString location, PN::Comm::ServiceError error) {
+            if (!error.code.isEmpty()) reply({}, failed(error));
+            else reply(location, {});
+        });
+    } else if (method == QLatin1String("projectFiles.upload")) {
+        // args: projectKey, localPath (checked by the plugin runtime), path, options
+        QFile source(arg(args, 1).toString());
+        if (!source.open(QIODevice::ReadOnly)) {
+            reply({}, PluginError::make(QStringLiteral("io-error"),
+                                        tr("Could not read %1: %2").arg(source.fileName(), source.errorString())));
+            return;
+        }
+        const QByteArray bytes = source.readAll();
+        source.close();
+        const QVariantMap options = arg(args, 3).toMap();
+        store->write(folder, arg(args, 2).toString(), bytes,
+                     options.value(QStringLiteral("overwrite"), false).toBool(),
+                     [reply, failed](QString location, PN::Comm::ServiceError error) {
+            if (!error.code.isEmpty()) reply({}, failed(error));
+            else reply(location, {});
+        });
+    } else if (method == QLatin1String("projectFiles.open")) {
+        QPointer<DesktopAppController> app = m_app;
+        store->location(folder, path, [reply, failed, app, path](QString location, PN::Comm::ServiceError error) {
+            if (!error.code.isEmpty()) { reply({}, failed(error)); return; }
+            if (location.isEmpty()) {
+                reply({}, PluginError::make(QStringLiteral("not-found"), tr("%1 is not in the project folder.").arg(path)));
+                return;
+            }
+            if (app)
+                app->openLocationPath(location);
+            reply(QVariant(), {});
+        });
     } else {
         reply({}, PluginError::make(QStringLiteral("not-found"), tr("Unknown method %1.").arg(method)));
     }

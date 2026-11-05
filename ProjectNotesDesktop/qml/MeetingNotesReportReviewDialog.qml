@@ -40,6 +40,19 @@ Dialog {
     property string pendingPreparationKey: ""
     property string pendingSaveUrl: ""
     property string pendingSaveFormat: ""
+    // Saving into the project's primary project folder (local or Microsoft
+    // Teams) instead of a location picked in the Save As dialog.
+    property bool pendingProjectFolderSave: false
+    property bool projectFolderOverwrite: false
+    property bool savingToProjectFolder: false
+    property string projectFolderFormat: "pdf"
+    property string projectFolderError: ""
+    property var projectFolder: ({})
+    readonly property bool hasProjectFolder: projectFolder && projectFolder.kind !== undefined
+    function refreshProjectFolder() {
+        projectFolder = projectId !== "" ? DesktopAppController.projectFolderInfo(projectId) : ({})
+    }
+    onProjectIdChanged: refreshProjectFolder()
 
     readonly property var office365: DesktopAppController.office365SettingsModel
     readonly property bool graphSelected: DesktopAppController.preferredEmailBackend === "graph"
@@ -183,7 +196,31 @@ Dialog {
         saveReportDialog.currentFile = StandardPaths.writableLocation(StandardPaths.DocumentsLocation) + "/" + defaultReportFileStem()
         saveReportDialog.open()
     }
+    function saveToProjectFolder(overwrite) {
+        projectFolderError = ""
+        projectFolderOverwrite = overwrite
+        pendingProjectFolderSave = true
+        pendingSaveUrl = ""
+        pendingSaveFormat = projectFolderFormat
+        DesktopAppController.setReportProjectFolderOptions(projectFolderSubfolder.text, projectFolderFormat)
+        var mode = projectFolderFormat === "html" ? "html-attachment" : "pdf-attachment"
+        if (reviewing && preparedKey === reportKey(mode)) savePendingReport()
+        else prepare(mode)
+    }
     function savePendingReport() {
+        if (pendingProjectFolderSave) {
+            var folderMode = pendingSaveFormat === "html" ? "html-attachment" : "pdf-attachment"
+            if (!reviewing || preparedKey !== reportKey(folderMode)) return
+            var folderName = generatedExportName(pendingSaveFormat)
+            if (folderName === "") return
+            pendingProjectFolderSave = false
+            pendingSaveFormat = ""
+            savingToProjectFolder = DesktopAppController.saveReviewGeneratedAttachmentToProjectFolder(
+                folderName, projectId, projectFolderSubfolder.text, projectFolderOverwrite)
+            if (!savingToProjectFolder)
+                projectFolderError = qsTr("The report could not be saved to the project folder.")
+            return
+        }
         var mode = pendingSaveFormat === "html" ? "html-attachment" : "pdf-attachment"
         if (pendingSaveUrl === "" || !reviewing || preparedKey !== reportKey(mode)) return
         var name = generatedExportName(pendingSaveFormat)
@@ -227,9 +264,44 @@ Dialog {
     onInternalReportChanged: Qt.callLater(dialog.prepareEmailReport)
     onOpened: {
         if (reportDate.text === "") reportDate.text = todayText()
+        refreshProjectFolder()
+        projectFolderError = ""
+        var folderOptions = DesktopAppController.reportProjectFolderOptions()
+        projectFolderFormat = folderOptions.format === "html" ? "html" : "pdf"
+        projectFolderSubfolder.text = folderOptions.subfolder || ""
         Qt.callLater(dialog.prepareEmailReport)
     }
-    onClosed: { pendingSaveUrl = ""; pendingSaveFormat = ""; pendingPreparationKey = "" }
+    onClosed: {
+        pendingSaveUrl = ""; pendingSaveFormat = ""; pendingPreparationKey = ""
+        pendingProjectFolderSave = false; savingToProjectFolder = false
+    }
+    Connections {
+        target: DesktopAppController
+        function onReportSavedToProjectFolder(ok, location, code, message) {
+            if (!dialog.savingToProjectFolder) return
+            dialog.savingToProjectFolder = false
+            if (ok) {
+                dialog._dismiss()
+                if (DesktopAppController.viewReportAfterSave)
+                    DesktopAppController.openLocation(location)
+            } else if (code === "exists") {
+                overwriteProjectFolderReport.open()
+            } else {
+                dialog.projectFolderError = message !== "" ? message
+                    : qsTr("The report could not be saved to the project folder.")
+            }
+        }
+    }
+    ThemedMessageDialog {
+        id: overwriteProjectFolderReport
+        title: qsTr("Replace the report?")
+        iconName: "warning"
+        iconColor: Theme.amber
+        confirmText: qsTr("Replace")
+        destructive: true
+        message: qsTr("A report with this name is already in the project folder. Replace it?")
+        onConfirmed: dialog.saveToProjectFolder(true)
+    }
     Connections {
         target: dialog.controller
         function onStateChanged() {
@@ -241,6 +313,10 @@ Dialog {
             if (dialog.controller && dialog.controller.stageName === "reviewing" && dialog.pendingPreparationKey !== "") {
                 dialog.preparedKey = dialog.pendingPreparationKey
                 dialog.pendingPreparationKey = ""
+            }
+            if (dialog.pendingProjectFolderSave && dialog.controller && dialog.controller.stageName === "failed") {
+                dialog.pendingProjectFolderSave = false
+                dialog.projectFolderError = dialog.controller.diagnostic
             }
             dialog.savePendingReport()
         }
@@ -345,6 +421,44 @@ Dialog {
                                 onSelected: dialog.delivery = "email"
                             }
                         }
+                        ColumnLayout {
+                            objectName: "reportProjectFolderOptions"
+                            visible: dialog.delivery === "save" && dialog.hasProjectFolder
+                            Layout.fillWidth: true; spacing: 6
+                            Label {
+                                Layout.fillWidth: true; wrapMode: Text.Wrap; color: Theme.text2
+                                text: dialog.hasProjectFolder
+                                    ? (dialog.projectFolder.kind === "teams"
+                                       ? qsTr("Project folder (Microsoft Teams): %1").arg(dialog.projectFolder.path)
+                                       : qsTr("Project folder: %1").arg(dialog.projectFolder.path))
+                                    : ""
+                            }
+                            RowLayout {
+                                Layout.fillWidth: true; spacing: 10
+                                ComboField {
+                                    Layout.preferredWidth: 130; label: qsTr("Format")
+                                    options: ["PDF", "HTML"]
+                                    value: dialog.projectFolderFormat === "html" ? "HTML" : "PDF"
+                                    onActivated: function(value) { dialog.projectFolderFormat = value === "HTML" ? "html" : "pdf" }
+                                }
+                                ColumnLayout {
+                                    Layout.fillWidth: true; spacing: 3
+                                    Text { text: qsTr("Subfolder"); color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
+                                    TextField {
+                                        id: projectFolderSubfolder
+                                        Layout.fillWidth: true
+                                        placeholderText: qsTr("For example Project Management/Status Reports")
+                                        selectByMouse: true
+                                        SpellCheckField { spellCheckEnabled: false }
+                                    }
+                                }
+                            }
+                            Label {
+                                visible: dialog.projectFolderError !== ""
+                                Layout.fillWidth: true; wrapMode: Text.Wrap; color: Theme.red
+                                text: dialog.projectFolderError
+                            }
+                        }
                     }
                 }
                 Rectangle {
@@ -430,6 +544,15 @@ Dialog {
                 text: dialog.emailActionHint()
             }
             Button { text: qsTr("Cancel"); onClicked: dialog._dismiss() }
+            Button {
+                objectName: "saveReportToProjectFolder"
+                visible: dialog.delivery === "save" && dialog.hasProjectFolder
+                text: dialog.savingToProjectFolder || dialog.pendingProjectFolderSave
+                      ? qsTr("Saving…") : qsTr("Save to Project Folder")
+                enabled: dialog.projectId !== "" && !dialog.savingToProjectFolder && !dialog.pendingProjectFolderSave
+                         && (!dialog.controller || !dialog.controller.busy)
+                onClicked: dialog.saveToProjectFolder(false)
+            }
             Button {
                 visible: dialog.delivery === "save"; text: qsTr("Save As…")
                 enabled: dialog.projectId !== "" && (!dialog.controller || !dialog.controller.busy)

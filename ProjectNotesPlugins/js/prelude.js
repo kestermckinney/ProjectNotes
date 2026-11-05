@@ -357,6 +357,26 @@
         reveal: function (path) { return call("files.reveal", [String(path)]); },
     });
 
+    // ── projectFiles: the project's primary project folder ──────────────────
+    // Paths are relative to the project folder, which is either local or a
+    // Microsoft Teams channel folder; the host writes to Teams through Graph.
+    const projectFiles = freeze({
+        location: function (projectKey) { return call("projectFiles.location", [String(projectKey)]); },
+        list: function (projectKey, folder) {
+            return call("projectFiles.list", [String(projectKey), folder === undefined || folder === null ? "" : String(folder)]);
+        },
+        exists: function (projectKey, path) { return call("projectFiles.exists", [String(projectKey), String(path)]); },
+        mkdir: function (projectKey, path) { return call("projectFiles.mkdir", [String(projectKey), String(path)]); },
+        readText: function (projectKey, path) { return call("projectFiles.readText", [String(projectKey), String(path)]); },
+        writeText: function (projectKey, path, text, options) {
+            return call("projectFiles.writeText", [String(projectKey), String(path), String(text), options || {}]);
+        },
+        upload: function (projectKey, localPath, path, options) {
+            return call("projectFiles.upload", [String(projectKey), String(localPath), String(path), options || {}]);
+        },
+        open: function (projectKey, path) { return call("projectFiles.open", [String(projectKey), String(path)]); },
+    });
+
     // ── integrations ───────────────────────────────────────────────────────
     const email = freeze({
         backends: function () { return call("email.backends", []); },
@@ -663,7 +683,7 @@
 
     const api = {
         plugin: plugin, data: data, app: app, menus: menus, ui: ui, settings: settings, shortcuts: shortcuts, secrets: secrets,
-        storage: storage, files: files, email: email, calendar: calendar, contacts: contacts,
+        storage: storage, files: files, projectFiles: projectFiles, email: email, calendar: calendar, contacts: contacts,
         office365: office365, http: http, auth: auth, timers: timers, log: log, reports: reports, PluginError: PluginError,
     };
     if (capabilitySet.has("com")) api.com = com;

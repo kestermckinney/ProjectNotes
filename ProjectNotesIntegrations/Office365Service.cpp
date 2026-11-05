@@ -118,7 +118,7 @@ void Office365Service::requestFileFinderConsent()
         m_oauth->setRequestedScopes({QStringLiteral("offline_access"),
                                      QStringLiteral("https://graph.microsoft.com/Team.ReadBasic.All"),
                                      QStringLiteral("https://graph.microsoft.com/Channel.ReadBasic.All"),
-                                     QStringLiteral("https://graph.microsoft.com/Files.Read.All")});
+                                     QStringLiteral("https://graph.microsoft.com/Files.ReadWrite.All")});
     }
 }
 
