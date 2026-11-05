@@ -1,7 +1,7 @@
 {
     "id": "com.projectnotespro.office-tools",
     "name": "MS Office Templates",
-    "version": "3.0.0",
+    "version": "3.1.0",
     "apiVersion": 1,
     "description": "Creates documents and schedules from the Word, Excel, PowerPoint and MS Project templates you configure, filled in from the record you right-click, opens a project's schedule, and closes Excel or Word processes left behind by automation.",
     "author": "Project Notes",

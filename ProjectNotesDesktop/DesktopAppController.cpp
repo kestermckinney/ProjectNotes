@@ -25,6 +25,7 @@
 #include "searchresultsmodel.h"
 #include "FileFinderService.h"
 #include "officedeeplink.h"
+#include "projectfolderlocation.h"
 #include "ProjectNotesEmail/CommunicationRepository.h"
 #include "ProjectNotesEmail/ArtifactStore.h"
 #include "ProjectNotesEmail/CommunicationsController.h"
@@ -176,6 +177,7 @@ DesktopAppController::DesktopAppController(QObject* parent)
     m_office365Service = m_fileFinder->office365Service();
     m_office365Transport = new PN::Comm::QtNetworkHttpTransport(this);
     m_office365Service->setHttpTransport(m_office365Transport);
+    m_projectFolderStore = new PN::Comm::ProjectFolderStore(m_office365Service, this);
     m_graphEmailBackend = std::make_unique<PN::Comm::GraphEmailBackend>(m_office365Service);
     m_emailService->registerBackend(PN::Comm::BackendId::Graph, m_graphEmailBackend.get());
     m_emlFileEmailBackend = std::make_unique<PN::Comm::EmlFileEmailBackend>(
@@ -1965,6 +1967,46 @@ bool DesktopAppController::saveReviewGeneratedAttachment(const QString &displayN
     return false;
 }
 
+bool DesktopAppController::saveReviewGeneratedAttachmentToProjectFolder(const QString &displayName,
+                                                                        const QString &projectId,
+                                                                        const QString &subfolder,
+                                                                        bool overwrite)
+{
+    if (!m_communicationsController || m_communicationsController->busy()
+        || displayName.trimmed().isEmpty() || !m_projectFolderStore)
+        return false;
+    const PN::Comm::ProjectFolder folder = primaryProjectFolder(projectId);
+    if (!folder.isValid())
+        return false;
+    const auto &preparation = m_communicationsController->preparation();
+    QString source;
+    for (const auto *list : {&preparation.attachments, &preparation.exports}) {
+        for (const PN::Comm::Artifact &artifact : *list)
+            if (artifact.generatedByApp && artifact.displayName == displayName)
+                source = artifact.absolutePath;
+        if (!source.isEmpty())
+            break;
+    }
+    QFile file(source);
+    if (source.isEmpty() || !file.open(QIODevice::ReadOnly))
+        return false;
+    const QByteArray bytes = file.readAll();
+    file.close();
+
+    QString relative = QDir::fromNativeSeparators(subfolder.trimmed());
+    while (relative.endsWith(QLatin1Char('/')))
+        relative.chop(1);
+    relative = relative.isEmpty() ? displayName : relative + QLatin1Char('/') + displayName;
+    QPointer<DesktopAppController> self(this);
+    m_projectFolderStore->write(folder, relative, bytes, overwrite,
+                                [self](QString location, PN::Comm::ServiceError error) {
+        if (!self)
+            return;
+        emit self->reportSavedToProjectFolder(error.code.isEmpty(), location, error.code, error.displayText);
+    });
+    return true;
+}
+
 bool DesktopAppController::removeExistingReportSaveFile(const QString &destination)
 {
     const QUrl destinationUrl(destination);
@@ -2168,6 +2210,29 @@ void DesktopAppController::setViewReportAfterSave(bool enabled)
     settings.setFallbacksEnabled(false);
     settings.setValue(QStringLiteral("Reports/ViewAfterSave"), enabled);
     emit viewReportAfterSaveChanged();
+}
+
+QVariantMap DesktopAppController::reportProjectFolderOptions() const
+{
+    QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
+    settings.setFallbacksEnabled(false);
+    return {{QStringLiteral("subfolder"), settings.value(QStringLiteral("Reports/ProjectFolderSubfolder")).toString()},
+            {QStringLiteral("format"), settings.value(QStringLiteral("Reports/ProjectFolderFormat"),
+                                                      QStringLiteral("pdf")).toString()}};
+}
+
+void DesktopAppController::setReportProjectFolderOptions(const QString& subfolder, const QString& format)
+{
+    QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
+    settings.setFallbacksEnabled(false);
+    settings.setValue(QStringLiteral("Reports/ProjectFolderSubfolder"), subfolder.trimmed());
+    settings.setValue(QStringLiteral("Reports/ProjectFolderFormat"),
+                      format == QLatin1String("html") ? QStringLiteral("html") : QStringLiteral("pdf"));
+}
+
+void DesktopAppController::openLocation(const QString& path)
+{
+    openLocationPath(path);
 }
 
 QString DesktopAppController::managingCompanyId() const
@@ -4230,8 +4295,12 @@ void DesktopAppController::openProjectLocation(int row)
     if (row < 0 || row >= model->rowCount()) return;
     // Rows saved by the old save-time rewrite hold ms-excel:ofe|u|<url>;
     // unwrap them so they open exactly like a canonical row.
-    const QString path = unwrapOfficeDeepLink(
-        model->data(model->index(row, 4)).toString());
+    openLocationPath(model->data(model->index(row, 4)).toString());
+}
+
+void DesktopAppController::openLocationPath(const QString& storedPath)
+{
+    const QString path = unwrapOfficeDeepLink(storedPath.trimmed());
     if (path.isEmpty()) return;
 
     // full_path is stored canonically (a plain http(s)/SharePoint URL, not an
@@ -4289,9 +4358,37 @@ QString DesktopAppController::primaryProjectLocationId(const QString& projectId)
 {
     QSqlQuery q(global_DBObjects.getDb());
     q.prepare(QStringLiteral("SELECT l.id FROM projects p JOIN project_locations l ON l.id = p.primary_location_id "
-                             "WHERE p.id = ? AND l.deleted = 0 AND l.location_type = 'File Folder'"));
+                             "WHERE p.id = ? AND l.deleted = 0 AND ") + PN::ProjectFolder::eligibleLocationSql(QStringLiteral("l")));
     q.addBindValue(projectId);
     return q.exec() && q.next() ? q.value(0).toString() : QString();
+}
+
+PN::Comm::ProjectFolder DesktopAppController::primaryProjectFolder(const QString& projectId) const
+{
+    if (projectId.trimmed().isEmpty())
+        return {};
+    QSqlQuery q(global_DBObjects.getDb());
+    q.prepare(QStringLiteral("SELECT l.location_type, l.full_path FROM projects p "
+                             "JOIN project_locations l ON l.id = p.primary_location_id "
+                             "WHERE p.id = ? AND l.deleted = 0 AND trim(coalesce(l.full_path, '')) <> '' AND ")
+              + PN::ProjectFolder::eligibleLocationSql(QStringLiteral("l")));
+    q.addBindValue(projectId);
+    if (!q.exec() || !q.next())
+        return {};
+    return PN::Comm::ProjectFolder::fromLocation(q.value(0).toString(), q.value(1).toString());
+}
+
+QVariantMap DesktopAppController::projectFolderInfo(const QString& projectId) const
+{
+    const PN::Comm::ProjectFolder folder = primaryProjectFolder(projectId);
+    if (!folder.isValid())
+        return {};
+    return {{QStringLiteral("kind"), folder.kindName()}, {QStringLiteral("path"), folder.path}};
+}
+
+bool DesktopAppController::canBeProjectFolder(const QString& locationType, const QString& fullPath) const
+{
+    return PN::ProjectFolder::isEligibleLocation(locationType, fullPath);
 }
 
 bool DesktopAppController::projectFolderChosenByUser(const QString& projectId) const
@@ -4307,10 +4404,11 @@ bool DesktopAppController::setPrimaryProjectLocation(const QString& projectId, c
     if (projectId.isEmpty())
         return false;
     if (!locationId.isEmpty()) {
-        // Only one of this project's own, live folder locations can be primary.
+        // Only one of this project's own, live folder locations (local or
+        // Microsoft Teams) can be primary.
         QSqlQuery check(global_DBObjects.getDb());
         check.prepare(QStringLiteral("SELECT 1 FROM project_locations WHERE id = ? AND project_id = ? "
-                                     "AND deleted = 0 AND location_type = 'File Folder'"));
+                                     "AND deleted = 0 AND ") + PN::ProjectFolder::eligibleLocationSql());
         check.addBindValue(locationId);
         check.addBindValue(projectId);
         if (!check.exec() || !check.next())

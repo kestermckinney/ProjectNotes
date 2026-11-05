@@ -26,6 +26,8 @@ class FileFinderService final : public QObject
     Q_PROPERTY(QString office365ClientId READ office365ClientId WRITE setOffice365ClientId NOTIFY settingsChanged)
     Q_PROPERTY(bool office365OpenLinksInDesktop READ office365OpenLinksInDesktop
                WRITE setOffice365OpenLinksInDesktop NOTIFY settingsChanged)
+    Q_PROPERTY(bool preferTeamsProjectFolder READ preferTeamsProjectFolder
+               WRITE setPreferTeamsProjectFolder NOTIFY settingsChanged)
     Q_PROPERTY(bool office365Authenticated READ office365Authenticated NOTIFY authenticationChanged)
     Q_PROPERTY(bool office365AuthenticationInProgress READ office365AuthenticationInProgress NOTIFY authenticationChanged)
     Q_PROPERTY(QString office365AuthenticationStatus READ office365AuthenticationStatus NOTIFY authenticationChanged)
@@ -56,6 +58,8 @@ public:
     void setOffice365ClientId(const QString &clientId);
     bool office365OpenLinksInDesktop() const { return m_office365OpenLinksInDesktop; }
     void setOffice365OpenLinksInDesktop(bool enabled);
+    bool preferTeamsProjectFolder() const { return m_preferTeamsProjectFolder; }
+    void setPreferTeamsProjectFolder(bool enabled);
     bool office365Authenticated() const;
     bool office365AuthenticationInProgress() const;
     QString office365AuthenticationStatus() const;
@@ -109,6 +113,7 @@ private:
     bool m_enabled = false;
     bool m_office365Enabled = false;
     bool m_office365OpenLinksInDesktop = true;
+    bool m_preferTeamsProjectFolder = false;
     bool m_initialized = false;
     bool m_scanning = false;
     QString m_tenantId = QStringLiteral("organizations");

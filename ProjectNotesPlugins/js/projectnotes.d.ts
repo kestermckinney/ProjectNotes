@@ -115,7 +115,8 @@ declare module "projectnotes" {
         currentView(): ViewInfo;
         currentRecord(options?: { include?: string[] }): Promise<DataRecord | null>;
         navigate(entity: string, key: string, options?: { tab?: string }): Promise<void>;
-        /** The project's primary project folder path, or null when it has none. */
+        /** The primary project folder when it is a local folder, or null when the project has none or it is in
+         *  Microsoft Teams. Use projectFiles to read and write either kind. */
         projectFolder(projectKey: string): Promise<string | null>;
         defaults(): Promise<{ managingCompanyId: string | null; managingCompanyName: string | null;
                               projectManagerId: string | null; projectManagerName: string | null }>;
@@ -222,6 +223,37 @@ declare module "projectnotes" {
         tempPath(name: string): string;
         openWithSystem(path: string): Promise<boolean>;
         reveal(path: string): Promise<void>;
+    };
+
+    /**
+     * The project's primary project folder, which is either a local folder or
+     * a Microsoft Teams channel folder. Paths are relative to that folder and
+     * use "/". A Teams folder is written through Microsoft Graph with the
+     * Office 365 account signed in under Settings, which needs
+     * Files.ReadWrite.All. Needs the "files" permission.
+     *
+     * Methods that return a location give what a project_locations row should
+     * store: a local path, or a Teams URL (the direct document URL for Office
+     * files, so they open in the desktop app).
+     */
+    export interface ProjectFolderLocation { kind: "local" | "teams"; path: string; }
+    export interface ProjectFileEntry { name: string; isDir: boolean; size: number; location: string; }
+    export const projectFiles: {
+        /** The project folder, or null when the project has none. A local folder is also readable and writable with files.*. */
+        location(projectKey: string): Promise<ProjectFolderLocation | null>;
+        /** Entries directly inside `folder` ("" for the project folder); empty when it is missing. */
+        list(projectKey: string, folder?: string): Promise<ProjectFileEntry[]>;
+        exists(projectKey: string, path: string): Promise<boolean>;
+        /** Creates the folder and any missing parents. */
+        mkdir(projectKey: string, path: string): Promise<string>;
+        /** null when the file is missing. */
+        readText(projectKey: string, path: string): Promise<string | null>;
+        /** Replaces an existing file unless overwrite is false (default true). */
+        writeText(projectKey: string, path: string, text: string, options?: { overwrite?: boolean }): Promise<string>;
+        /** Copies a local file into the project folder. Fails with code "exists" unless overwrite is true. */
+        upload(projectKey: string, localPath: string, path: string, options?: { overwrite?: boolean }): Promise<string>;
+        /** Opens a file or folder in the project folder, Office files in their desktop app. */
+        open(projectKey: string, path: string): Promise<void>;
     };
 
     // ── integrations ───────────────────────────────────────────────────────

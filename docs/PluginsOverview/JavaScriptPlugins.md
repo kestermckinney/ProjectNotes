@@ -160,7 +160,27 @@ const favorites = yield data.list("projects", { where: { folder_id: { lookup: "F
 yield data.save("projects", { project_number: "P4000", folder_id: { lookup: "Favorites" } });
 ```
 
-A project's primary project folder is `primary_location_id`, the key of one of its `project_locations` rows with type `File Folder`, or `null` when the project has none. `primary_location_manual` is `true` once the user has set or cleared it, and File Finder only fills in a folder while it is `false`. Read the folder's path with `app.projectFolder(projectKey)`, which returns `null` for a project without one. Projects are not given a folder from a location's description any more.
+A project's primary project folder is `primary_location_id`, the key of one of its `project_locations` rows, or `null` when the project has none. The row is either a `File Folder` on the user's computer or a Microsoft Teams channel folder, a `Web Link` to a SharePoint URL. `primary_location_manual` is `true` once the user has set or cleared it, and File Finder only fills in a folder while it is `false`. Projects are not given a folder from a location's description any more.
+
+### Saving into the project folder
+
+Use `projectFiles` to read and write the project folder. It works the same whether the folder is local or in Microsoft Teams; for a Teams folder the application talks to Microsoft 365 with the account signed in under **Settings > Office 365 Integration**, so the plugin needs no `office365` permission. Paths are relative to the project folder and may not leave it. It needs the `files` permission.
+
+```js
+const folder = yield projectFiles.location(project.$key);   // { kind: "local" | "teams", path } or null
+if (folder) {
+    yield projectFiles.mkdir(project.$key, "Project Management/Status Reports");
+    const location = yield projectFiles.upload(project.$key, files.tempPath("report.pdf"),
+                                               "Project Management/Status Reports/report.pdf", { overwrite: true });
+    yield data.save("project_locations", { project_id: { id: project.$key }, location_type: "PDF File",
+                                           location_description: "report.pdf", full_path: location });
+    yield projectFiles.open(project.$key, "Project Management/Status Reports/report.pdf");
+}
+```
+
+`list()`, `exists()`, `readText()` and `writeText()` round it out. Methods that write return the location to store in `project_locations`: a local path, or the Teams URL, which for Word, Excel, PowerPoint and Project files is the direct document URL that opens in the desktop app. `upload()` fails with code `exists` unless `overwrite` is `true`; `writeText()` replaces by default. A Teams folder can also fail with `teams-access-denied` when the sign-in lacks `Files.ReadWrite.All`.
+
+`app.projectFolder(projectKey)` returns the path only for a local folder, and `null` for a Teams folder or a project without one. A local folder from either call is also open to `files.*`. Office automation and other tools that need a real file write to `files.tempPath()` first and then `upload()` the result.
 
 ## User interface
 
@@ -234,7 +254,8 @@ A `contributes.settings` entry adds a section to Settings. With a `schema`, Proj
 | `office365` | `graph()` calls Microsoft Graph with the user's Office 365 sign-in; `graphPages()` follows paging links. |
 | `http` | `fetch()` to the hosts listed in the manifest, with basic or bearer authentication. |
 | `auth` | `browserSignIn()` opens a sign-in page in the browser and returns the redirect to a `localhost` address, for OAuth sign-ins to services other than Office 365. |
-| `files` | Files inside the plugin folder (read only), its data folder, folders the user picked, and project folders from `app.projectFolder()`. |
+| `files` | Files inside the plugin folder (read only), its data folder, folders the user picked, and local project folders from `app.projectFolder()` or `projectFiles.location()`. |
+| `projectFiles` | The project's primary project folder, local or Microsoft Teams (see [Saving into the project folder](#saving-into-the-project-folder)). Needs `files`. |
 | `storage`, `settings`, `secrets` | Private files, settings, and credentials kept in the operating system's credential store. |
 | `shortcuts` | `list()` reads the My Shortcuts table. `add(rows)` appends rows of `{ menu, submenu, entity, url }` and returns how many it added. A row is skipped when My Shortcuts already has one with the same entity, submenu and menu, ignoring case. Write the URL out in full: My Shortcuts fills in only `{{ entity.column }}` and `{{ preferences.* }}` tokens. Added rows carry `addedBy` with the plugin's id. |
 | `com` | Windows only: automate Office and other COM applications (see below). |

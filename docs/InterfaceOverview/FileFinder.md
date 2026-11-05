@@ -10,7 +10,11 @@ For each active project, File Finder looks for a folder whose name contains the 
 
 Each configured local search location is traversed once per scan. After File Finder finds a project's folder, it adds the folder as **Project Folder** and scans its files and subfolders. If **Include Office 365 locations** is enabled, it can also find a Microsoft Teams channel named for the project and scan the channel's SharePoint files.
 
-The local folder it finds also becomes the project's **primary project folder** when the project doesn't have one yet. Plugins and reports use the primary project folder, so archived email and generated documents land there. File Finder never replaces a primary project folder you set or cleared yourself. A Teams channel link is not used as a primary project folder, since it isn't a folder on your computer. See [Project Page](<ProjectPage.md>) for choosing one by hand.
+The Teams channel folder is listed as **Teams Project Folder**, so a project can show both its local folder and its Teams folder.
+
+Either one can become the project's **primary project folder** when the project doesn't have one yet. Plugins and reports use the primary project folder, so archived email, documents made from templates and saved reports land there. When a Teams folder is the primary project folder, Project Notes saves into it through Microsoft 365 with the account signed in under **Settings > Office 365 Integration**.
+
+When File Finder finds both, the local folder wins. Turn on **Use the Microsoft Teams folder as the project folder when both are found** to make the Teams folder win instead; a project whose File Finder pick is of the other kind switches on the next scan. File Finder never replaces a primary project folder you set or cleared yourself. See [Project Page](<ProjectPage.md>) for choosing one by hand.
 
 File classification rules are evaluated in order. The first regular expression that matches a file name or normalized path supplies the classification. The resulting description has the form `Classification : filename.ext`.
 

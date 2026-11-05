@@ -54,3 +54,17 @@ New profiles start with `~` as the portable local search root, exclude
 `Engineering/.*` folder trees, and receive the maintained default classification
 rules. The first-run migration preserves any roots or rules found in the legacy
 File Finder settings rather than replacing an existing user's configuration.
+
+A Microsoft Teams channel folder is stored as a `Web Link` row described
+`Teams Project Folder` (older rows described `Project Folder` are renamed when
+a scan revisits their URL), so a project can list its local folder and its
+Teams folder side by side. An existing row is adopted by at most one discovery
+per scan. Either kind can become the project's primary project folder (see
+`projectfolderlocation.h` for which rows qualify). When both are found the
+local folder wins, unless **preferTeamsProjectFolder** is set; an automatic
+primary of the other kind switches when the preferred kind turns up.
+
+File Finder only reads Teams. Writing into a Teams project folder goes through
+`PN::Comm::ProjectFolderStore` (ProjectNotesIntegrations) on the same Office 365
+session, which therefore asks for `Files.ReadWrite.All` instead of
+`Files.Read.All`.

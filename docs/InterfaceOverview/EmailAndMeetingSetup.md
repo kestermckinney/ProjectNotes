@@ -122,7 +122,7 @@ Your Microsoft 365 administrator creates an app registration that allows these d
 
 When Office 365 is your contact provider under **Contact Synchronization**, the same sign-in also asks for `Contacts.ReadWrite`. Add it to the registration, or sign-in will stop at the consent screen.
 
-If you also use [File Finder](<FileFinder.md>) to discover Teams channels and their files, the same registration should allow `Team.ReadBasic.All`, `Channel.ReadBasic.All` and `Files.Read.All`. Those three always need administrator consent.
+If you also use [File Finder](<FileFinder.md>) to discover Teams channels and their files, or save into a Teams project folder, the same registration should allow `Team.ReadBasic.All`, `Channel.ReadBasic.All` and `Files.ReadWrite.All`. Those three always need administrator consent.
 
 Two settings on the registration's **Authentication** page matter:
 

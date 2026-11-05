@@ -6,7 +6,7 @@ import { replaceVariables, formatDate } from "projectnotes/common";
 
 import { trace } from "./sso.mjs";
 
-const { app, data, email, files, http, log, secrets, settings, ui } = pn;
+const { app, data, email, files, http, log, projectFiles, secrets, settings, ui } = pn;
 
 // What differs between the reports. The status report also records the
 // project's last status date.
@@ -176,22 +176,28 @@ function* generateReport(context, report) {
     trace("ssrs", "downloads " + (ok ? "succeeded" : "failed"));
     if (!ok) return;
 
-    let folder = yield app.projectFolder(project.$key);
-    trace("ssrs", "project folder " + (folder || "(none)"));
-    if (folder) {
-        const sub = String(settings.get(report.folderKey, "") || report.folder).replace(/^[\\/]+|[\\/]+$/g, "");
-        folder = folder.replace(/[\\/]+$/, "") + "/" + sub;
-        if (!(yield files.exists(folder))) {
-            log.info("The " + report.title.toLowerCase() + " folder " + folder + " does not exist; the report stays in the temporary folder.");
-            folder = "";
+    // File the report in the project folder's report subfolder, which may be
+    // a local folder or a Microsoft Teams folder. The subfolder must exist.
+    const projectFolder = yield projectFiles.location(project.$key);
+    trace("ssrs", "project folder " + (projectFolder ? projectFolder.kind + " " + projectFolder.path : "(none)"));
+    let sub = "";
+    if (projectFolder) {
+        sub = String(settings.get(report.folderKey, "") || report.folder).replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+        if (!(yield projectFiles.exists(project.$key, sub))) {
+            log.info("The " + report.title.toLowerCase() + " folder " + sub + " does not exist in the project folder "
+                     + projectFolder.path + "; the report stays in the temporary folder.");
+            sub = null;
         }
     }
     let shown = pdfPath;
-    if (folder) {
-        shown = folder + "/" + stamp + ".pdf";
-        yield files.copy(pdfPath, shown, { overwrite: true });
-        if (options.keepWord) yield files.copy(docxPath, folder + "/" + stamp + ".docx", { overwrite: true });
-        trace("ssrs", "filed the report as " + shown);
+    let filed = "";
+    if (projectFolder && sub !== null) {
+        const relative = (sub ? sub + "/" : "") + stamp;
+        yield projectFiles.upload(project.$key, pdfPath, relative + ".pdf", { overwrite: true });
+        if (options.keepWord) yield projectFiles.upload(project.$key, docxPath, relative + ".docx", { overwrite: true });
+        filed = relative + ".pdf";
+        if (projectFolder.kind === "local") shown = projectFolder.path.replace(/[\\/]+$/, "") + "/" + filed;
+        trace("ssrs", "filed the report as " + filed + " in the " + projectFolder.kind + " project folder");
     }
 
     if (delivery !== DELIVERY.none) {

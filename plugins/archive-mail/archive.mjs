@@ -3,7 +3,7 @@
 // Python plugin, so mail it already archived is not downloaded again.
 import * as pn from "projectnotes";
 
-const { app, data, files, log, office365, storage } = pn;
+const { data, files, log, office365, projectFiles, storage } = pn;
 
 // The Python plugin's make_filename(): ISO timestamp without punctuation, a
 // dash, the subject with unsafe characters replaced, 70 characters at most.
@@ -83,15 +83,57 @@ export function toEml(m) {
     return eml;
 }
 
-function* readState(path) {
-    if (!(yield files.exists(path))) return {};
-    try { return JSON.parse(yield files.readText(path)); } catch (e) { return {}; }
+// Where archived mail goes: the project's primary project folder (local or a
+// Microsoft Teams folder, through projectFiles) or, with `localFolder`, a
+// folder the user picked. Paths given to it are relative to that folder.
+export function destination(projectKey, localFolder) {
+    if (localFolder) {
+        const root = String(localFolder).replace(/[\\/]+$/, "");
+        const full = function (relative) { return root + "/" + relative; };
+        return {
+            mkdir: function* (relative) { yield files.mkdir(full(relative)); },
+            names: function* (relative) {
+                if (!(yield files.exists(full(relative)))) return new Set();
+                return new Set((yield files.list(full(relative))).map(function (f) { return f.name.toLowerCase(); }));
+            },
+            readText: function* (relative) {
+                return (yield files.exists(full(relative))) ? yield files.readText(full(relative)) : null;
+            },
+            writeText: function* (relative, text) { yield files.writeText(full(relative), text); },
+            upload: function* (localPath, relative) { yield files.copy(localPath, full(relative), { overwrite: true }); },
+        };
+    }
+    return {
+        mkdir: function* (relative) { yield projectFiles.mkdir(projectKey, relative); },
+        names: function* (relative) {
+            return new Set((yield projectFiles.list(projectKey, relative)).map(function (f) { return f.name.toLowerCase(); }));
+        },
+        readText: function* (relative) { return yield projectFiles.readText(projectKey, relative); },
+        writeText: function* (relative, text) { yield projectFiles.writeText(projectKey, relative, text); },
+        upload: function* (localPath, relative) { yield projectFiles.upload(projectKey, localPath, relative, { overwrite: true }); },
+    };
 }
 
-function* downloadBox(projectNumber, box, top, folder, all) {
+// The project's folder as a destination, or null when it has none or its
+// local folder is gone.
+export function* projectDestination(projectKey) {
+    const folder = yield projectFiles.location(projectKey);
+    if (!folder) return null;
+    if (folder.kind === "local" && !(yield files.exists(folder.path))) return null;
+    return destination(projectKey, null);
+}
+
+function* readState(target, path) {
+    const text = yield target.readText(path);
+    if (!text) return {};
+    try { return JSON.parse(text); } catch (e) { return {}; }
+}
+
+function* downloadBox(projectNumber, box, top, target, folder, all) {
     const statePath = folder + "/download_state.json";
     const stateName = projectNumber + "_" + box + "_downloadtracker";
-    const state = yield readState(statePath);
+    const state = yield readState(target, statePath);
+    const present = yield target.names(folder);
     let skip = (state[stateName] && state[stateName].skip) || 0;
     let saved = 0;
     for (;;) {
@@ -104,33 +146,36 @@ function* downloadBox(projectNumber, box, top, folder, all) {
         }
         const messages = (response.body && response.body.value) || [];
         for (const m of messages) {
-            const base = folder + "/" + makeFilename(m.sentDateTime, m.subject);
-            if ((yield files.exists(base + ".msg")) || (yield files.exists(base + ".eml"))) continue;
+            const name = makeFilename(m.sentDateTime, m.subject);
+            if (present.has((name + ".msg").toLowerCase()) || present.has((name + ".eml").toLowerCase())) continue;
             const full = yield office365.graph("GET", "me/messages/" + m.id, { query: { "$expand": "attachments" } });
             if (full.status !== 200) {
                 log.warn("Downloading a message failed: " + full.status);
                 continue;
             }
-            yield files.writeText(base + ".eml", toEml(full.body));
+            yield target.writeText(folder + "/" + name + ".eml", toEml(full.body));
+            present.add((name + ".eml").toLowerCase());
             saved++;
         }
         skip += messages.length;
         if (!all || messages.length < top) break;
     }
     state[stateName] = { skip: skip };
-    yield files.writeText(statePath, JSON.stringify(state, null, 4));
+    yield target.writeText(statePath, JSON.stringify(state, null, 4));
     return saved;
 }
 
+function subfolder(name) { return String(name || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, ""); }
+
 function* archiveProject(cfg, projectKey, projectNumber, all) {
-    const folder = yield app.projectFolder(projectKey);
-    if (!folder || !(yield files.exists(folder))) return 0;
-    const received = folder + "/" + cfg.inboxFolder;
-    const sent = folder + "/" + cfg.sentFolder;
-    yield files.mkdir(received);
-    yield files.mkdir(sent);
-    let saved = yield downloadBox(projectNumber, "inbox", 20, received, all);
-    saved += yield downloadBox(projectNumber, "sentitems", 20, sent, all);
+    const target = yield projectDestination(projectKey);
+    if (!target) return 0;
+    const received = subfolder(cfg.inboxFolder);
+    const sent = subfolder(cfg.sentFolder);
+    yield target.mkdir(received);
+    yield target.mkdir(sent);
+    let saved = yield downloadBox(projectNumber, "inbox", 20, target, received, all);
+    saved += yield downloadBox(projectNumber, "sentitems", 20, target, sent, all);
     return saved;
 }
 
@@ -159,18 +204,21 @@ export function* archiveFromGraph(cfg, project) {
 }
 
 // Outlook classic over COM: saves matching messages as .msg (Windows only).
-export function* archiveFromOutlook(cfg, projectNumber, folder, progress) {
+// Outlook writes each message to a temporary file, which is then copied into
+// `target` (see destination()), so a Teams project folder works too.
+export function* archiveFromOutlook(cfg, projectNumber, target, progress) {
     const com = pn.com;
     const outlook = com.createObject("Outlook.Application");
     let saved = 0;
     try {
         const mapi = outlook.GetNamespace("MAPI");
-        const boxes = [[mapi.GetDefaultFolder(6), folder + "/" + cfg.inboxFolder, "Inbox items"],   // olFolderInbox
-                       [mapi.GetDefaultFolder(5), folder + "/" + cfg.sentFolder, "Sent items"]];   // olFolderSentMail
+        const boxes = [[mapi.GetDefaultFolder(6), subfolder(cfg.inboxFolder), "Inbox items"],   // olFolderInbox
+                       [mapi.GetDefaultFolder(5), subfolder(cfg.sentFolder), "Sent items"]];   // olFolderSentMail
         // Restrict to matching subjects instead of walking the whole mailbox.
         const filter = "@SQL=\"urn:schemas:httpmail:subject\" LIKE '%" + projectNumber.replace(/'/g, "''") + "%'";
         for (let b = 0; b < boxes.length; b++) {
-            yield files.mkdir(boxes[b][1]);
+            yield target.mkdir(boxes[b][1]);
+            const present = yield target.names(boxes[b][1]);
             const items = boxes[b][0].Items.Restrict(filter);
             const total = items.Count || 0;
             let index = 0;
@@ -179,9 +227,14 @@ export function* archiveFromOutlook(cfg, projectNumber, folder, progress) {
                 progress.update((b + index / Math.max(total, 1)) / 2, boxes[b][2]);
                 const sentOn = message.SentOn;
                 if (sentOn) {
-                    const base = boxes[b][1] + "/" + makeFilename(sentOn, message.Subject);
-                    if (!(yield files.exists(base + ".msg")) && !(yield files.exists(base + ".eml"))) {
-                        message.SaveAs(base.replace(/\//g, "\\") + ".msg", 3);   // olMSG
+                    const name = makeFilename(sentOn, message.Subject);
+                    if (!present.has((name + ".msg").toLowerCase()) && !present.has((name + ".eml").toLowerCase())) {
+                        const temporary = files.tempPath(name + ".msg");
+                        if (yield files.exists(temporary)) yield files.remove(temporary);
+                        message.SaveAs(temporary.replace(/\//g, "\\"), 3);   // olMSG
+                        yield target.upload(temporary, boxes[b][1] + "/" + name + ".msg");
+                        yield files.remove(temporary);
+                        present.add((name + ".msg").toLowerCase());
                         saved++;
                     }
                 }
