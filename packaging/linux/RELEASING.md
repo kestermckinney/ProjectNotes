@@ -32,10 +32,10 @@ registry. The release links point to those packages, rather than expiring CI art
    token. This project has protected `GIT_CONFIG_COUNT`, `GIT_CONFIG_KEY_0`,
    `GIT_CONFIG_VALUE_0`, and `GIT_TERMINAL_PROMPT` variables for that purpose.
 
-## Prepare 6.5.0
+## Prepare 6.5.1
 
 Update the desktop version and installer versions, review
-`packaging/gitlab/RELEASE_NOTES.md`, commit and push, then create `v6.5.0` at the
+`packaging/gitlab/RELEASE_NOTES.md`, commit and push, then create `v6.5.1` at the
 reviewed commit. The pipeline verifies that the tag matches the desktop version.
 The mobile application has its own release cycle and version.
 
@@ -49,14 +49,14 @@ an upcoming release into a current release (preserving its notes), and deploys
 Pages. Do not run it until the release is ready to become available to users.
 
 This pipeline currently builds Linux only. Attach a
-`ProjectNotes-6.5.0-Windows-x64-Setup.exe` and a macOS `.zip` asset with `macOS` in
+`ProjectNotes-6.5.1-Windows-x64-Setup.exe` and a macOS `.zip` asset with `macOS` in
 its link name before publishing if Windows/macOS should receive this version.
 The updater reads GitLab `assets.links` and uses `direct_asset_url` or `url`.
 
 ## Local signed build
 
 ```bash
-export PN_REF=v6.5.0
+export PN_REF=v6.5.1
 export GPG_KEY_ID=YOUR_EXISTING_SIGNING_KEY_FINGERPRINT
 export APP_REPO_URL=https://kestermckinney.gitlab.io/ProjectNotes/flatpak/
 export RUNTIME_REPO_URL=https://flathub.org/repo/flathub.flatpakrepo

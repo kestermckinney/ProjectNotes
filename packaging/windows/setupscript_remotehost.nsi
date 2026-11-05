@@ -7,7 +7,7 @@ RequestExecutionLevel user
 
 ; ── Product defines ───────────────────────────────────────────────────────────
 !define PRODUCT_NAME      "Project Notes Remote Host"
-!define PRODUCT_VERSION   "6.5.0"
+!define PRODUCT_VERSION   "6.5.1"
 !define PRODUCT_PUBLISHER "Paul McKinney"
 !define PRODUCT_WEB_SITE  "https://gitlab.com/kestermckinney/ProjectNotes"
 !define PRODUCT_DIR_REGKEY  "Software\Microsoft\Windows\CurrentVersion\App Paths\Project Notes Remote Host.exe"

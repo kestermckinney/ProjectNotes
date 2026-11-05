@@ -1,24 +1,12 @@
-# Project Notes 6.5.0
+# Project Notes 6.5.1
 
-Plugins are now written in JavaScript and run inside Project Notes. Python is no longer needed or bundled.
+This release lets a project keep its files in Microsoft Teams.
 
-- Rewrites the bundled plugins (My Shortcuts, Archive Mail, Office Tools, Team Member Quick Add) and the IFS Cloud plugin in JavaScript. Their settings carry over from the Python versions on first start.
-- Adds plugin installation from `.pnplugin` packages, with a review of what each plugin can do before it runs.
-- Adds plugin settings backup under **Settings > Plugins**. Export settings to a file and import them on another computer. Files from the old Settings Migrator import too.
-- Moves your own plugins to the application data folder, so upgrades leave them alone.
-- Renders report PDFs without Qt WebEngine, which makes the download much smaller.
-- Adds native macOS Contacts support and renames People and Clients to Contacts and Companies throughout.
-- Reorganizes the Settings page and moves Appearance into Preferences.
-- Stores project folders in their own synced table. A project is now in one folder at a time, and existing folders move over on the first start; a project that was in several folders keeps the first one.
-- Click a folder's name in the sidebar to show only its projects. The arrow at the end of the header collapses the folder, and collapsed folders are now remembered per computer.
-- Renames folders from Settings or from a new right-click menu on folder headers, which also edits the icon and color.
-- Adds a Folder filter to the project list on desktop and mobile, and exposes `folder_id` on projects to plugins.
-- Each project now stores its primary project folder. File Finder sets it when it finds the project's folder, and the **⋮** menu on a folder location sets or clears it. Plugins and reports save into this folder, and a project can have none.
-- A project's primary project folder can be its Microsoft Teams channel folder. File Finder lists it as **Teams Project Folder** and uses it when there is no local folder, or always with the new **Use the Microsoft Teams folder as the project folder when both are found** setting. Documents made from MS Office Templates, saved reports (**Save to Project Folder**), Archive Mail and IFS Cloud SSRS reports all save into a Teams folder through Microsoft 365. The Office 365 app registration now needs `Files.ReadWrite.All` in place of `Files.Read.All`; sign in again after granting it.
+- A project's primary project folder can be its Microsoft Teams channel folder. File Finder lists it as **Teams Project Folder** and uses it when there is no local folder, or always with the new **Use the Microsoft Teams folder as the project folder when both are found** setting. **Set as Primary Project Folder** on a Teams folder location chooses it by hand.
+- Documents made from MS Office Templates, reports saved with the new **Save to Project Folder** button, Archive Mail, and IFS Cloud SSRS reports all save into a Teams project folder through Microsoft 365.
+- The Office 365 app registration now needs `Files.ReadWrite.All` in place of `Files.Read.All`. After an administrator grants it, sign in again under **Settings > Office 365 Integration**.
 - Adds `projectFiles` to the plugin API for reading and writing the project folder, local or Microsoft Teams.
-- The macOS download runs on macOS 13 (Ventura) and later again, on both Apple silicon and Intel Macs.
-- On macOS, Project Notes now shares its app identity with the iPhone and iPad app, ready for the Mac App Store. After updating, macOS asks once more for access to Calendar, Contacts and Automation, and may ask whether Project Notes can use its saved cloud sync password. Choose **Always Allow**.
-- The Windows and macOS installers remove the embedded Python runtime, its packages, and the retired Python plugins left behind by earlier versions.
+- Removes the leftover ARM64 `icuuc.dll` that upgrades on Windows could leave behind.
 
 ### Install on Linux
 
