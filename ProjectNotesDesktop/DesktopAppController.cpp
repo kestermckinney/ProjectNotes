@@ -3049,34 +3049,40 @@ static void sortByName(QVariantList& list)
     });
 }
 
-QVariantList DesktopAppController::companyList() const
+// Run an "SELECT id, name ..." query and return the rows as a picker list.
+// Picker lists read the tables directly instead of the shared Contacts /
+// Companies models: those models carry whatever filter the user last applied on
+// the list pages (and the filter lives in the model's SQL, not just the proxy),
+// so reading them would hide contacts or companies from every picker.
+static QVariantList pickerListFromQuery(const QString& sql)
 {
     QVariantList out;
-    auto* proxy = global_DBObjects.companiesmodelproxy();
-    if (!proxy) return out;
-    for (int row = 0; row < proxy->rowCount(); ++row) {
+    DB_LOCK;
+    QSqlQuery qry(global_DBObjects.getDb());
+    qry.exec(sql);
+    while (qry.next()) {
         QVariantMap m;
-        m.insert("id",   proxy->data(proxy->index(row, 0)).toString());
-        m.insert("name", proxy->data(proxy->index(row, 1)).toString());
+        m.insert("id",   qry.value(0).toString());
+        m.insert("name", qry.value(1).toString());
         out.append(m);
     }
+    DB_UNLOCK;
     sortByName(out);
     return out;
 }
 
+QVariantList DesktopAppController::companyList() const
+{
+    return pickerListFromQuery(
+        "SELECT id, client_name FROM clients "
+        "WHERE deleted IS NULL OR deleted = 0");
+}
+
 QVariantList DesktopAppController::contactList() const
 {
-    QVariantList out;
-    auto* proxy = global_DBObjects.contactsmodelproxy();
-    if (!proxy) return out;
-    for (int row = 0; row < proxy->rowCount(); ++row) {
-        QVariantMap m;
-        m.insert("id",   proxy->data(proxy->index(row, 0)).toString());
-        m.insert("name", proxy->data(proxy->index(row, 1)).toString());
-        out.append(m);
-    }
-    sortByName(out);
-    return out;
+    return pickerListFromQuery(
+        "SELECT id, name FROM people "
+        "WHERE deleted IS NULL OR deleted = 0");
 }
 
 QVariantList DesktopAppController::projectList() const
@@ -4078,6 +4084,27 @@ int DesktopAppController::addTeamMember(const QString& projectId)
     QVariant fk(projectId);
     return proxyRowFromSource(global_DBObjects.projectteammembersmodelproxy(),
                               global_DBObjects.projectteammembersmodel()->newRecord(&fk));
+}
+
+bool DesktopAppController::addTeamMemberContact(const QString& projectId,
+                                                const QString& contactId)
+{
+    global_DBObjects.setLastSaveError("");
+    if (projectId.isEmpty() || contactId.isEmpty()) return false;
+
+    if (isProjectTeamMember(projectId, contactId)) {
+        emit errorOccurred(tr("Duplicate Team Member"),
+                           tr("That contact is already a team member on this project."));
+        return false;
+    }
+
+    if (addContactToProjectTeam(projectId, contactId))
+        return true;
+
+    const QString err = global_DBObjects.lastSaveError();
+    if (!err.isEmpty())
+        emit errorOccurred(tr("Cannot Add Team Member"), err);
+    return false;
 }
 
 bool DesktopAppController::deleteTeamMember(int row)

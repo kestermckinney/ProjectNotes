@@ -29,6 +29,7 @@
 #include "DesktopAppController.h"
 #include "databaseobjects.h"
 #include "databasestructure.h"
+#include "sortfilterproxymodel.h"
 #include "databaseupgrade_v6_4_0.h"
 #include "version.h"
 #include "FolderManager.h"
@@ -815,6 +816,55 @@ private slots:
         QVERIFY2(c->saveTeamMember(row, memberId, "Analyst", true),
                  qPrintable(c->lastSaveError()));
         QCOMPARE(c->projectTeamMembersModel()->rowCount(), before + 1);
+    }
+
+    // Issue #10: the Add Team Member picker lost contacts whenever a filter was
+    // on, because contactList() read the shared, filtered Contacts model. The
+    // picker list must ignore list filters, and adding through the picker must
+    // land on the right project even when the team list is filtered too.
+    void test_10a_teamPickerIgnoresFilters()
+    {
+        const int prow = c->addContact();
+        QVERIFY(prow >= 0);
+        const QString name = uniq("Picker_");
+        QVERIFY2(c->saveContact(prow, name, "p@example.com", "", "",
+                               m_clientId, "Analyst"),
+                 qPrintable(c->lastSaveError()));
+        const QString id = idForColumnValue(c->contactsModel(), 1, name);
+        QVERIFY(!id.isEmpty());
+
+        auto listHas = [](const QVariantList& list, const QString& want) {
+            for (const QVariant& v : list)
+                if (v.toMap().value("id").toString() == want) return true;
+            return false;
+        };
+
+        // setQuickSearch() is debounced; apply the search immediately instead.
+        auto search = [](QAbstractItemModel* m, const QString& text) {
+            auto* proxy = qobject_cast<SortFilterProxyModel*>(m);
+            QVERIFY(proxy);
+            proxy->setQuickSearchNow(text);
+        };
+        // Clear the searches even on failure, or later tests inherit them.
+        auto clear = qScopeGuard([&] {
+            search(c->contactsModel(), "");
+            search(c->companiesModel(), "");
+            search(c->projectTeamMembersModel(), "");
+        });
+
+        search(c->contactsModel(), "no-contact-matches-this");
+        search(c->companiesModel(), "no-company-matches-this");
+        QCOMPARE(c->contactsModel()->rowCount(), 0);
+        QCOMPARE(c->companiesModel()->rowCount(), 0);
+        QVERIFY(listHas(c->contactList(), id));
+        QVERIFY(listHas(c->contactList(), m_personId));
+        QVERIFY(listHas(c->companyList(), m_clientId));
+
+        c->setProjectFilter(m_projectId);
+        search(c->projectTeamMembersModel(), "no-member-matches-this");
+        QVERIFY(c->addTeamMemberContact(m_projectId, id));
+        QVERIFY(!c->addTeamMemberContact(m_projectId, id));   // duplicate
+        QVERIFY(listHas(c->teamMemberList(m_projectId, {}), id));
     }
 
     void test_10b_sendNotesLoadsRecipientsWithoutEmailBackend()

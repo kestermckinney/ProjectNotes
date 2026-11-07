@@ -1311,11 +1311,10 @@ Item {
     ContactPickerDialog {
         id: teamPicker
         headingText: qsTr("Add Team Member")
-        model: DesktopAppController.contactList()
+        // Re-read on every open so contacts added since the page loaded show up.
+        reload: function () { return DesktopAppController.contactList() }
         onPicked: (contact) => {
-            var r = DesktopAppController.addTeamMember(page.projectId)
-            if (r >= 0) {
-                DesktopAppController.saveTeamMember(r, contact.id, "", false)
+            if (DesktopAppController.addTeamMemberContact(page.projectId, contact.id)) {
                 DesktopAppController.refreshTeamMembers()
                 page._refreshTeamContacts()
             }
