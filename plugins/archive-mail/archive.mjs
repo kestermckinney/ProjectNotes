@@ -117,10 +117,10 @@ export function destination(projectKey, localFolder) {
 // The project's folder as a destination, or null when it has none or its
 // local folder is gone.
 export function* projectDestination(projectKey) {
-    const folder = yield projectFiles.location(projectKey);
+    const folder = yield projectFiles.location(projectKey, { preferLocal: true });
     if (!folder) return null;
     if (folder.kind === "local" && !(yield files.exists(folder.path))) return null;
-    return destination(projectKey, null);
+    return destination(projectKey, folder.kind === "local" ? folder.path : null);
 }
 
 function* readState(target, path) {

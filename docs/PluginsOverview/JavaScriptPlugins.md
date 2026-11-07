@@ -349,3 +349,5 @@ Settings > Plugins can install a plugin folder or a `.pnplugin` file, which is a
 - **Logging.** `console.log()` and `log.info()` write to the application log, tagged with the plugin id. Open it from the application menu's log viewer. Errors also appear as a notice and in Settings > Plugins.
 - **Type checking.** `projectnotes.d.ts` (in `ProjectNotesPlugins/js` in the source tree) declares the whole API. Add it to a `jsconfig.json` next to your plugin for completion and type checking in editors such as Visual Studio Code.
 - **Long work.** Keep synchronous loops short. Waiting on promises does not count toward the ten-second limit; a loop that never yields does.
+
+Archive Mail calls `projectFiles.location(projectKey, { preferLocal: true })` to prefer an existing local project folder (including a synced SharePoint folder). It writes mail and `download_state.json` directly into that local folder; if none is available, it uses the usual project folder destination. Other callers keep the default destination selection.

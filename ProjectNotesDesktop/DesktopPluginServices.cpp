@@ -346,7 +346,9 @@ void DesktopPluginServices::requestProjectFiles(const QString& method, const QVa
         return;
     }
     const QString projectKey = arg(args, 0).toString();
-    const PN::Comm::ProjectFolder folder = m_app->primaryProjectFolder(projectKey);
+    const bool preferLocal = method == QLatin1String("projectFiles.location")
+        && arg(args, 1).toMap().value(QStringLiteral("preferLocal")).toBool();
+    const PN::Comm::ProjectFolder folder = m_app->projectFolderForFiles(projectKey, preferLocal);
     if (method == QLatin1String("projectFiles.location")) {
         if (!folder.isValid()) {
             reply(QVariant::fromValue(nullptr), {});

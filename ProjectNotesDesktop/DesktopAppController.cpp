@@ -4405,6 +4405,30 @@ PN::Comm::ProjectFolder DesktopAppController::primaryProjectFolder(const QString
     return PN::Comm::ProjectFolder::fromLocation(q.value(0).toString(), q.value(1).toString());
 }
 
+PN::Comm::ProjectFolder DesktopAppController::projectFolderForFiles(const QString& projectId, bool preferLocal) const
+{
+    const PN::Comm::ProjectFolder primary = primaryProjectFolder(projectId);
+    if (!preferLocal)
+        return primary;
+    if (preferLocal && primary.kind == PN::Comm::ProjectFolder::Kind::Local
+        && QFileInfo(primary.path).isDir())
+        return primary;
+    // Archive Mail can explicitly prefer an available local synced folder.
+    QSqlQuery q(global_DBObjects.getDb());
+    q.prepare(QStringLiteral("SELECT full_path FROM project_locations WHERE project_id = ? AND deleted = 0 "
+                             "AND location_type = 'File Folder' AND trim(coalesce(full_path, '')) <> '' "
+                             "ORDER BY location_description, full_path"));
+    q.addBindValue(projectId);
+    if (q.exec()) {
+        while (q.next()) {
+            const QString path = q.value(0).toString().trimmed();
+            if (QFileInfo(path).isDir())
+                return {PN::Comm::ProjectFolder::Kind::Local, path};
+        }
+    }
+    return primary;
+}
+
 QVariantMap DesktopAppController::projectFolderInfo(const QString& projectId) const
 {
     const PN::Comm::ProjectFolder folder = primaryProjectFolder(projectId);

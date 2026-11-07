@@ -1051,6 +1051,12 @@ void PluginHostTest::bundledPluginsRun()
     emlFile.close();
     QVERIFY(QFileInfo::exists(projectFolder + QStringLiteral("/Mail/Received/download_state.json")));
 
+    // Archive Mail requests a local synced folder and pins all writes to it.
+    const auto archiveLocations = services.argsOf(outlook, QStringLiteral("projectFiles.location"));
+    QVERIFY(!archiveLocations.isEmpty());
+    QVERIFY(archiveLocations.last().value(1).toMap().value(QStringLiteral("preferLocal")).toBool());
+    QVERIFY(services.argsOf(outlook, QStringLiteral("projectFiles.writeText")).isEmpty());
+
     // A second run finds the message already archived and saves nothing.
     registry.runMenu(outlook, QStringLiteral("download-graph"), QStringLiteral("projects"), QStringLiteral("project-p4000"));
     QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(outlook, QStringLiteral("ui.notify")).size(), 2, 10000);

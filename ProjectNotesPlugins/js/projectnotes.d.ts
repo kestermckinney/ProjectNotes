@@ -240,7 +240,7 @@ declare module "projectnotes" {
     export interface ProjectFileEntry { name: string; isDir: boolean; size: number; location: string; }
     export const projectFiles: {
         /** The project folder, or null when the project has none. A local folder is also readable and writable with files.*. */
-        location(projectKey: string): Promise<ProjectFolderLocation | null>;
+        location(projectKey: string, options?: { preferLocal?: boolean }): Promise<ProjectFolderLocation | null>;
         /** Entries directly inside `folder` ("" for the project folder); empty when it is missing. */
         list(projectKey: string, folder?: string): Promise<ProjectFileEntry[]>;
         exists(projectKey: string, path: string): Promise<boolean>;

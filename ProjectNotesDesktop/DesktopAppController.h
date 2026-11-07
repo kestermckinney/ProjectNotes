@@ -800,6 +800,8 @@ public:
     // Whether a location row may be made the primary project folder.
     Q_INVOKABLE bool        canBeProjectFolder(const QString& locationType, const QString& fullPath) const;
     PN::Comm::ProjectFolder primaryProjectFolder(const QString& projectId) const;
+    // preferLocal selects an existing local project folder before the primary.
+    PN::Comm::ProjectFolder projectFolderForFiles(const QString& projectId, bool preferLocal = false) const;
     PN::Comm::ProjectFolderStore* projectFolderStore() const { return m_projectFolderStore; }
     // True once the user has set or cleared the primary project folder, which
     // stops File Finder from choosing one.
