@@ -1072,32 +1072,41 @@ QVariantList AppController::teamMemberList(const QString& projectId, const QStri
     return out;
 }
 
-QVariantList AppController::companyList() const
+// Run an "SELECT id, name ..." query and return the rows as a picker list.
+// Picker lists read the tables directly instead of the shared Contacts /
+// Companies models: those models carry the column filters restored from the
+// list pages (applied in the model's SQL), so reading them would hide contacts
+// or companies from every picker.
+static QVariantList pickerListFromQuery(const QString& sql)
 {
     QVariantList out;
-    auto* proxy = global_DBObjects.companiesmodelproxy();
-    if (!proxy) return out;
-    for (int row = 0; row < proxy->rowCount(); ++row) {
+    DB_LOCK;
+    QSqlQuery qry(global_DBObjects.getDb());
+    qry.exec(sql);
+    while (qry.next()) {
         QVariantMap m;
-        m.insert("id",   proxy->data(proxy->index(row, 0)).toString());
-        m.insert("name", proxy->data(proxy->index(row, 1)).toString());
+        m.insert("id",   qry.value(0).toString());
+        m.insert("name", qry.value(1).toString());
         out.append(m);
     }
+    DB_UNLOCK;
     return out;
+}
+
+QVariantList AppController::companyList() const
+{
+    return pickerListFromQuery(
+        "SELECT id, client_name FROM clients "
+        "WHERE deleted IS NULL OR deleted = 0 "
+        "ORDER BY client_name COLLATE NOCASE");
 }
 
 QVariantList AppController::contactList() const
 {
-    QVariantList out;
-    auto* proxy = global_DBObjects.contactsmodelproxy();
-    if (!proxy) return out;
-    for (int row = 0; row < proxy->rowCount(); ++row) {
-        QVariantMap m;
-        m.insert("id",   proxy->data(proxy->index(row, 0)).toString());
-        m.insert("name", proxy->data(proxy->index(row, 1)).toString());
-        out.append(m);
-    }
-    return out;
+    return pickerListFromQuery(
+        "SELECT id, name FROM people "
+        "WHERE deleted IS NULL OR deleted = 0 "
+        "ORDER BY name COLLATE NOCASE");
 }
 
 QString AppController::teamMemberEmailList() const

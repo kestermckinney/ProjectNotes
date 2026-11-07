@@ -753,6 +753,12 @@ public:
     Q_INVOKABLE QVariantMap getTeamMemberData(int row) const;
     Q_INVOKABLE bool        saveTeamMember(int row, const QString& contactId,
                                            const QString& role, bool receiveStatusReport);
+    // Add contactId to projectId's team in one step (the Team picker). Writes the
+    // source model directly, so a filter on the team list can't redirect the
+    // write to another row. Reports a duplicate or a failed save through
+    // errorOccurred() and returns false.
+    Q_INVOKABLE bool        addTeamMemberContact(const QString& projectId,
+                                                 const QString& contactId);
     // Same vCard parsing as addContactsFromVCardDrop() (company resolved/created,
     // contact added/looked up), plus each contact is added to projectId's team
     // via addContactToProjectTeam() (silently skipping anyone already on it).
