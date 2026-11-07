@@ -230,13 +230,22 @@ declare module "projectnotes" {
      * a Microsoft Teams channel folder. Paths are relative to that folder and
      * use "/". A Teams folder is written through Microsoft Graph with the
      * Office 365 account signed in under Settings, which needs
-     * Files.ReadWrite.All. Needs the "files" permission.
+     * Files.ReadWrite.All and the "Save files into Microsoft Teams folders"
+     * setting. Without them the Teams folder is read-only: location() reports
+     * writable false (or gives the project's local folder instead, when it
+     * has one), and writes fail with "teams-read-only" or
+     * "teams-access-denied". Needs the "files" permission.
      *
      * Methods that return a location give what a project_locations row should
      * store: a local path, or a Teams URL (the direct document URL for Office
      * files, so they open in the desktop app).
      */
-    export interface ProjectFolderLocation { kind: "local" | "teams"; path: string; }
+    export interface ProjectFolderLocation {
+        kind: "local" | "teams";
+        path: string;
+        /** False for a Teams folder Project Notes can't save into; it can still be read. */
+        writable: boolean;
+    }
     export interface ProjectFileEntry { name: string; isDir: boolean; size: number; location: string; }
     export const projectFiles: {
         /** The project folder, or null when the project has none. A local folder is also readable and writable with files.*. */

@@ -10,6 +10,23 @@
 
 namespace PN::Comm {
 
+namespace {
+
+const QString kGraphPrefix = QStringLiteral("https://graph.microsoft.com/");
+const QString kFilesRead = QStringLiteral("https://graph.microsoft.com/Files.Read.All");
+const QString kFilesReadWrite = QStringLiteral("https://graph.microsoft.com/Files.ReadWrite.All");
+const QString kTeamsFileWriteKey = QStringLiteral("Office365/teamsFileWrite");
+
+QString bareScope(QString scope)
+{
+    scope = scope.trimmed();
+    if (scope.startsWith(kGraphPrefix, Qt::CaseInsensitive))
+        scope = scope.mid(kGraphPrefix.size());
+    return scope;
+}
+
+} // namespace
+
 Office365Service::Office365Service(QObject *parent) : QObject(parent)
 {
     setOAuthManager(new MicrosoftOAuthManager(this));
@@ -28,6 +45,8 @@ void Office365Service::setOAuthManager(MicrosoftOAuthManager *manager)
         connect(m_oauth, &MicrosoftOAuthManager::accessTokenChanged, this,
                 [this](const QString &token) {
                     m_accessToken = token;
+                    if (!token.isEmpty())
+                        m_fileWriteSignInFailed = false;
                     if (token.isEmpty()) {
                         m_identityLabel.clear();
                         m_identityGeneration = 0;
@@ -40,6 +59,15 @@ void Office365Service::setOAuthManager(MicrosoftOAuthManager *manager)
                 [this] { emit accountChanged(); });
         connect(m_oauth, &MicrosoftOAuthManager::diagnostic, this,
                 [this](const QString &message) { emit diagnostic(message); });
+        connect(m_oauth, &MicrosoftOAuthManager::interactiveSignInFailed, this, [this] {
+            bool askedForWrite = false;
+            for (const QString &scope : m_oauth->requestedScopeList())
+                askedForWrite = askedForWrite || isFileWriteScope(scope);
+            if (m_fileWriteSignInFailed != askedForWrite) {
+                m_fileWriteSignInFailed = askedForWrite;
+                emit accountChanged();
+            }
+        });
     }
     emit accountChanged();
 }
@@ -77,6 +105,11 @@ void Office365Service::configureIdentity(const QString &settingsOrganization,
     m_settingsOrganization = settingsOrganization;
     m_tenantId = tenantId.trimmed().isEmpty() ? QStringLiteral("organizations") : tenantId.trimmed();
     m_clientId = clientId.trimmed();
+    if (!m_settingsOrganization.isEmpty()) {
+        QSettings settings(m_settingsOrganization, QStringLiteral("AppSettings"));
+        settings.setFallbacksEnabled(false);
+        m_teamsFileWrite = settings.value(kTeamsFileWriteKey, true).toBool();
+    }
     if (m_oauth)
         m_oauth->configure(m_tenantId, m_clientId);
 }
@@ -112,17 +145,70 @@ QString Office365Service::authenticationStatus() const
 QString Office365Service::userCode() const { return m_oauth ? m_oauth->userCode() : QString(); }
 QUrl Office365Service::verificationUrl() const { return m_oauth ? m_oauth->verificationUrl() : QUrl(); }
 void Office365Service::restoreSession() { if (m_oauth) m_oauth->restoreSession(); }
+bool Office365Service::isFileWriteScope(const QString &scope)
+{
+    return bareScope(scope).compare(QLatin1String("Files.ReadWrite.All"), Qt::CaseInsensitive) == 0;
+}
+
+void Office365Service::setTeamsFileWriteEnabled(bool enabled)
+{
+    if (m_teamsFileWrite == enabled)
+        return;
+    m_teamsFileWrite = enabled;
+    if (!m_settingsOrganization.isEmpty()) {
+        QSettings settings(m_settingsOrganization, QStringLiteral("AppSettings"));
+        settings.setFallbacksEnabled(false);
+        settings.setValue(kTeamsFileWriteKey, enabled);
+        settings.sync();
+    }
+    // A refused upload may have queued the write scope for the next sign-in.
+    m_additionalScopes = applyTeamsFilePolicy(m_additionalScopes);
+    // The requested scopes are left alone: changing them would mark a working
+    // session as needing new consent. startSignIn() applies the setting.
+    emit accountChanged();
+}
+
+QString Office365Service::teamsFileScope() const
+{
+    return m_teamsFileWrite ? kFilesReadWrite : kFilesRead;
+}
+
+bool Office365Service::teamsFilesWritable() const
+{
+    if (!m_teamsFileWrite)
+        return false;
+    const QStringList granted = m_oauth ? m_oauth->grantedScopeList() : QStringList{};
+    if (granted.isEmpty())
+        return true;
+    for (const QString &scope : granted)
+        if (isFileWriteScope(scope))
+            return true;
+    return false;
+}
+
+QStringList Office365Service::applyTeamsFilePolicy(QStringList scopes) const
+{
+    if (m_teamsFileWrite)
+        return scopes;
+    for (QString &scope : scopes)
+        if (isFileWriteScope(scope))
+            scope = kFilesRead;
+    scopes.removeDuplicates();
+    return scopes;
+}
+
 void Office365Service::requestFileFinderConsent()
 {
     if (m_oauth) {
         m_oauth->setRequestedScopes({QStringLiteral("offline_access"),
                                      QStringLiteral("https://graph.microsoft.com/Team.ReadBasic.All"),
                                      QStringLiteral("https://graph.microsoft.com/Channel.ReadBasic.All"),
-                                     QStringLiteral("https://graph.microsoft.com/Files.ReadWrite.All")});
+                                     teamsFileScope()});
     }
 }
 
-void Office365Service::requestCommunicationsConsent(bool includeContacts, bool exportContacts)
+void Office365Service::requestCommunicationsConsent(bool includeContacts, bool exportContacts,
+                                                    bool includeFileWrite)
 {
     if (m_oauth) {
         m_oauth->setRequestedScopes({QStringLiteral("offline_access"),
@@ -131,11 +217,32 @@ void Office365Service::requestCommunicationsConsent(bool includeContacts, bool e
                                      // Scheduled meetings are created as draft
                                      // events in the signed-in calendar.
                                      QStringLiteral("Calendars.ReadWrite")});
-        if (includeContacts) {
-            auto scopes = m_oauth->requestedScopeList();
+        auto scopes = m_oauth->requestedScopeList();
+        if (includeContacts)
             scopes.append(exportContacts ? QStringLiteral("Contacts.ReadWrite") : QStringLiteral("Contacts.Read"));
-            m_oauth->setRequestedScopes(scopes);
+        // Teams project folders need the Teams file scope (Files.ReadWrite.All,
+        // or Files.Read.All with saving turned off), and a refresh never adds
+        // it, so this sign-in is where it is consented. Ask when the caller
+        // says Teams folders are in use (File Finder searches Teams), or when
+        // the saved grant already reaches Teams or SharePoint files. The
+        // grant alone is not enough: Microsoft can revoke it, and then
+        // nothing would ask for the scope again.
+        if (includeFileWrite)
+            scopes.append(teamsFileScope());
+        static const QStringList teamsFileScopes{
+            QStringLiteral("Files.Read.All"), QStringLiteral("Files.ReadWrite.All"),
+            QStringLiteral("Team.ReadBasic.All"), QStringLiteral("Channel.ReadBasic.All")};
+        for (const QString &granted : m_oauth->grantedScopeList()) {
+            if (teamsFileScopes.contains(bareScope(granted), Qt::CaseInsensitive)) {
+                scopes.append(teamsFileScope());
+                break;
+            }
         }
+        // A feature that was refused (a Teams upload needing
+        // Files.ReadWrite.All, a plugin's scopes) tells the user to sign in
+        // again here; without these that sign-in would never ask for them.
+        scopes.append(m_additionalScopes);
+        m_oauth->setRequestedScopes(applyTeamsFilePolicy(scopes));
     }
 }
 
@@ -146,7 +253,7 @@ void Office365Service::requestContactConsent(bool exportEnabled)
         scopes.append({QStringLiteral("offline_access"), QStringLiteral("User.Read"),
                        exportEnabled ? QStringLiteral("Contacts.ReadWrite") : QStringLiteral("Contacts.Read")});
         scopes.removeDuplicates();
-        m_oauth->setRequestedScopes(scopes);
+        m_oauth->setRequestedScopes(applyTeamsFilePolicy(scopes));
     }
 }
 
@@ -156,13 +263,36 @@ void Office365Service::requestAdditionalScopes(const QStringList &extra)
         return;
     QStringList scopes = m_oauth->grantedScopeList();
     scopes.append({QStringLiteral("offline_access"), QStringLiteral("User.Read")});
-    scopes.append(extra);
+    const QStringList allowed = applyTeamsFilePolicy(extra);
+    scopes.append(allowed);
     scopes.removeDuplicates();
-    m_oauth->setRequestedScopes(scopes);
+    m_additionalScopes.append(allowed);
+    m_additionalScopes.removeDuplicates();
+    m_oauth->setRequestedScopes(applyTeamsFilePolicy(scopes));
 }
 
-void Office365Service::startSignIn() { if (m_oauth) m_oauth->startSignIn(); }
-void Office365Service::signOut() { if (m_oauth) m_oauth->signOut(); }
+void Office365Service::startSignIn()
+{
+    if (!m_oauth)
+        return;
+    // Whatever set the scopes (including the manager's File Finder default),
+    // a sign-in never asks for Files.ReadWrite.All with saving turned off.
+    const QStringList requested = m_oauth->requestedScopeList();
+    const QStringList allowed = applyTeamsFilePolicy(requested);
+    if (allowed != requested)
+        m_oauth->setRequestedScopes(allowed);
+    if (m_fileWriteSignInFailed) {
+        m_fileWriteSignInFailed = false;
+        emit accountChanged();
+    }
+    m_oauth->startSignIn();
+}
+void Office365Service::signOut()
+{
+    m_additionalScopes.clear();
+    if (m_oauth)
+        m_oauth->signOut();
+}
 
 Office365Account Office365Service::account() const
 {

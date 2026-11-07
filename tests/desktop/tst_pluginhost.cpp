@@ -99,6 +99,7 @@ public:
 // store over a local folder. `reportedKind` is what projectFiles.location()
 // says the folder is, so a test can make a plugin treat it as a Microsoft
 // Teams folder (reachable only through projectFiles) while it stays local.
+// "teams-read-only" is a Teams folder Project Notes can't save into.
 bool answerProjectFiles(PN::Comm::ProjectFolderStore& store, const QString& folderPath, const QString& reportedKind,
                         const QString& method, const QVariantList& args, const Reply& reply)
 {
@@ -112,10 +113,12 @@ bool answerProjectFiles(PN::Comm::ProjectFolderStore& store, const QString& fold
     };
     const QString path = args.value(1).toString();
     if (method == QLatin1String("projectFiles.location")) {
-        reply(QVariantMap{{QStringLiteral("kind"), reportedKind},
-                          {QStringLiteral("path"), reportedKind == QLatin1String("teams")
+        const bool teams = reportedKind.startsWith(QLatin1String("teams"));
+        reply(QVariantMap{{QStringLiteral("kind"), teams ? QStringLiteral("teams") : reportedKind},
+                          {QStringLiteral("path"), teams
                                ? QStringLiteral("https://contoso.sharepoint.com/sites/P4000/Shared%20Documents/General")
-                               : folderPath}}, {});
+                               : folderPath},
+                          {QStringLiteral("writable"), reportedKind != QLatin1String("teams-read-only")}}, {});
     } else if (method == QLatin1String("projectFiles.list")) {
         store.list(folder, path, [reply, failed](QList<PN::Comm::ProjectFileEntry> entries, PN::Comm::ServiceError error) {
             if (!error.code.isEmpty()) { reply({}, failed(error)); return; }
@@ -1071,6 +1074,23 @@ void PluginHostTest::bundledPluginsRun()
     QVERIFY2(registry.plugin(outlook).lastError.isEmpty(), qPrintable(registry.plugin(outlook).lastError));
     QCOMPARE(services.argsOf(outlook, QStringLiteral("ui.notify")).last().value(0).toString(), QStringLiteral("Saved 1 email(s)."));
     QVERIFY(QFileInfo::exists(eml));
+
+    // A Teams folder Project Notes can't save into (saving turned off, or
+    // read access only) is skipped instead of failing on the first write.
+    QVERIFY(QDir(projectFolder + QStringLiteral("/Mail")).removeRecursively());
+    projectFolderKind = QStringLiteral("teams-read-only");
+    const int writesBefore = services.argsOf(outlook, QStringLiteral("projectFiles.mkdir")).size()
+        + services.argsOf(outlook, QStringLiteral("projectFiles.upload")).size()
+        + services.argsOf(outlook, QStringLiteral("projectFiles.writeText")).size();
+    registry.runMenu(outlook, QStringLiteral("download-graph"), QStringLiteral("projects"), QStringLiteral("project-p4000"));
+    QTRY_COMPARE_WITH_TIMEOUT(services.argsOf(outlook, QStringLiteral("ui.notify")).size(), 4, 10000);
+    QVERIFY2(registry.plugin(outlook).lastError.isEmpty(), qPrintable(registry.plugin(outlook).lastError));
+    QCOMPARE(services.argsOf(outlook, QStringLiteral("ui.notify")).last().value(0).toString(), QStringLiteral("Saved 0 email(s)."));
+    QCOMPARE(services.argsOf(outlook, QStringLiteral("projectFiles.mkdir")).size()
+                 + services.argsOf(outlook, QStringLiteral("projectFiles.upload")).size()
+                 + services.argsOf(outlook, QStringLiteral("projectFiles.writeText")).size(),
+             writesBefore);
+    QVERIFY(!QFileInfo::exists(eml));
     projectFolderKind = QStringLiteral("local");
 
     // MS Office Templates is Windows-only. A copy without the platform limit checks

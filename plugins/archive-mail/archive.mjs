@@ -114,11 +114,12 @@ export function destination(projectKey, localFolder) {
     };
 }
 
-// The project's folder as a destination, or null when it has none or its
-// local folder is gone.
+// Prefer an available local project folder, including a synced Teams folder.
+// The project's folder as a destination, or null when it has none, its
+// local folder is gone, or it is a Teams folder Project Notes can't save into.
 export function* projectDestination(projectKey) {
     const folder = yield projectFiles.location(projectKey, { preferLocal: true });
-    if (!folder) return null;
+    if (!folder || folder.writable === false) return null;
     if (folder.kind === "local" && !(yield files.exists(folder.path))) return null;
     return destination(projectKey, folder.kind === "local" ? folder.path : null);
 }

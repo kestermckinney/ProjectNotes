@@ -53,7 +53,10 @@ struct ProjectFileEntry {
 //
 // Teams folders go through Microsoft Graph with the signed-in Office 365
 // account: the folder URL is resolved once through /shares, then items are
-// addressed by path beneath it. Writing needs Files.ReadWrite.All.
+// addressed by path beneath it. Writing needs Files.ReadWrite.All and the
+// Office 365 "save files into Microsoft Teams folders" setting; without them
+// a Teams folder is read-only and write() and mkdir() fail at once with
+// "teams-read-only" or "teams-access-denied".
 class ProjectFolderStore final : public QObject {
     Q_OBJECT
 public:
@@ -63,6 +66,10 @@ public:
     using BytesCallback = std::function<void(std::optional<QByteArray>, ServiceError)>;
 
     explicit ProjectFolderStore(Office365Service *office, QObject *parent = nullptr);
+
+    // Whether write() and mkdir() can work in `folder`: always for a local
+    // folder, and for a Teams folder when the Office 365 account may save there.
+    [[nodiscard]] bool canWrite(const ProjectFolder &folder) const;
 
     // The files and folders directly inside `relative`; empty when it is missing.
     void list(const ProjectFolder &folder, const QString &relative, EntriesCallback done);
@@ -110,6 +117,7 @@ private:
                      LocationCallback done);
     void finishUpload(const Root &root, const QJsonObject &item, LocationCallback done);
     ServiceError responseError(const HttpResponse &response, const QString &what);
+    ServiceError readOnlyError(const QString &what);
 
     static QUrl itemUrl(const Root &root, const QString &itemId, const QStringList &segments,
                         const QString &suffix = {}, const QString &query = {});

@@ -75,10 +75,44 @@ QString Office365SettingsModel::accountLabel() const
     return m_service ? m_service->account().label : QString();
 }
 
+bool Office365SettingsModel::teamsFileWrite() const
+{
+    return !m_service || m_service->teamsFileWriteEnabled();
+}
+
+void Office365SettingsModel::setTeamsFileWrite(bool enabled)
+{
+    if (m_service)
+        m_service->setTeamsFileWriteEnabled(enabled);
+}
+
+bool Office365SettingsModel::fileWriteSignInFailed() const
+{
+    return m_service && m_service->fileWriteSignInFailed();
+}
+
+bool Office365SettingsModel::teamsFileWriteNotGranted() const
+{
+    if (!m_service || !m_service->authenticated() || !m_service->teamsFileWriteEnabled())
+        return false;
+    // Only when this account uses Teams files at all.
+    bool teamsFiles = m_fileFinder && m_fileFinder->office365Enabled();
+    for (const QString &scope : m_service->account().grantedScopes)
+        teamsFiles = teamsFiles || scope.contains(QLatin1String("Files.Read"), Qt::CaseInsensitive);
+    return teamsFiles && !m_service->teamsFilesWritable();
+}
+
 void Office365SettingsModel::startSignIn()
 {
     // The single account sign-in also requests the enabled contact capability,
-    // never Mail.Send. File Finder requests its own scopes when used.
+    // and Teams file access when File Finder searches Microsoft Teams (write
+    // access when saving into Teams folders is on). Never Mail.Send.
+    requestCommunicationsConsent();
+}
+
+void Office365SettingsModel::signInWithoutTeamsFileWrite()
+{
+    setTeamsFileWrite(false);
     requestCommunicationsConsent();
 }
 
@@ -88,7 +122,8 @@ void Office365SettingsModel::requestCommunicationsConsent()
         return;
     const auto config = m_contacts ? m_contacts->configuration() : QVariantMap{};
     const bool contactsEnabled = config.value("provider").toString() == "office365";
-    m_service->requestCommunicationsConsent(contactsEnabled, contactsEnabled);
+    const bool teamsFolders = m_fileFinder && m_fileFinder->office365Enabled();
+    m_service->requestCommunicationsConsent(contactsEnabled, contactsEnabled, teamsFolders);
     m_service->startSignIn();
 }
 

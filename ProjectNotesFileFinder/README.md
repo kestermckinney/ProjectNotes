@@ -67,4 +67,6 @@ primary of the other kind switches when the preferred kind turns up.
 File Finder only reads Teams. Writing into a Teams project folder goes through
 `PN::Comm::ProjectFolderStore` (ProjectNotesIntegrations) on the same Office 365
 session, which therefore asks for `Files.ReadWrite.All` instead of
-`Files.Read.All`.
+`Files.Read.All`. With the Office 365 setting **Save files into Microsoft
+Teams folders** turned off it asks for `Files.Read.All` again, and Teams
+project folders are read-only.

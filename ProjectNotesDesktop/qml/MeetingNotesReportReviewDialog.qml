@@ -48,7 +48,9 @@ Dialog {
     property string projectFolderFormat: "pdf"
     property string projectFolderError: ""
     property var projectFolder: ({})
+    // A Teams folder Project Notes can't save into is not offered.
     readonly property bool hasProjectFolder: projectFolder && projectFolder.kind !== undefined
+                                             && projectFolder.writable !== false
     function refreshProjectFolder() {
         projectFolder = projectId !== "" ? DesktopAppController.projectFolderInfo(projectId) : ({})
     }

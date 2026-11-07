@@ -346,6 +346,8 @@ void DesktopPluginServices::requestProjectFiles(const QString& method, const QVa
         return;
     }
     const QString projectKey = arg(args, 0).toString();
+    // Reads and writes use the same folder, so a plugin never reads one
+    // folder and saves into another.
     const bool preferLocal = method == QLatin1String("projectFiles.location")
         && arg(args, 1).toMap().value(QStringLiteral("preferLocal")).toBool();
     const PN::Comm::ProjectFolder folder = m_app->projectFolderForFiles(projectKey, preferLocal);
@@ -354,7 +356,8 @@ void DesktopPluginServices::requestProjectFiles(const QString& method, const QVa
             reply(QVariant::fromValue(nullptr), {});
             return;
         }
-        reply(QVariantMap{{QStringLiteral("kind"), folder.kindName()}, {QStringLiteral("path"), folder.path}}, {});
+        reply(QVariantMap{{QStringLiteral("kind"), folder.kindName()}, {QStringLiteral("path"), folder.path},
+                          {QStringLiteral("writable"), store->canWrite(folder)}}, {});
         return;
     }
     if (!folder.isValid()) {
@@ -362,7 +365,8 @@ void DesktopPluginServices::requestProjectFiles(const QString& method, const QVa
                                     tr("The project has no project folder. Set one on the project's Files & Folders tab.")));
         return;
     }
-    // Errors from the store keep their codes ("exists", "teams-access-denied", ...).
+    // Errors from the store keep their codes ("exists", "teams-access-denied",
+    // "teams-read-only", ...).
     auto failed = [](const PN::Comm::ServiceError& error) {
         return PluginError::make(error.code.isEmpty() ? QStringLiteral("io-error") : error.code, error.displayText);
     };

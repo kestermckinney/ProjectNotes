@@ -52,11 +52,38 @@ public:
     [[nodiscard]] QString userCode() const;
     [[nodiscard]] QUrl verificationUrl() const;
     void restoreSession();
+
+    // Saving into Microsoft Teams project folders needs Files.ReadWrite.All.
+    // Some organizations never grant it to their app registration, and asking
+    // for a scope that cannot be consented fails the whole sign-in (email
+    // drafts, calendar, contacts and File Finder included). With saving
+    // turned off, every request for Files.ReadWrite.All becomes
+    // Files.Read.All, so Teams stays readable. Stored as
+    // Office365/teamsFileWrite; on by default.
+    [[nodiscard]] bool teamsFileWriteEnabled() const { return m_teamsFileWrite; }
+    void setTeamsFileWriteEnabled(bool enabled);
+    // Files.ReadWrite.All, or Files.Read.All with saving turned off.
+    [[nodiscard]] QString teamsFileScope() const;
+    // True when saving is on and the grant allows it. A grant that was never
+    // recorded counts as allowing it; Graph refuses the upload if not.
+    [[nodiscard]] bool teamsFilesWritable() const;
+    // The last interactive sign-in failed while it asked for
+    // Files.ReadWrite.All, which is the usual sign of an organization that
+    // has not approved it. Cleared when a sign-in starts or succeeds.
+    [[nodiscard]] bool fileWriteSignInFailed() const { return m_fileWriteSignInFailed; }
+    static bool isFileWriteScope(const QString &scope);
+
     void requestFileFinderConsent();
-    void requestCommunicationsConsent(bool includeContacts = false, bool exportContacts = false);
+    // includeFileWrite adds the Teams file scope (see teamsFileScope()), for
+    // Microsoft Teams project folders. It is also added when the saved grant
+    // already reaches Teams or SharePoint files.
+    void requestCommunicationsConsent(bool includeContacts = false, bool exportContacts = false,
+                                      bool includeFileWrite = false);
     void requestContactConsent(bool exportEnabled);
-    // Adds scopes (for example a plugin's office365.scopes) to those already
-    // granted, for the next sign-in.
+    // Adds scopes (for example a plugin's office365.scopes, or the Teams write
+    // scope after a refused upload) to those already granted, for the next
+    // sign-in. They are kept until sign-out, so the Settings sign-in, which
+    // sets its own scope list, still asks for them.
     void requestAdditionalScopes(const QStringList &scopes);
     void startSignIn();
     void signOut();
@@ -76,6 +103,9 @@ signals:
     void diagnostic(const QString &message);
 
 private:
+    // Replaces Files.ReadWrite.All with Files.Read.All when saving is off.
+    [[nodiscard]] QStringList applyTeamsFilePolicy(QStringList scopes) const;
+
     MicrosoftOAuthManager *m_oauth = nullptr;
     HttpTransport *m_transport = nullptr;
     QString m_accessToken;
@@ -84,6 +114,10 @@ private:
     QString m_tenantId = QStringLiteral("organizations");
     QString m_clientId;
     quint64 m_identityGeneration = 0;
+    // Scopes features asked for through requestAdditionalScopes().
+    QStringList m_additionalScopes;
+    bool m_teamsFileWrite = true;
+    bool m_fileWriteSignInFailed = false;
 };
 
 } // namespace PN::Comm

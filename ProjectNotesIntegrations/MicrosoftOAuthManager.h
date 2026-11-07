@@ -61,6 +61,9 @@ signals:
     void accessTokenChanged(const QString &accessToken);
     void stateChanged();
     void diagnostic(const QString &message);
+    // A device-code sign-in ended without a token: it could not start, the
+    // code expired, or Microsoft refused it (often missing consent).
+    void interactiveSignInFailed();
 
 private:
     using JsonHandler = std::function<void(const QJsonObject &, const QString &)>;

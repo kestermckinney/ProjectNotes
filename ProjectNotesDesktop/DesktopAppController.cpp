@@ -1975,7 +1975,7 @@ bool DesktopAppController::saveReviewGeneratedAttachmentToProjectFolder(const QS
     if (!m_communicationsController || m_communicationsController->busy()
         || displayName.trimmed().isEmpty() || !m_projectFolderStore)
         return false;
-    const PN::Comm::ProjectFolder folder = primaryProjectFolder(projectId);
+    const PN::Comm::ProjectFolder folder = projectFolderForFiles(projectId);
     if (!folder.isValid())
         return false;
     const auto &preparation = m_communicationsController->preparation();
@@ -4408,12 +4408,14 @@ PN::Comm::ProjectFolder DesktopAppController::primaryProjectFolder(const QString
 PN::Comm::ProjectFolder DesktopAppController::projectFolderForFiles(const QString& projectId, bool preferLocal) const
 {
     const PN::Comm::ProjectFolder primary = primaryProjectFolder(projectId);
-    if (!preferLocal)
+    if (!preferLocal && (primary.kind != PN::Comm::ProjectFolder::Kind::Teams
+        || (m_projectFolderStore && m_projectFolderStore->canWrite(primary))))
         return primary;
     if (preferLocal && primary.kind == PN::Comm::ProjectFolder::Kind::Local
         && QFileInfo(primary.path).isDir())
         return primary;
     // Archive Mail can explicitly prefer an available local synced folder.
+    // Other callers retain the fallback for a read-only Teams folder.
     QSqlQuery q(global_DBObjects.getDb());
     q.prepare(QStringLiteral("SELECT full_path FROM project_locations WHERE project_id = ? AND deleted = 0 "
                              "AND location_type = 'File Folder' AND trim(coalesce(full_path, '')) <> '' "
@@ -4431,10 +4433,11 @@ PN::Comm::ProjectFolder DesktopAppController::projectFolderForFiles(const QStrin
 
 QVariantMap DesktopAppController::projectFolderInfo(const QString& projectId) const
 {
-    const PN::Comm::ProjectFolder folder = primaryProjectFolder(projectId);
+    const PN::Comm::ProjectFolder folder = projectFolderForFiles(projectId);
     if (!folder.isValid())
         return {};
-    return {{QStringLiteral("kind"), folder.kindName()}, {QStringLiteral("path"), folder.path}};
+    return {{QStringLiteral("kind"), folder.kindName()}, {QStringLiteral("path"), folder.path},
+            {QStringLiteral("writable"), m_projectFolderStore && m_projectFolderStore->canWrite(folder)}};
 }
 
 bool DesktopAppController::canBeProjectFolder(const QString& locationType, const QString& fullPath) const

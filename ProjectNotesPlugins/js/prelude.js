@@ -19,7 +19,7 @@
     // where they would `await` it; the host drives them (see drive()). This
     // file itself sticks to that subset.
 
-    // â”€â”€ Polyfills for common newer built-ins (each plugin has its own engine) â”€
+    // ── Polyfills for common newer built-ins (each plugin has its own engine) ─
     if (typeof Promise.prototype.finally !== "function") {
         Object.defineProperty(Promise.prototype, "finally", { configurable: true, writable: true, value: function (fn) {
             return this.then(function (v) { return Promise.resolve(fn()).then(function () { return v; }); },
@@ -45,7 +45,7 @@
         } });
     }
 
-    // â”€â”€ Coroutines â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Coroutines ─────────────────────────────────────────────────────────
     // A plugin function may return a value, a promise, or a generator. A
     // generator is run as a coroutine: each `yield` waits for the yielded
     // promise (or array of promises, or nested generator) and resumes with its
@@ -70,7 +70,7 @@
         });
     }
 
-    // â”€â”€ Errors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Errors ─────────────────────────────────────────────────────────────
     class PluginError extends Error {
         constructor(code, message, permission, details) {
             super(message || code);
@@ -87,7 +87,7 @@
         return new PluginError("plugin-error", String(e && e.message ? e.message : e));
     }
 
-    // â”€â”€ Bridge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Bridge ─────────────────────────────────────────────────────────────
     const pending = new Map();      // request id -> {resolve, reject}
 
     function call(method, args) {
@@ -103,7 +103,7 @@
     }
     function freeze(o) { return Object.freeze(o); }
 
-    // â”€â”€ Timers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Timers ─────────────────────────────────────────────────────────────
     let nextTimer = 1;
     const timerCallbacks = new Map();
     function startTimer(fn, ms, repeat, args) {
@@ -117,7 +117,7 @@
         if (timerCallbacks.delete(id)) callSync("timer.stop", [id]);
     }
 
-    // â”€â”€ Logging â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Logging ────────────────────────────────────────────────────────────
     function format(args) {
         return Array.prototype.map.call(args, function (a) {
             if (typeof a === "string") return a;
@@ -132,7 +132,7 @@
         error: function () { host.log("error", format(arguments)); },
     });
 
-    // â”€â”€ Events from the host â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Events from the host ───────────────────────────────────────────────
     const subscriptions = { "data.changed": [], "app.viewChanged": [], "settings.changed": [] };
     function subscribe(kind, entry) {
         subscriptions[kind].push(entry);
@@ -154,13 +154,13 @@
         }
     }
 
-    // â”€â”€ plugin â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── plugin ─────────────────────────────────────────────────────────────
     const plugin = freeze({
         id: info.id, name: info.name, version: info.version, apiVersion: info.apiVersion,
         bundled: info.bundled, packagePath: info.packagePath, dataPath: info.dataPath,
     });
 
-    // â”€â”€ data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── data ───────────────────────────────────────────────────────────────
     function makeDataOps(prefix) {
         return {
             get: function (entity, keyOrWhere, options) { return call(prefix + "get", [entity, keyOrWhere, options || {}]); },
@@ -203,7 +203,7 @@
         importXml: function (xml) { return call("data.importXml", [xml]); },
     }, dataOps));
 
-    // â”€â”€ app â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── app ────────────────────────────────────────────────────────────────
     const capabilitySet = new Set(info.capabilities || []);
     const app = freeze({
         version: info.appVersion,
@@ -229,7 +229,7 @@
         onViewChanged: function (handler) { return subscribe("app.viewChanged", { handler: handler }); },
     });
 
-    // â”€â”€ menus â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── menus ──────────────────────────────────────────────────────────────
     const menuHandlers = new Map();
     const menus = freeze({
         register: function (items) {
@@ -252,7 +252,7 @@
         list: function () { return callSync("menus.list", []); },
     });
 
-    // â”€â”€ ui â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── ui ─────────────────────────────────────────────────────────────────
     let nextDialog = 1;
     const dialogHandlers = new Map();   // dialog token -> handlers object
     const ui = freeze({
@@ -298,7 +298,7 @@
         }),
     });
 
-    // â”€â”€ settings / secrets / storage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── settings / secrets / storage ───────────────────────────────────────
     const settings = freeze({
         get: function (key, defaultValue) {
             const v = callSync("settings.get", [String(key)]);
@@ -338,7 +338,7 @@
         list: function (dir) { return call("storage.list", [dir === undefined ? "" : String(dir)]); },
     });
 
-    // â”€â”€ files â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── files ──────────────────────────────────────────────────────────────
     const files = freeze({
         exists: function (path) { return call("files.exists", [String(path)]); },
         stat: function (path) { return call("files.stat", [String(path)]); },
@@ -357,7 +357,7 @@
         reveal: function (path) { return call("files.reveal", [String(path)]); },
     });
 
-    // â”€â”€ projectFiles: the project's primary project folder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── projectFiles: the project's primary project folder ──────────────────
     // Paths are relative to the project folder, which is either local or a
     // Microsoft Teams channel folder; the host writes to Teams through Graph.
     const projectFiles = freeze({
@@ -377,7 +377,7 @@
         open: function (projectKey, path) { return call("projectFiles.open", [String(projectKey), String(path)]); },
     });
 
-    // â”€â”€ integrations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── integrations ───────────────────────────────────────────────────────
     const email = freeze({
         backends: function () { return call("email.backends", []); },
         compose: function (message) { return call("email.compose", [message || {}]); },
@@ -533,7 +533,7 @@
         generate: function (workflow, projectKey, options) { return call("reports.generate", [String(workflow), String(projectKey), options || {}]); },
     });
 
-    // â”€â”€ projectnotes/common â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── projectnotes/common ────────────────────────────────────────────────
     function escapeHtml(text) {
         return String(text === null || text === undefined ? "" : text)
             .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -693,7 +693,7 @@
     // Globals every plugin expects.
     const console = freeze({ log: log.info, info: log.info, debug: log.debug, warn: log.warn, error: log.error });
 
-    // â”€â”€ Hooks the host calls â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Hooks the host calls ───────────────────────────────────────────────
     let moduleNamespace = null;
     const hooks = {
         api: api,

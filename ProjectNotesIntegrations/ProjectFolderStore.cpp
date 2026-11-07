@@ -5,6 +5,7 @@
 
 #include "Office365Service.h"
 #include "projectfolderlocation.h"
+#include "QLogger.h"
 
 #include <QDir>
 #include <QDirIterator>
@@ -71,6 +72,28 @@ ProjectFolder ProjectFolder::fromLocation(const QString &locationType, const QSt
 ProjectFolderStore::ProjectFolderStore(Office365Service *office, QObject *parent)
     : QObject(parent), m_office(office)
 {
+}
+
+bool ProjectFolderStore::canWrite(const ProjectFolder &folder) const
+{
+    if (folder.kind == ProjectFolder::Kind::Local)
+        return true;
+    return folder.kind == ProjectFolder::Kind::Teams && m_office && m_office->teamsFilesWritable();
+}
+
+ServiceError ProjectFolderStore::readOnlyError(const QString &what)
+{
+    if (!m_office || !m_office->teamsFileWriteEnabled())
+        return makeError(QStringLiteral("teams-read-only"),
+                         tr("Could not save %1: saving into Microsoft Teams folders is turned off in Settings > "
+                            "Office 365 Integration. Save to a local folder instead.").arg(what));
+    // Saving is on but the sign-in only allows reading: ask for the write
+    // scope on the next sign-in.
+    m_office->requestAdditionalScopes({m_office->teamsFileScope()});
+    return makeError(QStringLiteral("teams-access-denied"),
+                     tr("Could not save %1: the Office 365 sign-in does not allow saving into Microsoft Teams. "
+                        "Sign in again from Settings > Office 365 Integration and allow Project Notes to save "
+                        "files (Files.ReadWrite.All).").arg(what));
 }
 
 bool ProjectFolderStore::splitRelative(const QString &relative, QStringList *segments, bool allowEmpty)
@@ -142,11 +165,20 @@ ServiceError ProjectFolderStore::responseError(const HttpResponse &response, con
     const int status = response.statusCode;
     QString detail = QJsonDocument::fromJson(response.body).object()
         .value(QStringLiteral("error")).toObject().value(QStringLiteral("message")).toString();
+    if (status < 200 || status >= 300) {
+        const QJsonObject graphError = QJsonDocument::fromJson(response.body).object()
+            .value(QStringLiteral("error")).toObject();
+        QLog_Warning(CONSOLELOG, QStringLiteral("Teams request for %1 failed: HTTP %2 %3 %4 (granted scopes: %5)")
+                         .arg(what).arg(status)
+                         .arg(graphError.value(QStringLiteral("code")).toString(), detail,
+                              m_office ? m_office->account().grantedScopes.join(u' ') : QString()));
+    }
     if (status == 401 || status == 403) {
         // A session signed in before Project Notes wrote to Teams holds only
-        // Files.Read.All. Ask for the write scope on the next sign-in.
-        if (m_office && status == 403)
-            m_office->requestAdditionalScopes({QStringLiteral("https://graph.microsoft.com/Files.ReadWrite.All")});
+        // Files.Read.All. Ask for the write scope on the next sign-in, unless
+        // saving into Teams is turned off: then asking could fail the sign-in.
+        if (m_office && status == 403 && m_office->teamsFileWriteEnabled())
+            m_office->requestAdditionalScopes({m_office->teamsFileScope()});
         return makeError(QStringLiteral("teams-access-denied"),
                          tr("Microsoft Teams refused access to %1. Sign in again from Settings > Office 365 "
                             "Integration and allow Project Notes to save files (Files.ReadWrite.All).").arg(what));
@@ -442,6 +474,10 @@ void ProjectFolderStore::mkdir(const ProjectFolder &folder, const QString &relat
         done(path, {});
         return;
     }
+    if (!canWrite(folder)) {
+        done({}, readOnlyError(relative));
+        return;
+    }
     QPointer<ProjectFolderStore> self(this);
     resolveRoot(folder.path, [self, segments, done](std::optional<Root> root, ServiceError error) {
         if (!self)
@@ -552,6 +588,10 @@ void ProjectFolderStore::write(const ProjectFolder &folder, const QString &relat
         }
         file.close();
         done(path, {});
+        return;
+    }
+    if (!canWrite(folder)) {
+        done({}, readOnlyError(relative));
         return;
     }
     const QString name = segments.takeLast();

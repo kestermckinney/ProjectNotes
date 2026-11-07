@@ -27,13 +27,15 @@ class ScriptedTransport final : public HttpTransport {
 public:
     QList<HttpRequest> requests;
     std::function<HttpResponse(const HttpRequest &)> route;
+    // What the sign-in grants.
+    QString grantedScope = QStringLiteral("https://graph.microsoft.com/Files.ReadWrite.All");
 
     void send(HttpRequest request, Completion completion) override
     {
         if (request.url.host().contains(QLatin1String("login"))) {
             completion({request.operationId, 200, {}, QJsonDocument(QJsonObject{
                 {"access_token", "graph-access"}, {"refresh_token", "graph-refresh"}, {"expires_in", 3600},
-                {"scope", "offline_access https://graph.microsoft.com/Files.ReadWrite.All"}}).toJson(QJsonDocument::Compact), {}});
+                {"scope", "offline_access " + grantedScope}}).toJson(QJsonDocument::Compact), {}});
             return;
         }
         requests.append(request);
@@ -84,8 +86,10 @@ struct Signed {
     ScriptedTransport transport;
     MicrosoftOAuthManager manager;
     Office365Service service;
-    Signed()
+    explicit Signed(const QString &grantedScope = {})
     {
+        if (!grantedScope.isEmpty())
+            transport.grantedScope = grantedScope;
         service.setHttpTransport(&transport);
         service.setOAuthManager(&manager);
         manager.setSecretStore([](const QString &, QString *) { return QStringLiteral("saved-refresh"); }, {}, {});
@@ -116,6 +120,8 @@ private slots:
     void teamsReadUsesDownloadUrlWithoutToken();
     void teamsListPagesAndMissingFolderIsEmpty();
     void teamsAccessDeniedAsksForWriteScope();
+    void teamsReadOnlyWhenSavingIsOff();
+    void teamsReadOnlyGrantFailsBeforeGraph();
 };
 
 void ProjectFolderStoreTest::eligibleLocations()
@@ -396,6 +402,68 @@ void ProjectFolderStoreTest::teamsAccessDeniedAsksForWriteScope()
     QVERIFY(written.done);
     QCOMPARE(written.error.code, QStringLiteral("teams-access-denied"));
     QVERIFY(written.error.displayText.contains(QStringLiteral("Files.ReadWrite.All")));
+    QVERIFY(s.manager.requestedScopeList().contains(QStringLiteral("https://graph.microsoft.com/Files.ReadWrite.All")));
+}
+
+void ProjectFolderStoreTest::teamsReadOnlyWhenSavingIsOff()
+{
+    // Saving into Teams turned off: writes fail at once without a Graph
+    // call and never queue the write scope, but reading still works.
+    Signed s;
+    s.service.setTeamsFileWriteEnabled(false);
+    s.transport.route = [&](const HttpRequest &request) -> HttpResponse {
+        const QString url = request.url.toString(QUrl::FullyDecoded);
+        if (url.contains(QLatin1String("/shares/")))
+            return rootFolder();
+        if (url.contains(QLatin1String("/children")))
+            return json(200, {{"value", QJsonArray{item("f1", "a.txt", false, kFolderUrl + "/a.txt")}}});
+        return json(404, {});
+    };
+    ProjectFolderStore store(&s.service);
+    const ProjectFolder teams{ProjectFolder::Kind::Teams, kFolderUrl};
+    s.transport.requests.clear();   // the sign-in's account lookup
+    const QStringList requestedBefore = s.manager.requestedScopeList();
+    QVERIFY(!store.canWrite(teams));
+    QVERIFY(store.canWrite({ProjectFolder::Kind::Local, QStringLiteral("C:/Projects/P4000")}));
+
+    Result<QString> written;
+    store.write(teams, QStringLiteral("a.txt"), "x", true,
+                [&](QString location, ServiceError error) { written = {true, location, error}; });
+    QVERIFY(written.done);
+    QCOMPARE(written.error.code, QStringLiteral("teams-read-only"));
+    Result<QString> made;
+    store.mkdir(teams, QStringLiteral("Reports"),
+                [&](QString location, ServiceError error) { made = {true, location, error}; });
+    QVERIFY(made.done);
+    QCOMPARE(made.error.code, QStringLiteral("teams-read-only"));
+    QVERIFY(s.transport.requests.isEmpty());
+    QCOMPARE(s.manager.requestedScopeList(), requestedBefore);
+
+    Result<QList<ProjectFileEntry>> listed;
+    store.list(teams, QString(),
+               [&](QList<ProjectFileEntry> entries, ServiceError error) { listed = {true, entries, error}; });
+    QVERIFY(listed.done);
+    QVERIFY2(listed.error.code.isEmpty(), qPrintable(listed.error.displayText));
+    QCOMPARE(listed.value.size(), 1);
+}
+
+void ProjectFolderStoreTest::teamsReadOnlyGrantFailsBeforeGraph()
+{
+    // Saving is on, but Microsoft granted read access only: the write fails
+    // without a Graph call and the next sign-in asks for the write scope.
+    Signed s(QStringLiteral("https://graph.microsoft.com/Files.Read.All"));
+    ProjectFolderStore store(&s.service);
+    const ProjectFolder teams{ProjectFolder::Kind::Teams, kFolderUrl};
+    QVERIFY(s.service.account().authenticated);
+    s.transport.requests.clear();   // the sign-in's account lookup
+    QVERIFY(!store.canWrite(teams));
+    Result<QString> written;
+    store.write(teams, QStringLiteral("a.txt"), "x", true,
+                [&](QString location, ServiceError error) { written = {true, location, error}; });
+    QVERIFY(written.done);
+    QCOMPARE(written.error.code, QStringLiteral("teams-access-denied"));
+    QVERIFY(written.error.displayText.contains(QStringLiteral("Files.ReadWrite.All")));
+    QVERIFY(s.transport.requests.isEmpty());
     QVERIFY(s.manager.requestedScopeList().contains(QStringLiteral("https://graph.microsoft.com/Files.ReadWrite.All")));
 }
 

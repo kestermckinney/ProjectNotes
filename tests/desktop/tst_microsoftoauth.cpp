@@ -35,6 +35,12 @@ private slots:
     void requiresExplicitFeatureScopes();
     void emailDraftConsentPreservesFileFinderSession();
     void contactsRequestTheirOwnCapabilities();
+    void settingsSignInKeepsRequestedFeatureScopes();
+    void settingsSignInSkipsFileWriteWithoutTeams();
+    void settingsSignInAsksForFileWriteWhenTeamsFoldersAreUsed();
+    void teamsFileWriteOffAsksForReadScopeOnly();
+    void teamsFileWriteSettingPersists();
+    void failedSignInFlagsTheFileWriteScope();
     void facadeAddsAuthorizationWithoutExposingToken();
     void refreshFailureAndSignOutClearCredentialState();
     void sharedServiceOwnsIdentitySettings();
@@ -218,7 +224,11 @@ void MicrosoftOAuthManagerTest::emailDraftConsentPreservesFileFinderSession()
     QVERIFY(consentBody.contains("Mail.ReadWrite"));
     QVERIFY(!consentBody.contains("Mail.Send"));
     QVERIFY(consentBody.contains("Calendars.ReadWrite"));
-    QVERIFY(!consentBody.contains("Files.Read"));
+    // The saved grant reaches Teams files, so this sign-in also asks for the
+    // write scope that saving into Teams project folders needs. It does not
+    // re-request File Finder's read scopes; Microsoft keeps those.
+    QVERIFY(consentBody.contains("Files.ReadWrite.All"));
+    QVERIFY(!consentBody.contains("Files.Read.All"));
     QVERIFY(!consentBody.contains("Team.Read"));
 
     transport.nextBody = QJsonDocument(QJsonObject{
@@ -250,6 +260,160 @@ void MicrosoftOAuthManagerTest::contactsRequestTheirOwnCapabilities()
     service.requestCommunicationsConsent(true, true);
     QVERIFY(manager.requestedScopeList().contains(QStringLiteral("Contacts.ReadWrite")));
     QVERIFY(!manager.requestedScopeList().contains(QStringLiteral("Mail.Send")));
+}
+
+void MicrosoftOAuthManagerTest::settingsSignInKeepsRequestedFeatureScopes()
+{
+    // A refused Teams upload asks for Files.ReadWrite.All and tells the user
+    // to sign in again from Settings. That sign-in sets its own scope list
+    // and must still ask for the write scope, or the upload is refused again.
+    const QString write = QStringLiteral("https://graph.microsoft.com/Files.ReadWrite.All");
+    MicrosoftOAuthManager manager;
+    Office365Service service;
+    service.setOAuthManager(&manager);
+    service.requestAdditionalScopes({write});
+    service.requestCommunicationsConsent();
+    QVERIFY(manager.requestedScopeList().contains(write));
+    QVERIFY(manager.requestedScopeList().contains(QStringLiteral("Mail.ReadWrite")));
+    service.requestCommunicationsConsent(true, true);
+    QVERIFY(manager.requestedScopeList().contains(write));
+    QVERIFY(manager.requestedScopeList().contains(QStringLiteral("Contacts.ReadWrite")));
+
+    // Signing out forgets them.
+    service.signOut();
+    service.requestCommunicationsConsent();
+    QVERIFY(!manager.requestedScopeList().contains(write));
+}
+
+void MicrosoftOAuthManagerTest::settingsSignInSkipsFileWriteWithoutTeams()
+{
+    // An account that never used File Finder or Teams folders is not asked
+    // for file access by the email and calendar sign-in.
+    MicrosoftOAuthManager manager;
+    Office365Service service;
+    service.setOAuthManager(&manager);
+    service.requestCommunicationsConsent();
+    for (const QString &scope : manager.requestedScopeList())
+        QVERIFY2(!scope.contains(QStringLiteral("Files.")), qPrintable(scope));
+}
+
+void MicrosoftOAuthManagerTest::settingsSignInAsksForFileWriteWhenTeamsFoldersAreUsed()
+{
+    // Microsoft can revoke the saved grant (for example after the app's
+    // permissions change), leaving nothing that shows Teams is in use. The
+    // caller's File Finder setting still asks for the write scope.
+    MicrosoftOAuthManager manager;
+    Office365Service service;
+    service.setOAuthManager(&manager);
+    QVERIFY(manager.grantedScopeList().isEmpty());
+    service.requestCommunicationsConsent(false, false, true);
+    QVERIFY(manager.requestedScopeList().contains(
+        QStringLiteral("https://graph.microsoft.com/Files.ReadWrite.All")));
+    QVERIFY(manager.requestedScopeList().contains(QStringLiteral("Mail.ReadWrite")));
+}
+
+void MicrosoftOAuthManagerTest::teamsFileWriteOffAsksForReadScopeOnly()
+{
+    // An organization that never approves Files.ReadWrite.All: with saving
+    // into Teams turned off, no path asks for it, so the sign-in can succeed.
+    const QString write = QStringLiteral("https://graph.microsoft.com/Files.ReadWrite.All");
+    const QString read = QStringLiteral("https://graph.microsoft.com/Files.Read.All");
+    FakeHttpTransport transport;
+    transport.nextBody = QJsonDocument(QJsonObject{
+        {"device_code", "synthetic-device"}, {"user_code", "ABCD-EFGH"},
+        {"verification_uri", "https://login.example.test/device"}
+    }).toJson(QJsonDocument::Compact);
+    MicrosoftOAuthManager manager;
+    manager.configure("tenant", "client");
+    Office365Service service;
+    service.setHttpTransport(&transport);
+    service.setOAuthManager(&manager);
+    service.requestAdditionalScopes({write});   // a refused upload, before the change
+    service.setTeamsFileWriteEnabled(false);
+    QVERIFY(!service.teamsFilesWritable());
+    QCOMPARE(service.teamsFileScope(), read);
+
+    service.requestCommunicationsConsent(false, false, true);
+    QVERIFY(manager.requestedScopeList().contains(read));
+    QVERIFY(!manager.requestedScopeList().contains(write));
+    QVERIFY(manager.requestedScopeList().contains(QStringLiteral("Mail.ReadWrite")));
+
+    service.requestFileFinderConsent();
+    QVERIFY(manager.requestedScopeList().contains(read));
+    QVERIFY(!manager.requestedScopeList().contains(write));
+
+    // A plugin or a refused upload asking for the write scope gets read.
+    service.requestAdditionalScopes({write});
+    QVERIFY(!manager.requestedScopeList().contains(write));
+
+    // The manager's own File Finder default asks for the write scope; the
+    // sign-in still does not.
+    MicrosoftOAuthManager fresh;
+    fresh.configure("tenant", "client");
+    service.setOAuthManager(&fresh);
+    QVERIFY(fresh.requestedScopeList().contains(write));
+    service.startSignIn();
+    const QByteArray body = transport.requests.constLast().body;
+    QVERIFY(!body.contains("Files.ReadWrite.All"));
+    QVERIFY(body.contains("Files.Read.All"));
+
+    service.setTeamsFileWriteEnabled(true);
+    QCOMPARE(service.teamsFileScope(), write);
+    // No grant recorded yet: writing is attempted and Graph decides.
+    QVERIFY(service.teamsFilesWritable());
+}
+
+void MicrosoftOAuthManagerTest::teamsFileWriteSettingPersists()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+    QSettings::setPath(QSettings::NativeFormat, QSettings::UserScope,
+                       temporary.filePath(QStringLiteral("settings")));
+    const QString organization = QStringLiteral("ProjectNotes-Test-")
+        + QUuid::createUuid().toString(QUuid::WithoutBraces);
+    QSettings canonical(organization, QStringLiteral("AppSettings"));
+    canonical.setFallbacksEnabled(false);
+    canonical.clear();
+
+    {
+        Office365Service service;
+        service.configureIdentity(organization, QStringLiteral("organizations"), {});
+        QVERIFY(service.teamsFileWriteEnabled());   // on by default
+        service.setTeamsFileWriteEnabled(false);
+    }
+    canonical.sync();
+    QCOMPARE(canonical.value(QStringLiteral("Office365/teamsFileWrite")).toBool(), false);
+    Office365Service restarted;
+    restarted.configureIdentity(organization, QStringLiteral("organizations"), {});
+    QVERIFY(!restarted.teamsFileWriteEnabled());
+    canonical.clear();
+}
+
+void MicrosoftOAuthManagerTest::failedSignInFlagsTheFileWriteScope()
+{
+    // Microsoft refuses a sign-in that asks for a scope the organization has
+    // not approved. When the write scope was asked for, Settings offers to
+    // sign in without it.
+    FakeHttpTransport transport;
+    transport.nextBody = QJsonDocument(QJsonObject{
+        {"error", "invalid_request"},
+        {"error_description", "AADSTS65001: The user or administrator has not consented."}
+    }).toJson(QJsonDocument::Compact);
+    MicrosoftOAuthManager manager;
+    manager.configure("tenant", "client");
+    Office365Service service;
+    service.setHttpTransport(&transport);
+    service.setOAuthManager(&manager);
+    service.requestCommunicationsConsent(false, false, true);
+    service.startSignIn();
+    QVERIFY(!service.authenticationInProgress());
+    QVERIFY(service.fileWriteSignInFailed());
+
+    // Without the write scope the same failure is not about it.
+    service.setTeamsFileWriteEnabled(false);
+    service.requestCommunicationsConsent(false, false, true);
+    service.startSignIn();
+    QVERIFY(!service.fileWriteSignInFailed());
 }
 
 void MicrosoftOAuthManagerTest::refreshFailureAndSignOutClearCredentialState()

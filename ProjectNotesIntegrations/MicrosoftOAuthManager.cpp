@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "MicrosoftOAuthManager.h"
+#include "QLogger.h"
 
 #include <QDateTime>
 #include <QJsonDocument>
@@ -169,6 +170,7 @@ void MicrosoftOAuthManager::startSignIn()
     QUrlQuery form;
     form.addQueryItem(QStringLiteral("client_id"), m_clientId);
     form.addQueryItem(QStringLiteral("scope"), requestedScopes());
+    QLog_Info(CONSOLELOG, QStringLiteral("Microsoft sign-in requests: %1").arg(requestedScopes()));
     postForm(oauthEndpoint(QStringLiteral("devicecode")), form,
              [this, operationId](const QJsonObject &response, const QString &networkError) {
         if (operationId != m_operationId)
@@ -178,6 +180,7 @@ void MicrosoftOAuthManager::startSignIn()
             setState(m_authenticated, false,
                      tr("Microsoft sign-in could not start: %1")
                          .arg(!oauthError.isEmpty() ? oauthError : networkError));
+            emit interactiveSignInFailed();
             return;
         }
         m_deviceCode = response.value(QStringLiteral("device_code")).toString();
@@ -273,6 +276,7 @@ void MicrosoftOAuthManager::pollForDeviceToken(quint64 operationId)
     if (QDateTime::currentMSecsSinceEpoch() >= m_deviceCodeExpiresAt) {
         clearDeviceCode();
         setState(m_authenticated, false, tr("The Microsoft sign-in code expired. Sign in again."));
+        emit interactiveSignInFailed();
         return;
     }
 
@@ -308,6 +312,7 @@ void MicrosoftOAuthManager::pollForDeviceToken(quint64 operationId)
             setState(m_authenticated, false,
                      tr("Microsoft sign-in failed: %1")
                          .arg(response.value(QStringLiteral("error_description")).toString(error)));
+            emit interactiveSignInFailed();
             return;
         }
         acceptTokenResponse(response, true);
@@ -379,6 +384,9 @@ void MicrosoftOAuthManager::acceptTokenResponse(const QJsonObject &response, boo
                  tr("Microsoft did not confirm the requested capability scopes."));
         return;
     }
+    QLog_Info(CONSOLELOG, QStringLiteral("Microsoft %1 confirmed scopes: %2")
+                              .arg(interactiveConsent ? QStringLiteral("sign-in") : QStringLiteral("token refresh"),
+                                   confirmedScopes.join(u' ')));
     if (!confirmedScopes.isEmpty()) {
         m_grantedScopes = std::move(confirmedScopes);
         persistGrantedScopes();

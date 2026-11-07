@@ -795,11 +795,15 @@ public:
     // Microsoft Teams folder (a SharePoint Web Link), or "" when it has none.
     // Re-read on projectFolderRev.
     Q_INVOKABLE QString     primaryProjectLocationId(const QString& projectId) const;
-    // {kind: "local"|"teams", path} for the primary project folder, or {}.
+    // {kind: "local"|"teams", path, writable} for the folder project files
+    // go to (see projectFolderForFiles()), or {}.
     Q_INVOKABLE QVariantMap projectFolderInfo(const QString& projectId) const;
     // Whether a location row may be made the primary project folder.
     Q_INVOKABLE bool        canBeProjectFolder(const QString& locationType, const QString& fullPath) const;
     PN::Comm::ProjectFolder primaryProjectFolder(const QString& projectId) const;
+    // The folder saves and plugins' projectFiles use: the primary project
+    // folder, unless it is a Teams folder the Office 365 account cannot save
+    // into and the project also has a local folder, which is used instead.
     // preferLocal selects an existing local project folder before the primary.
     PN::Comm::ProjectFolder projectFolderForFiles(const QString& projectId, bool preferLocal = false) const;
     PN::Comm::ProjectFolderStore* projectFolderStore() const { return m_projectFolderStore; }

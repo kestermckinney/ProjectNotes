@@ -31,6 +31,8 @@ For File Finder's Teams and SharePoint discovery, and for saving into a Microsof
 
 `Files.ReadWrite.All` lets Project Notes save documents made from templates, saved reports and archived email into a project's Teams folder. It replaces `Files.Read.All`, which earlier versions asked for and which only allows File Finder to read. If you signed in before, a save to a Teams folder reports that access was refused; grant `Files.ReadWrite.All` on the registration and sign in again. Teams keeps channel files in SharePoint, but `Sites.Read.All` and `Sites.ReadWrite.All` are not needed.
 
+Some organizations will not grant `Files.ReadWrite.All`. Asking for a permission nobody has approved makes Microsoft refuse the whole sign-in, so email drafts, calendar events and contacts stop working too. Turn off **Save files into Microsoft Teams folders** and Project Notes asks for `Files.Read.All` instead. File Finder still reads Teams, and saves go to the project's local folder. A project whose only folder is in Teams gets no **Save to Project Folder** button, and plugins ask where to save.
+
 `Mail.ReadWrite` creates and updates drafts. It also satisfies plugins that ask for `Mail.Read`, such as Archive Mail. Project Notes never requests `Mail.Send`, so it cannot send mail from your account.
 
 All of these are **delegated** permissions. Application permissions are not used.
@@ -53,8 +55,10 @@ Open the app menu, choose **Settings**, and select **Office 365 Integration**.
 | **Application (client) ID** | The application ID assigned to the Microsoft Entra app registration. |
 | **Sign in to Microsoft 365** | Begins device-code sign-in and requests email, calendar, and contact permissions. Project Notes displays a code and a button that opens Microsoft's sign-in page. Copy the code, open the page, and complete sign-in in your browser. |
 | **Sign out** | Removes the saved refresh token and invalidates cached Office 365 File Finder state. It does not remove local File Finder settings or existing **Files & Folders** entries. |
+| **Save files into Microsoft Teams folders** | On by default. Lets saved reports, documents made from templates and archived email go into a project's Teams folder, which needs `Files.ReadWrite.All`. Turn it off when your organization does not approve that permission, then sign in again. |
+| **Sign in without saving to Teams** | Shown after a sign-in that asked for `Files.ReadWrite.All` fails. It turns off **Save files into Microsoft Teams folders** and signs in again. |
 
-The status panel reports whether Project Notes is signed in and shows the device code and verification-page button while authentication is in progress.
+The status panel reports whether Project Notes is signed in and shows the device code and verification-page button while authentication is in progress. When saving into Teams is on but Microsoft granted read access only, the note under the setting says so, and Teams folders stay read-only until an administrator grants `Files.ReadWrite.All` and you sign in again.
 
 ## Credential Storage
 

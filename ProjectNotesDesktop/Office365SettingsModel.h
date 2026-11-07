@@ -25,6 +25,12 @@ class Office365SettingsModel final : public QObject
     Q_PROPERTY(QString userCode READ userCode NOTIFY changed)
     Q_PROPERTY(QUrl verificationUrl READ verificationUrl NOTIFY changed)
     Q_PROPERTY(QString accountLabel READ accountLabel NOTIFY changed)
+    // "Save files into Microsoft Teams folders" (Files.ReadWrite.All).
+    Q_PROPERTY(bool teamsFileWrite READ teamsFileWrite WRITE setTeamsFileWrite NOTIFY changed)
+    // The last sign-in failed while asking for Files.ReadWrite.All.
+    Q_PROPERTY(bool fileWriteSignInFailed READ fileWriteSignInFailed NOTIFY changed)
+    // Signed in with saving on, but Microsoft granted only read access.
+    Q_PROPERTY(bool teamsFileWriteNotGranted READ teamsFileWriteNotGranted NOTIFY changed)
 
 public:
     explicit Office365SettingsModel(FileFinderService *fileFinder,
@@ -41,9 +47,16 @@ public:
     QString userCode() const;
     QUrl verificationUrl() const;
     QString accountLabel() const;
+    bool teamsFileWrite() const;
+    void setTeamsFileWrite(bool enabled);
+    bool fileWriteSignInFailed() const;
+    bool teamsFileWriteNotGranted() const;
 
     Q_INVOKABLE void startSignIn();
     Q_INVOKABLE void requestCommunicationsConsent();
+    // Turns Teams file saving off and signs in again without asking for
+    // Files.ReadWrite.All.
+    Q_INVOKABLE void signInWithoutTeamsFileWrite();
     Q_INVOKABLE void signOut();
     void setContactSyncModel(PN::Contacts::ContactSyncSettingsModel *model) { m_contacts = model; }
 

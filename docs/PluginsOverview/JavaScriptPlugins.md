@@ -178,7 +178,7 @@ if (folder) {
 }
 ```
 
-`list()`, `exists()`, `readText()` and `writeText()` round it out. Methods that write return the location to store in `project_locations`: a local path, or the Teams URL, which for Word, Excel, PowerPoint and Project files is the direct document URL that opens in the desktop app. `upload()` fails with code `exists` unless `overwrite` is `true`; `writeText()` replaces by default. A Teams folder can also fail with `teams-access-denied` when the sign-in lacks `Files.ReadWrite.All`.
+`list()`, `exists()`, `readText()` and `writeText()` round it out. Methods that write return the location to store in `project_locations`: a local path, or the Teams URL, which for Word, Excel, PowerPoint and Project files is the direct document URL that opens in the desktop app. `upload()` fails with code `exists` unless `overwrite` is `true`; `writeText()` replaces by default. A Teams folder can also fail with `teams-access-denied` when the sign-in lacks `Files.ReadWrite.All`, or with `teams-read-only` when **Save files into Microsoft Teams folders** is off. `location()` reports `writable: false` for such a folder; check it before writing and offer a local folder instead. When the project also has a local folder, `projectFiles` uses that one and `location()` returns it.
 
 `app.projectFolder(projectKey)` returns the path only for a local folder, and `null` for a Teams folder or a project without one. A local folder from either call is also open to `files.*`. Office automation and other tools that need a real file write to `files.tempPath()` first and then `upload()` the result.
 

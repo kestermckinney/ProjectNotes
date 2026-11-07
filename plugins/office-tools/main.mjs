@@ -648,13 +648,14 @@ function* createDocument(context) {
     // The project's folder plus the configured subfolder, or a folder the
     // user picks when there is no project folder. A Microsoft Teams project
     // folder can't be written by Office directly: the document is saved to a
-    // temporary file and then uploaded into the Teams folder.
+    // temporary file and then uploaded into the Teams folder. A Teams folder
+    // Project Notes can't save into counts as no project folder.
     let base = null;
     let teams = false;
     let useSubfolder = true;
     if (project) {
         const projectFolder = yield projectFiles.location(project.$key);
-        if (projectFolder && projectFolder.kind === "teams") {
+        if (projectFolder && projectFolder.kind === "teams" && projectFolder.writable !== false) {
             teams = true;
             base = "";
         } else if (projectFolder && (yield files.exists(projectFolder.path))) {

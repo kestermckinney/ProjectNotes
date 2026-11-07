@@ -686,6 +686,57 @@ Item {
                         }
                     }
 
+                    // An organization that has not approved Files.ReadWrite.All
+                    // for its app registration fails the whole sign-in.
+                    Rectangle {
+                        objectName: "teamsFileWriteSignInFailed"
+                        visible: page._office365 && page._office365.fileWriteSignInFailed
+                        Layout.fillWidth: true
+                        implicitHeight: fileWriteFailedColumn.implicitHeight + 20
+                        radius: Theme.radiusSm
+                        color: Theme.surface
+                        border.color: Theme.amber
+                        ColumnLayout {
+                            id: fileWriteFailedColumn
+                            anchors.fill: parent
+                            anchors.margins: 10
+                            spacing: 6
+                            Text {
+                                Layout.fillWidth: true
+                                text: qsTr("The sign-in asked for permission to save files into Microsoft Teams folders (Files.ReadWrite.All). If your organization has not approved that permission for this application, sign in without it. Teams folders stay readable, and files are saved to local folders instead.")
+                                color: Theme.text
+                                font.pixelSize: Theme.fontBody
+                                wrapMode: Text.WordWrap
+                            }
+                            Button {
+                                implicitHeight: 28
+                                text: qsTr("Sign in without saving to Teams")
+                                enabled: page._office365 && !page._office365.authenticationInProgress
+                                onClicked: {
+                                    officeTenantField.commit()
+                                    officeClientField.commit()
+                                    page._office365.signInWithoutTeamsFileWrite()
+                                }
+                            }
+                        }
+                    }
+
+                    SettingsCheck {
+                        objectName: "teamsFileWrite"
+                        label: qsTr("Save files into Microsoft Teams folders")
+                        checked: page._office365 ? page._office365.teamsFileWrite : true
+                        onToggledValue: (v) => { if (page._office365) page._office365.teamsFileWrite = v }
+                    }
+                    Text {
+                        Layout.fillWidth: true
+                        text: page._office365 && page._office365.teamsFileWriteNotGranted
+                              ? qsTr("Microsoft granted read access only, so Teams folders are read-only. Ask an administrator to grant Files.ReadWrite.All and sign in again, or turn this off.")
+                              : qsTr("Needs Files.ReadWrite.All on the app registration. Turn this off if your organization does not allow it; Teams folders stay readable and files are saved to local folders instead. Sign in again after changing it.")
+                        color: page._office365 && page._office365.teamsFileWriteNotGranted ? Theme.amber : Theme.text3
+                        font.pixelSize: Theme.fontSm
+                        wrapMode: Text.WordWrap
+                    }
+
                     SettingsCheck {
                         label: qsTr("Open links in desktop apps when available")
                         checked: page._finder ? page._finder.office365OpenLinksInDesktop : true
@@ -693,7 +744,7 @@ Item {
                     }
                     Text {
                         Layout.fillWidth: true
-                        text: qsTr("Signing in requests permission to create Outlook email drafts and draft calendar events. It never requests permission to send mail.")
+                        text: qsTr("Signing in requests permission to create Outlook email drafts and draft calendar events, and, when File Finder searches Teams, to read Microsoft Teams project folders and save files into them. It never requests permission to send mail.")
                         color: Theme.text3
                         font.pixelSize: Theme.fontSm
                         wrapMode: Text.WordWrap

@@ -177,11 +177,17 @@ function* generateReport(context, report) {
     if (!ok) return;
 
     // File the report in the project folder's report subfolder, which may be
-    // a local folder or a Microsoft Teams folder. The subfolder must exist.
+    // a local folder or a Microsoft Teams folder. The subfolder must exist,
+    // and Project Notes must be allowed to save into a Teams folder.
     const projectFolder = yield projectFiles.location(project.$key);
-    trace("ssrs", "project folder " + (projectFolder ? projectFolder.kind + " " + projectFolder.path : "(none)"));
+    trace("ssrs", "project folder " + (projectFolder ? projectFolder.kind + " " + projectFolder.path
+                                       + (projectFolder.writable === false ? " (read-only)" : "") : "(none)"));
     let sub = "";
-    if (projectFolder) {
+    if (projectFolder && projectFolder.writable === false) {
+        log.info("Project Notes can't save into the Microsoft Teams project folder " + projectFolder.path
+                 + "; the report stays in the temporary folder.");
+        sub = null;
+    } else if (projectFolder) {
         sub = String(settings.get(report.folderKey, "") || report.folder).replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
         if (!(yield projectFiles.exists(project.$key, sub))) {
             log.info("The " + report.title.toLowerCase() + " folder " + sub + " does not exist in the project folder "
