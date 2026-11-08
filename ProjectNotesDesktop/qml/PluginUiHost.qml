@@ -191,6 +191,9 @@ Item {
                 id: scroll
                 implicitHeight: Math.min(form.implicitHeight, host.height * 0.6)
                 contentWidth: availableWidth
+                // The form fits the viewport width. Basic's horizontal bar
+                // still intercepts bottom-row clicks when its thumb is hidden.
+                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                 clip: true
                 ColumnLayout {
                     width: scroll.availableWidth

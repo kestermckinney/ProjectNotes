@@ -1645,6 +1645,58 @@ private slots:
                                 .arg(doubled.join(QStringLiteral(", ")))));
     }
 
+    // Basic's transparent horizontal scrollbar used to intercept clicks on
+    // the last checkbox in the report options, even though no scrolling was needed.
+    void test_09a_reportFormCheckboxes()
+    {
+        clearWarnings();
+        auto* mainWindow = qobject_cast<QQuickWindow*>(root);
+        QVERIFY(mainWindow);
+        mainWindow->resize(1200, 800);
+        mainWindow->show();
+        QTest::qWait(100);
+        auto* ui = PluginUiController::instance();
+        const QVariantList fields {
+            QVariantMap{{"key", "reportDate"}, {"label", "Report date"}, {"type", "date"}},
+            QVariantMap{{"key", "delivery"}, {"label", "Email"}, {"type", "choice"},
+                        {"choices", QStringList{"Email the PDF", "Do not email"}}},
+            QVariantMap{{"key", "keepWord"}, {"label", "Save a Word copy in the project folder"}, {"type", "checkbox"}},
+            QVariantMap{{"key", "display"}, {"label", "Open the PDF when it is ready"}, {"type", "checkbox"}}
+        };
+        const int request = ui->openRequest("test", "form",
+            {{"title", "Generate Status Report"}, {"form", QVariantMap{{"fields", fields}}},
+             {"values", QVariantMap{{"reportDate", "2026-11-08"}, {"delivery", "Email the PDF"},
+                                    {"keepWord", false}, {"display", false}}}},
+            [](const QVariant&, const PN::Plugins::PluginError&) {});
+        auto close = qScopeGuard([&] { ui->closeRequest(request); });
+        QObject* dialog = nullptr;
+        QTRY_VERIFY((dialog = root->findChild<QObject*>("pluginRequest_form")));
+        auto* content = dialog->property("contentItem").value<QQuickItem*>();
+        QVERIFY(content);
+        QQuickItem* checkbox = nullptr;
+        QTRY_VERIFY(([&] {
+            QList<QQuickItem*> pending{content};
+            while (!pending.isEmpty()) {
+                auto* item = pending.takeLast();
+                pending.append(item->childItems());
+                if (item->inherits("QQuickCheckBox") && item->property("text").toString() == "Open the PDF when it is ready")
+                    checkbox = item;
+            }
+            return checkbox != nullptr;
+        })());
+        QTest::qWait(100);
+        QVERIFY(checkbox->isEnabled());
+        auto* window = checkbox->window();
+        QVERIFY(window);
+        const QPoint boxPoint = checkbox->mapToScene(QPointF(8, checkbox->height() / 2)).toPoint();
+        QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier, boxPoint);
+        QTRY_VERIFY(checkbox->property("checked").toBool());
+        const QPoint labelPoint = checkbox->mapToScene(QPointF(80, checkbox->height() / 2)).toPoint();
+        QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier, labelPoint);
+        QTRY_VERIFY(!checkbox->property("checked").toBool());
+        assertClean("report form checkboxes");
+    }
+
     // My Shortcuts' table: the URL cell's right-click menu offers Insert Field
     // with the preferences values plus the columns of the row's Entity, and the
     // Entity cell is a drop-down. Uses the plugin's real settings schema.
