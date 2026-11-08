@@ -90,7 +90,7 @@ Page {
                     text: qsTr("Help")
                     iconName: "questionmark.circle"
                     showChevron: false
-                    onClicked: Qt.openUrlExternally("https://projectnotes.readthedocs.io/en/latest/Mobile/ProjectNotesMobile/")
+                    onClicked: Qt.openUrlExternally("https://www.projectnotespro.com/docs/Mobile/ProjectNotesMobile")
                 }
                 SettingsItem {
                     text: qsTr("What's New")

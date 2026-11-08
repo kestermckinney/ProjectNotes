@@ -74,6 +74,6 @@ Please keep feedback respectful, specific, and constructive. Clear, practical co
 - [Repository](https://gitlab.com/kestermckinney/ProjectNotes)
 - [Open issues](https://gitlab.com/kestermckinney/ProjectNotes/-/issues)
 - [Planning and issue board](https://gitlab.com/kestermckinney/ProjectNotes/-/boards)
-- [Documentation](https://projectnotes.readthedocs.io)
+- [Documentation](https://www.projectnotespro.com/docs)
 
 Issue templates are Markdown descriptions; check that you have completed the relevant sections before submitting.

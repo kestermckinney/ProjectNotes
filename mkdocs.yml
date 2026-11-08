@@ -1,11 +1,8 @@
 site_name: Project Notes Documentation
 
 theme:
-  name: readthedocs
+  name: mkdocs
   highlightjs: true
-
-extra_css:
-  - css/extra.css
 
 nav:
   - 'Home': index.md

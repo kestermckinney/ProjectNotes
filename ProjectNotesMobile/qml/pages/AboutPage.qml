@@ -92,7 +92,7 @@ Page {
             Layout.alignment: Qt.AlignHCenter
             highlighted: true
             text: qsTr("Documentation")
-            onClicked: Qt.openUrlExternally("https://projectnotes.readthedocs.io/")
+            onClicked: Qt.openUrlExternally("https://www.projectnotespro.com/docs")
         }
 
         MonoButton {

@@ -1,7 +1,0 @@
-/* The readthedocs theme's content column caps out at 800px (see
-   .wy-nav-content in mkdocs' bundled theme.css), leaving a wide empty
-   margin on anything wider than a laptop screen. Let it fill the space
-   next to the fixed-width sidebar instead. */
-.wy-nav-content {
-    max-width: none;
-}

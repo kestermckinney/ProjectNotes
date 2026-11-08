@@ -1110,7 +1110,7 @@ ApplicationWindow {
                     spacing: 6
                     Repeater {
                         model: [
-                            { label: qsTr("Documentation"), url: "https://projectnotes.readthedocs.io/" },
+                            { label: qsTr("Documentation"), url: "https://www.projectnotespro.com/docs" },
                             { label: qsTr("Release Notes"), url: "https://gitlab.com/kestermckinney/ProjectNotes/-/releases" },
                             { label: qsTr("Source Code"), url: "https://gitlab.com/kestermckinney/ProjectNotes" }
                         ]
