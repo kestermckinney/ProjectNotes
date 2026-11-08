@@ -68,6 +68,7 @@ class ICloudMeetingBackend;
 class MacMailBackend;
 class MacCalendarBackend;
 #endif
+class OutlookClassicEmailBackend;
 class OutlookClassicMeetingBackend;
 }
 
@@ -1075,7 +1076,7 @@ private:
     // "Outlook" is the new Outlook for Windows, "Outlook (Classic)" is
     // OUTLOOK.EXE; each opens that app whatever the file associations say.
     std::unique_ptr<PN::Comm::EmlFileEmailBackend> m_outlookEmailBackend;
-    std::unique_ptr<PN::Comm::EmlFileEmailBackend> m_outlookClassicEmailBackend;
+    std::unique_ptr<PN::Comm::OutlookClassicEmailBackend> m_outlookClassicEmailBackend;
     std::unique_ptr<PN::Comm::IcsFileMeetingBackend> m_outlookMeetingBackend;
     std::unique_ptr<PN::Comm::OutlookClassicMeetingBackend> m_outlookClassicMeetingBackend;
 #endif

@@ -208,3 +208,9 @@ To back up only plugin settings, use the **Back Up Plugin Settings** section at 
 - [Presenting to Companies](PresentingToCompanies.md) — How to use preferences when presenting to companies
 - [Email and Meeting Setup](<EmailAndMeetingSetup.md>) — Setting up mail and calendar handoff
 - [Reports and Email](<ReportsAndEmail.md>) — Generating and sending project reports
+
+### Email signatures
+
+Outlook (Classic) creates a normal new message and lets Outlook initialize the configured new-message signature before inserting Project Notes content above it. Signature formatting and inline images remain in the original message. This also applies to plugin emails (including IFS reports), and to Default Email Application when the Windows `.eml` association is Outlook Classic. An empty message body leaves the signature alone. Configure the default new-message signature in Outlook for the sending account.
+
+Other handoff methods depend on the receiving client: opening an imported `.eml` draft (including New Outlook) or creating a Microsoft 365 Graph draft does not guarantee automatic insertion of the client's signature. Check the signature in those compose windows before sending; select Outlook (Classic) on Windows for native signature-preserving composition. Project Notes does not change any client's signature settings.

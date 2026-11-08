@@ -58,6 +58,7 @@
 #endif
 #if defined(Q_OS_WIN)
 #include "ProjectNotesEmail/backends/OutlookLauncher.h"
+#include "ProjectNotesEmail/backends/OutlookClassicEmailBackend.h"
 #include "ProjectNotesMeetings/backends/OutlookClassicMeetingBackend.h"
 #endif
 #include "ProjectNotesIntegrations/MeetingTemplateStore.h"
@@ -205,9 +206,8 @@ DesktopAppController::DesktopAppController(QObject* parent)
 #if defined(Q_OS_WIN)
     // The new Outlook takes the staged .eml/.ics file like any default app, but
     // imports an .ics without its attendees; the Schedule meeting window offers
-    // Copy Attendees for it.  Outlook (classic) opens the .eml the way its own
-    // file association does, and builds meetings through its object model so
-    // the attendees arrive filled in.
+    // Copy Attendees for it. Outlook Classic uses its object model for both
+    // emails (preserving the new-message signature) and meeting attendees.
     const QString cacheDirectory = PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile);
     const auto openInNewOutlook = [](const QUrl &url) {
         return PN::Comm::OutlookLauncher::openWithNewOutlook(url.toLocalFile());
@@ -218,12 +218,7 @@ DesktopAppController::DesktopAppController(QObject* parent)
     m_outlookMeetingBackend = std::make_unique<PN::Comm::IcsFileMeetingBackend>(
         cacheDirectory, openInNewOutlook, QStringLiteral("outlook-open-failed"));
     m_meetingService->registerBackend(PN::Comm::BackendId::Outlook, m_outlookMeetingBackend.get());
-    m_outlookClassicEmailBackend = std::make_unique<PN::Comm::EmlFileEmailBackend>(
-        cacheDirectory,
-        [](const QUrl &url) {
-            return PN::Comm::OutlookLauncher::openWithClassicOutlook(url.toLocalFile(), QStringLiteral("/eml"));
-        },
-        QStringLiteral("outlook-classic-open-failed"));
+    m_outlookClassicEmailBackend = std::make_unique<PN::Comm::OutlookClassicEmailBackend>();
     m_emailService->registerBackend(PN::Comm::BackendId::OutlookClassic, m_outlookClassicEmailBackend.get());
     m_outlookClassicMeetingBackend = std::make_unique<PN::Comm::OutlookClassicMeetingBackend>();
     m_meetingService->registerBackend(PN::Comm::BackendId::OutlookClassic, m_outlookClassicMeetingBackend.get());

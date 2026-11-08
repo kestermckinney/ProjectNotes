@@ -403,3 +403,10 @@ Document Communication Templates with a simple field-insertion walkthrough, inli
 - [Qt native rich-text rendering](https://doc.qt.io/qt-6/qtextdocument.html).
 - [Qt QJSEngine and interruption](https://doc.qt.io/qt-6/qjsengine.html).
 - [Graph calendar event creation](https://learn.microsoft.com/en-us/graph/api/user-post-events?view=graph-rest-1.0) and [event resource/isDraft semantics](https://learn.microsoft.com/en-us/graph/api/resources/event?view=graph-rest-1.0).
+
+
+Signature preservation acceptance checks (Outlook Classic):
+- Configure a new-message signature containing styled text, a link and an inline logo. Open contact email, project email, inline meeting notes and a report attachment; each composer must contain one signature below the generated content, with the logo still visible.
+- Repeat with an IFS plugin `email.compose()` report, and with Default Email Application while `.eml` is associated with Outlook Classic.
+- Verify To/Cc/Bcc and attachments, Unicode body text, and a blank body. With no configured automatic signature, the composer must contain only the requested content.
+- Close each test composer without sending. New Outlook/imported EML and Graph drafts require separate client acceptance; they cannot be assumed to initialize new-message signatures.

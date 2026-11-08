@@ -18,6 +18,9 @@ bool openWithNewOutlook(const QString &path);
 // OUTLOOK.EXE as registered under App Paths; empty when it is not installed.
 QString classicExecutable();
 
+// Whether the system .eml association points to Outlook Classic.
+bool isClassicDefaultEmailApplication();
+
 // Starts OUTLOOK.EXE with `fileSwitch` (/eml or /ical, as its own file
 // associations do) and the file.
 bool openWithClassicOutlook(const QString &path, const QString &fileSwitch);

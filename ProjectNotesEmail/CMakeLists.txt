@@ -83,7 +83,8 @@ endif()
 
 if(WIN32)
     # OutlookLauncher opens files in the new Outlook with ShellExecuteEx.
-    target_link_libraries(ProjectNotesEmail PRIVATE shell32)
+    target_sources(ProjectNotesEmail PRIVATE backends/OutlookClassicEmailBackend.h backends/OutlookClassicEmailBackend.cpp)
+    target_link_libraries(ProjectNotesEmail PRIVATE shell32 shlwapi ole32 oleaut32)
 endif()
 
 target_include_directories(ProjectNotesEmail PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)

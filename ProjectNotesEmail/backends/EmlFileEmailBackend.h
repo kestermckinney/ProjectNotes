@@ -28,6 +28,7 @@ public:
 private:
     QString m_cacheDirectory;
     FileOpener m_opener;
+    bool m_useDefaultApplication = false;
     QString m_openFailureCode;
     QSet<QUuid> m_cancelled;
     // Opening a file with the desktop's handler is unobservable and may already

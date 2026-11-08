@@ -351,3 +351,7 @@ Settings > Plugins can install a plugin folder or a `.pnplugin` file, which is a
 - **Long work.** Keep synchronous loops short. Waiting on promises does not count toward the ten-second limit; a loop that never yields does.
 
 Archive Mail calls `projectFiles.location(projectKey, { preferLocal: true })` to prefer an existing local project folder (including a synced SharePoint folder). It writes mail and `download_state.json` directly into that local folder; if none is available, it uses the usual project folder destination. Other callers keep the default destination selection.
+
+#### Email client signatures
+
+`email.compose()` uses the same backend as application email actions. Supply only the message content; do not append a copied user signature. Outlook Classic initializes its own configured new-message signature and Project Notes inserts the plugin body above it, preserving formatting and signature images. Imported EML and Graph drafts depend on the client's signature behavior; automatic signature insertion is not guaranteed for those routes.

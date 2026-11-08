@@ -7,6 +7,10 @@
 #include "ProjectNotesEmail/EmlWriter.h"
 
 #include <QDesktopServices>
+#if defined(Q_OS_WIN)
+#include "OutlookLauncher.h"
+#include "OutlookClassicEmailBackend.h"
+#endif
 
 namespace PN::Comm {
 namespace {
@@ -44,6 +48,7 @@ EmlFileEmailBackend::EmlFileEmailBackend(QString cacheDirectory, FileOpener open
     : m_cacheDirectory(std::move(cacheDirectory)), m_opener(std::move(opener)),
       m_openFailureCode(std::move(openFailureCode))
 {
+    m_useDefaultApplication = !m_opener;
     if (!m_opener) m_opener = [](const QUrl &url) { return QDesktopServices::openUrl(url); };
 }
 
@@ -60,6 +65,16 @@ void EmlFileEmailBackend::handoff(EmailRequest request, Completion completion)
         result.error = {"eml-launch-already-attempted", {}, RetryKind::None, OutcomeCertainty::Uncertain};
         completion(result); return;
     }
+#if defined(Q_OS_WIN)
+    // The default-client route must preserve signatures too. Custom openers
+    // select a particular client and must not be redirected by this check.
+    if (m_useDefaultApplication && OutlookLauncher::isClassicDefaultEmailApplication()) {
+        m_launchAttempted.insert(request.operationId);
+        OutlookClassicEmailBackend backend;
+        backend.handoff(std::move(request), std::move(completion));
+        return;
+    }
+#endif
     ValidationResult validation;
     const QByteArray message = EmlWriter::write(request, {}, &validation);
     if (message.isEmpty()) {

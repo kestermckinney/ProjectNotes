@@ -14,6 +14,7 @@
 #if defined(Q_OS_WIN)
 #include <windows.h>
 #include <shellapi.h>
+#include <shlwapi.h>
 #endif
 
 namespace PN::Comm::OutlookLauncher {
@@ -78,6 +79,16 @@ QString classicExecutable()
     return {};
 }
 
+bool isClassicDefaultEmailApplication()
+{
+    wchar_t executable[32768];
+    DWORD size = DWORD(std::size(executable));
+    if (FAILED(AssocQueryStringW(ASSOCF_NONE, ASSOCSTR_EXECUTABLE, L".eml", L"open", executable, &size)))
+        return false;
+    return QFileInfo(QString::fromWCharArray(executable)).fileName().compare(
+        QStringLiteral("OUTLOOK.EXE"), Qt::CaseInsensitive) == 0;
+}
+
 bool openWithClassicOutlook(const QString &path, const QString &fileSwitch)
 {
     const QString executable = classicExecutable();
@@ -92,6 +103,7 @@ bool openWithClassicOutlook(const QString &path, const QString &fileSwitch)
 
 bool openWithNewOutlook(const QString &) { return false; }
 QString classicExecutable() { return {}; }
+bool isClassicDefaultEmailApplication() { return false; }
 bool openWithClassicOutlook(const QString &, const QString &) { return false; }
 
 #endif
