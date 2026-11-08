@@ -11,7 +11,7 @@ ProjectNotes is a project manager's workspace for notes, action items, project m
 ## Explore
 
 - [Project site](https://kestermckinney.gitlab.io/ProjectNotes/)
-- [Documentation](https://projectnotes.readthedocs.io)
+- [Documentation](https://www.projectnotespro.com/docs)
 - [Planning and issue board](https://gitlab.com/kestermckinney/ProjectNotes/-/boards)
 - [Report a bug](https://gitlab.com/kestermckinney/ProjectNotes/-/issues/new?issuable_template=Bug)
 - [Request an enhancement](https://gitlab.com/kestermckinney/ProjectNotes/-/issues/new?issuable_template=Enhancement)
