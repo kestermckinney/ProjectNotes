@@ -13,14 +13,15 @@ namespace PN::Comm {
 // anything a crash left behind.
 //
 // Only an explicit allow-list is removed.  The same cache folder also holds
-// state the Python plug-ins must keep between sessions (Microsoft 365 and IFS
+// legacy plug-in state that must survive between sessions (Microsoft 365 and IFS
 // token caches, saved plug-in state), and nothing outside the list is touched.
 class TransientCacheCleaner final {
 public:
     explicit TransientCacheCleaner(QString cacheDirectory);
 
     // Deletes the communications staging tree (email attachments, rendered
-    // reports, meeting .ics files) and the plug-ins' generated report files.
+    // reports, meeting .ics files), JavaScript plug-in temporary trees, contact
+    // drag files, and legacy plug-in HTML reports.
     // Returns the paths that could not be removed.
     QStringList clean() const;
 
