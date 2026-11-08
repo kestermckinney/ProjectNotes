@@ -102,6 +102,48 @@ private slots:
         assertClean("initial load of Main.qml");
     }
 
+    void test_00_searchClearButton()
+    {
+        clearWarnings();
+        QQmlComponent component(engine);
+        component.setData(R"(
+            import QtQuick
+            import ProjectNotesDesktop
+            Flickable {
+                width: 900; height: 100
+                contentWidth: width; contentHeight: 300
+                TopBar {
+                    objectName: "testSearchBar"
+                    width: 900; height: 44
+                    property string appliedSearch: ""
+                    onSearchEdited: (text) => appliedSearch = text
+                }
+            }
+        )", QUrl());
+        QScopedPointer<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* flick = qobject_cast<QQuickItem*>(object.data());
+        auto* bar = object->findChild<QQuickItem*>("testSearchBar");
+        auto* button = object->findChild<QQuickItem*>("quickSearchClearButton");
+        QVERIFY(flick && bar && button);
+        QQuickWindow window;
+        window.resize(900, 100);
+        flick->setParentItem(window.contentItem());
+        window.show();
+        for (const QPointF offset : {QPointF(13, 13), QPointF(2, 2)}) {
+            bar->setProperty("searchText", "location");
+            bar->setProperty("appliedSearch", "location");
+            QTest::qWait(50);
+            QVERIFY(button->isVisible());
+            QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier,
+                              button->mapToScene(offset).toPoint());
+            QTRY_COMPARE(bar->property("searchText").toString(), QString());
+            QCOMPARE(bar->property("appliedSearch").toString(), QString());
+            QVERIFY(!button->isVisible());
+        }
+        assertClean("search clear button in scrolling content");
+    }
+
     void test_00_keyboardListNavigation()
     {
         clearWarnings();
@@ -1015,6 +1057,46 @@ private slots:
             assertClean("openNote");
             nav("goBack");
         }
+    }
+
+    void test_02a_projectSearchClearButtons()
+    {
+        const QString pid = projectWithNote();
+        QVERIFY(!pid.isEmpty());
+        clearWarnings();
+        nav("selectSection", "projects");
+        nav("openProject", pid);
+        auto* window = qobject_cast<QQuickWindow*>(root);
+        QVERIFY(window);
+        window->show();
+        auto* tabs = findVisualChild(window->contentItem(), "projectDetailTabs");
+        QVERIFY(tabs);
+        const QStringList sections = {"statusreport", "trackeritems", "team", "locations", "notes"};
+        const QList<QAbstractItemModel*> models = {c->statusReportItemsModel(), c->projectTrackerItemsModel(),
+            c->projectTeamMembersModel(), c->projectLocationsModel(), c->projectNotesModel()};
+        for (int i = 0; i < sections.size(); ++i) {
+            tabs->setProperty("currentIndex", i);
+            QTest::qWait(60);
+            auto* field = findVisualChild(window->contentItem(), sections[i] + "SearchField");
+            auto* button = findVisualChild(window->contentItem(), sections[i] + "SearchClearButton");
+            QVERIFY2(field && button, qPrintable(sections[i]));
+            const int rows = models[i]->rowCount();
+            field->forceActiveFocus();
+            for (char ch : QByteArray("zzzznomatchinglocationzzzz"))
+                QTest::keyClick(window, ch);
+            QTRY_VERIFY(!c->getQuickSearch(models[i]).isEmpty());
+            QTRY_COMPARE(models[i]->rowCount(), 0);
+            QVERIFY(button->isVisible());
+            // Let ListView reposition its header after the debounced filter.
+            QTest::qWait(100);
+            QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier,
+                              button->mapToScene(QPointF(2, 2)).toPoint());
+            QTRY_COMPARE(field->property("text").toString(), QString());
+            QCOMPARE(c->getQuickSearch(models[i]), QString());
+            QTRY_COMPARE(models[i]->rowCount(), rows);
+        }
+        nav("goBack");
+        assertClean("clear search across all project tabs");
     }
 
     void test_02b_settingsCategories()

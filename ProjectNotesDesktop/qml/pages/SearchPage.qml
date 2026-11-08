@@ -136,10 +136,30 @@ Item {
                     }
                     Component.onCompleted: forceActiveFocus()
                 }
-                MaterialIcon {
-                    name: "close"; size: 16; color: Theme.text3
+                ToolButton {
+                    objectName: "databaseSearchClearButton"
                     visible: searchField.text !== ""
-                    TapHandler { onTapped: searchField.clear() }
+                    Layout.preferredWidth: 28
+                    Layout.preferredHeight: 28
+                    padding: 0
+                    focusPolicy: Qt.NoFocus
+                    Accessible.name: qsTr("Clear Search")
+                    contentItem: MaterialIcon { name: "close"; size: 16; color: Theme.text3 }
+                    background: Rectangle {
+                        radius: Theme.radiusSm
+                        color: parent.hovered ? Theme.surface2 : "transparent"
+                    }
+                    onClicked: searchField.clear()
+                    // Keep the clear click from being grabbed by an enclosing list.
+                    MouseArea {
+                        anchors.fill: parent
+                        preventStealing: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: searchField.clear()
+                    }
+                    ToolTip.visible: hovered
+                    ToolTip.text: qsTr("Clear Search")
+                    ToolTip.delay: 400
                 }
             }
         }

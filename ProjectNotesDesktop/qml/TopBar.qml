@@ -314,20 +314,36 @@ Rectangle {
                 // the full search page rather than focusing this field, and the
                 // glyph was the hardcoded macOS one on every platform. The
                 // field's real shortcut is on the tooltip below, rendered per-OS.
-                MaterialIcon {
-                    name: "cancel"
-                    size: 15
-                    color: clearHover.hovered ? Theme.text2 : Theme.text3
+                ToolButton {
+                    objectName: "quickSearchClearButton"
                     visible: searchField.text !== ""
+                    Layout.preferredWidth: 26
+                    Layout.preferredHeight: 26
                     Layout.alignment: Qt.AlignVCenter
-                    HoverHandler { id: clearHover }
-                    TapHandler {
-                        gesturePolicy: TapHandler.ReleaseWithinBounds
-                        onTapped: bar.clearSearch()
+                    padding: 0
+                    focusPolicy: Qt.NoFocus
+                    Accessible.name: qsTr("Clear Search")
+                    contentItem: MaterialIcon {
+                        name: "cancel"
+                        size: 15
+                        color: parent.hovered ? Theme.text2 : Theme.text3
                     }
-                    ToolTip.visible: clearHover.hovered
+                    background: Rectangle {
+                        radius: Theme.radiusSm
+                        color: parent.hovered ? Theme.surface2 : "transparent"
+                    }
+                    onClicked: bar.clearSearch()
+                    // Keep the clear click from being grabbed by an enclosing list.
+                    MouseArea {
+                        anchors.fill: parent
+                        preventStealing: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: bar.clearSearch()
+                    }
+                    ToolTip.visible: hovered
                     ToolTip.text: qsTr("Clear Search")
                     ToolTip.delay: 400
+                    HoverHandler { id: clearHover }
                 }
             }
             HoverHandler { id: searchHover }

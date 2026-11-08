@@ -515,6 +515,7 @@ Item {
         // â”€â”€ Tabs (with live count badges) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         TabBar {
             id: tabBar
+            objectName: "projectDetailTabs"
             Layout.fillWidth: true
             Layout.leftMargin: 16
             Layout.rightMargin: 16
@@ -1476,6 +1477,7 @@ Item {
                 MaterialIcon { name: "search"; size: 13; color: Theme.text3 }
                 TextField {
                     id: subSearchField
+                    objectName: bar.filterSection + "SearchField"
                     Layout.fillWidth: true
                     placeholderText: qsTr("Search")
                     color: Theme.text
@@ -1498,20 +1500,36 @@ Item {
                 }
                 // Clear button, same circle-X affordance as TopBar's search box —
                 // only visible once there's something to clear.
-                MaterialIcon {
-                    name: "cancel"
-                    size: 13
-                    color: subClearHover.hovered ? Theme.text2 : Theme.text3
+                ToolButton {
+                    objectName: bar.filterSection + "SearchClearButton"
                     visible: subSearchField.text !== ""
+                    Layout.preferredWidth: 26
+                    Layout.preferredHeight: 26
                     Layout.alignment: Qt.AlignVCenter
-                    HoverHandler { id: subClearHover }
-                    TapHandler {
-                        gesturePolicy: TapHandler.ReleaseWithinBounds
-                        onTapped: bar.clearSearch()
+                    padding: 0
+                    focusPolicy: Qt.NoFocus
+                    Accessible.name: qsTr("Clear Search")
+                    contentItem: MaterialIcon {
+                        name: "cancel"
+                        size: 13
+                        color: parent.hovered ? Theme.text2 : Theme.text3
                     }
-                    ToolTip.visible: subClearHover.hovered
+                    background: Rectangle {
+                        radius: Theme.radiusSm
+                        color: parent.hovered ? Theme.surface2 : "transparent"
+                    }
+                    onClicked: bar.clearSearch()
+                    // Keep the clear click from being grabbed by an enclosing list.
+                    MouseArea {
+                        anchors.fill: parent
+                        preventStealing: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: bar.clearSearch()
+                    }
+                    ToolTip.visible: hovered
                     ToolTip.text: qsTr("Clear Search")
                     ToolTip.delay: 400
+                    HoverHandler { id: subClearHover }
                 }
             }
         }
