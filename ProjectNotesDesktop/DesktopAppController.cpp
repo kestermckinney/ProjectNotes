@@ -394,9 +394,6 @@ void DesktopAppController::cleanupTransientCache()
         PN::Comm::TransientCacheCleaner(PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile)).clean();
     for (const QString &path : failed)
         QLog_Warning(CONSOLELOG, QStringLiteral("Could not remove temporary file %1").arg(path));
-    // Contact cards dragged out to other applications (contactVCardDragData).
-    QDir(QDir(PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile)).filePath(QStringLiteral("vcard-drag")))
-        .removeRecursively();
 }
 
 void DesktopAppController::registerThunderbirdBackends(const QString &command)

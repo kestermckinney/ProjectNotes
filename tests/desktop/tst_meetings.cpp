@@ -455,10 +455,19 @@ void MeetingsTest::cacheCleanerKeepsPluginState()
     touch(QStringLiteral("ifs_sso_token_cache.json"));
     touch(QStringLiteral("projectnotes_saved_state.json"));
     touch(QStringLiteral("qmlcache/keep.html"));
+    touch(QStringLiteral("plugin-temp/reports/nested/report.pdf"));
+    touch(QStringLiteral("plugin-temp/reports/report.xlsx"));
+    touch(QStringLiteral("plugin-temp/archive-mail/message.msg"));
+    touch(QStringLiteral("plugin-temp/reports/.partial"));
+    touch(QStringLiteral("vcard-drag/contact.vcf"));
+    touch(QStringLiteral("plugin-data/reports/settings.json"));
 
     QVERIFY(TransientCacheCleaner(cache.path()).clean().isEmpty());
     QVERIFY(!root.exists(QStringLiteral("communications/staging")));
     QVERIFY(!root.exists(QStringLiteral("20260915P100statusreport.html")));
+    QVERIFY(!root.exists(QStringLiteral("plugin-temp")));
+    QVERIFY(!root.exists(QStringLiteral("vcard-drag")));
+    QVERIFY(root.exists(QStringLiteral("plugin-data/reports/settings.json")));
     QVERIFY(root.exists(QStringLiteral("icloud_contacts_abc.json")));
     QVERIFY(root.exists(QStringLiteral("token_cache.json")));
     QVERIFY(root.exists(QStringLiteral("ifs_sso_token_cache.json")));

@@ -37,6 +37,18 @@ QStringList TransientCacheCleaner::clean() const
         failed.append(store.stagingRoot());
 
     QDir directory(root.absoluteFilePath());
+    // JavaScript plug-ins can generate reports/downloads of any type inside
+    // their per-run tree. Contact drag files are temporary as well.
+    for (const QString &name : {QStringLiteral("plugin-temp"), QStringLiteral("vcard-drag")}) {
+        const QString path = directory.filePath(name);
+        const QFileInfo entry(path);
+        if (!entry.exists() && !entry.isSymLink())
+            continue;
+        const bool removed = entry.isSymLink() || !entry.isDir()
+            ? QFile::remove(path) : QDir(path).removeRecursively();
+        if (!removed)
+            failed.append(path);
+    }
     const QFileInfoList files = directory.entryInfoList(transientFilePatterns(),
                                                         QDir::Files | QDir::Hidden | QDir::System);
     for (const QFileInfo &file : files) {
