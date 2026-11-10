@@ -69,6 +69,11 @@ public:
     // Milliseconds since epoch at which the current synchronous call into
     // JavaScript started, or 0 when idle. Read by the watchdog thread.
     qint64 busySince() const { return m_busySince.load(); }
+
+    // Test hooks: the most plugins seen inside the serialized start-up section
+    // at the same time. Anything above 1 means the start-up lock is not held.
+    static int peakConcurrentStartups();
+    static void resetStartupStats();
     // Thread-safe: interrupts a runaway synchronous call.
     void interrupt();
 

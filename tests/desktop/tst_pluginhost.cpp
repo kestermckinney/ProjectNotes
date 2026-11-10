@@ -9,6 +9,7 @@
 
 #include "ProjectNotesPlugins/PluginManifest.h"
 #include "ProjectNotesPlugins/PluginRegistry.h"
+#include "ProjectNotesPlugins/PluginRuntime.h"
 #include "ProjectNotesPlugins/PluginServices.h"
 #include "ProjectNotesPlugins/PublishedSchema.h"
 #include "ProjectNotesIntegrations/ProjectFolderStore.h"
@@ -277,6 +278,7 @@ private slots:
     void ifsCloudPlugin();
     void ifsCloudDefaultShortcuts();
     void ifsCloudMovesShortcuts();
+    void concurrentStartup();
 
 private:
     QJsonObject run(const QString& menuId, const QString& entity = {}, const QString& key = {}, int timeoutMs = 10000);
@@ -748,6 +750,52 @@ void PluginHostTest::comWordConversion()
     if (!result.value(QStringLiteral("word")).toBool())
         QSKIP("Microsoft Word is not installed.");
     QVERIFY(result.value(QStringLiteral("converted")).toBool());
+}
+
+// Every plugin starts on its own thread. Creating the engines at the same
+// time once corrupted the heap (QQmlTypeLoader reads shared Qt state) and
+// crashed the released app at launch, so start many plugins at once, repeatedly.
+void PluginHostTest::concurrentStartup()
+{
+    constexpr int pluginCount = 32;
+    constexpr int rounds = 3;
+    const QString bundled = m_dir.filePath(QStringLiteral("concurrent-bundled"));
+    PluginRuntime::resetStartupStats();
+    QStringList ids;
+    for (int i = 0; i < pluginCount; ++i) {
+        const QString id = QStringLiteral("concurrent%1").arg(i);
+        ids << id;
+        writeFile(bundled + QStringLiteral("/") + id + QStringLiteral("/plugin.json"), manifest(id, {}));
+        writeFile(bundled + QStringLiteral("/") + id + QStringLiteral("/main.mjs"),
+                  QByteArrayLiteral("import * as pn from 'projectnotes';\n"
+                                    "const until = Date.now() + 25; while (Date.now() < until) {}\n"
+                                    "import * as common from 'projectnotes/common';\n"
+                                    "export function onStart() { const items = []; "
+                                    "for (let i = 0; i < 50; i++) items.push({ n: i, s: String(i) }); "
+                                    "return items.length; }\n"
+                                    "export function a1(x) { return x.map(v => v * 2).filter(v => v > 3); }\n"
+                                    "export function a2(x) { let t = 0; for (const v of x) t += v; return { t, x }; }\n"
+                                    "export function a3(o) { return Object.keys(o).sort().join(','); }\n"
+                                    "export function* g(n) { for (let i = 0; i < n; i++) yield i; }\n"));
+    }
+
+    for (int round = 0; round < rounds; ++round) {
+        FakeServices services;
+        PluginRegistry registry(&services);
+        registry.setPaths({bundled, m_dir.filePath(QStringLiteral("concurrent-user")),
+                           m_dir.filePath(QStringLiteral("concurrent-data")), m_dir.filePath(QStringLiteral("concurrent-temp"))});
+        registry.setSettingsOrganization(QStringLiteral("ProjectNotesPluginTest"));
+        registry.setAppVersion(QStringLiteral("6.5.0"));
+        registry.loadAll();
+        for (const QString& id : ids)
+            QTRY_VERIFY2_WITH_TIMEOUT(registry.isRunning(id),
+                                      qPrintable(QStringLiteral("round %1, %2: %3").arg(round).arg(id, registry.plugin(id).loadError)),
+                                      20000);
+        registry.stopAll();
+    }
+    // The module's top-level code spins for 25 ms, so without the start-up
+    // lock many plugins would be inside the section together.
+    QCOMPARE(PluginRuntime::peakConcurrentStartups(), 1);
 }
 
 void PluginHostTest::watchdogStopsRunawayCode()

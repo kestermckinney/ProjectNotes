@@ -206,6 +206,38 @@ bool PluginRuntime::callHook(const char* name, const QJSValueList& args, QJSValu
     return true;
 }
 
+// Every plugin starts on its own thread, but creating a QJSEngine, registering
+// modules and compiling the first module touch process-wide Qt state that is
+// not thread safe (QQmlTypeLoader reads QLibraryInfo and QSettings, setenv is
+// racy). Concurrent starts corrupted the heap and crashed the app at launch.
+// Only the start-up is serialized; running plugins stay parallel.
+static QMutex& engineStartupMutex()
+{
+    static QMutex mutex;
+    return mutex;
+}
+
+static std::atomic<int> g_startupsInside {0};
+static std::atomic<int> g_startupPeak {0};
+
+int PluginRuntime::peakConcurrentStartups() { return g_startupPeak.load(); }
+void PluginRuntime::resetStartupStats() { g_startupsInside.store(0); g_startupPeak.store(0); }
+
+namespace {
+// Counts the plugins inside the start-up section, for the test hook above.
+struct StartupCounter {
+    bool active = true;
+    StartupCounter()
+    {
+        const int now = ++g_startupsInside;
+        int peak = g_startupPeak.load();
+        while (now > peak && !g_startupPeak.compare_exchange_weak(peak, now)) {}
+    }
+    void release() { if (active) { --g_startupsInside; active = false; } }
+    ~StartupCounter() { release(); }
+};
+}
+
 bool PluginRuntime::start(QString* error)
 {
     const PluginManifest& manifest = m_config.manifest;
@@ -260,6 +292,8 @@ bool PluginRuntime::start(QString* error)
     // generator still holds, and every plugin's async code is a generator
     // (the app crashed mid-way through an IFS import). The engine reads this
     // when it is created; 0 makes it collect all at once, as before Qt 6.8.
+    QMutexLocker startupLocker(&engineStartupMutex());
+    StartupCounter startupCounter;
     if (!qEnvironmentVariableIsSet("QV4_GC_TIMELIMIT"))
         qputenv("QV4_GC_TIMELIMIT", "0");
     {
@@ -313,6 +347,8 @@ bool PluginRuntime::start(QString* error)
     m_busySince.store(nowMs());
     QJSValue ns = m_engine->importModule(mainPath);
     m_busySince.store(0);
+    startupCounter.release();
+    startupLocker.unlock();
     if (m_engine->isInterrupted()) {
         m_engine->setInterrupted(false);
         *error = QStringLiteral("Loading %1 took too long and was stopped.").arg(manifest.main);
