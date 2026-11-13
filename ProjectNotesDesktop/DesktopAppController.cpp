@@ -2204,6 +2204,23 @@ void DesktopAppController::setViewReportAfterSave(bool enabled)
     emit viewReportAfterSaveChanged();
 }
 
+bool DesktopAppController::automaticUpdateChecks() const
+{
+    QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
+    settings.setFallbacksEnabled(false);
+    return settings.value(QStringLiteral("Updates/CheckAtStartup"), true).toBool();
+}
+
+void DesktopAppController::setAutomaticUpdateChecks(bool enabled)
+{
+    if (automaticUpdateChecks() == enabled)
+        return;
+    QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
+    settings.setFallbacksEnabled(false);
+    settings.setValue(QStringLiteral("Updates/CheckAtStartup"), enabled);
+    emit automaticUpdateChecksChanged();
+}
+
 QVariantMap DesktopAppController::reportProjectFolderOptions() const
 {
     QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
@@ -4760,7 +4777,7 @@ void DesktopAppController::checkForUpdates()
 
 void DesktopAppController::checkForUpdatesSilent()
 {
-    if (!s_updateChecksEnabled)
+    if (!s_updateChecksEnabled || !automaticUpdateChecks())
         return;
     m_silentCheck = true;
     ensureUpdater();

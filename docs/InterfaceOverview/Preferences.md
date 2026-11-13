@@ -12,7 +12,7 @@ The Project Notes Settings page allows you to configure application-wide setting
 ## Related Settings Pages
 
 This page covers Preferences (Appearance, Project Manager/Managing Company,
-and View Report After Save), the Email, Contacts, and Calendar tab, View
+View Report After Save, and automatic update checks), the Email, Contacts, and Calendar tab, View
 Options, Data, and About. A few other Settings-page tabs are substantial
 enough to have their own documentation:
 
@@ -149,6 +149,8 @@ Choosing **About** from the [Application Menu](<ApplicationMenu.md>)'s **Help** 
 ## Checking for Updates
 
 Project Notes can keep itself up to date by checking GitLab for newer releases. A quiet, background check runs automatically each time Project Notes starts. If a newer release is found, it offers to download and install it for you; the installer runs automatically and Project Notes relaunches itself when it finishes. When no update is available, the background check stays silent so it never interrupts your work.
+
+To stop the startup check, open **Settings**, go to the **Preferences** tab, and clear **Check for updates automatically at startup**. The change takes effect the next time Project Notes starts. Manual checks still work. The option is hidden in the Mac App Store and Microsoft Store versions, since the store handles updates there.
 
 You can also check at any time from the app menu by choosing **Check for Updates…**. A manual check always reports its result — including telling you when you are already running the latest version.
 

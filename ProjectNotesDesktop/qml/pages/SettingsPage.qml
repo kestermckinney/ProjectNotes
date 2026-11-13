@@ -169,6 +169,15 @@ Item {
                     checked: DesktopAppController.viewReportAfterSave
                     onToggledValue: (v) => DesktopAppController.viewReportAfterSave = v
                 }
+                SettingsCheck {
+                    // Store builds update through the store, so there is
+                    // nothing to turn off there.
+                    objectName: "automaticUpdateChecks"
+                    visible: DesktopAppController.updatesSupported
+                    label: qsTr("Check for updates automatically at startup")
+                    checked: DesktopAppController.automaticUpdateChecks
+                    onToggledValue: (v) => DesktopAppController.automaticUpdateChecks = v
+                }
                 GridLayout {
                     Layout.fillWidth: true
                     Layout.minimumWidth: 0

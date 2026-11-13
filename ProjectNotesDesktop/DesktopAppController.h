@@ -86,6 +86,7 @@ class DesktopAppController : public QObject
     Q_OBJECT
 
     Q_PROPERTY(bool viewReportAfterSave READ viewReportAfterSave WRITE setViewReportAfterSave NOTIFY viewReportAfterSaveChanged)
+    Q_PROPERTY(bool automaticUpdateChecks READ automaticUpdateChecks WRITE setAutomaticUpdateChecks NOTIFY automaticUpdateChecksChanged)
 
     Q_PROPERTY(QAbstractItemModel* projectsListModel     READ projectsListModel     NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* projectNotesModel     READ projectNotesModel     NOTIFY databaseReady)
@@ -353,6 +354,10 @@ public:
     // ── Preferences (managing company / project manager, by id) ──────────────
     bool viewReportAfterSave() const;
     void setViewReportAfterSave(bool enabled);
+    // Whether the quiet launch-time update check runs. Help > Check for
+    // Updates works either way. Stored per machine; defaults to on.
+    bool automaticUpdateChecks() const;
+    void setAutomaticUpdateChecks(bool enabled);
     Q_INVOKABLE QString managingCompanyId() const;
     Q_INVOKABLE void    setManagingCompanyId(const QString& companyId);
     Q_INVOKABLE QString projectManagerId() const;
@@ -959,6 +964,7 @@ signals:
     void pluginNavigateRequested(const QString& dataType, const QString& dataId,
                                  const QString& fkId, const QString& dataKey);
     void viewReportAfterSaveChanged();
+    void automaticUpdateChecksChanged();
     void reviewAudiencePresetChanged();
     void emailSettingsChanged();
     void meetingReviewChanged();
