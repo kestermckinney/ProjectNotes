@@ -99,7 +99,11 @@ ServiceError ProjectFolderStore::readOnlyError(const QString &what)
 bool ProjectFolderStore::splitRelative(const QString &relative, QStringList *segments, bool allowEmpty)
 {
     segments->clear();
-    const QString value = QDir::fromNativeSeparators(relative.trimmed());
+    // Plugin paths are the same on every platform, so a backslash separates
+    // folders on macOS and Linux too (QDir::fromNativeSeparators converts it
+    // only on Windows). Teams and SharePoint refuse it in names anyway.
+    QString value = relative.trimmed();
+    value.replace(QLatin1Char('\\'), QLatin1Char('/'));
     static const QRegularExpression drive(QStringLiteral("^[A-Za-z]:"));
     if (value.startsWith(QLatin1Char('/')) || drive.match(value).hasMatch())
         return false;

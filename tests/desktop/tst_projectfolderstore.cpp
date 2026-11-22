@@ -146,6 +146,9 @@ void ProjectFolderStoreTest::relativePathsStayInsideTheFolder()
     QVERIFY(!ProjectFolderStore::splitRelative(QString(), &segments, false));
     QVERIFY(!ProjectFolderStore::splitRelative(QStringLiteral("../outside.txt"), &segments));
     QVERIFY(!ProjectFolderStore::splitRelative(QStringLiteral("a/../../b"), &segments));
+    // Backslashes separate folders on every platform, so these leave the folder too.
+    QVERIFY(!ProjectFolderStore::splitRelative(QStringLiteral("..\\outside.txt"), &segments));
+    QVERIFY(!ProjectFolderStore::splitRelative(QStringLiteral("\\server\\share"), &segments));
     QVERIFY(!ProjectFolderStore::splitRelative(QStringLiteral("/etc/passwd"), &segments));
     QVERIFY(!ProjectFolderStore::splitRelative(QStringLiteral("C:/Windows"), &segments));
 }
