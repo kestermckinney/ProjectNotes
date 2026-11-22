@@ -6,44 +6,63 @@ The **Microsoft 365 drafts** integration creates email drafts and draft calendar
 
 Native [Contact Synchronization](Preferences.md#contact-synchronization) and **Full Contact Export** also use this account. Use this tab's single sign-in action to grant `Contacts.ReadWrite` alongside email and calendar access. Contact export remains available when scheduled and manual synchronization are disabled.
 
-## Before You Sign In
+## For Administrators
 
-Your organization must provide a **dedicated** Microsoft Entra app registration for Office 365 Integration. Do not reuse the app registration configured for the old Outlook Integration plugin, whose consent only covers Mail, Calendar, Contacts, and Tasks scopes. Office 365 Integration requests different, higher-privilege delegated Microsoft Graph scopes:
+Project Notes signs in to Microsoft 365 as the user, through an app registration your organization owns. This section lists everything a Microsoft Entra administrator sets up so every Office 365 feature works. Users need nothing beyond the tenant ID and application (client) ID it produces.
 
-For email drafts and meeting invitations:
+### 1. Create a dedicated app registration
 
-- `User.Read`
-- `Mail.ReadWrite`
-- `Calendars.ReadWrite`
-- `offline_access`
+In the Microsoft Entra admin center, open **App registrations > New registration**.
 
-For contact synchronization and Full Contact Export:
+- **Supported account types** must agree with the tenant ID users enter in Project Notes. The default tenant, `organizations`, needs a registration that accepts accounts in any organizational directory. A registration limited to your own directory works when users enter your specific tenant ID.
+- **Redirect URI** stays empty, and no client secret or certificate is needed.
+- On the **Authentication** page, set **Allow public client flows** to **Yes**. Project Notes signs in with the device-code flow, and without this setting sign-in fails after the user enters the code.
 
-- `Contacts.ReadWrite`
+Do not reuse the registration made for the old Outlook Integration plugin. Its consent covers only Mail, Calendar, Contacts, and Tasks.
 
-Importing contacts without ever exporting them needs only `Contacts.Read`. Project Notes asks for `Contacts.ReadWrite` whenever Office 365 is the contact provider, so grant that one unless you are sure nobody will export.
+### 2. Add the delegated Microsoft Graph permissions
 
-For File Finder's Teams and SharePoint discovery, and for saving into a Microsoft Teams project folder:
+On **API permissions**, add these **delegated** Microsoft Graph permissions. Project Notes uses no application permissions, so it can reach only what the signed-in user can already reach.
 
-- `Team.ReadBasic.All`
-- `Channel.ReadBasic.All`
-- `Files.ReadWrite.All`
+| Permission | Used for |
+| :--- | :--- |
+| `User.Read` | Identifying the signed-in account |
+| `offline_access` | Staying signed in between sessions |
+| `Mail.ReadWrite` | Creating email drafts, and reading mail for [Archive Mail](../StandardPlugins/ArchiveMail.md) |
+| `Calendars.ReadWrite` | Creating draft meeting events |
+| `Contacts.ReadWrite` | [Contact Synchronization](Preferences.md#contact-synchronization) and **Full Contact Export** |
+| `Team.ReadBasic.All` | File Finder listing the teams the user has joined |
+| `Channel.ReadBasic.All` | File Finder listing each team's channels |
+| `Files.ReadWrite.All` | File Finder reading channel files, and saving reports, documents made from templates and archived email into a project's Teams folder |
 
-`Files.ReadWrite.All` lets Project Notes save documents made from templates, saved reports and archived email into a project's Teams folder. It replaces `Files.Read.All`, which earlier versions asked for and which only allows File Finder to read. If you signed in before, a save to a Teams folder reports that access was refused; grant `Files.ReadWrite.All` on the registration and sign in again. Teams keeps channel files in SharePoint, but `Sites.Read.All` and `Sites.ReadWrite.All` are not needed.
+Notes on the list:
 
-Some organizations will not grant `Files.ReadWrite.All`. Asking for a permission nobody has approved makes Microsoft refuse the whole sign-in, so email drafts, calendar events and contacts stop working too. Turn off **Save files into Microsoft Teams folders** and Project Notes asks for `Files.Read.All` instead. File Finder still reads Teams, and saves go to the project's local folder. A project whose only folder is in Teams gets no **Save to Project Folder** button, and plugins ask where to save.
+- **Never `Mail.Send`.** Project Notes cannot send mail from the account. `Mail.ReadWrite` also covers plugins that ask for `Mail.Read`, such as Archive Mail.
+- **No SharePoint permissions.** Teams keeps channel files in SharePoint, but `Files.ReadWrite.All` reaches them. `Sites.Read.All` and `Sites.ReadWrite.All` are not needed.
+- **Read-only Teams access.** If your organization will not allow `Files.ReadWrite.All`, add `Files.Read.All` instead and have users turn off **Save files into Microsoft Teams folders** (see [Settings](#settings)). File Finder still reads Teams, and saves go to the project's local folder. A project whose only folder is in Teams then gets no **Save to Project Folder** button, and plugins ask where to save. Earlier versions asked only for `Files.Read.All`; users who signed in then must sign in again once `Files.ReadWrite.All` is granted.
+- **Read-only contacts.** Importing contacts without ever exporting them needs only `Contacts.Read`, but Project Notes asks for `Contacts.ReadWrite` whenever Office 365 is the contact provider. Grant `Contacts.ReadWrite` unless you know nobody will export.
+- **Plugins.** A plugin can declare more Microsoft Graph permissions in its `plugin.json` (`office365.scopes`). The bundled plugins need nothing beyond the table. Before users install a third-party plugin that asks for more, add its permissions to the registration too.
 
-`Mail.ReadWrite` creates and updates drafts. It also satisfies plugins that ask for `Mail.Read`, such as Archive Mail. Project Notes never requests `Mail.Send`, so it cannot send mail from your account.
+### 3. Grant admin consent
 
-All of these are **delegated** permissions. Application permissions are not used.
+Select **Grant admin consent for** your organization on the **API permissions** page, covering every permission above.
 
-### App registration settings
+Microsoft lets users consent to all of these delegated permissions themselves. When your tenant allows that, each user approves what they use at sign-in, and admin consent is optional. Many tenants block user consent, though. Then every permission Project Notes asks for needs admin consent, or Microsoft refuses the whole sign-in, and email drafts, calendar events and contacts stop working along with Teams.
 
-Project Notes signs in with the device-code flow and has no client secret. On the app registration's **Authentication** page, set **Allow public client flows** to **Yes**. Without it, sign-in fails after you enter the code.
+The sign-in under **Settings > Office 365 Integration** asks for mail and calendar access, contact access when Office 365 is the contact provider, and the three Teams permissions when File Finder searches Teams or the account already uses Teams files. Granting admin consent for the whole list up front means turning on a feature later never needs a new approval.
 
-The **Supported account types** setting must agree with the tenant ID you enter in Project Notes. The default tenant, `organizations`, needs a registration that accepts accounts in any organizational directory. A registration limited to your own directory works when you enter your specific tenant ID.
+A sign-in that seems to complete but leaves File Finder reporting an error that mentions admin approval (AADSTS90094) means consent is missing. Either it was never granted, or the tenant ID or client ID entered in Project Notes points to a different registration.
 
-Microsoft Graph marks `Team.ReadBasic.All`, `Channel.ReadBasic.All`, and `Files.ReadWrite.All` as requiring administrator consent. A tenant administrator must grant consent for these permissions on the dedicated app registration (Microsoft Entra admin center > **App registrations** > the app > **API permissions** > **Grant admin consent**) before sign-in will succeed. If sign-in appears to complete but File Finder then reports an error mentioning admin approval (AADSTS90094), consent has not been granted yet, or the tenant/client ID entered below points at an app registration that was never granted it.
+### 4. Allow the device-code sign-in
+
+Conditional Access policies that block the device-code flow (the **Authentication flows** condition) also block Project Notes. Exclude this app registration from such a policy, or limit the exclusion to the users who need it.
+
+### 5. Check what users can reach in Teams
+
+Delegated permissions never go beyond the user's own access:
+
+- File Finder sees only teams the user has joined, and private or shared channels only when the user is a member of them.
+- Saving into a Teams folder needs edit rights to the channel's files. Team members have them by default. A user with read-only access to the channel's SharePoint folder can browse it in File Finder, but saves there are refused.
 
 ## Settings
 
@@ -62,7 +81,7 @@ The status panel reports whether Project Notes is signed in and shows the device
 
 ## Credential Storage
 
-Project Notes stores the Microsoft refresh token in the operating system's credential vault. Access tokens remain in memory. The tenant ID, client ID, and connection state are stored in the local Project Notes settings profile and do not sync through the project database. These settings are kept independent of the old Outlook Integration plugin's tenant ID and application ID — changing one never affects the other.
+Project Notes stores the Microsoft refresh token in the operating system's credential vault. Access tokens remain in memory. The tenant ID, client ID, and connection state are stored in the local Project Notes settings profile and do not sync through the project database. These settings are kept independent of the old Outlook Integration plugin's tenant ID and application ID. Changing one never affects the other.
 
 ## Use with File Finder
 

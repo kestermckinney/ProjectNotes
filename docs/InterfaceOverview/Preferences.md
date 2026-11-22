@@ -19,7 +19,7 @@ enough to have their own documentation:
 - [Cloud Sync](<RemoteHost.md>) — Sync your database with Project Notes Pro
 - [Project Folders](<ProjectFolders.md>) — Create, rename, and color the folders in the project sidebar
 - [File Finder](<FileFinder.md>) — Native automatic project file discovery
-- [Office 365 Integration](<Office365Integration.md>) — Native Microsoft 365 sign-in used by File Finder
+- [Office 365 Integration](<Office365Integration.md>) — Microsoft 365 sign-in used for email drafts, meeting drafts, contacts, Archive Mail, File Finder and Teams project folders
 
 ## Appearance
 

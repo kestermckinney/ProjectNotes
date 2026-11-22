@@ -122,14 +122,14 @@ Your Microsoft 365 administrator creates an app registration that allows these d
 
 When Office 365 is your contact provider under **Contact Synchronization**, the same sign-in also asks for `Contacts.ReadWrite`. Add it to the registration, or sign-in will stop at the consent screen.
 
-If you also use [File Finder](<FileFinder.md>) to discover Teams channels and their files, or save into a Teams project folder, the same registration should allow `Team.ReadBasic.All`, `Channel.ReadBasic.All` and `Files.ReadWrite.All`. Those three always need administrator consent.
+If you also use [File Finder](<FileFinder.md>) to discover Teams channels and their files, or save into a Teams project folder, the same registration should allow `Team.ReadBasic.All`, `Channel.ReadBasic.All` and `Files.ReadWrite.All`. The sign-in asks for all three once File Finder searches Teams.
 
 Two settings on the registration's **Authentication** page matter:
 
 - **Allow public client flows** must be **Yes**. Project Notes signs in with a device code and has no client secret, so sign-in fails without it.
 - **Supported account types** must fit the tenant ID you enter below. The default, `organizations`, needs a registration that accepts any organizational directory.
 
-Some organizations require administrator consent before anyone can sign in. [Office 365 Integration](<Office365Integration.md>) has the full permission list.
+Many organizations block users from consenting to apps, and then an administrator must grant consent for every permission before anyone can sign in. A Conditional Access policy that blocks the device-code flow blocks Project Notes too. [Office 365 Integration](<Office365Integration.md#for-administrators>) has the full administrator checklist.
 
 ### Sign in
 
