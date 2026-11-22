@@ -28,15 +28,8 @@
 	<true/>
 	<key>NSHighResolutionCapable</key>
 	<true/>
-	<!-- Required the first time the "MacOS Email and Calendar" integration
-	     creates a Calendar.app event: macOS shows this text in its one-time
-	     Automation consent prompt for controlling Calendar (and, if the
-	     user has separately granted Accessibility access, System Events). -->
-	<key>NSAppleEventsUsageDescription</key>
-	<string>Project Notes uses Calendar to create meeting events you review before sending invitations.</string>
-	<!-- Calendar also refuses scripted commands from apps without Calendars
-	     access, so the same integration asks for it (via EventKit) before
-	     creating the event. NSCalendarsUsageDescription covers macOS 13. -->
+	<!-- The "MacOS Email and Calendar" integration saves meetings through
+	     EventKit. NSCalendarsUsageDescription covers macOS 13. -->
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Project Notes adds the meetings you schedule to your calendar so you can review them before sending invitations.</string>
 	<key>NSCalendarsUsageDescription</key>

@@ -27,7 +27,7 @@ When local and Office 365 discovery find a file with the same project, classific
 | Setting or action | Description |
 | :--- | :--- |
 | **Enable File Finder** | Starts scheduled reconciliation. Disable it to stop background and manual scans without deleting settings or existing file entries. |
-| **Include Office 365 locations** | Adds Microsoft Teams and SharePoint discovery to local discovery. Configure and sign in on the separate **Office 365 Integration** settings page first. |
+| **Include Office 365 locations** | Adds Microsoft Teams and SharePoint discovery to local discovery. Configure and sign in on the separate **Office 365 Integration** settings page first. The sign-in asks for the Teams permissions only while this is on, so if you turn it on after signing in, sign in again. Your administrator adds them to the app registration; see [For Administrators](<Office365Integration.md#for-administrators>). |
 | **Scan Now** | Starts an immediate scan using the saved settings. The current status and previous scan summary appear beside the button. |
 | **Reconsider All Files** | Clears File Finder's discovery cache and performs a fresh scan. It keeps search locations, exclusions, classification rules, and existing **Files & Folders** rows. Use it after remote folders change in a way an ordinary scan does not detect. |
 

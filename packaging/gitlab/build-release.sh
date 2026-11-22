@@ -25,7 +25,7 @@ fi
 python3 - <<'PY'
 import base64, configparser, os, subprocess
 repo = configparser.ConfigParser(interpolation=None)
-repo.read('packaging/linux/projectnotes.flatpakrepo')
+repo.read('packaging/gitlab/projectnotes.flatpakrepo')
 expected = base64.b64decode(repo['Flatpak Repo']['GPGKey'])
 actual = subprocess.check_output(['gpg', '--export', os.environ['FLATPAK_GPG_KEY_ID']])
 if expected != actual:
@@ -49,7 +49,7 @@ flatpak build-update-repo --gpg-sign="$GPG_KEY_ID" --gpg-homedir="$GPG_HOMEDIR" 
 bash packaging/linux/build-flatpak.sh bundle
 mkdir -p public/flatpak
 cp -a packaging/linux/flatpak-repo/. public/flatpak/
-cp packaging/linux/projectnotes.flatpakrepo packaging/linux/projectnotes.gpg public/flatpak/
+cp packaging/gitlab/projectnotes.flatpakrepo packaging/gitlab/projectnotes.gpg public/flatpak/
 cp packaging/linux/icons/256x256/com.projectnotespro.ProjectNotes.png public/flatpak/icon.png
 # Flatpak clients must not follow Pages' unique-domain redirects for every object.
 printf '%s\n' 'Project Notes Linux update repository' > public/index.html

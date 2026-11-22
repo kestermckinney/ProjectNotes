@@ -99,6 +99,7 @@ using PN::Comm::reviewPresetRule;
 #include <QClipboard>
 #include <QCryptographicHash>
 #include <QDateTime>
+#include <QLocale>
 #include <QDir>
 #include <QDomDocument>
 #include <QDesktopServices>
@@ -192,9 +193,10 @@ DesktopAppController::DesktopAppController(QObject* parent)
         PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile));
     m_meetingService->registerBackend(PN::Comm::BackendId::DefaultApp, m_icsMeetingBackend.get());
 #if defined(Q_OS_DARWIN)
-    // "MacOS Email and Calendar" drives Mail.app and Calendar.app directly via
-    // AppKit/Apple Events (see MacMailBackend/MacCalendarBackend) rather than
-    // opening a staged .eml/.ics file.
+    // "MacOS Email and Calendar" hands Mail a compose window through
+    // NSSharingService and saves Calendar events through EventKit (see
+    // MacMailBackend/MacCalendarBackend) rather than opening a staged .eml/.ics
+    // file. Neither sends Apple Events.
     m_macMailBackend = std::make_unique<PN::Comm::MacMailBackend>();
     m_emailService->registerBackend(PN::Comm::BackendId::MacMail, m_macMailBackend.get());
     m_macCalendarBackend = std::make_unique<PN::Comm::MacCalendarBackend>();
@@ -1795,10 +1797,12 @@ bool DesktopAppController::handoffPreparedMeeting(const QString &subject, const 
         const PN::Comm::MeetingRequest meeting =
             PN::Comm::MeetingPreparationFactory::request(*self->m_meetingReview, recipients.recipients);
         const PN::Comm::BackendId backend = meeting.backend;
-        self->m_meetingService->handoff(meeting, [self, backend](PN::Comm::MeetingHandoffResult outcome) {
+        const QDateTime start = meeting.start;
+        self->m_meetingService->handoff(meeting, [self, backend, start](PN::Comm::MeetingHandoffResult outcome) {
             if (!self)
                 return;
             self->finishMeetingHandoff(outcome);
+            Q_UNUSED(start); // used on macOS only
 #if defined(Q_OS_DARWIN)
             // MacCalendarBackend creates the event directly in Calendar rather
             // than opening a file, so nothing else confirms it happened; the
@@ -1808,8 +1812,10 @@ bool DesktopAppController::handoffPreparedMeeting(const QString &subject, const 
             if (backend == PN::Comm::BackendId::MacMail && outcome.error.code.isEmpty()
                 && !outcome.eventIdentity.isEmpty()) {
                 emit self->infoOccurred(self->tr("Schedule Meeting"),
-                    self->tr("The event was created on your \"%1\" calendar. Paste the copied attendees into "
-                             "the event's invitees, then click Send in Calendar.").arg(outcome.eventIdentity));
+                    self->tr("The event was added to your \"%1\" calendar on %2. Open it in Calendar, paste the "
+                             "copied attendees into its invitees, then click Send.")
+                        .arg(outcome.eventIdentity,
+                             QLocale().toString(start.toLocalTime(), QLocale::ShortFormat)));
             }
 #endif
             // The iCloud review stays open after success because CalDAV does
@@ -4732,7 +4738,8 @@ QString DesktopAppController::qtRuntimeVersion() const
 // same battle-tested unattended install/relaunch flow the Widgets app ships:
 // a silent NSIS install (/waitpid + /relaunch) on Windows and a detached
 // swap-and-relaunch helper on macOS. (Linux has no installer asset — it updates
-// via Flatpak — so a check there reports "download manually".)
+// via Flatpak — so a check there points the user at flatpak update, or at the
+// instructions for moving the remote to GitHub.)
 void DesktopAppController::ensureUpdater()
 {
     if (m_updater)
@@ -4753,6 +4760,22 @@ void DesktopAppController::ensureUpdater()
     connect(m_updater, &UpdateManager::checkFailed, this, [this](const QString& err) {
         if (!m_silentCheck) emit updateCheckFailed(err);
     });
+    // Shown even for the silent startup check: without it a Linux user left on
+    // the GitLab remote would never learn that releases moved to GitHub. The
+    // sandbox cannot see which remote Flatpak uses, so a user who already
+    // switched would be told again on every launch until they update. The
+    // startup check therefore tells them once per version; a manual check
+    // always does.
+    connect(m_updater, &UpdateManager::linuxRepositoryChangeNeeded, this,
+            [this](const QString& version, const QUrl& instructionsUrl) {
+                QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
+                settings.setFallbacksEnabled(false);
+                const QString key = QStringLiteral("Updates/LinuxRepositoryNoticeVersion");
+                if (m_silentCheck && settings.value(key).toString() == version)
+                    return;
+                settings.setValue(key, version);
+                emit linuxRepositoryChangeNeeded(version, instructionsUrl.toString());
+            });
     connect(m_updater, &UpdateManager::downloadProgress, this,
             [this](qint64 received, qint64 total) {
                 emit updateDownloadProgress(total > 0

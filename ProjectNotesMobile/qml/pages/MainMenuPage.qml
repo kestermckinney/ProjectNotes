@@ -96,7 +96,7 @@ Page {
                     text: qsTr("What's New")
                     iconName: "sparkles"
                     showChevron: false
-                    onClicked: Qt.openUrlExternally("https://gitlab.com/kestermckinney/ProjectNotes/-/releases")
+                    onClicked: Qt.openUrlExternally("https://github.com/kestermckinney/ProjectNotes/releases")
                 }
                 SettingsItem {
                     text: qsTr("About")

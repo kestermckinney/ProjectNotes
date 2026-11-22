@@ -41,8 +41,10 @@ if publish:
             raise SystemExit('A newer release is already published; refusing to downgrade the repository')
 
 links = []
+# The bundle is built in packaging/linux; the GitLab descriptor and key are in
+# packaging/gitlab (packaging/linux holds the GitHub ones).
 for name in ['ProjectNotes.flatpak', 'projectnotes.flatpakrepo', 'projectnotes.gpg']:
-    path = Path('packaging/linux') / name
+    path = Path('packaging/linux' if name.endswith('.flatpak') else 'packaging/gitlab') / name
     endpoint = f'/packages/generic/projectnotes/{quote(tag, safe="")}/{name}'
     if not publish:
         request(endpoint, 'PUT', path.read_bytes(), 'application/octet-stream')
@@ -50,7 +52,7 @@ for name in ['ProjectNotes.flatpak', 'projectnotes.flatpakrepo', 'projectnotes.g
                   'direct_asset_path': '/' + name, 'link_type': 'package'})
 
 # Preserve any release notes already reviewed on GitLab.
-notes = Path('packaging/gitlab/RELEASE_NOTES.md').read_text()
+notes = Path('packaging/RELEASE_NOTES.md').read_text()
 from datetime import datetime, timezone
 payload = {'name': f'Project Notes {tag.removeprefix("v")}',
            'description': existing['description'] if existing else notes,

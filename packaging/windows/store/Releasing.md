@@ -1,6 +1,6 @@
 # Releasing on the Microsoft Store
 
-The Store build is an MSIX package of the same executable and files the GitLab installer ships. It has no Remote Host. It runs as a full trust desktop app, so nothing in the code is sandboxed. The one runtime difference: when the process has a package identity, `main.cpp` turns the in-app updater off, because the Store updates the app.
+The Store build is an MSIX package of the same executable and files the GitHub installer ships. It has no Remote Host. It runs as a full trust desktop app, so nothing in the code is sandboxed. The one runtime difference: when the process has a package identity, `main.cpp` turns the in-app updater off, because the Store updates the app.
 
 ## One-time setup
 
@@ -13,7 +13,7 @@ The Store build is an MSIX package of the same executable and files the GitLab i
    $env:PN_MSIX_PUBLISHER_DISPLAY_NAME = '<Package/Properties/PublisherDisplayName>'
    ```
 
-3. Install the Windows 10/11 SDK (for `makeappx.exe` and `signtool.exe`) alongside the Visual Studio 2022 and Qt kit the GitLab build uses.
+3. Install the Windows 10/11 SDK (for `makeappx.exe` and `signtool.exe`) alongside the Visual Studio 2022 and Qt kit the GitHub build uses.
 
 ## Each release
 
@@ -38,5 +38,5 @@ This writes a package ending in `-local-test.msix`, signs it with a throwaway ce
 ## Things to know for review
 
 - **runFullTrust.** Partner Center asks why. Project Notes is a Qt desktop app that reads and writes the user's chosen folders and talks to Outlook and Office through COM.
-- **Data is separate.** A packaged app's writes to AppData go to a per-package location, so a user moving from the GitLab build does not see their database. Use the app's export and import, or copy `database\ProjectNotes.db` by hand.
+- **Data is separate.** A packaged app's writes to AppData go to a per-package location, so a user moving from the GitHub build does not see their database. Use the app's export and import, or copy `database\ProjectNotes.db` by hand.
 - **Store screenshots and description** are entered in Partner Center. They are not part of the package.

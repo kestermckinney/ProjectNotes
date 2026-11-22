@@ -58,7 +58,8 @@ void markChecked()
     QSettings(kOrganization, QStringLiteral("AppSettings")).setValue(kCheckedKey, true);
 }
 
-// Copies the data folder, leaving out logs and SQLite's shared-memory file,
+// Copies the data folder, leaving out logs, the settings copies (read
+// separately) and SQLite's shared-memory file,
 // which SQLite rebuilds. The -wal file is copied with the database so changes
 // not yet checkpointed come along.
 bool copyDataFolder(const QString& from, const QString& to, QString* failed)
@@ -69,6 +70,7 @@ bool copyDataFolder(const QString& from, const QString& to, QString* failed)
         const QString path = it.next();
         const QString relative = source.relativeFilePath(path);
         if (relative.startsWith(QStringLiteral("logs/")) || relative == QStringLiteral("startup-error.log")
+            || relative.startsWith(QLatin1String(kSettingsFolder) + QLatin1Char('/'))
             || relative.endsWith(QStringLiteral("-shm")))
             continue;
         const QString destination = to + QLatin1Char('/') + relative;
@@ -82,8 +84,8 @@ bool copyDataFolder(const QString& from, const QString& to, QString* failed)
     return true;
 }
 
-// QSettings reads a .plist path directly, so the old preferences come over
-// with the same keys the direct download used.
+// The direct download's settings copies (see exportSettings()) are plists that
+// QSettings reads directly, so the keys come over unchanged.
 void copySettings(const QString& plist, const QString& application)
 {
     if (!QFileInfo::exists(plist))
@@ -94,6 +96,46 @@ void copySettings(const QString& plist, const QString& application)
         to.setValue(key, from.value(key));
 }
 
+// Asks for the direct download's data folder in an Open dialog, which is
+// what lets the sandboxed app read it. Accepts the folder itself or the
+// Application Support folder above it. Empty if the user cancels.
+QString chooseDataFolder(const QString& suggested, const QString& database)
+{
+    @autoreleasepool {
+        while (true) {
+            NSOpenPanel* panel = [NSOpenPanel openPanel];
+            panel.canChooseDirectories = YES;
+            panel.canChooseFiles = NO;
+            panel.allowsMultipleSelection = NO;
+            panel.showsHiddenFiles = YES;
+            panel.prompt = QObject::tr("Copy From This Folder").toNSString();
+            panel.message = QObject::tr("Select the \"Project Notes\" folder of the downloaded version. It is in "
+                                        "your Library folder, under Application Support.").toNSString();
+            panel.directoryURL = [NSURL fileURLWithPath:suggested.toNSString() isDirectory:YES];
+            if ([panel runModal] != NSModalResponseOK || panel.URLs.count == 0)
+                return {};
+
+            const QString chosen = QString::fromNSString(panel.URLs.firstObject.path);
+            for (const QString& candidate : {chosen, chosen + QStringLiteral("/Project Notes")}) {
+                if (QFileInfo::exists(candidate + database))
+                    return candidate;
+            }
+
+            QMessageBox retry(QMessageBox::Warning, QStringLiteral("Project Notes"),
+                              QObject::tr("That folder has no Project Notes data"));
+            retry.setInformativeText(QObject::tr(
+                "Choose the \"Project Notes\" folder in Library > Application Support. It holds "
+                "ProjectNotes.db."));
+            QPushButton* again = retry.addButton(QObject::tr("Choose Again"), QMessageBox::AcceptRole);
+            retry.addButton(QObject::tr("Start Empty"), QMessageBox::RejectRole);
+            retry.setDefaultButton(again);
+            retry.exec();
+            if (retry.clickedButton() != again)
+                return {};
+        }
+    }
+}
+
 } // namespace
 
 void run()
@@ -101,23 +143,24 @@ void run()
     if (QSettings(kOrganization, QStringLiteral("AppSettings")).value(kCheckedKey).toBool())
         return;
 
-    const QString home = realHome();
-    const QString source = home + QStringLiteral("/Library/Application Support/Project Notes");
     const QString target = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     const QString database = QStringLiteral("/ProjectNotes.db");
 
-    // Nothing to bring over, or this version already has its own data.
-    if (home.isEmpty() || !QFileInfo::exists(source + database) || QFileInfo::exists(target + database)) {
+    // This version already has its own data.
+    if (QFileInfo::exists(target + database)) {
         markChecked();
         return;
     }
 
+    // The sandbox cannot look for the downloaded version's data without the
+    // user choosing its folder, so a first start always asks.
     QMessageBox ask(QMessageBox::Question, QStringLiteral("Project Notes"),
                     QObject::tr("Bring over your data from the downloaded version?"));
     ask.setInformativeText(QObject::tr(
-        "Project Notes found the projects, notes and settings of the version downloaded from "
-        "projectnotespro.com. Copy them into this version? The downloaded version keeps its own copy."));
-    QPushButton* copyButton = ask.addButton(QObject::tr("Copy My Data"), QMessageBox::AcceptRole);
+        "If you have used Project Notes downloaded from projectnotespro.com on this Mac, this version can "
+        "copy its projects, notes and settings. You choose its data folder in the next step. The downloaded "
+        "version keeps its own copy."));
+    QPushButton* copyButton = ask.addButton(QObject::tr("Copy My Data..."), QMessageBox::AcceptRole);
     ask.addButton(QObject::tr("Start Empty"), QMessageBox::RejectRole);
     ask.setDefaultButton(copyButton);
     ask.exec();
@@ -141,6 +184,15 @@ void run()
             return; // ask again on the next start
     }
 
+    const QString home = realHome();
+    const QString source = chooseDataFolder(
+        home.isEmpty() ? QDir::homePath() : home + QStringLiteral("/Library/Application Support/Project Notes"),
+        database);
+    if (source.isEmpty()) {
+        markChecked();
+        return;
+    }
+
     QString failed;
     QDir().mkpath(target);
     if (!copyDataFolder(source, target, &failed)) {
@@ -154,18 +206,25 @@ void run()
                 .arg(failed));
         return;
     }
-    copySettings(home + QStringLiteral("/Library/Preferences/com.projectnotes.AppSettings.plist"),
-                 QStringLiteral("AppSettings"));
-    copySettings(home + QStringLiteral("/Library/Preferences/com.projectnotes.PluginSettings.plist"),
-                 QStringLiteral("PluginSettings"));
+    const QString settings = source + QLatin1Char('/') + QLatin1String(kSettingsFolder) + QLatin1Char('/');
+    const bool hasSettings = QFileInfo::exists(settings + QStringLiteral("AppSettings.plist"));
+    copySettings(settings + QStringLiteral("AppSettings.plist"), QStringLiteral("AppSettings"));
+    copySettings(settings + QStringLiteral("PluginSettings.plist"), QStringLiteral("PluginSettings"));
     markChecked();
     QLog_Info(CONSOLELOG, QStringLiteral("Copied the downloaded version's data from %1").arg(source));
 
+    // Versions of the direct download before the settings copy existed leave
+    // only the data folder behind.
+    const QString settingsNote = hasSettings
+        ? QString()
+        : QObject::tr("\n\nYour settings were not copied, because the downloaded version is too old to share "
+                      "them. Use File > Export Settings in the downloaded version, then File > Import Settings here.");
     QMessageBox::information(nullptr, QStringLiteral("Project Notes"),
         QObject::tr("Your data was copied.\n\n"
                     "This version can open only the folders you choose, so pick your project folders "
                     "again (Files & Folders > Browse Folder) and your File Finder locations "
-                    "(Settings > File Finder). If cloud sync asks you to sign in, sign in again."));
+                    "(Settings > File Finder). If cloud sync asks you to sign in, sign in again.")
+            + settingsNote);
 }
 
 } // namespace DirectDownloadMigration

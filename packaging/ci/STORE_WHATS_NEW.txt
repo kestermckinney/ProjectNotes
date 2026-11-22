@@ -1,0 +1,22 @@
+Project Notes 6.5.3
+
+This update brings together everything new since 6.5.0.
+
+Microsoft Teams project folders (Mac)
+- A project's main folder can now be its Microsoft Teams channel folder. Reports, archived email and other files Project Notes saves to the project folder go straight to Teams.
+- File Finder lists the Teams folder as "Teams Project Folder" next to the local Project Folder, and either can be made the main one. A new setting picks the Teams folder when both are found.
+- If your organization hasn't approved saving files to Teams, turn off "Save files into Microsoft Teams folders" in Settings. Teams folders stay readable, and files are saved to local folders instead.
+- Email archiving uses a local project folder when one is available.
+- Signing in now asks for everything File Finder needs to search Teams. If your organization lets you approve apps yourself, no administrator approval is needed first.
+
+Calendar and data (Mac)
+- Scheduled meetings are saved to your default calendar. Project Notes now asks only for calendar access, not for permission to control Calendar.
+- When moving from the downloaded version, you choose its data folder before your data is copied, and its settings come along too.
+
+Fixes
+- Add Team Member now lists every contact, even when the Contacts list is filtered (iPhone, iPad and Mac).
+- Fixed a crash that could happen at launch while plugins were starting (Mac).
+- Search clear buttons work on every page (Mac).
+- Checkboxes in report forms respond to clicks again (Mac).
+- Temporary files made by plugins are removed when you quit (Mac).
+- Help links now open the user guide on the Project Notes website.

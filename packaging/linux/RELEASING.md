@@ -1,116 +1,101 @@
-# Linux releases on GitLab
+# Linux releases
 
-The GitLab pipeline builds a signed OSTree repository, publishes it at
-`https://kestermckinney.gitlab.io/ProjectNotes/flatpak/`, and uploads durable
-`ProjectNotes.flatpak` and `projectnotes.flatpakrepo` assets to the generic package
-registry. The release links point to those packages, rather than expiring CI artifacts.
+Releases are published on GitHub. `.github/workflows/flatpak-release.yml`
+builds a signed OSTree repository when a `v*` tag is pushed, publishes it to
+the `gh-pages` branch of `kestermckinney/projectnotes-flatpak` (served at
+`https://kestermckinney.github.io/projectnotes-flatpak/`), and attaches
+`ProjectNotes.flatpak` and `projectnotes.flatpakrepo` to the GitHub release.
 
-## One-time setup
+GitLab stays public during the move. Builds 6.4.0 through 6.5.1 check only
+GitLab for updates, so 6.5.2 is released on both hosts; after that, release on
+GitHub only. The GitLab pipeline (`.gitlab-ci.yml`, `packaging/gitlab/`) still
+builds the GitLab-signed repository at
+`https://kestermckinney.gitlab.io/ProjectNotes/flatpak/`. Its descriptor and
+public key are `packaging/gitlab/projectnotes.flatpakrepo` and
+`packaging/gitlab/projectnotes.gpg`. Remove that pipeline when GitLab is retired.
 
-1. Make release metadata and packages publicly readable. The updater uses the
-   public GitLab API and never embeds a private access token in the application.
-2. Enable GitLab Pages with public access. Disable **Use unique domain** in Pages
-   settings so the stable URL above serves the repository without login or redirects.
-   The `public/` output here contains only the distribution repository. If this
-   project also hosts a website, combine its output with this job before deployment.
-3. Protect `v*` tags. Add protected CI/CD variables:
+## GitLab is not kept in sync
 
-   | Variable | Type | Contents |
-   | --- | --- | --- |
-   | `FLATPAK_GPG_PRIVATE_KEY` | File | ASCII-armored existing repository signing key |
-   | `FLATPAK_GPG_KEY_ID` | Variable | Signing-key fingerprint |
-   | `FLATPAK_GPG_PASSPHRASE` | Masked variable | Passphrase, if the key uses one |
+Pushes go to GitHub only; `origin` in this repository and in `../SqliteSyncPro`
+points there. Both pipelines clone ProjectNotes and SqliteSyncPro from GitHub at
+pinned commits, so push before tagging. For the 6.5.2 GitLab release, push just
+that tag once (`git push gitlab v6.5.2`); its pipeline then builds from GitHub.
 
-   Reuse the key matching `packaging/linux/projectnotes.flatpakrepo`. Keep its
-   private half out of Git. The build checks the exported public key before signing.
-   Existing GitHub Actions secrets cannot be read back; import the original key
-   from its backup. Do not silently generate a new key for existing installations.
-4. Use a runner that supports Flatpak/bubblewrap sandbox builds with the KDE 6.9
-   container. A self-managed Docker runner may require privileged mode.
-   For private SqliteSyncPro sources, authorize this project in SqliteSyncPro’s
-   CI job-token allowlist and configure a Git credential helper using the job
-   token. This project has protected `GIT_CONFIG_COUNT`, `GIT_CONFIG_KEY_0`,
-   `GIT_CONFIG_VALUE_0`, and `GIT_TERMINAL_PROMPT` variables for that purpose.
+## One-time setup on GitHub
 
-## Prepare 6.5.1
+1. Repository secrets (Settings > Secrets and variables > Actions):
 
-Update the desktop version and installer versions, review
-`packaging/gitlab/RELEASE_NOTES.md`, commit and push, then create `v6.5.1` at the
-reviewed commit. The pipeline verifies that the tag matches the desktop version.
-The mobile application has its own release cycle and version.
+   | Secret | Contents |
+   | --- | --- |
+   | `FLATPAK_GPG_PRIVATE_KEY` | ASCII-armored private signing key |
+   | `FLATPAK_GPG_KEY_ID` | Its fingerprint, `FEC8AE6825C826AFD564C424BA3027E5F2617C22` |
+   | `FLATPAK_GPG_PASSPHRASE` | Its passphrase |
+   | `FLATPAK_PAGES_DEPLOY_TOKEN` | Token that can push to `kestermckinney/projectnotes-flatpak` |
+   | `VERCEL_DOCS_DEPLOY_HOOK` | Deploy hook for projectnotespro.com (used by `docs-deploy.yml`) |
 
-GitLab has no GitHub-style draft release flag. Keep the release notes in Git, or
-create an **upcoming release** with a future `released_at` date. The application
-ignores upcoming releases. Build artifacts are available for review from the
-`flatpak-release` job. The `prepare-release` job uploads assets and creates an upcoming release dated
-2099-01-01 to keep it pending explicit publication. The manual `publish-release`
-job turns
-an upcoming release into a current release (preserving its notes), and deploys
-Pages. Do not run it until the release is ready to become available to users.
+   The key must match `packaging/linux/projectnotes.flatpakrepo`; the workflow
+   refuses to sign with any other. Installed users trust that key, so never
+   replace it with a new one.
+2. Create the `linux-release` environment (Settings > Environments) and add
+   yourself as a required reviewer. The publish job waits for that approval.
+3. Leave GitHub Pages on `kestermckinney/projectnotes-flatpak` serving the
+   `gh-pages` branch.
 
-This pipeline currently builds Linux only. Attach a
-`ProjectNotes-6.5.1-Windows-x64-Setup.exe` and a macOS `.zip` asset with `macOS` in
-its link name before publishing if Windows/macOS should receive this version.
-The updater reads GitLab `assets.links` and uses `direct_asset_url` or `url`.
+## Prepare a release
+
+Update the desktop and installer versions, review `packaging/RELEASE_NOTES.md`,
+commit and push, then tag `vX.Y.Z` at the reviewed commit and push the tag. The
+workflow checks that the tag matches the version in `CMakeLists.txt`.
+
+1. The `build` job builds and signs the repository, starting from the
+   published one so users download a delta.
+2. Review the run, then approve the `publish` job. It refuses to run when a
+   newer release is already published, deploys the repository and attaches the
+   bundle. If the release does not exist yet, it is created as a **draft** from
+   `packaging/RELEASE_NOTES.md`.
+3. Attach `ProjectNotes-X.Y.Z-Windows-x64-Setup.exe`,
+   `ProjectNotesRemoteHost-X.Y.Z-Windows-x64-Setup.exe` and the macOS
+   `ProjectNotes-X.Y.Z-macOS.zip`, then publish the draft. The desktop updater
+   ignores drafts, so nobody is offered the release until then.
+
+For 6.5.2, also push the tag to GitLab and run its pipeline: `prepare-release` creates an upcoming
+release, then attach the Windows and macOS installers there and run the manual
+`publish-release` job.
+
+The updater reads the latest GitHub release (`assets`, `browser_download_url`)
+and the latest GitLab release (`assets.links`), and offers whichever has the
+higher version, GitHub on a tie. An older release left on either host is ignored.
 
 ## Local signed build
 
 ```bash
-export PN_REF=v6.5.1
-export GPG_KEY_ID=YOUR_EXISTING_SIGNING_KEY_FINGERPRINT
-export APP_REPO_URL=https://kestermckinney.gitlab.io/ProjectNotes/flatpak/
-export RUNTIME_REPO_URL=https://flathub.org/repo/flathub.flatpakrepo
+export PN_REF=v6.5.2
+export GPG_KEY_ID=FEC8AE6825C826AFD564C424BA3027E5F2617C22
+export APP_REPO_URL=https://kestermckinney.github.io/projectnotes-flatpak/
+./packaging/linux/build-flatpak.sh build
 ./packaging/linux/build-flatpak.sh repo
 ./packaging/linux/build-flatpak.sh bundle
 ```
 
-Run `build` first if the build directory does not exist. Source builds fetch from
-GitLab at pinned commits; unpushed edits are not included. `APP_REPO_URL` embeds
-the application's update remote. `RUNTIME_REPO_URL` refers only to dependencies.
-Signed bundles also embed the public signing key.
+Sources are cloned from GitHub at pinned commits, so unpushed edits are not
+included. `PN_GIT_URL` and `SS_GIT_URL` override the clone URLs. `APP_REPO_URL`
+is the update remote embedded in the bundle, and `RUNTIME_REPO_URL` (Flathub by
+default) is where dependencies come from. Signed bundles also embed the public key.
 
-## Updates and migration
+## Keys
 
-Users add the descriptor with `flatpak remote-add --if-not-exists projectnotes
-https://kestermckinney.gitlab.io/ProjectNotes/flatpak/projectnotes.flatpakrepo`.
-Desktop software managers can install updates automatically when enabled;
-command-line users run `flatpak update`.
+| Repository | Primary fingerprint |
+| --- | --- |
+| GitHub, `kestermckinney.github.io/projectnotes-flatpak` | `FEC8AE6825C826AFD564C424BA3027E5F2617C22` |
+| GitLab, `kestermckinney.gitlab.io/ProjectNotes/flatpak` | `E0C07E21F0E41F83CBDCCB04F82B4E4D2183B011` |
 
-For the existing GitHub remote, run:
+Users move an installation from GitLab to GitHub with the steps in
+`docs/Introduction/InstallLinux.md`. Keep the app ID and the `master` branch so
+installed refs keep updating. Private-key, passphrase and revocation backups are
+in the ignored `.release-secrets/` directory and must never enter Git.
 
-```bash
-curl --fail --location --output projectnotes.gpg https://kestermckinney.gitlab.io/ProjectNotes/flatpak/projectnotes.gpg
-flatpak remote-modify --gpg-import=projectnotes.gpg --url=https://kestermckinney.gitlab.io/ProjectNotes/flatpak/ projectnotes
-flatpak update com.projectnotespro.ProjectNotes
-```
+## Known validation limits
 
-The GitLab repository uses a new signing key. Existing installations must import
-`projectnotes.gpg` using the migration command above.
-
-Keep the existing app ID and `master` branch to preserve installed refs. Every
-repository build includes a complete delta from an empty installation. This
-pipeline starts a fresh repository, so clients can update without old server
-objects but will download a full delta. A future incremental implementation can
-restore the previous repository before export to reduce update bandwidth.
-
-## Deploy a prepared repository while keeping the release upcoming
-
-A maintainer can upload a signed repository as `repository.tar.gz` to the same
-generic package/version as the bundle, containing `index.html` and `flatpak/`.
-Trigger an API pipeline on main with `REPOSITORY_PACKAGE_VERSION=v6.4.0` and
-`REPOSITORY_PACKAGE_SHA256` set to the archive’s SHA-256 digest. The
-`deploy-prepared-repository` job verifies the archive checksum and publishes
-Pages while leaving the release’s upcoming date unchanged. Future tag pipelines
-use the normal signed build, preparation, and manual publication workflow.
-
-## Known validation limits for 6.4.0
-
-The Flathub linter flags the existing home-folder permission, which this
-self-hosted application uses for user documents and plugin workflows. AppStream
-and desktop-file validation pass. The linter also reports KDE 6.9 as end of life;
-upgrade the runtime before the next Linux release. The 6.4.0 package uses the runtime verified by the current build.
-
-The new GitLab public signing key fingerprint is
-`E0C07E21F0E41F83CBDCCB04F82B4E4D2183B011`. Local private-key, passphrase, and
-revocation backups are in the ignored `.release-secrets/` directory. CI stores
-its signing material in protected variables; private keys must never enter Git.
+The Flathub linter flags the home-folder permission, which this self-hosted app
+needs for user documents and plugin workflows. It also reports KDE 6.9 as end
+of life; move to a newer runtime before a later Linux release.

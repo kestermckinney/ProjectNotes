@@ -48,7 +48,13 @@ void ArtifactStoreTest::settingsAreProfileAndDatabaseScoped()
     firstStore.setThunderbirdPath(QStringLiteral("/opt/thunderbird/thunderbird"));
     QCOMPARE(firstStore.preferredBackend(), BackendId::Thunderbird);
     QCOMPARE(firstStore.thunderbirdPath(), QStringLiteral("/opt/thunderbird/thunderbird"));
+    // An unconfigured profile gets the platform's first-run default: macOS
+    // Mail and Calendar on macOS, the default application elsewhere.
+#if defined(Q_OS_DARWIN)
+    QCOMPARE(secondStore.preferredBackend(), BackendId::MacMail);
+#else
     QCOMPARE(secondStore.preferredBackend(), BackendId::DefaultApp);
+#endif
     QCOMPARE(secondStore.thunderbirdPath(), QString());
 }
 

@@ -1304,12 +1304,22 @@ void CommunicationContractsTest::createsThunderbirdComposeArguments()
 
 void CommunicationContractsTest::launchesThunderbirdCommandWithFixedArguments()
 {
+#ifdef Q_OS_WIN
+    QSKIP("Flatpak launchers exist only on Linux.");
+#endif
     QTemporaryDir directory; QVERIFY(directory.isValid());
     const QString bodyPath = directory.filePath(QStringLiteral("message.html"));
     QFile body(bodyPath); QVERIFY(body.open(QIODevice::WriteOnly)); body.write("<p>body</p>"); body.close();
+    // The launcher refuses a program that is not an executable file, so use a
+    // stand-in flatpak rather than relying on /bin/flatpak being installed.
+    // The test's launcher below replaces the process start; it never runs.
+    QTemporaryDir tools; QVERIFY(tools.isValid());
+    const QString flatpak = tools.filePath(QStringLiteral("flatpak"));
+    QFile stub(flatpak); QVERIFY(stub.open(QIODevice::WriteOnly)); stub.write("#!/bin/sh\n"); stub.close();
+    QVERIFY(stub.setPermissions(stub.permissions() | QFileDevice::ExeOwner));
     QString program;
     QStringList arguments;
-    ThunderbirdEmailBackend backend(QStringLiteral("/bin/flatpak run org.mozilla.Thunderbird"),
+    ThunderbirdEmailBackend backend(QStringLiteral("\"%1\" run org.mozilla.Thunderbird").arg(flatpak),
         [&program, &arguments](const QString &receivedProgram, const QStringList &receivedArguments) {
             program = receivedProgram; arguments = receivedArguments; return true;
         });
@@ -1320,7 +1330,7 @@ void CommunicationContractsTest::launchesThunderbirdCommandWithFixedArguments()
     bool completed = false;
     backend.handoff(request, [&completed](EmailHandoffResult result) { completed = result.error.code.isEmpty(); });
     QVERIFY(completed);
-    QCOMPARE(program, QStringLiteral("/bin/flatpak"));
+    QCOMPARE(program, flatpak);
     QCOMPARE(arguments.first(), QStringLiteral("run"));
     const QString stagingRoot = QFileInfo(directory.path()).dir().absolutePath();
     QCOMPARE(arguments.at(1), QStringLiteral("--filesystem=%1:ro").arg(stagingRoot));

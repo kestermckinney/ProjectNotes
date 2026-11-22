@@ -1,0 +1,523 @@
+name: Release
+
+# Builds the Windows, macOS and iOS releases when a version tag is pushed.
+# Linux has its own workflow, flatpak-release.yml, started by the same tag.
+#
+#   windows         NSIS installers (Project Notes, Remote Host) and the MSIX
+#   macos           Notarized direct download: .dmg and the updater's .zip
+#   macos-appstore  Mac App Store .pkg
+#   ios             App Store .ipa
+#
+# Then:
+#   github-release   Attaches the direct downloads to the GitHub release. A
+#                    missing release is created as a draft from
+#                    packaging/RELEASE_NOTES.md, as flatpak-release.yml does.
+#   app-store-ios    Uploads the .ipa and submits the version for App Review.
+#   app-store-macos  Uploads the .pkg and submits the version for App Review.
+#   microsoft-store  Uploads the .msix and commits the submission for
+#                    certification.
+#
+# The store jobs run in the `store-release` environment. Add required reviewers
+# to it (Settings > Environments) to approve each submission by hand.
+#
+# Run it from the Actions tab (workflow_dispatch) to build without releasing
+# or submitting anything. Secrets and one-time setup: packaging/ci/RELEASING.md.
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch: {}
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  QT_VERSION: '6.11.1'
+  # aqtinstall 3.3 cannot read Qt 6.11's Windows repository (it is split per
+  # compiler), so Windows stays on 6.10, the series the local Windows kit uses.
+  QT_VERSION_WINDOWS: '6.10.3'
+  SQLITESYNCPRO_REPO: kestermckinney/SqliteSyncPro
+  BUNDLE_ID: com.projectnotespro.projectnotesmobile
+  # Locale of the "What's New" text sent with App Store submissions.
+  STORE_LOCALE: en-US
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.info.outputs.version }}
+      build_number: ${{ steps.info.outputs.build_number }}
+      sqlitesyncpro_sha: ${{ steps.info.outputs.sqlitesyncpro_sha }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check versions and pick the build number
+        id: info
+        run: |
+          version="$(sed -n 's/.*project(ProjectNotes VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)"
+          [ -n "$version" ] || { echo "No version in CMakeLists.txt"; exit 1; }
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            [ "$GITHUB_REF_NAME" = "v$version" ] || { echo "Tag $GITHUB_REF_NAME does not match version $version"; exit 1; }
+          fi
+          for nsi in packaging/windows/setupscript.nsi packaging/windows/setupscript_remotehost.nsi; do
+            grep -q "^!define PRODUCT_VERSION *\"$version\"" "$nsi" || { echo "$nsi does not say version $version"; exit 1; }
+          done
+          # App Store Connect needs a new, larger build number for every upload.
+          # The local scripts use the same UTC timestamp form.
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "build_number=$(date -u +%Y%m%d%H%M)" >> "$GITHUB_OUTPUT"
+          # SqliteSyncPro has no tags; every job builds the same tip of its
+          # default branch, as the Flatpak does.
+          sha="$(git ls-remote "https://github.com/$SQLITESYNCPRO_REPO.git" HEAD | cut -f1)"
+          [ -n "$sha" ] || { echo "Could not resolve $SQLITESYNCPRO_REPO"; exit 1; }
+          echo "sqlitesyncpro_sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "Project Notes $version, SqliteSyncPro ${sha::8}"
+
+      - name: Check the App Store release notes
+        if: github.ref_type == 'tag'
+        run: |
+          version="${{ steps.info.outputs.version }}"
+          notes=packaging/ci/STORE_WHATS_NEW.txt
+          head -n 1 "$notes" | grep -q "$version" || { echo "Update $notes for $version (its first line names the version)"; exit 1; }
+          [ "$(wc -c < "$notes")" -le 4000 ] || { echo "$notes is over the App Store's 4000 characters"; exit 1; }
+
+  # ── Windows ────────────────────────────────────────────────────────────────
+  windows:
+    needs: prepare
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      BUILD_NAME: ci-windows
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: ProjectNotes
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ env.SQLITESYNCPRO_REPO }}
+          ref: ${{ needs.prepare.outputs.sqlitesyncpro_sha }}
+          path: SqliteSyncPro
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION_WINDOWS }}
+          host: windows
+          target: desktop
+          arch: win64_msvc2022_64
+          # qtpdf provides imageformats/qpdf.dll, which the installer ships.
+          modules: qtcharts qtpdf
+          dir: ${{ runner.temp }}
+          cache: true
+
+      - uses: ./ProjectNotes/.github/actions/setup-vcpkg
+        with:
+          cache-key: x64-windows
+
+      - name: Install Ninja and NSIS
+        run: choco install ninja nsis -y --no-progress
+
+      - name: Build the Remote Host
+        run: |
+          $toolchain = "$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+          cmake -S SqliteSyncPro -B SqliteSyncPro/build/ci -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release "-DCMAKE_TOOLCHAIN_FILE=$toolchain"
+          if ($LASTEXITCODE) { exit 1 }
+          cmake --build SqliteSyncPro/build/ci --target ProjectNotesRemoteHost --parallel
+          if ($LASTEXITCODE) { exit 1 }
+          # SqliteSyncPro's manifest only has OpenSSL. libpq.dll, which Qt's
+          # PostgreSQL driver loads, comes from vcpkg directly. Only the
+          # openssl feature, so it needs no DLLs the installer leaves out.
+          Push-Location $env:RUNNER_TEMP
+          & "$env:VCPKG_ROOT/vcpkg" install --classic "libpq[core,openssl]:x64-windows"
+          if ($LASTEXITCODE) { exit 1 }
+          Pop-Location
+          Copy-Item "$env:VCPKG_ROOT/installed/x64-windows/bin/libpq.dll" SqliteSyncPro/build/ci/admin/
+
+      - name: Build Project Notes and stage the deployment
+        run: |
+          $toolchain = "$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+          $build = "ProjectNotes/build/$env:BUILD_NAME"
+          $ssp = (Resolve-Path SqliteSyncPro/build/ci).Path
+          cmake -S ProjectNotes -B $build -G Ninja -DCMAKE_BUILD_TYPE=Release `
+            "-DCMAKE_TOOLCHAIN_FILE=$toolchain" "-DSQLITESYNCPRO_BUILD_DIR=$ssp"
+          if ($LASTEXITCODE) { exit 1 }
+          cmake --build $build --parallel
+          if ($LASTEXITCODE) { exit 1 }
+          cmake --build $build --target deploy
+          if ($LASTEXITCODE) { exit 1 }
+
+      - name: Build the installers
+        working-directory: ProjectNotes/packaging/windows
+        run: |
+          $makensis = "${env:ProgramFiles(x86)}\NSIS\makensis.exe"
+          foreach ($script in 'setupscript.nsi', 'setupscript_remotehost.nsi') {
+            & $makensis /DPN_DEPLOY_STAGED "/DBUILD_CONFIG=$env:BUILD_NAME" $script
+            if ($LASTEXITCODE) { exit 1 }
+          }
+
+      - name: Build the Microsoft Store package
+        run: |
+          ProjectNotes/packaging/windows/store/build_store.ps1 `
+            -BuildDir "ProjectNotes/build/$env:BUILD_NAME" -SkipDeploy
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installers
+          path: ProjectNotes/packaging/windows/*-Windows-x64-Setup.exe
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-store
+          path: ProjectNotes/packaging/windows/store/output/*.msix
+          if-no-files-found: error
+          retention-days: 14
+
+  # ── macOS direct download ──────────────────────────────────────────────────
+  macos:
+    needs: prepare
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: ProjectNotes
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ env.SQLITESYNCPRO_REPO }}
+          ref: ${{ needs.prepare.outputs.sqlitesyncpro_sha }}
+          path: SqliteSyncPro
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: mac
+          target: desktop
+          arch: clang_64
+          modules: qtcharts
+          dir: ${{ runner.temp }}
+          cache: true
+
+      - uses: ./ProjectNotes/.github/actions/setup-vcpkg
+        with:
+          cache-key: universal-osx
+
+      - name: Install Ninja
+        run: brew install ninja
+
+      - name: Import the Developer ID certificates
+        env:
+          CERTS_P12: ${{ secrets.APPLE_DEVELOPER_ID_P12 }}
+          CERTS_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_P12_PASSWORD }}
+        run: ProjectNotes/packaging/ci/import_signing_certs.sh
+
+      - name: Write the App Store Connect API key
+        env:
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+        run: |
+          key="$RUNNER_TEMP/AuthKey.p8"
+          printf '%s\n' "$ASC_API_KEY_P8" > "$key"
+          echo "NOTARY_API_KEY_PATH=$key" >> "$GITHUB_ENV"
+
+      - name: Build, sign and notarize
+        env:
+          QT_MACOS: ${{ runner.temp }}/Qt/${{ env.QT_VERSION }}/macos
+          NOTARY_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          NOTARY_API_ISSUER: ${{ secrets.ASC_API_ISSUER_ID }}
+        run: ProjectNotes/packaging/macos/build_installer.sh --all
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-direct
+          path: |
+            ProjectNotes/packaging/macos/output/*.dmg
+            ProjectNotes/packaging/macos/output/*-macOS.zip
+          if-no-files-found: error
+          retention-days: 14
+
+  # ── Mac App Store ──────────────────────────────────────────────────────────
+  macos-appstore:
+    needs: prepare
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: ProjectNotes
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ env.SQLITESYNCPRO_REPO }}
+          ref: ${{ needs.prepare.outputs.sqlitesyncpro_sha }}
+          path: SqliteSyncPro
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: mac
+          target: desktop
+          arch: clang_64
+          modules: qtcharts
+          dir: ${{ runner.temp }}
+          cache: true
+
+      - uses: ./ProjectNotes/.github/actions/setup-vcpkg
+        with:
+          cache-key: universal-osx
+
+      - name: Install Ninja
+        run: brew install ninja
+
+      - name: Import the App Store certificates
+        env:
+          CERTS_P12: ${{ secrets.APPLE_DISTRIBUTION_P12 }}
+          CERTS_PASSWORD: ${{ secrets.APPLE_DISTRIBUTION_P12_PASSWORD }}
+        run: ProjectNotes/packaging/ci/import_signing_certs.sh
+
+      - name: Write the provisioning profile
+        env:
+          PROFILE: ${{ secrets.MACOS_APPSTORE_PROFILE }}
+        run: |
+          profile="$RUNNER_TEMP/ProjectNotes-AppStore.provisionprofile"
+          printf '%s' "$PROFILE" | base64 --decode > "$profile"
+          echo "PN_PROVISIONING_PROFILE=$profile" >> "$GITHUB_ENV"
+
+      - name: Build, sign and package
+        env:
+          QT_MACOS: ${{ runner.temp }}/Qt/${{ env.QT_VERSION }}/macos
+        # No API key here, so the script stops after the .pkg. app-store-macos uploads it.
+        run: ProjectNotes/packaging/macos/build_appstore.sh "${{ needs.prepare.outputs.build_number }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-appstore
+          path: ProjectNotes/packaging/macos/output-appstore/*-AppStore.pkg
+          if-no-files-found: error
+          retention-days: 14
+
+  # ── iOS ────────────────────────────────────────────────────────────────────
+  ios:
+    needs: prepare
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: ProjectNotes
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ env.SQLITESYNCPRO_REPO }}
+          ref: ${{ needs.prepare.outputs.sqlitesyncpro_sha }}
+          path: SqliteSyncPro
+
+      # The iOS kit needs the matching macOS kit for its host tools.
+      - name: Install Qt for macOS
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: mac
+          target: desktop
+          arch: clang_64
+          modules: qtcharts
+          dir: ${{ runner.temp }}
+          cache: true
+      - name: Install Qt for iOS
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: mac
+          target: ios
+          arch: ios
+          modules: qtcharts
+          dir: ${{ runner.temp }}
+          cache: true
+
+      - uses: ./ProjectNotes/.github/actions/setup-vcpkg
+        with:
+          cache-key: arm64-ios
+
+      - name: Build OpenSSL for iOS
+        working-directory: ${{ runner.temp }}
+        run: |
+          "$VCPKG_ROOT/vcpkg" install --classic openssl:arm64-ios
+          echo "PN_VCPKG_IOS_ROOT=$VCPKG_ROOT/installed" >> "$GITHUB_ENV"
+
+      - name: Import the Apple Distribution certificate
+        env:
+          CERTS_P12: ${{ secrets.APPLE_DISTRIBUTION_P12 }}
+          CERTS_PASSWORD: ${{ secrets.APPLE_DISTRIBUTION_P12_PASSWORD }}
+        run: ProjectNotes/packaging/ci/import_signing_certs.sh
+
+      - name: Write the App Store Connect API key
+        env:
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+        run: |
+          key="$RUNNER_TEMP/AuthKey.p8"
+          printf '%s\n' "$ASC_API_KEY_P8" > "$key"
+          echo "XCODE_AUTH_KEY_PATH=$key" >> "$GITHUB_ENV"
+
+      - name: Build, archive and export
+        env:
+          QT_IOS: ${{ runner.temp }}/Qt/${{ env.QT_VERSION }}/ios
+          QT_HOST: ${{ runner.temp }}/Qt/${{ env.QT_VERSION }}/macos
+          # Lets xcodebuild fetch the App Store provisioning profile.
+          XCODE_AUTH_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          XCODE_AUTH_KEY_ISSUER: ${{ secrets.ASC_API_ISSUER_ID }}
+        # No ASC_API_KEY_ID here, so the script does not upload. app-store-ios does.
+        run: ProjectNotes/packaging/ios/build_appstore.sh "${{ needs.prepare.outputs.build_number }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-appstore
+          path: ProjectNotes/packaging/ios/build/export/*.ipa
+          if-no-files-found: error
+          retention-days: 14
+
+  # ── GitHub release ─────────────────────────────────────────────────────────
+  github-release:
+    needs: [prepare, windows, macos]
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-installers
+          path: ${{ runner.temp }}/dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: macos-direct
+          path: ${{ runner.temp }}/dist
+
+      - name: Attach the downloads to the release
+        run: |
+          ls -l "$RUNNER_TEMP/dist"
+          # flatpak-release.yml may be creating the same draft at this moment.
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || \
+            gh release create "$GITHUB_REF_NAME" --draft \
+              --title "Project Notes ${{ needs.prepare.outputs.version }}" \
+              --notes-file packaging/RELEASE_NOTES.md || \
+            gh release view "$GITHUB_REF_NAME" >/dev/null
+          gh release upload "$GITHUB_REF_NAME" --clobber "$RUNNER_TEMP"/dist/*
+
+  # ── App Store submissions ──────────────────────────────────────────────────
+  app-store-ios:
+    needs: [prepare, ios]
+    if: github.ref_type == 'tag'
+    runs-on: macos-15
+    environment: store-release
+    # Both App Store jobs change the same App Store Connect record.
+    concurrency:
+      group: app-store-connect
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: ios-appstore
+          path: ${{ runner.temp }}/ipa
+
+      - name: Write the App Store Connect API key
+        env:
+          ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_API_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+        run: packaging/ci/write_asc_key.sh
+
+      - name: Upload the build
+        env:
+          ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_API_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
+        run: |
+          ipa="$(ls "$RUNNER_TEMP"/ipa/*.ipa | head -n 1)"
+          xcrun altool --validate-app -f "$ipa" -t ios --apiKey "$ASC_API_KEY_ID" --apiIssuer "$ASC_API_ISSUER_ID"
+          xcrun altool --upload-app -f "$ipa" -t ios --apiKey "$ASC_API_KEY_ID" --apiIssuer "$ASC_API_ISSUER_ID"
+
+      - name: Submit for App Review
+        run: |
+          packaging/ci/submit_app_review.sh ios "$(ls "$RUNNER_TEMP"/ipa/*.ipa | head -n 1)" \
+            "${{ needs.prepare.outputs.version }}"
+
+  app-store-macos:
+    needs: [prepare, macos-appstore]
+    if: github.ref_type == 'tag'
+    runs-on: macos-15
+    environment: store-release
+    concurrency:
+      group: app-store-connect
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: macos-appstore
+          path: ${{ runner.temp }}/pkg
+
+      - name: Write the App Store Connect API key
+        env:
+          ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_API_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+        run: packaging/ci/write_asc_key.sh
+
+      - name: Upload the build
+        env:
+          ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_API_ISSUER: ${{ secrets.ASC_API_ISSUER_ID }}
+        run: packaging/macos/upload_appstore.sh "$(ls "$RUNNER_TEMP"/pkg/*-AppStore.pkg | head -n 1)"
+
+      - name: Submit for App Review
+        run: |
+          packaging/ci/submit_app_review.sh osx "$(ls "$RUNNER_TEMP"/pkg/*-AppStore.pkg | head -n 1)" \
+            "${{ needs.prepare.outputs.version }}"
+
+  # ── Microsoft Store submission ─────────────────────────────────────────────
+  microsoft-store:
+    needs: windows
+    if: github.ref_type == 'tag'
+    runs-on: windows-latest
+    environment: store-release
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-store
+          path: ${{ runner.temp }}/msix
+
+      - uses: microsoft/setup-msstore-cli@v1
+
+      - name: Upload and submit for certification
+        env:
+          MSSTORE_TENANT_ID: ${{ secrets.MSSTORE_TENANT_ID }}
+          MSSTORE_SELLER_ID: ${{ secrets.MSSTORE_SELLER_ID }}
+          MSSTORE_CLIENT_ID: ${{ secrets.MSSTORE_CLIENT_ID }}
+          MSSTORE_CLIENT_SECRET: ${{ secrets.MSSTORE_CLIENT_SECRET }}
+          MSSTORE_PRODUCT_ID: ${{ vars.MSSTORE_PRODUCT_ID }}
+        run: |
+          if (-not $env:MSSTORE_PRODUCT_ID) { throw 'Set the MSSTORE_PRODUCT_ID repository variable (Partner Center Store ID).' }
+          $msix = Get-ChildItem "$env:RUNNER_TEMP/msix/*.msix" | Select-Object -First 1
+          msstore reconfigure --tenantId $env:MSSTORE_TENANT_ID --sellerId $env:MSSTORE_SELLER_ID `
+            --clientId $env:MSSTORE_CLIENT_ID --clientSecret $env:MSSTORE_CLIENT_SECRET
+          if ($LASTEXITCODE) { exit 1 }
+          # Creates a submission with the new package and commits it, which
+          # starts certification.
+          msstore publish $msix.FullName -id $env:MSSTORE_PRODUCT_ID
+          if ($LASTEXITCODE) { exit 1 }

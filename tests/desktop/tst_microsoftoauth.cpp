@@ -225,11 +225,12 @@ void MicrosoftOAuthManagerTest::emailDraftConsentPreservesFileFinderSession()
     QVERIFY(!consentBody.contains("Mail.Send"));
     QVERIFY(consentBody.contains("Calendars.ReadWrite"));
     // The saved grant reaches Teams files, so this sign-in also asks for the
-    // write scope that saving into Teams project folders needs. It does not
-    // re-request File Finder's read scopes; Microsoft keeps those.
+    // write scope that saving into Teams project folders needs, and for the
+    // team and channel scopes File Finder lists Teams with.
     QVERIFY(consentBody.contains("Files.ReadWrite.All"));
     QVERIFY(!consentBody.contains("Files.Read.All"));
-    QVERIFY(!consentBody.contains("Team.Read"));
+    QVERIFY(consentBody.contains("Team.ReadBasic.All"));
+    QVERIFY(consentBody.contains("Channel.ReadBasic.All"));
 
     transport.nextBody = QJsonDocument(QJsonObject{
         {"error", "authorization_declined"}, {"error_description", "Synthetic denial"}
@@ -293,8 +294,10 @@ void MicrosoftOAuthManagerTest::settingsSignInSkipsFileWriteWithoutTeams()
     Office365Service service;
     service.setOAuthManager(&manager);
     service.requestCommunicationsConsent();
-    for (const QString &scope : manager.requestedScopeList())
+    for (const QString &scope : manager.requestedScopeList()) {
         QVERIFY2(!scope.contains(QStringLiteral("Files.")), qPrintable(scope));
+        QVERIFY2(!scope.contains(QStringLiteral("ReadBasic")), qPrintable(scope));
+    }
 }
 
 void MicrosoftOAuthManagerTest::settingsSignInAsksForFileWriteWhenTeamsFoldersAreUsed()
@@ -310,6 +313,13 @@ void MicrosoftOAuthManagerTest::settingsSignInAsksForFileWriteWhenTeamsFoldersAr
     QVERIFY(manager.requestedScopeList().contains(
         QStringLiteral("https://graph.microsoft.com/Files.ReadWrite.All")));
     QVERIFY(manager.requestedScopeList().contains(QStringLiteral("Mail.ReadWrite")));
+    // This is the only interactive sign-in, so it must also ask for what File
+    // Finder lists teams and channels with, or File Finder works only after
+    // an administrator consents to them.
+    QVERIFY(manager.requestedScopeList().contains(
+        QStringLiteral("https://graph.microsoft.com/Team.ReadBasic.All")));
+    QVERIFY(manager.requestedScopeList().contains(
+        QStringLiteral("https://graph.microsoft.com/Channel.ReadBasic.All")));
 }
 
 void MicrosoftOAuthManagerTest::teamsFileWriteOffAsksForReadScopeOnly()
@@ -337,6 +347,8 @@ void MicrosoftOAuthManagerTest::teamsFileWriteOffAsksForReadScopeOnly()
     QVERIFY(manager.requestedScopeList().contains(read));
     QVERIFY(!manager.requestedScopeList().contains(write));
     QVERIFY(manager.requestedScopeList().contains(QStringLiteral("Mail.ReadWrite")));
+    QVERIFY(manager.requestedScopeList().contains(
+        QStringLiteral("https://graph.microsoft.com/Team.ReadBasic.All")));
 
     service.requestFileFinderConsent();
     QVERIFY(manager.requestedScopeList().contains(read));

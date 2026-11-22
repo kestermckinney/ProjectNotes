@@ -4,6 +4,7 @@
 #ifndef UPDATEMANAGER_H
 #define UPDATEMANAGER_H
 
+#include <QJsonArray>
 #include <QObject>
 #include <QString>
 #include <QUrl>
@@ -13,7 +14,7 @@ class QNetworkAccessManager;
 class QNetworkReply;
 class QProgressDialog;
 
-// Checks GitLab Releases for a newer ProjectNotes build, downloads the
+// Checks GitHub and GitLab Releases for a newer ProjectNotes build, downloads the
 // platform installer, and launches it. On both Windows and macOS the install is
 // unattended and the app relaunches itself: Windows runs the NSIS installer
 // silently (it waits on /waitpid, then /relaunch), while macOS launches a
@@ -24,6 +25,13 @@ class QProgressDialog;
 // and react to the signals below. The "silent" flag passed to checkForUpdates is
 // remembered so automatic (startup/daily) checks stay quiet when there is nothing
 // to do, while a manual Help-menu check always reports its result.
+//
+// The repository is moving from GitLab to GitHub, so both are asked in
+// parallel and the higher stable version wins. On a tie the release that
+// carries an installer for this platform wins, then GitHub. Taking the higher
+// version, rather than whichever answers first, keeps an older release left
+// on either host from hiding a newer one on the other. A host that fails is
+// logged and ignored as long as the other one answers.
 class UpdateManager : public QObject
 {
     Q_OBJECT
@@ -31,13 +39,17 @@ class UpdateManager : public QObject
 public:
     explicit UpdateManager(QWidget *parent = nullptr);
 
-    // Query the GitLab "latest release" endpoint. When silent is true,
+    // Query both "latest release" endpoints. When silent is true,
     // upToDate()/checkFailed() are emitted but callers are expected to ignore them.
     void checkForUpdates(bool silent);
 
     // Download the given installer asset (shown with a progress dialog) and,
     // on success, launch it and emit installerLaunched() so the app can shut down.
     void downloadAndInstall(const QUrl &assetUrl);
+
+    // The Linux install instructions on the project site, which explain how to
+    // point an existing Flatpak remote at the GitHub-hosted repository.
+    static QString linuxInstallInstructionsUrl();
 
     // Semantic version (e.g. "6.4.0") assembled from version.h.
     static QString currentVersion();
@@ -57,6 +69,11 @@ public:
 signals:
     void updateAvailable(const QString &version, const QString &releaseNotes, const QUrl &assetUrl);
     void upToDate();
+    // Linux only: a newer release was published on GitHub. Flatpak installs
+    // that still follow the GitLab remote will not see it, so the user is
+    // asked to switch the remote (instructionsUrl explains how). Unlike
+    // checkFailed() this is meant to be shown even after a silent check.
+    void linuxRepositoryChangeNeeded(const QString &version, const QUrl &instructionsUrl);
     void checkFailed(const QString &error);
     void installerLaunched();
     // Emitted during a download so a themed host can show progress (total <= 0
@@ -66,19 +83,42 @@ signals:
     void updateError(const QString &message);
 
 private slots:
-    void onCheckFinished();
     void onDownloadFinished();
     void onDownloadProgress(qint64 received, qint64 total);
 
 private:
     friend class UpdateManagerTest;
-    void processRelease(const class QJsonObject &release);
+
+    enum class ReleaseSource { GitHub, GitLab };
+
+    // One host's answer, reduced to what the choice between hosts needs.
+    struct ReleaseCandidate {
+        ReleaseSource source = ReleaseSource::GitLab;
+        bool answered = false;  // the host returned a release record
+        bool skipped = false;   // a record that is not an installable release (upcoming, draft, prerelease)
+        QString version;        // X.Y.Z, set when answered and not skipped
+        QString notes;
+        QJsonArray links;       // {name, url[, direct_asset_url]} as selectInstallerLink expects
+        QString error;          // why this host gave no usable release
+    };
+
+    static ReleaseCandidate parseGitHubRelease(const QByteArray &body);
+    static ReleaseCandidate parseGitLabRelease(const QByteArray &body);
+    // Picks the release to offer (see the class comment); nullptr when neither
+    // host reported a version.
+    static const ReleaseCandidate *chooseRelease(const ReleaseCandidate &github,
+                                                 const ReleaseCandidate &gitlab);
+
+    QNetworkReply *startReleaseRequest(const char *url, bool github);
+    void onReleaseReplyFinished(QNetworkReply *reply, ReleaseSource source);
+    void finishCheck();
+    void processRelease(const ReleaseCandidate &release);
 
     static QString selectInstallerLink(const class QJsonArray &assets,
                                        const QString &nameFragment,
                                        const QString &nameSuffix);
 
-    // Returns the direct_asset_url (or url) of the GitLab release link matching the platform,
+    // Returns the direct_asset_url (or url) of the release link matching the platform,
     // or an empty string when the release carries no suitable installer.
     static QString selectPlatformAsset(const class QJsonArray &assets);
 
@@ -99,7 +139,10 @@ private:
     bool m_downloadCanceled = false;
     QWidget *m_parentWidget = nullptr;
     QNetworkAccessManager *m_network = nullptr;
-    QNetworkReply *m_checkReply = nullptr;
+    QNetworkReply *m_githubReply = nullptr;
+    QNetworkReply *m_gitlabReply = nullptr;
+    ReleaseCandidate m_githubRelease;
+    ReleaseCandidate m_gitlabRelease;
     QNetworkReply *m_downloadReply = nullptr;
     QProgressDialog *m_progressDialog = nullptr;
     QString m_downloadPath;

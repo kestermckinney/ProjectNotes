@@ -28,9 +28,26 @@ using namespace QLogger;
 
 namespace
 {
-// GitLab project that publishes ProjectNotes releases.
-const char *kReleaseApiUrl =
+// Where ProjectNotes releases are published. The repository is moving from
+// GitLab to GitHub; both are checked (see UpdateManager in updatemanager.h).
+const char *kGitHubReleaseApiUrl =
+    "https://api.github.com/repos/kestermckinney/ProjectNotes/releases/latest";
+const char *kGitLabReleaseApiUrl =
     "https://gitlab.com/api/v4/projects/kestermckinney%2FProjectNotes/releases/permalink/latest";
+
+// Tags are published as "vX.Y.Z". Anything else (a prerelease suffix, an
+// empty tag) is not offered.
+QString stableVersionFromTag(QString tag)
+{
+    if (tag.startsWith('v', Qt::CaseInsensitive))
+        tag.remove(0, 1);
+    static const QRegularExpression stableVersion(QStringLiteral("^[0-9]+\\.[0-9]+\\.[0-9]+$"));
+    return stableVersion.match(tag).hasMatch() ? tag : QString();
+}
+
+// Explains how to move a Flatpak install to the GitHub-hosted repository.
+const char *kLinuxInstallInstructionsUrl =
+    "https://www.projectnotespro.com/docs/Introduction/InstallLinux";
 
 // Identify the application to the release service.
 const char *kUserAgent = "ProjectNotes-Updater";
@@ -41,6 +58,11 @@ UpdateManager::UpdateManager(QWidget *parent)
     , m_parentWidget(parent)
     , m_network(new QNetworkAccessManager(this))
 {
+}
+
+QString UpdateManager::linuxInstallInstructionsUrl()
+{
+    return QString::fromLatin1(kLinuxInstallInstructionsUrl);
 }
 
 QString UpdateManager::currentVersion()
@@ -118,81 +140,205 @@ void UpdateManager::checkForUpdates(bool silent)
 {
     m_silent = silent;
 
-    if (m_checkReply)
+    if (m_githubReply || m_gitlabReply)
         return; // a check is already in flight
 
-    QNetworkRequest request{QUrl(QString::fromLatin1(kReleaseApiUrl))};
+    m_githubRelease = ReleaseCandidate{ReleaseSource::GitHub};
+    m_gitlabRelease = ReleaseCandidate{ReleaseSource::GitLab};
+    m_githubReply = startReleaseRequest(kGitHubReleaseApiUrl, true);
+    m_gitlabReply = startReleaseRequest(kGitLabReleaseApiUrl, false);
+}
+
+QNetworkReply *UpdateManager::startReleaseRequest(const char *url, bool github)
+{
+    QNetworkRequest request{QUrl(QString::fromLatin1(url))};
     request.setHeader(QNetworkRequest::UserAgentHeader, QString::fromLatin1(kUserAgent));
-    request.setRawHeader("Accept", "application/json");
+    if (github)
+    {
+        request.setRawHeader("Accept", "application/vnd.github+json");
+        request.setRawHeader("X-GitHub-Api-Version", "2022-11-28");
+    }
+    else
+    {
+        request.setRawHeader("Accept", "application/json");
+    }
     request.setTransferTimeout(30000);
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                          QNetworkRequest::NoLessSafeRedirectPolicy);
 
-    m_checkReply = m_network->get(request);
-    connect(m_checkReply, &QNetworkReply::finished, this, &UpdateManager::onCheckFinished);
+    QNetworkReply *reply = m_network->get(request);
+    const ReleaseSource source = github ? ReleaseSource::GitHub : ReleaseSource::GitLab;
+    connect(reply, &QNetworkReply::finished, this, [this, reply, source] { onReleaseReplyFinished(reply, source); });
+    return reply;
 }
 
-void UpdateManager::onCheckFinished()
+void UpdateManager::onReleaseReplyFinished(QNetworkReply *reply, ReleaseSource source)
 {
-    QNetworkReply *reply = m_checkReply;
-    m_checkReply = nullptr;
     reply->deleteLater();
-
+    const bool github = source == ReleaseSource::GitHub;
+    ReleaseCandidate result;
     if (reply->error() != QNetworkReply::NoError)
     {
-        const QString error = reply->errorString();
-        QLog_Warning(CONSOLELOG, QString("Update check failed: %1").arg(error));
-        emit checkFailed(error);
-        return;
+        result.source = source;
+        result.error = reply->errorString();
     }
-
-    const QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
-    if (!doc.isObject())
+    else
     {
-        emit checkFailed(tr("Unexpected response from the update server."));
-        return;
+        const QByteArray body = reply->readAll();
+        result = github ? parseGitHubRelease(body) : parseGitLabRelease(body);
+    }
+    if (!result.error.isEmpty())
+        QLog_Info(CONSOLELOG, QString("Update check: %1 gave no release: %2")
+                                  .arg(github ? "GitHub" : "GitLab", result.error));
+
+    if (github)
+    {
+        m_githubReply = nullptr;
+        m_githubRelease = result;
+    }
+    else
+    {
+        m_gitlabReply = nullptr;
+        m_gitlabRelease = result;
     }
 
-    processRelease(doc.object());
+    if (!m_githubReply && !m_gitlabReply)
+        finishCheck();
 }
 
-void UpdateManager::processRelease(const QJsonObject &release)
+UpdateManager::ReleaseCandidate UpdateManager::parseGitHubRelease(const QByteArray &body)
 {
+    ReleaseCandidate result{ReleaseSource::GitHub};
+    const QJsonDocument doc = QJsonDocument::fromJson(body);
+    if (!doc.isObject())
+    {
+        result.error = tr("Unexpected response from the update server.");
+        return result;
+    }
+    const QJsonObject release = doc.object();
+    result.answered = true;
+    // releases/latest never returns these, but a record that is one is not an update.
+    if (release.value("draft").toBool() || release.value("prerelease").toBool())
+    {
+        result.skipped = true;
+        return result;
+    }
+    result.version = stableVersionFromTag(release.value("tag_name").toString());
+    if (result.version.isEmpty())
+    {
+        result.error = tr("The update server did not report a version.");
+        return result;
+    }
+    result.notes = release.value("body").toString();
+    for (const QJsonValue &v : release.value("assets").toArray())
+    {
+        const QJsonObject asset = v.toObject();
+        result.links.append(QJsonObject{{"name", asset.value("name").toString()},
+                                        {"url", asset.value("browser_download_url").toString()}});
+    }
+    return result;
+}
+
+UpdateManager::ReleaseCandidate UpdateManager::parseGitLabRelease(const QByteArray &body)
+{
+    ReleaseCandidate result{ReleaseSource::GitLab};
+    const QJsonDocument doc = QJsonDocument::fromJson(body);
+    if (!doc.isObject())
+    {
+        result.error = tr("Unexpected response from the update server.");
+        return result;
+    }
+    const QJsonObject release = doc.object();
+    result.answered = true;
     // Upcoming releases are preparation records, not installable updates.
     if (release.value("upcoming_release").toBool())
+    {
+        result.skipped = true;
+        return result;
+    }
+    result.version = stableVersionFromTag(release.value("tag_name").toString());
+    if (result.version.isEmpty())
+    {
+        result.error = tr("The update server did not report a version.");
+        return result;
+    }
+    result.notes = release.value("description").toString();
+    result.links = release.value("assets").toObject().value("links").toArray();
+    return result;
+}
+
+const UpdateManager::ReleaseCandidate *UpdateManager::chooseRelease(const ReleaseCandidate &github,
+                                                                    const ReleaseCandidate &gitlab)
+{
+    const bool hasGitHub = !github.version.isEmpty();
+    const bool hasGitLab = !gitlab.version.isEmpty();
+    if (!hasGitHub || !hasGitLab)
+        return hasGitHub ? &github : (hasGitLab ? &gitlab : nullptr);
+
+    if (isNewerVersion(gitlab.version, github.version))
+        return &gitlab;
+    if (isNewerVersion(github.version, gitlab.version))
+        return &github;
+    // Same version on both: the one this platform can install, then GitHub.
+    if (selectPlatformAsset(github.links).isEmpty() && !selectPlatformAsset(gitlab.links).isEmpty())
+        return &gitlab;
+    return &github;
+}
+
+void UpdateManager::finishCheck()
+{
+    if (const ReleaseCandidate *release = chooseRelease(m_githubRelease, m_gitlabRelease))
+    {
+        processRelease(*release);
+        return;
+    }
+
+    // Neither host reported a version. A host that answered with only an
+    // upcoming or draft record means there is nothing to install yet.
+    if (m_githubRelease.skipped || m_gitlabRelease.skipped)
     {
         emit upToDate();
         return;
     }
 
-    // Tags are published as "vX.Y.Z"; strip the leading "v".
-    QString latest = release.value("tag_name").toString();
-    if (latest.startsWith('v', Qt::CaseInsensitive))
-        latest.remove(0, 1);
+    // Both failed. Until releases are published on GitHub, its usual reason is
+    // "not found", so GitLab's reason is the more useful one to show.
+    const QString error = !m_gitlabRelease.error.isEmpty() ? m_gitlabRelease.error : m_githubRelease.error;
+    QLog_Warning(CONSOLELOG, QString("Update check failed: %1").arg(error));
+    emit checkFailed(error.isEmpty() ? tr("Unexpected response from the update server.") : error);
+}
 
-    static const QRegularExpression stableVersion(QStringLiteral("^[0-9]+\\.[0-9]+\\.[0-9]+$"));
-    if (!stableVersion.match(latest).hasMatch())
-    {
-        emit checkFailed(tr("The update server did not report a version."));
-        return;
-    }
+void UpdateManager::processRelease(const ReleaseCandidate &release)
+{
+    const QString &latest = release.version;
+    const QString host = release.source == ReleaseSource::GitHub ? QStringLiteral("GitHub") : QStringLiteral("GitLab");
 
     if (!isNewerVersion(latest, currentVersion()))
     {
-        QLog_Info(CONSOLELOG, QString("Update check: running %1, latest %2 — up to date.")
-                                  .arg(currentVersion(), latest));
+        QLog_Info(CONSOLELOG, QString("Update check: running %1, latest %2 (%3) — up to date.")
+                                  .arg(currentVersion(), latest, host));
         emit upToDate();
         return;
     }
 
 #if defined(Q_OS_LINUX)
-    // The host's Flatpak software manager owns sandboxed app updates.
+    // The host's Flatpak software manager owns sandboxed app updates. A release
+    // that only GitHub has is invisible to a remote that still points at
+    // GitLab, so tell the user to change the remote rather than just update.
+    if (release.source == ReleaseSource::GitHub)
+    {
+        QLog_Info(CONSOLELOG, QString("Update available: %1 from GitHub (current %2); "
+                                      "the Flatpak remote may need to move to GitHub.")
+                                  .arg(latest, currentVersion()));
+        emit linuxRepositoryChangeNeeded(latest, QUrl(linuxInstallInstructionsUrl()));
+        return;
+    }
     emit checkFailed(tr("Version %1 is available. Update Project Notes through your software "
                         "manager or run flatpak update com.projectnotespro.ProjectNotes.").arg(latest));
     return;
 #endif
 
-    const QString assetUrl = selectPlatformAsset(release.value("assets").toObject().value("links").toArray());
+    const QString assetUrl = selectPlatformAsset(release.links);
     if (assetUrl.isEmpty())
     {
         // A newer release exists but ships no installer for this platform.
@@ -201,8 +347,8 @@ void UpdateManager::processRelease(const QJsonObject &release)
         return;
     }
 
-    QLog_Info(CONSOLELOG, QString("Update available: %1 (current %2).").arg(latest, currentVersion()));
-    emit updateAvailable(latest, release.value("description").toString(), QUrl(assetUrl));
+    QLog_Info(CONSOLELOG, QString("Update available: %1 from %2 (current %3).").arg(latest, host, currentVersion()));
+    emit updateAvailable(latest, release.notes, QUrl(assetUrl));
 }
 
 void UpdateManager::downloadAndInstall(const QUrl &assetUrl)

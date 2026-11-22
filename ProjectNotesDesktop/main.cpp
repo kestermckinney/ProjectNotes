@@ -277,5 +277,14 @@ int main(int argc, char* argv[])
     if (window)
         window->show();
 
+#if defined(Q_OS_MACOS) && !defined(PN_APP_STORE)
+    // The App Store build cannot read ~/Library/Preferences when it copies
+    // this version's data, so keep a copy of the settings in the data folder.
+    if (!parser.isSet(devProfileOption)) {
+        DirectDownloadMigration::exportSettings();
+        QObject::connect(&app, &QCoreApplication::aboutToQuit, [] { DirectDownloadMigration::exportSettings(); });
+    }
+#endif
+
     return app.exec();
 }

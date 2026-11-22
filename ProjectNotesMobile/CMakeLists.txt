@@ -29,7 +29,10 @@ endif()
 # Bypass the search entirely by pre-setting the exact cache variables that
 # FindOpenSSL.cmake would normally populate — when these are already set it
 # skips its search and uses them directly.
-set(_VCPKG_IOS_ROOT "/Users/paulmckinney/Documents/Projects/vcpkg/installed")
+# CI passes -DPN_VCPKG_IOS_ROOT=<vcpkg>/installed.
+set(PN_VCPKG_IOS_ROOT "/Users/paulmckinney/Documents/Projects/vcpkg/installed" CACHE PATH
+    "vcpkg installed folder holding the arm64-ios and x64-ios-simulator OpenSSL builds")
+set(_VCPKG_IOS_ROOT "${PN_VCPKG_IOS_ROOT}")
 
 if(CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
     # x86_64 simulator — runs via Rosetta on Apple Silicon. Qt's ios package

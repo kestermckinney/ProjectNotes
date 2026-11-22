@@ -15,7 +15,7 @@ Enable the plugin to archive automatically; disable it to stop.
 
 Open **Settings > Archive Mail** and choose the integration.
 
-Office 365 uses the account you sign in with under [Office 365 Integration](../InterfaceOverview/Office365Integration.md); there is no separate application or tenant to register. The plugin asks for one permission on top of what Project Notes already uses: reading mail. The first time it needs it, sign in again under **Settings > Office 365 Integration** and approve it.
+Office 365 uses the account you sign in with under [Office 365 Integration](../InterfaceOverview/Office365Integration.md); there is no separate application or tenant to register. The plugin needs `Mail.Read`, which the `Mail.ReadWrite` permission from that sign-in already covers, so the app registration needs no extra permission. If you signed in before Project Notes asked for `Mail.ReadWrite`, the plugin asks you to sign in again under **Settings > Office 365 Integration**.
 
 | Setting | What it does |
 | :--- | :--- |

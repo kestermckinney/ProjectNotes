@@ -59,7 +59,7 @@ qt_add_executable(ProjectNotes
     # Backs the plugin secret API.
     ../credentialstore.cpp ../credentialstore.h
     SecurityScopedBookmarks.h
-    # Unattended software update (GitLab releases → silent install + relaunch).
+    # Unattended software update (GitHub/GitLab releases → silent install + relaunch).
     ../updatemanager.cpp   ../updatemanager.h
     # Single-instance guard (UUID key in main.cpp).
     ../runguard.cpp ../runguard.h
@@ -222,6 +222,10 @@ if(PN_APP_STORE)
     endif()
 else()
     target_sources(ProjectNotes PRIVATE SecurityScopedBookmarks.cpp)
+    if(APPLE)
+        # Leaves a copy of the settings where the App Store build can read them.
+        target_sources(ProjectNotes PRIVATE DirectDownloadSettingsExport.cpp)
+    endif()
 endif()
 
 # The Thunderbird contacts helper is a second executable started by the app,
@@ -327,14 +331,25 @@ if(APPLE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     # macdeployqt rewrites the executable's load commands, which invalidates its
     # signature; an executable with a broken signature is killed at launch.
     # Ad-hoc ("-") works, but TCC then pins every privacy grant (e.g.
-    # Automation > Calendar) to the binary's cdhash, so each rebuild silently
+    # Calendars) to the binary's cdhash, so each rebuild silently
     # revokes it. A real identity such as "Apple Development" makes grants
     # survive rebuilds.
+    #
+    # The App Store flavor is signed with its sandbox entitlements, so a local
+    # build runs in the App Sandbox the way the store build does.
+    # build_appstore.sh signs again for distribution.
     set(PN_MACOS_DEV_SIGN_IDENTITY "-" CACHE STRING
         "codesign identity for the macOS dev bundle (\"-\" = ad-hoc)")
+    if(PN_APP_STORE)
+        set(_desktop_sign_entitlements
+            --entitlements "${CMAKE_CURRENT_SOURCE_DIR}/../packaging/macos/ProjectNotes-AppStore.entitlements")
+    else()
+        set(_desktop_sign_entitlements "")
+    endif()
     add_custom_command(TARGET ProjectNotes POST_BUILD
         COMMAND codesign --force --sign "${PN_MACOS_DEV_SIGN_IDENTITY}" "$<TARGET_FILE:ProjectNotes>"
-        COMMAND codesign --force --sign "${PN_MACOS_DEV_SIGN_IDENTITY}" "$<TARGET_BUNDLE_DIR:ProjectNotes>"
+        COMMAND codesign --force --sign "${PN_MACOS_DEV_SIGN_IDENTITY}" ${_desktop_sign_entitlements}
+            "$<TARGET_BUNDLE_DIR:ProjectNotes>"
         COMMENT "Re-signing the app bundle"
         VERBATIM)
 else()
@@ -409,8 +424,8 @@ if(APPLE)
     # template instead, the same values must also exist as plain CMake
     # variables here, or every substitution silently comes out blank
     # (including CFBundleIdentifier — which leaves macOS's TCC subsystem with
-    # no stable app identity to register an Automation permission against, so
-    # the "MacOS Email and Calendar" integration's Calendar access silently
+    # no stable app identity to register privacy grants such as Calendars
+    # access against, so the "MacOS Email and Calendar" integration silently
     # never works).
     set(MACOSX_BUNDLE_GUI_IDENTIFIER "${PN_MACOS_BUNDLE_ID}")
     set(MACOSX_BUNDLE_BUNDLE_NAME "Project Notes")
@@ -436,7 +451,6 @@ if(APPLE)
         MACOSX_BUNDLE_ICON_FILE projectnotes.icns
         MACOSX_BUNDLE ${_desktop_macos_bundle}
         # A custom template (rather than CMake's default) so it can declare
-        # NSAppleEventsUsageDescription, required by the "MacOS Email and
-        # Calendar" integration's Apple Events to Calendar.app.
+        # the Calendars and Contacts usage descriptions.
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/../packaging/macos/Info.plist.in")
 endif()

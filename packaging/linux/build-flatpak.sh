@@ -51,15 +51,15 @@ fi
 
 # ── Source pins ──────────────────────────────────────────────────────────────
 # PN_REF  Which ProjectNotes source build/install/repo compile:
-#           latest  (default) the newest v* tag on GitLab
+#           latest  (default) the newest v* tag on GitHub
 #           pinned  the `commit:` values committed in the manifest, untouched
 #           <tag|branch|sha>  that ref, e.g. v6.1.0, main, or a full commit SHA
 #         Unless pinned, SqliteSyncPro follows its default-branch tip, matching
 #         the release workflow. The resolved pins go into a generated copy of
 #         the manifest; the committed manifest is never edited.
 PN_REF="${PN_REF:-latest}"
-PN_GIT_URL="https://gitlab.com/kestermckinney/ProjectNotes.git"
-SS_GIT_URL="https://gitlab.com/kestermckinney/SqliteSyncPro.git"
+PN_GIT_URL="${PN_GIT_URL:-https://github.com/kestermckinney/ProjectNotes.git}"
+SS_GIT_URL="${SS_GIT_URL:-https://github.com/kestermckinney/SqliteSyncPro.git}"
 # Must sit next to the real manifest so its relative module includes resolve.
 RESOLVED_MANIFEST="$SCRIPT_DIR/.${APP_ID}.resolved.yml"
 
@@ -122,7 +122,7 @@ DESKTOP_FILE="$SCRIPT_DIR/${APP_ID}.desktop"
 usage() {
     echo "Usage: $0 [setup|build|lint|run|install|repo|bundle|clean]"
     echo ""
-    echo "  NOTE: build/install/repo clone ProjectNotes + SqliteSyncPro from GitLab."
+    echo "  NOTE: build/install/repo clone ProjectNotes + SqliteSyncPro from GitHub."
     echo "        By default they build the newest v* tag (with SqliteSyncPro HEAD)."
     echo "        Override with PN_REF=<tag|branch|sha>, or PN_REF=pinned to use the"
     echo "        manifest's committed 'commit:' values. Push before building."
@@ -226,7 +226,7 @@ cmd_lint() {
 
 cmd_build() {
     echo "==> Building Flatpak..."
-    echo "    (clones ProjectNotes + SqliteSyncPro from GitLab at pinned commits;"
+    echo "    (clones ProjectNotes + SqliteSyncPro from GitHub at pinned commits;"
     echo "     ensure those commits are pushed to origin first)"
     resolve_manifest
     "${FLATPAK_BUILDER[@]}" "${BUILDER_FLAGS[@]}" --force-clean "$BUILD_DIR" "$MANIFEST"

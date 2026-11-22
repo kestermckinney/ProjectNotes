@@ -55,7 +55,9 @@ The App Store version stores its data in its own sandbox folder:
 ~/Library/Containers/com.projectnotespro.projectnotesmobile/Data/
 ```
 
-The first time you open the App Store version, it looks for data from the direct-download version. If it finds some, it asks whether to copy it over. Click **Copy My Data** to bring across your database, plugins, and settings. If the downloaded version is open, Project Notes asks you to quit it first so nothing changes during the copy.
+The first time you open the App Store version, it asks whether to copy data from the direct-download version. Click **Copy My Data...**, then choose that version's data folder: **Project Notes** inside **Library > Application Support** in your home folder. The Open dialog starts there. The sandbox lets the App Store version read only folders you pick, which is why it asks. If the downloaded version is open, Project Notes asks you to quit it first so nothing changes during the copy.
+
+Your database and plugins come across, and so do your settings if you have opened a current release of the downloaded version. If yours is older and you would rather not update it, use **File > Export Settings** there and **File > Import Settings** in the App Store version.
 
 Both versions install as **Project Notes** in your Applications folder, so you keep one or the other. Your data is copied, not moved: the downloaded version's data stays where it was, and you can go back to it by installing the download again. The two copies don't update each other, so keep working in one version.
 

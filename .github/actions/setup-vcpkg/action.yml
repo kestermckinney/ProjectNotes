@@ -1,0 +1,35 @@
+name: Set up vcpkg
+description: >
+  Clones and bootstraps vcpkg, sets VCPKG_ROOT and VCPKG_DEFAULT_BINARY_CACHE,
+  and restores the binary cache so OpenSSL, Hunspell and libpq are built once.
+
+inputs:
+  cache-key:
+    description: Distinguishes the caches of jobs that build different triplets.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Clone and bootstrap vcpkg
+      id: vcpkg
+      shell: bash
+      run: |
+        root="$RUNNER_TEMP/vcpkg"
+        git clone --quiet --filter=blob:none https://github.com/microsoft/vcpkg.git "$root"
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          (cd "$root" && cmd //c bootstrap-vcpkg.bat -disableMetrics)
+        else
+          "$root/bootstrap-vcpkg.sh" -disableMetrics
+        fi
+        mkdir -p "$RUNNER_TEMP/vcpkg-cache"
+        echo "VCPKG_ROOT=$root" >> "$GITHUB_ENV"
+        echo "VCPKG_DEFAULT_BINARY_CACHE=$RUNNER_TEMP/vcpkg-cache" >> "$GITHUB_ENV"
+        echo "sha=$(git -C "$root" rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore the vcpkg binary cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ runner.temp }}/vcpkg-cache
+        key: vcpkg-${{ runner.os }}-${{ inputs.cache-key }}-${{ steps.vcpkg.outputs.sha }}
+        restore-keys: vcpkg-${{ runner.os }}-${{ inputs.cache-key }}-

@@ -197,13 +197,19 @@ QStringList Office365Service::applyTeamsFilePolicy(QStringList scopes) const
     return scopes;
 }
 
+QStringList Office365Service::teamsScopes() const
+{
+    return {QStringLiteral("https://graph.microsoft.com/Team.ReadBasic.All"),
+            QStringLiteral("https://graph.microsoft.com/Channel.ReadBasic.All"),
+            teamsFileScope()};
+}
+
 void Office365Service::requestFileFinderConsent()
 {
     if (m_oauth) {
-        m_oauth->setRequestedScopes({QStringLiteral("offline_access"),
-                                     QStringLiteral("https://graph.microsoft.com/Team.ReadBasic.All"),
-                                     QStringLiteral("https://graph.microsoft.com/Channel.ReadBasic.All"),
-                                     teamsFileScope()});
+        QStringList scopes{QStringLiteral("offline_access")};
+        scopes.append(teamsScopes());
+        m_oauth->setRequestedScopes(scopes);
     }
 }
 
@@ -220,24 +226,23 @@ void Office365Service::requestCommunicationsConsent(bool includeContacts, bool e
         auto scopes = m_oauth->requestedScopeList();
         if (includeContacts)
             scopes.append(exportContacts ? QStringLiteral("Contacts.ReadWrite") : QStringLiteral("Contacts.Read"));
-        // Teams project folders need the Teams file scope (Files.ReadWrite.All,
-        // or Files.Read.All with saving turned off), and a refresh never adds
-        // it, so this sign-in is where it is consented. Ask when the caller
-        // says Teams folders are in use (File Finder searches Teams), or when
-        // the saved grant already reaches Teams or SharePoint files. The
-        // grant alone is not enough: Microsoft can revoke it, and then
-        // nothing would ask for the scope again.
-        if (includeFileWrite)
-            scopes.append(teamsFileScope());
-        static const QStringList teamsFileScopes{
+        // Teams project folders and File Finder's Teams search need the
+        // Teams scopes (teamsScopes()), and a refresh never adds them, so
+        // this sign-in is where they are consented. This is the only
+        // interactive sign-in, so without them File Finder could list teams
+        // and channels only through an administrator's earlier consent. Ask
+        // when the caller says Teams folders are in use (File Finder searches
+        // Teams), or when the saved grant already reaches Teams or SharePoint
+        // files. The grant alone is not enough: Microsoft can revoke it, and
+        // then nothing would ask for the scopes again.
+        bool teams = includeFileWrite;
+        static const QStringList teamsGrantScopes{
             QStringLiteral("Files.Read.All"), QStringLiteral("Files.ReadWrite.All"),
             QStringLiteral("Team.ReadBasic.All"), QStringLiteral("Channel.ReadBasic.All")};
-        for (const QString &granted : m_oauth->grantedScopeList()) {
-            if (teamsFileScopes.contains(bareScope(granted), Qt::CaseInsensitive)) {
-                scopes.append(teamsFileScope());
-                break;
-            }
-        }
+        for (const QString &granted : m_oauth->grantedScopeList())
+            teams = teams || teamsGrantScopes.contains(bareScope(granted), Qt::CaseInsensitive);
+        if (teams)
+            scopes.append(teamsScopes());
         // A feature that was refused (a Teams upload needing
         // Files.ReadWrite.All, a plugin's scopes) tells the user to sign in
         // again here; without these that sign-in would never ask for them.

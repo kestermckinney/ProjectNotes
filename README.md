@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-GPL%203.0-blue?style=for-the-badge)](LICENSE)
 
-[Project site](https://kestermckinney.gitlab.io/ProjectNotes/) · [GitLab repository](https://gitlab.com/kestermckinney/ProjectNotes) · [Latest release](https://gitlab.com/kestermckinney/ProjectNotes/-/releases/permalink/latest)
+[Project site](https://kestermckinney.github.io/ProjectNotes/) · [GitHub repository](https://github.com/kestermckinney/ProjectNotes) · [Latest release](https://github.com/kestermckinney/ProjectNotes/releases/latest)
 
 ![ProjectNotes demo](docs/img/demo.gif)
 
@@ -10,12 +10,11 @@ ProjectNotes is a project manager's workspace for notes, action items, project m
 
 ## Explore
 
-- [Project site](https://kestermckinney.gitlab.io/ProjectNotes/)
+- [Project site](https://kestermckinney.github.io/ProjectNotes/)
 - [Documentation](https://www.projectnotespro.com/docs)
-- [Planning and issue board](https://gitlab.com/kestermckinney/ProjectNotes/-/boards)
-- [Report a bug](https://gitlab.com/kestermckinney/ProjectNotes/-/issues/new?issuable_template=Bug)
-- [Request an enhancement](https://gitlab.com/kestermckinney/ProjectNotes/-/issues/new?issuable_template=Enhancement)
-- [Ask a usage question](https://gitlab.com/kestermckinney/ProjectNotes/-/issues/new?issuable_template=Question)
+- [Report a bug](https://github.com/kestermckinney/ProjectNotes/issues/new?template=bug_report.yml)
+- [Request an enhancement](https://github.com/kestermckinney/ProjectNotes/issues/new?template=enhancement_request.yml)
+- [Ask a usage question](https://github.com/kestermckinney/ProjectNotes/issues/new?template=question.yml)
 - [Contributing guide](CONTRIBUTING.md)
 
 ## What ProjectNotes Does
@@ -34,43 +33,35 @@ Project Notes ships as a self-hosted Flatpak with automatic updates:
 ```bash
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 flatpak remote-add --if-not-exists projectnotes \
-  https://kestermckinney.gitlab.io/ProjectNotes/flatpak/projectnotes.flatpakrepo
+  https://kestermckinney.github.io/projectnotes-flatpak/projectnotes.flatpakrepo
 flatpak install projectnotes com.projectnotespro.ProjectNotes
 ```
 
 Prefer a single file? Download `ProjectNotes.flatpak` from the
-[latest GitLab release](https://gitlab.com/kestermckinney/ProjectNotes/-/releases/permalink/latest).
-For an existing installation using the former GitHub-hosted remote, see the
-migration instructions below.
+[latest GitHub release](https://github.com/kestermckinney/ProjectNotes/releases/latest).
 Full instructions: [Installing on Linux](docs/Introduction/InstallLinux.md).
 
 ## Updating An Existing Installation
 
-Older desktop builds check the former GitHub repository, which is unavailable.
-Download and install a new Windows or macOS build from [GitLab releases](https://gitlab.com/kestermckinney/ProjectNotes/-/releases)
-when one is available. Builds containing the GitLab updater will check GitLab for
-subsequent updates.
+The project moved from GitLab back to GitHub with version 6.5.2. Windows and
+macOS builds from 6.4.0 through 6.5.1 check only GitLab, and 6.5.2 is published
+there too, so they update to it and then check GitHub from then on. If a build
+does not offer an update, download the latest one from
+[GitHub releases](https://github.com/kestermckinney/ProjectNotes/releases).
 
-For Linux installations using the former update server, keep the existing remote
-and import the GitLab signing key, change its URL, then update:
-
-```bash
-curl --fail --location --output projectnotes.gpg https://kestermckinney.gitlab.io/ProjectNotes/flatpak/projectnotes.gpg
-flatpak remote-modify --gpg-verify --gpg-import=projectnotes.gpg --url=https://kestermckinney.gitlab.io/ProjectNotes/flatpak/ projectnotes
-flatpak update com.projectnotespro.ProjectNotes
-```
-
-See [Installing on Linux](docs/Introduction/InstallLinux.md) for the key fingerprint
-and instructions for user-specific installations.
+A Linux installation added from `kestermckinney.gitlab.io` has to be pointed at
+the GitHub repository, which uses a different signing key. Project Notes
+reminds you at startup. The steps and key fingerprint are in
+[Installing on Linux](docs/Introduction/InstallLinux.md#moving-an-existing-installation-to-github).
 
 ## Activity And Requests
 
-- [Open issues](https://gitlab.com/kestermckinney/ProjectNotes/-/issues?state=opened)
-- [Open bugs](https://gitlab.com/kestermckinney/ProjectNotes/-/issues?state=opened&search=%5BBug%5D)
-- [Open enhancements](https://gitlab.com/kestermckinney/ProjectNotes/-/issues?state=opened&search=%5BEnhancement%5D)
-- [Usage questions](https://gitlab.com/kestermckinney/ProjectNotes/-/issues?state=opened&search=%5BQuestion%5D)
-- [Recent commits](https://gitlab.com/kestermckinney/ProjectNotes/-/commits/main)
-- [Releases and downloads](https://gitlab.com/kestermckinney/ProjectNotes/-/releases)
+- [Open issues](https://github.com/kestermckinney/ProjectNotes/issues)
+- [Open bugs](https://github.com/kestermckinney/ProjectNotes/issues?q=is%3Aissue%20is%3Aopen%20%5BBug%5D)
+- [Open enhancements](https://github.com/kestermckinney/ProjectNotes/issues?q=is%3Aissue%20is%3Aopen%20%5BEnhancement%5D)
+- [Usage questions](https://github.com/kestermckinney/ProjectNotes/issues?q=is%3Aissue%20is%3Aopen%20%5BQuestion%5D)
+- [Recent commits](https://github.com/kestermckinney/ProjectNotes/commits/main)
+- [Releases and downloads](https://github.com/kestermckinney/ProjectNotes/releases)
 
 ## Contributing
 
@@ -79,22 +70,22 @@ Contributions are welcome in several forms:
 - Bug reports with clear reproduction steps
 - Enhancement requests with a real project-management use case
 - Documentation fixes and clarification
-- Focused merge requests with tests or screenshots when relevant
+- Focused pull requests with tests or screenshots when relevant
 
-Please start with [CONTRIBUTING.md](CONTRIBUTING.md) before opening a merge request.
+Please start with [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 
 ## Building From Source
 
 For build and setup details, see:
 
-- [How to Contribute](https://gitlab.com/kestermckinney/ProjectNotes/-/blob/main/CONTRIBUTING.md)
+- [How to Contribute](https://github.com/kestermckinney/ProjectNotes/blob/main/CONTRIBUTING.md)
 - [System Requirements](Systemrequirements.md)
 - [Developer documentation](docs/index.md)
 
 ## Related projects
 
-- [SqliteSyncPro](https://gitlab.com/kestermckinney/SqliteSyncPro) — the Qt library used for ProjectNotes synchronization.
-- [ScheduleIO](https://gitlab.com/kestermckinney/ScheduleIO) — a Qt library for reading, writing, and calculating Microsoft Project schedules.
+- [SqliteSyncPro](https://github.com/kestermckinney/SqliteSyncPro) — the Qt library used for ProjectNotes synchronization.
+- [ScheduleIO](https://github.com/kestermckinney/ScheduleIO) — a Qt library for reading, writing, and calculating Microsoft Project schedules.
 
 ## License
 

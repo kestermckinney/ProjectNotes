@@ -1,0 +1,26 @@
+name: Deploy User Guide
+
+# Rebuild projectnotespro.com when the user guide changes. Its build pulls
+# docs/ from main (scripts/sync-docs.mjs in PN-AccountManager), so a redeploy
+# is all it takes. VERCEL_DOCS_DEPLOY_HOOK is a repository secret holding the
+# Vercel deploy hook URL.
+
+on:
+  push:
+    branches: [main]
+    paths: ['docs/**']
+  workflow_dispatch: {}
+
+permissions: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger a Vercel redeploy
+        env:
+          VERCEL_DOCS_DEPLOY_HOOK: ${{ secrets.VERCEL_DOCS_DEPLOY_HOOK }}
+        run: |
+          test -n "$VERCEL_DOCS_DEPLOY_HOOK" || { echo "VERCEL_DOCS_DEPLOY_HOOK is not set"; exit 1; }
+          curl --fail --silent --show-error --request POST --output /dev/null "$VERCEL_DOCS_DEPLOY_HOOK"
+          echo "Triggered a Vercel redeploy for ${GITHUB_SHA::8}"
