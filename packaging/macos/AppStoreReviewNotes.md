@@ -20,18 +20,18 @@ If review asks for user plugins to be removed, the build option `PN_APP_STORE_US
 | `cs.allow-jit` | Qt's QML engine and the plugin JavaScript engine compile scripts to native code. |
 | `network.client` | Cloud sync with Project Notes Pro, Office 365 (Microsoft Graph), iCloud contacts (CardDAV), and web requests plugins make to the hosts they declare. |
 | `network.server` | Some sign-ins (an organization's Keycloak server, for example) finish by redirecting the browser to `http://localhost:<port>`. The app listens on the loopback address only, only while a sign-in is waiting. |
-| `files.user-selected.read-write`, `files.bookmarks.app-scope` | Project folders, File Finder search locations and file locations the user picks are reopened in later sessions through security-scoped bookmarks. |
-| `automation.apple-events`, `temporary-exception.apple-events` (Calendar, Mail, System Events) | The "MacOS Email and Calendar" integration creates draft messages in Mail and draft events in Calendar, which the user reviews and sends. Nothing is sent without the user. |
-| `personal-information.calendars` | Calendar requires calendar access from any app that scripts it. |
+| `files.user-selected.read-write`, `files.bookmarks.app-scope` | Project folders, File Finder search locations and file locations the user picks are reopened in later sessions through security-scoped bookmarks. On the first start the app also offers to copy the data of the direct download (sold separately, not sandboxed); the user picks that version's data folder in an Open dialog, and the app only reads it. |
+| `personal-information.calendars` | The "MacOS Email and Calendar" integration saves meetings the user schedules to their calendar through EventKit, without attendees, so the user adds invitees and sends from Calendar. Mail drafts go through the system's compose-email sharing service and need no entitlement. |
 | `personal-information.addressbook` | Optional contact synchronization with the Contacts app. |
-| `temporary-exception.files.home-relative-path.read-only` (`~/Library/Application Support/Project Notes/` and two preference files) | Read only, on the first start. Project Notes is also sold as a direct download, which keeps its data in these locations. The App Store version offers once to copy that data into its container, and copies only if the user agrees. It never writes to these paths. |
 
-The usage descriptions for Apple Events, Calendars and Contacts are in `Info.plist`.
+The usage descriptions for Calendars and Contacts are in `Info.plist`.
+
+The app sends no Apple Events and uses no temporary exceptions. The 6.5.1 submission was rejected under Guideline 2.4.5(i) for `temporary-exception.apple-events`. Calendar events now go through EventKit (`MacCalendarBackend`) in both the App Store build and the direct download. The read-only exception for the direct download's data is gone too: the user picks that folder in an Open dialog instead. `build_appstore.sh` refuses to package a build whose signature carries an Apple Events or temporary-exception entitlement.
 
 ## Before submitting
 
 - The Mac build ships in the iOS app's record ("Project Notes Pro") under its bundle ID, `com.projectnotespro.projectnotesmobile`, so one listing and one purchase cover both. The direct download uses the same bundle ID; it is not sandboxed and keeps its data in `~/Library`.
-- The data lives in the sandbox container (`~/Library/Containers/com.projectnotespro.projectnotesmobile/Data/`). On the first start, `DirectDownloadMigration` offers to copy the direct download's database, plugins and settings into it. If review rejects the read-only exception, remove it and the app falls back to cloud sync or Export XML / Import XML.
+- The data lives in the sandbox container (`~/Library/Containers/com.projectnotespro.projectnotesmobile/Data/`). On the first start, `DirectDownloadMigration` offers to copy the direct download's database, plugins and settings into it, from the folder the user picks. The sandbox cannot read `~/Library/Preferences`, so the direct download writes a copy of its settings to `AppStoreMigration/` in its data folder at start and quit (`DirectDownloadSettingsExport.cpp`). A direct download too old to do that leaves only its data; settings must be set again, or brought over with Export Settings.
 - Paths typed by hand, or stored in a database copied from another computer, are not reachable until the user picks the folder once (Files & Folders > Browse Folder, or Settings > File Finder).
 - Export compliance: the app uses HTTPS and the operating system's TLS. Cloud sync also encrypts data with the user's passphrase before upload; answer the encryption questions in App Store Connect accordingly.
 - Licensing: the project is GPL-3.0 and the maintainer holds the copyright. Check any contributed GPL code and third-party libraries (Qt is used under the LGPL) before submitting.

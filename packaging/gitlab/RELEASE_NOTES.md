@@ -1,12 +1,12 @@
-# Project Notes 6.5.1
+# Project Notes 6.5.2
 
-This release lets a project keep its files in Microsoft Teams.
+This release changes how the macOS version works with Calendar and how the Mac App Store version copies data from the downloaded version. Both changes remove permissions the Mac App Store does not allow.
 
-- A project's primary project folder can be its Microsoft Teams channel folder. File Finder lists it as **Teams Project Folder** and uses it when there is no local folder, or always with the new **Use the Microsoft Teams folder as the project folder when both are found** setting. **Set as Primary Project Folder** on a Teams folder location chooses it by hand.
-- Documents made from MS Office Templates, reports saved with the new **Save to Project Folder** button, Archive Mail, and IFS Cloud SSRS reports all save into a Teams project folder through Microsoft 365.
-- The Office 365 app registration now needs `Files.ReadWrite.All` in place of `Files.Read.All`. After an administrator grants it, sign in again under **Settings > Office 365 Integration**.
-- Adds `projectFiles` to the plugin API for reading and writing the project folder, local or Microsoft Teams.
-- Removes the leftover ARM64 `icuuc.dll` that upgrades on Windows could leave behind.
+### macOS
+
+- **MacOS Email and Calendar** saves scheduled meetings to your default calendar for new events, then brings Calendar forward and tells you which calendar and date it used. macOS now asks only for calendar access, not for permission to control Calendar. Open the event in Calendar, paste the copied attendees and click **Send**.
+- The Mac App Store version asks you to choose the downloaded version's data folder before copying your data. The Open dialog starts in that folder.
+- The downloaded version keeps a copy of its settings in its data folder, so the Mac App Store version can bring them over along with your data.
 
 ### Install on Linux
 

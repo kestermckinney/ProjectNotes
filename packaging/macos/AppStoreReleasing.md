@@ -2,7 +2,7 @@
 
 Project Notes for macOS ships two ways. The direct download (`build_installer.sh`, published on GitLab) is a notarized, Developer ID signed installer with its own updater. The Mac App Store build is sandboxed, has no updater, and is built from the same source with `-DPN_APP_STORE=ON`. Both use `com.projectnotespro.projectnotesmobile`, the iOS app's bundle ID (`PN_MACOS_BUNDLE_ID` in the top-level `CMakeLists.txt`), because the Mac app ships in the iOS app's App Store Connect record ("Project Notes Pro"). One listing and one purchase cover iPhone, iPad and Mac. Releases before 6.5.0 used `com.projectnotespro.ProjectNotes` for the app and its installer package. The installer package now uses the new ID too, so macOS records it as a new package rather than an upgrade, and the direct download's `preinstall` script removes the old app before installing.
 
-The store build is sandboxed, so its data lives in a container and doesn't share the direct download's. On its first start it offers to copy that data (`ProjectNotesDesktop/DirectDownloadMigration.mm`).
+The store build is sandboxed, so its data lives in a container and doesn't share the direct download's. On its first start it offers to copy that data from the folder the user picks (`ProjectNotesDesktop/DirectDownloadMigration.mm`).
 
 Both builds run on macOS 13 or later, on Apple silicon and Intel. `build_common.sh` holds the build steps they share.
 

@@ -11,16 +11,10 @@
     <key>com.apple.security.cs.allow-jit</key>
     <true/>
 
-    <!-- Apple Events to Calendar.app (and System Events) for the "MacOS Email
-         and Calendar" integration. Under the hardened runtime, Apple Events
-         are rejected with -1743 without this, even when the user has allowed
-         Automation in System Settings. -->
-    <key>com.apple.security.automation.apple-events</key>
-    <true/>
-
-    <!-- Calendars access, which Calendar.app also requires of any app that
-         scripts it. Under the hardened runtime the Calendars prompt never
-         appears without this. -->
+    <!-- Calendars access for the "MacOS Email and Calendar" integration,
+         which saves meetings through EventKit. Under the hardened runtime
+         the Calendars prompt never appears without this. No Apple Events
+         entitlement: the app sends none, the same as the App Store build. -->
     <key>com.apple.security.personal-information.calendars</key>
     <true/>
 

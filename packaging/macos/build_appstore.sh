@@ -238,6 +238,10 @@ codesign --force --sign "${APP_IDENTITY}" --timestamp \
 codesign --verify --deep --strict --verbose=2 "${STAGED}"
 codesign -d --entitlements - --xml "${STAGED}" 2>/dev/null | grep -q "com.apple.security.app-sandbox" || \
     die "The signed app does not carry the App Sandbox entitlement."
+# App Review rejects these (Guideline 2.4.5(i)); see AppStoreReviewNotes.md.
+if codesign -d --entitlements - --xml "${STAGED}" 2>/dev/null | grep -q -E "apple-events|temporary-exception"; then
+    die "The signed app carries an Apple Events or temporary-exception entitlement, which App Review rejects."
+fi
 
 log "Building ${PKG}..."
 rm -f "${PKG}"

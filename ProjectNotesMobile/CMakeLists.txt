@@ -1,6 +1,15 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(ProjectNotesMobile VERSION 6.5.0 LANGUAGES CXX)
+# The mobile app ships the desktop app's version. It is a standalone project,
+# so read the version from the top-level CMakeLists.txt rather than repeat it.
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt" _pn_project_line
+     REGEX "^project\\(ProjectNotes VERSION [0-9.]+")
+string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" PN_VERSION "${_pn_project_line}")
+if(NOT PN_VERSION)
+    message(FATAL_ERROR "Could not read the version from ../CMakeLists.txt")
+endif()
+
+project(ProjectNotesMobile VERSION ${PN_VERSION} LANGUAGES CXX)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../version.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/version.h @ONLY)
 include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR})

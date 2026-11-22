@@ -71,13 +71,13 @@ If you want the meeting to arrive with its attendees already filled in, use **Ou
 
 1. Set **Integration** to **MacOS Email and Calendar**.
 2. Open Mail and Calendar at least once and add the account you send project mail from.
-3. Schedule a test meeting. macOS asks whether Project Notes may access your calendars, then whether it may control Calendar. Allow both.
+3. Schedule a test meeting. macOS asks whether Project Notes may access your calendars. Allow full access.
 
 This mode also turns on contact synchronization against the Contacts app on this Mac directly — there is no separate account or password to enter. The first sync asks for access under **System Settings > Privacy & Security > Contacts**. See [Contact Synchronization](<Preferences.md#contact-synchronization>) for matching, export, and review details.
 
 Reports open in a Mail compose window with the recipients, formatted body, and file attachments already in place. Cc recipients appear alongside the To recipients. Bcc recipients cannot be carried; choose **Default Application** or another integration for messages that need Bcc.
 
-Invitations become an event on your first writable calendar with the agenda in its notes. Calendar would send invitations the moment the event had attendees, so Project Notes adds none. Click **Copy Attendees** in the Schedule meeting window, paste the list into the event's invitees field, check the time, then click **Send**.
+Invitations become an event on your default calendar for new events, with the agenda in its notes. Project Notes then brings Calendar forward and tells you which calendar and date it used; open the event there. Calendar would send invitations the moment the event had attendees, so Project Notes adds none. Click **Copy Attendees** in the Schedule meeting window, paste the list into the event's invitees field, check the time, then click **Send**.
 
 If you would rather work with files, choose **Default Application** instead. Mail must handle `.eml` files and Calendar must handle `.ics` files. To set that, select any such file in Finder, press **Command-I**, choose the application under **Open with**, then click **Change All**.
 
@@ -219,7 +219,7 @@ Run one of each before you rely on it.
 | The audience is empty | Nobody is on the project team, or nobody is marked **Receive Status** for a status report. |
 | Microsoft 365 reports it is not signed in | Open **Settings > Office 365 Integration** and sign in again. A refresh token expires if it goes unused for a long time. |
 | A meeting draft is created but has no attendees | The sign-in predates calendar permission. Sign out, then sign in again to grant `Calendars.ReadWrite`. |
-| Calendar reports it is not allowed, or no event appears | Open **System Settings > Privacy & Security**. Under **Calendars**, give Project Notes full access. Under **Automation**, turn on **Calendar** for Project Notes. |
+| Calendar reports it is not allowed, or no event appears | Open **System Settings > Privacy & Security**. Under **Calendars**, give Project Notes full access. |
 | No contacts sync under MacOS Email and Calendar | Open **System Settings > Privacy & Security > Contacts** and give Project Notes access, then try **Test Connection** again. |
 | Mail opens without the attachment | Keep Project Notes open until the draft has saved its attachments. If your mail client cannot import the native sharing items, try **Default Application**. |
 | Thunderbird does not start | The **Thunderbird executable** value is wrong. Try the bare command `thunderbird`, a full path, or `flatpak run org.mozilla.Thunderbird`. |

@@ -21,32 +21,18 @@
     <true/>
 
     <!-- Project folders, File Finder locations and files the user picks, kept
-         across restarts with security-scoped bookmarks -->
+         across restarts with security-scoped bookmarks. Also the direct
+         download's data folder, which the user picks on the first start for
+         DirectDownloadMigration to copy. No temporary exceptions. -->
     <key>com.apple.security.files.user-selected.read-write</key>
     <true/>
     <key>com.apple.security.files.bookmarks.app-scope</key>
     <true/>
 
-    <!-- First start only: read the direct download's data folder and settings
-         so DirectDownloadMigration can copy them into the container. Read
-         only, and limited to these three paths. -->
-    <key>com.apple.security.temporary-exception.files.home-relative-path.read-only</key>
-    <array>
-        <string>/Library/Application Support/Project Notes/</string>
-        <string>/Library/Preferences/com.projectnotes.AppSettings.plist</string>
-        <string>/Library/Preferences/com.projectnotes.PluginSettings.plist</string>
-    </array>
-
-    <!-- "MacOS Email and Calendar": draft messages in Mail and events in
-         Calendar for the user to review -->
-    <key>com.apple.security.automation.apple-events</key>
-    <true/>
-    <key>com.apple.security.temporary-exception.apple-events</key>
-    <array>
-        <string>com.apple.iCal</string>
-        <string>com.apple.mail</string>
-        <string>com.apple.systemevents</string>
-    </array>
+    <!-- "MacOS Email and Calendar": events are saved through EventKit
+         (MacEventKitCalendarBackend). Mail drafts go through NSSharingService
+         and need no entitlement. No Apple Events: App Review does not grant
+         the temporary exception (Guideline 2.4.5(i)). -->
     <key>com.apple.security.personal-information.calendars</key>
     <true/>
 

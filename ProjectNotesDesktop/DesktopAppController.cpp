@@ -99,6 +99,7 @@ using PN::Comm::reviewPresetRule;
 #include <QClipboard>
 #include <QCryptographicHash>
 #include <QDateTime>
+#include <QLocale>
 #include <QDir>
 #include <QDomDocument>
 #include <QDesktopServices>
@@ -192,9 +193,10 @@ DesktopAppController::DesktopAppController(QObject* parent)
         PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile));
     m_meetingService->registerBackend(PN::Comm::BackendId::DefaultApp, m_icsMeetingBackend.get());
 #if defined(Q_OS_DARWIN)
-    // "MacOS Email and Calendar" drives Mail.app and Calendar.app directly via
-    // AppKit/Apple Events (see MacMailBackend/MacCalendarBackend) rather than
-    // opening a staged .eml/.ics file.
+    // "MacOS Email and Calendar" hands Mail a compose window through
+    // NSSharingService and saves Calendar events through EventKit (see
+    // MacMailBackend/MacCalendarBackend) rather than opening a staged .eml/.ics
+    // file. Neither sends Apple Events.
     m_macMailBackend = std::make_unique<PN::Comm::MacMailBackend>();
     m_emailService->registerBackend(PN::Comm::BackendId::MacMail, m_macMailBackend.get());
     m_macCalendarBackend = std::make_unique<PN::Comm::MacCalendarBackend>();
@@ -1795,10 +1797,12 @@ bool DesktopAppController::handoffPreparedMeeting(const QString &subject, const 
         const PN::Comm::MeetingRequest meeting =
             PN::Comm::MeetingPreparationFactory::request(*self->m_meetingReview, recipients.recipients);
         const PN::Comm::BackendId backend = meeting.backend;
-        self->m_meetingService->handoff(meeting, [self, backend](PN::Comm::MeetingHandoffResult outcome) {
+        const QDateTime start = meeting.start;
+        self->m_meetingService->handoff(meeting, [self, backend, start](PN::Comm::MeetingHandoffResult outcome) {
             if (!self)
                 return;
             self->finishMeetingHandoff(outcome);
+            Q_UNUSED(start); // used on macOS only
 #if defined(Q_OS_DARWIN)
             // MacCalendarBackend creates the event directly in Calendar rather
             // than opening a file, so nothing else confirms it happened; the
@@ -1808,8 +1812,10 @@ bool DesktopAppController::handoffPreparedMeeting(const QString &subject, const 
             if (backend == PN::Comm::BackendId::MacMail && outcome.error.code.isEmpty()
                 && !outcome.eventIdentity.isEmpty()) {
                 emit self->infoOccurred(self->tr("Schedule Meeting"),
-                    self->tr("The event was created on your \"%1\" calendar. Paste the copied attendees into "
-                             "the event's invitees, then click Send in Calendar.").arg(outcome.eventIdentity));
+                    self->tr("The event was added to your \"%1\" calendar on %2. Open it in Calendar, paste the "
+                             "copied attendees into its invitees, then click Send.")
+                        .arg(outcome.eventIdentity,
+                             QLocale().toString(start.toLocalTime(), QLocale::ShortFormat)));
             }
 #endif
             // The iCloud review stays open after success because CalDAV does

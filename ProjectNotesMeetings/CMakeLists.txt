@@ -30,7 +30,7 @@ if(APPLE)
         backends/MacCalendarBackend.h
         backends/MacCalendarBackend.mm
     )
-    target_link_libraries(ProjectNotesMeetings PRIVATE "-framework AppKit" "-framework ApplicationServices" "-framework CoreServices" "-framework EventKit")
+    target_link_libraries(ProjectNotesMeetings PRIVATE "-framework AppKit" "-framework EventKit")
 endif()
 
 if(WIN32)
