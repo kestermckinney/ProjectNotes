@@ -59,7 +59,7 @@ qt_add_executable(ProjectNotes
     # Backs the plugin secret API.
     ../credentialstore.cpp ../credentialstore.h
     SecurityScopedBookmarks.h
-    # Unattended software update (GitLab releases → silent install + relaunch).
+    # Unattended software update (GitHub/GitLab releases → silent install + relaunch).
     ../updatemanager.cpp   ../updatemanager.h
     # Single-instance guard (UUID key in main.cpp).
     ../runguard.cpp ../runguard.h

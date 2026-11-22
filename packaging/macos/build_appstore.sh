@@ -8,7 +8,7 @@
 # Project Notes (cmake -DPN_APP_STORE=ON). It ships in the same App Store
 # Connect record as the iOS app ("Project Notes Pro"), so it uses that app's
 # App ID, com.projectnotespro.projectnotesmobile, under Apple Team 2PY624KHXH.
-# The direct download (GitLab, build_installer.sh) uses the same bundle ID.
+# The direct download (GitHub, build_installer.sh) uses the same bundle ID.
 #
 # Usage:
 #   ./build_appstore.sh [BUILD_NUMBER] [options]

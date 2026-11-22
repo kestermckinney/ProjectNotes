@@ -1,0 +1,203 @@
+name: Flatpak Release
+
+# Builds and signs the Linux Flatpak when a version tag is pushed, then, once
+# the `linux-release` environment approves the run, publishes it:
+#   * the signed OSTree repository goes to the gh-pages branch of
+#     kestermckinney/projectnotes-flatpak, which serves
+#     https://kestermckinney.github.io/projectnotes-flatpak/ (`flatpak update`);
+#   * ProjectNotes.flatpak and projectnotes.flatpakrepo are attached to the
+#     GitHub release. A missing release is created as a draft from
+#     packaging/RELEASE_NOTES.md, so nothing reaches the desktop updater until
+#     the draft is published by hand.
+#
+# Repository secrets (Settings > Secrets and variables > Actions):
+#   FLATPAK_GPG_PRIVATE_KEY     ASCII-armored private signing key
+#   FLATPAK_GPG_KEY_ID          Its fingerprint
+#   FLATPAK_GPG_PASSPHRASE      Its passphrase
+#   FLATPAK_PAGES_DEPLOY_TOKEN  Token that can push to projectnotes-flatpak
+#
+# Add required reviewers to the `linux-release` environment (Settings >
+# Environments) so publication waits for approval. See packaging/linux/RELEASING.md.
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch: {}
+
+concurrency:
+  group: flatpak-release
+  cancel-in-progress: false
+
+env:
+  PAGES_REPO: kestermckinney/projectnotes-flatpak
+  PAGES_BRANCH: gh-pages
+  APP_REPO_URL: https://kestermckinney.github.io/projectnotes-flatpak/
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    # Ships flatpak and flatpak-builder. bubblewrap needs elevated privileges
+    # to build inside the container.
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.9
+      options: --privileged
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Check the tag against the application version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          version="$(sed -n 's/.*project(ProjectNotes VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)"
+          [ "$GITHUB_REF_NAME" = "v$version" ] || { echo "Tag $GITHUB_REF_NAME does not match version $version"; exit 1; }
+
+      - name: Install the KDE runtime and SDK
+        run: |
+          flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          flatpak install -y --noninteractive flathub org.kde.Platform//6.9 org.kde.Sdk//6.9
+
+      - name: Import the signing key
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.FLATPAK_GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.FLATPAK_GPG_PASSPHRASE }}
+          GPG_KEY_ID: ${{ secrets.FLATPAK_GPG_KEY_ID }}
+        run: |
+          export GNUPGHOME="$RUNNER_TEMP/gnupg"
+          mkdir -p "$GNUPGHOME"; chmod 700 "$GNUPGHOME"
+          # ostree signs through gpg-agent with no pinentry here, so preset the
+          # passphrase and cache it for longer than the build takes.
+          printf '%s\n' allow-loopback-pinentry allow-preset-passphrase \
+            'default-cache-ttl 21600' 'max-cache-ttl 21600' > "$GNUPGHOME/gpg-agent.conf"
+          gpgconf --kill gpg-agent || true
+          printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import
+          preset="$(gpgconf --list-dirs libexecdir)/gpg-preset-passphrase"
+          gpg --batch --with-colons --with-keygrip --list-secret-keys "$GPG_KEY_ID" \
+            | awk -F: '$1 == "grp" { print $10 }' \
+            | while read -r grip; do printf '%s' "$GPG_PASSPHRASE" | "$preset" --preset "$grip"; done
+          # Installed users trust the key in projectnotes.flatpakrepo; refuse
+          # to sign with any other.
+          python3 - <<'PY'
+          import base64, configparser, os, subprocess
+          repo = configparser.ConfigParser(interpolation=None)
+          repo.read('packaging/linux/projectnotes.flatpakrepo')
+          expected = base64.b64decode(repo['Flatpak Repo']['GPGKey'])
+          actual = subprocess.check_output(['gpg', '--export', os.environ['GPG_KEY_ID']])
+          if expected != actual:
+              raise SystemExit('Signing key differs from packaging/linux/projectnotes.flatpakrepo')
+          PY
+          echo "GNUPGHOME=$GNUPGHOME" >> "$GITHUB_ENV"
+
+      - name: Start from the published repository
+        # Exporting into the live repository keeps its history, so users
+        # download a delta instead of the whole app.
+        run: |
+          dest="$GITHUB_WORKSPACE/packaging/linux/flatpak-repo"
+          if git clone --branch "$PAGES_BRANCH" --depth 1 "https://github.com/$PAGES_REPO.git" "$RUNNER_TEMP/published" \
+             && [ -d "$RUNNER_TEMP/published/objects" ]; then
+            rm -rf "$RUNNER_TEMP/published/.git"
+            cp -a "$RUNNER_TEMP/published" "$dest"
+            echo "Seeded from the published repository."
+          else
+            echo "No published repository; starting a new one."
+          fi
+
+      - name: Create a D-Bus machine ID
+        run: |
+          mkdir -p /var/lib/dbus
+          [ -s /etc/machine-id ] || dbus-uuidgen --ensure=/etc/machine-id
+
+      - name: Build, sign and bundle
+        working-directory: packaging/linux
+        env:
+          GPG_KEY_ID: ${{ secrets.FLATPAK_GPG_KEY_ID }}
+          PN_REF: ${{ github.sha }}
+          # rofiles-fuse cannot run inside the container.
+          DISABLE_ROFILES_FUSE: '1'
+          USE_BUILDER_FLATPAK: '0'
+        run: |
+          export GPG_HOMEDIR="$GNUPGHOME"
+          # Exporting builds the app, so skip the separate build step.
+          mkdir -p flatpak-build
+          ./build-flatpak.sh repo
+          flatpak build-update-repo --gpg-sign="$GPG_KEY_ID" --gpg-homedir="$GPG_HOMEDIR" \
+            --generate-static-deltas flatpak-repo
+          ./build-flatpak.sh bundle
+          cp projectnotes.flatpakrepo flatpak-repo/projectnotes.flatpakrepo
+          cp icons/256x256/com.projectnotespro.ProjectNotes.png flatpak-repo/icon.png
+          touch flatpak-repo/.nojekyll
+          tar -czf "$RUNNER_TEMP/flatpak-repo.tar.gz" -C flatpak-repo .
+
+      - name: Upload the repository
+        uses: actions/upload-artifact@v4
+        with:
+          name: flatpak-repo
+          path: ${{ runner.temp }}/flatpak-repo.tar.gz
+          retention-days: 7
+
+      - name: Upload the bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: flatpak-bundle
+          path: |
+            packaging/linux/ProjectNotes.flatpak
+            packaging/linux/projectnotes.flatpakrepo
+          retention-days: 7
+
+  publish:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    environment: linux-release
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Refuse to replace a newer release
+        run: |
+          latest="$(gh release view --json tagName --jq .tagName 2>/dev/null || true)"
+          if [ -n "$latest" ] && [ "$latest" != "$GITHUB_REF_NAME" ]; then
+            newest="$(printf '%s\n%s\n' "${latest#v}" "${GITHUB_REF_NAME#v}" | sort -V | tail -n1)"
+            [ "$newest" = "${GITHUB_REF_NAME#v}" ] || { echo "$latest is newer than $GITHUB_REF_NAME"; exit 1; }
+          fi
+
+      - name: Download the build
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/build
+
+      - name: Unpack the repository
+        run: |
+          mkdir -p "$RUNNER_TEMP/flatpak-repo"
+          tar -xzf "$RUNNER_TEMP/build/flatpak-repo/flatpak-repo.tar.gz" -C "$RUNNER_TEMP/flatpak-repo"
+          test -s "$RUNNER_TEMP/flatpak-repo/summary"
+          test -s "$RUNNER_TEMP/flatpak-repo/summary.sig"
+
+      - name: Publish the repository
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          personal_token: ${{ secrets.FLATPAK_PAGES_DEPLOY_TOKEN }}
+          external_repository: kestermckinney/projectnotes-flatpak
+          publish_branch: gh-pages
+          publish_dir: ${{ runner.temp }}/flatpak-repo
+          # One commit holding every current OSTree object keeps the branch small.
+          force_orphan: true
+          commit_message: Publish Flatpak ${{ github.ref_name }}
+
+      - name: Attach the bundle to the release
+        run: |
+          if ! gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release create "$GITHUB_REF_NAME" --draft \
+              --title "Project Notes ${GITHUB_REF_NAME#v}" --notes-file packaging/RELEASE_NOTES.md
+          fi
+          gh release upload "$GITHUB_REF_NAME" --clobber \
+            "$RUNNER_TEMP/build/flatpak-bundle/ProjectNotes.flatpak" \
+            "$RUNNER_TEMP/build/flatpak-bundle/projectnotes.flatpakrepo"

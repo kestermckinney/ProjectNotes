@@ -4,7 +4,7 @@
 
 .DESCRIPTION
   Packages the files the `deploy` CMake target staged, the same payload the
-  GitLab installer ships, minus the Remote Host. See Releasing.md next to this
+  GitHub installer ships, minus the Remote Host. See Releasing.md next to this
   script for the one-time Partner Center setup.
 
   Store identity defaults to the Project Notes Pro Product identity in Partner

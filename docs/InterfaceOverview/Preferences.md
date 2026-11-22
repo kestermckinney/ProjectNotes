@@ -150,7 +150,7 @@ Choosing **About** from the [Application Menu](<ApplicationMenu.md>)'s **Help** 
 
 Project Notes can keep itself up to date by checking GitHub and GitLab for newer releases. It installs the newest release it finds on either one. A quiet, background check runs automatically each time Project Notes starts. If a newer release is found, it offers to download and install it for you; the installer runs automatically and Project Notes relaunches itself when it finishes. When no update is available, the background check stays silent so it never interrupts your work.
 
-On Linux, Flatpak installs updates, so Project Notes tells you about a new release instead of installing it. Releases are moving to GitHub. When the newer release is on GitHub, Project Notes asks you to point your Flatpak installation at the GitHub repository and links to the [Linux installation instructions](https://www.projectnotespro.com/docs/Introduction/InstallLinux). The startup check shows this notice once for each new version. **Check for Updates…** shows it every time.
+On Linux, Flatpak installs updates, so Project Notes tells you about a new release instead of installing it. Releases have moved to GitHub. When the newer release is on GitHub, Project Notes asks you to point your Flatpak installation at the GitHub repository and links to the [Linux installation instructions](https://www.projectnotespro.com/docs/Introduction/InstallLinux). The startup check shows this notice once for each new version. **Check for Updates…** shows it every time.
 
 To stop the startup check, open **Settings**, go to the **Preferences** tab, and clear **Check for updates automatically at startup**. The change takes effect the next time Project Notes starts. Manual checks still work. The option is hidden in the Mac App Store and Microsoft Store versions, since the store handles updates there.
 
@@ -159,7 +159,7 @@ You can also check at any time from the app menu by choosing **Check for Updates
 Versions 6.4.0 through 6.5.1 check only GitLab. Versions before 6.4.0 check only
 GitHub, so they find updates again once releases are published there. If a
 version does not find an update, download and install the latest build from
-[GitLab releases](https://gitlab.com/kestermckinney/ProjectNotes/-/releases).
+[GitHub releases](https://github.com/kestermckinney/ProjectNotes/releases).
 
 ## How Preferences Are Used
 

@@ -1,0 +1,25 @@
+name: Usage question
+description: Ask a question about setup, configuration, or expected behavior
+title: "[Question]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Questions are welcome. Please include enough detail for someone else to answer without guessing.
+  - type: input
+    id: version
+    attributes:
+      label: ProjectNotes version
+      placeholder: e.g. 5.0.1
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      placeholder: What are you trying to do, and where are you getting stuck?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      placeholder: Include any plugins, platform details, screenshots, or relevant setup information.

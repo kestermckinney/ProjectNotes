@@ -1116,8 +1116,8 @@ ApplicationWindow {
                     Repeater {
                         model: [
                             { label: qsTr("Documentation"), url: "https://www.projectnotespro.com/docs" },
-                            { label: qsTr("Release Notes"), url: "https://gitlab.com/kestermckinney/ProjectNotes/-/releases" },
-                            { label: qsTr("Source Code"), url: "https://gitlab.com/kestermckinney/ProjectNotes" }
+                            { label: qsTr("Release Notes"), url: "https://github.com/kestermckinney/ProjectNotes/releases" },
+                            { label: qsTr("Source Code"), url: "https://github.com/kestermckinney/ProjectNotes" }
                         ]
                         delegate: Button {
                             required property var modelData

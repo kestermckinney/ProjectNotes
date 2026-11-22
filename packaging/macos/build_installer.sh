@@ -5,7 +5,7 @@
 # the QML desktop frontend's "Project Notes.app" (ProjectNotesDesktop target),
 # plus a self-contained ProjectNotes-<ver>-macOS.zip consumed by the in-app
 # auto-updater (UpdateManager on macOS). These are the direct-download assets
-# published on GitLab; the Mac App Store build comes from build_appstore.sh.
+# published on GitHub; the Mac App Store build comes from build_appstore.sh.
 #
 # The app is built here, as a universal (Apple silicon and Intel) Release build
 # that runs on macOS 13 or later. build_common.sh explains how.

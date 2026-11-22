@@ -7,7 +7,7 @@ Thanks for your interest in improving ProjectNotes.
 - Report bugs with clear steps, expected behavior, and actual behavior.
 - Suggest enhancements that solve a real project-management workflow problem.
 - Improve documentation, examples, and wording where something is unclear.
-- Submit focused merge requests that solve one problem at a time.
+- Submit focused pull requests that solve one problem at a time.
 
 ## Before You Open An Issue
 
@@ -41,9 +41,9 @@ Enhancement requests are most useful when they explain:
 
 The more grounded the request is in day-to-day project work, the easier it is to evaluate and prioritize.
 
-## Merge Requests
+## Pull Requests
 
-Please keep merge requests:
+Please keep pull requests:
 
 - Small enough to review comfortably
 - Focused on one feature or fix
@@ -71,9 +71,8 @@ Please keep feedback respectful, specific, and constructive. Clear, practical co
 
 ## Project Links
 
-- [Repository](https://gitlab.com/kestermckinney/ProjectNotes)
-- [Open issues](https://gitlab.com/kestermckinney/ProjectNotes/-/issues)
-- [Planning and issue board](https://gitlab.com/kestermckinney/ProjectNotes/-/boards)
+- [Repository](https://github.com/kestermckinney/ProjectNotes)
+- [Open issues](https://github.com/kestermckinney/ProjectNotes/issues)
 - [Documentation](https://www.projectnotespro.com/docs)
 
-Issue templates are Markdown descriptions; check that you have completed the relevant sections before submitting.
+The issue forms ask for what a report needs. Fill in every required field before you submit.
