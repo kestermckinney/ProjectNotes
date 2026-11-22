@@ -336,9 +336,16 @@ if [[ "${DO_DMG}" == true ]]; then
 
     DMG_PATH="${OUTPUT_DIR}/ProjectNotes-${INSTALLER_VERSION}-macOS.dmg"
 
+    # Size the image ourselves. hdiutil's own estimate from -srcfolder can come
+    # out smaller than the .pkg on APFS (seen on GitHub's macOS runners), and
+    # the copy then fails with "No space left on device".
+    DMG_SIZE_MB=$(( $(du -sm "${DMG_STAGING}" | cut -f1) * 12 / 10 + 20 ))
+
     hdiutil create \
         -volname "ProjectNotes ${PN_VERSION}" \
         -srcfolder "${DMG_STAGING}" \
+        -size "${DMG_SIZE_MB}m" \
+        -fs HFS+ \
         -ov \
         -format UDZO \
         "${DMG_PATH}"
