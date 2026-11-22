@@ -32,8 +32,13 @@
 #                    the iOS kit's Gui config needs host tools such as Qt6GrpcTools)
 #   TEAM_ID          10-character Apple Team ID
 #   SCHEME           Xcode scheme to archive
+#   PN_VCPKG_IOS_ROOT vcpkg "installed" folder with the arm64-ios OpenSSL build
 #   ASC_API_KEY_ID   App Store Connect API Key ID   (same as --api-key)
 #   ASC_API_ISSUER   App Store Connect API Issuer ID (same as --api-issuer)
+#   XCODE_AUTH_KEY_PATH, XCODE_AUTH_KEY_ID, XCODE_AUTH_KEY_ISSUER
+#                    App Store Connect API key xcodebuild signs in with to
+#                    fetch certificates and profiles, for a machine with no
+#                    Apple account in Xcode (CI). Setting these does not upload.
 #
 # Prerequisites:
 #   - Xcode + command line tools (xcodebuild, xcrun)
@@ -88,6 +93,14 @@ EXPORT_OPTIONS="${SCRIPT_DIR}/ExportOptions.plist"
 
 QT_CMAKE="${QT_IOS}/bin/qt-cmake"
 
+# Without an Apple account in Xcode, -allowProvisioningUpdates needs an API key.
+XCODE_AUTH=()
+if [[ -n "${XCODE_AUTH_KEY_PATH:-}" ]]; then
+    XCODE_AUTH=(-authenticationKeyPath "${XCODE_AUTH_KEY_PATH}"
+                -authenticationKeyID "${XCODE_AUTH_KEY_ID:?}"
+                -authenticationKeyIssuerID "${XCODE_AUTH_KEY_ISSUER:?}")
+fi
+
 # ── Sanity checks ─────────────────────────────────────────────────────────────
 if [[ ! -x "${QT_CMAKE}" ]]; then
     echo "ERROR: qt-cmake not found at ${QT_CMAKE}" >&2
@@ -112,7 +125,8 @@ echo
 # ── Step 1: configure (Xcode generator, Release) ──────────────────────────────
 echo "==> [1/4] Configuring Xcode project..."
 "${QT_CMAKE}" -S "${SRC_DIR}" -B "${BUILD_DIR}" -G Xcode -DCMAKE_BUILD_TYPE=Release \
-    -DQT_HOST_PATH="${QT_HOST}"
+    -DQT_HOST_PATH="${QT_HOST}" \
+    ${PN_VCPKG_IOS_ROOT:+-DPN_VCPKG_IOS_ROOT="${PN_VCPKG_IOS_ROOT}"}
 
 # ── Step 2: archive (auto-creates distribution cert + App Store profile) ───────
 echo "==> [2/4] Archiving..."
@@ -124,6 +138,7 @@ xcodebuild \
     -archivePath "${ARCHIVE}" \
     CURRENT_PROJECT_VERSION="${BUILD_NUMBER}" \
     -allowProvisioningUpdates \
+    ${XCODE_AUTH[@]+"${XCODE_AUTH[@]}"} \
     archive
 
 # ── Step 3: export signed .ipa ────────────────────────────────────────────────
@@ -134,7 +149,8 @@ xcodebuild \
     -archivePath "${ARCHIVE}" \
     -exportPath "${EXPORT_DIR}" \
     -exportOptionsPlist "${EXPORT_OPTIONS}" \
-    -allowProvisioningUpdates
+    -allowProvisioningUpdates \
+    ${XCODE_AUTH[@]+"${XCODE_AUTH[@]}"}
 
 IPA="$(/usr/bin/find "${EXPORT_DIR}" -maxdepth 1 -name '*.ipa' | head -n 1)"
 if [[ -z "${IPA}" ]]; then

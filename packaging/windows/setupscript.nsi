@@ -15,8 +15,11 @@ RequestExecutionLevel user
 !define PRODUCT_UNINST_ROOT_KEY "HKCU"
 
 ; ── Deploy directory (relative to this script's location) ─────────────────────
-; Change BUILD_CONFIG if your Qt Creator kit name differs.
-!define BUILD_CONFIG "Desktop_Qt_6_10_0_MSVC2022_64bit-Release"
+; Change BUILD_CONFIG if your Qt Creator kit name differs, or pass
+; /DBUILD_CONFIG=<build folder name> to makensis (the release workflow does).
+!ifndef BUILD_CONFIG
+  !define BUILD_CONFIG "Desktop_Qt_6_10_0_MSVC2022_64bit-Release"
+!endif
 !define BUILD_DIR    "..\..\build\${BUILD_CONFIG}"
 !define DEPLOY_DIR   "${BUILD_DIR}\deploy"
 

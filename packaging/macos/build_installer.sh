@@ -28,6 +28,9 @@
 #   APPLE_ID                 Apple ID email for notarytool
 #   NOTARIZE_KEYCHAIN_PROFILE Keychain profile name created with:
 #                              xcrun notarytool store-credentials <profile>
+#   NOTARY_API_KEY_PATH      App Store Connect API key (.p8). When set, notarytool
+#                            uses it with NOTARY_API_KEY_ID and NOTARY_API_ISSUER
+#                            instead of the keychain profile (CI does this).
 #   PN_BUILD_DIR             CMake build directory (default build/release)
 #   QT_MACOS                 Qt macOS kit (contains bin/qt-cmake)
 #   VCPKG_ROOT               vcpkg checkout used for static Hunspell and OpenSSL
@@ -48,6 +51,13 @@ SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application: Paul McKinney (2PY624K
 INSTALLER_IDENTITY="${INSTALLER_IDENTITY:-Developer ID Installer: Paul McKinney (2PY624KHXH)}"
 APPLE_ID="${APPLE_ID:-paul.mckinney@me.com}"
 NOTARIZE_KEYCHAIN_PROFILE="${NOTARIZE_KEYCHAIN_PROFILE:-ProjectNotes-Notarize}"
+
+# notarytool credentials: an API key when one is given, else the keychain profile.
+if [[ -n "${NOTARY_API_KEY_PATH:-}" ]]; then
+    NOTARY_AUTH=(--key "${NOTARY_API_KEY_PATH}" --key-id "${NOTARY_API_KEY_ID:?}" --issuer "${NOTARY_API_ISSUER:?}")
+else
+    NOTARY_AUTH=(--apple-id "${APPLE_ID}" --team-id "${TEAM_ID}" --keychain-profile "${NOTARIZE_KEYCHAIN_PROFILE}")
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -304,9 +314,7 @@ if [[ "${DO_NOTARIZE}" == true ]]; then
     log "Submitting ${DIST_PKG} to Apple notarization service..."
 
     xcrun notarytool submit "${DIST_PKG}" \
-        --apple-id   "${APPLE_ID}" \
-        --team-id    "${TEAM_ID}" \
-        --keychain-profile "${NOTARIZE_KEYCHAIN_PROFILE}" \
+        "${NOTARY_AUTH[@]}" \
         --wait
 
     log "Stapling notarization ticket..."
@@ -342,9 +350,7 @@ if [[ "${DO_DMG}" == true ]]; then
     if [[ "${DO_NOTARIZE}" == true ]]; then
         log "Notarizing DMG..."
         xcrun notarytool submit "${DMG_PATH}" \
-            --apple-id   "${APPLE_ID}" \
-            --team-id    "${TEAM_ID}" \
-            --keychain-profile "${NOTARIZE_KEYCHAIN_PROFILE}" \
+            "${NOTARY_AUTH[@]}" \
             --wait
         xcrun stapler staple "${DMG_PATH}"
         log "DMG notarized."
@@ -367,9 +373,7 @@ ditto -c -k --keepParent "${UPDATER_APP}" "${UPDATE_ZIP}"
 if [[ "${DO_NOTARIZE}" == true ]]; then
     log "Notarizing updater app..."
     xcrun notarytool submit "${UPDATE_ZIP}" \
-        --apple-id   "${APPLE_ID}" \
-        --team-id    "${TEAM_ID}" \
-        --keychain-profile "${NOTARIZE_KEYCHAIN_PROFILE}" \
+        "${NOTARY_AUTH[@]}" \
         --wait
 
     # Staple the ticket onto the .app, then re-zip so the shipped archive carries it.

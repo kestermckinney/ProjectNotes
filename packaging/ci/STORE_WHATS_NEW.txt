@@ -1,0 +1,5 @@
+Project Notes 6.5.2
+
+- On the Mac, scheduled meetings are saved to your default calendar. Project Notes now asks only for calendar access, not for permission to control Calendar.
+- The Mac App Store version asks you to choose the downloaded version's data folder before copying your data, and brings its settings over too.
+- Project Notes now lives on GitHub: https://github.com/kestermckinney/ProjectNotes
