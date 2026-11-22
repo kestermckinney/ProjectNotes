@@ -157,6 +157,11 @@ ApplicationWindow {
             infoLabel.text = qsTr("Could not check for updates:\n\n%1").arg(err)
             infoDialog.open()
         }
+        function onLinuxRepositoryChangeNeeded(version, instructionsUrl) {
+            linuxRepoDialog.version = version
+            linuxRepoDialog.instructionsUrl = instructionsUrl
+            linuxRepoDialog.open()
+        }
         function onUpdateAvailable(version, notes) {
             updateLabel.text = qsTr("Project Notes %1 is available. You are running %2.\n\n"
                                     + "Install it now? The app will download the update, install it, "
@@ -1314,6 +1319,112 @@ ApplicationWindow {
                         // Exclusive grab so this tap doesn't also fall through to
                         // whatever's behind the dialog (e.g. a project row).
                         TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: infoDialog.close() }
+                    }
+                }
+            }
+        }
+    }
+
+    // Linux: a newer release was published on GitHub. Flatpak installs that
+    // still follow the GitLab remote never see it, so ask the user to move
+    // the remote and link to the instructions on the project site.
+    Dialog {
+        id: linuxRepoDialog
+        property string version: ""
+        property string instructionsUrl: ""
+        anchors.centerIn: parent
+        width: 440
+        scale: Theme.uiScale
+        modal: true
+        padding: 0
+        closePolicy: Popup.CloseOnEscape
+        title: qsTr("Update Available")
+
+        background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
+        header: null
+        footer: null
+
+        contentItem: ColumnLayout {
+            spacing: 0
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.margins: 14
+                spacing: 8
+                MaterialIcon { name: "system_update_alt"; size: 20; color: Theme.accent }
+                Text {
+                    text: linuxRepoDialog.title
+                    color: Theme.text; font.pixelSize: Theme.font2xl; font.weight: Font.Bold
+                    Layout.fillWidth: true
+                }
+                DialogCloseButton { popup: linuxRepoDialog }
+            }
+            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.margins: 18
+                spacing: 16
+                Text {
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    color: Theme.text
+                    font.pixelSize: Theme.fontLg
+                    text: qsTr("Project Notes %1 is available. You are running %2.\n\n"
+                               + "Project Notes releases are now published on GitHub. If your "
+                               + "Flatpak installation still uses the GitLab repository, change "
+                               + "it to the GitHub repository to receive this and future updates. "
+                               + "Then run flatpak update.")
+                          .arg(linuxRepoDialog.version).arg(DesktopAppController.appVersion())
+                }
+                Text {
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    textFormat: Text.RichText
+                    font.pixelSize: Theme.fontLg
+                    color: Theme.text
+                    linkColor: Theme.accent
+                    text: qsTr("See the <a href=\"%1\">Linux installation instructions</a> "
+                               + "on www.projectnotespro.com.").arg(linuxRepoDialog.instructionsUrl)
+                    onLinkActivated: (link) => Qt.openUrlExternally(link)
+                    HoverHandler { cursorShape: parent.hoveredLink ? Qt.PointingHandCursor : Qt.ArrowCursor }
+                }
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 10
+                    Item { Layout.fillWidth: true }
+                    Rectangle {
+                        implicitHeight: 30
+                        implicitWidth: linuxRepoLaterText.implicitWidth + 26
+                        radius: Theme.radiusSm
+                        color: linuxRepoLaterHover.hovered ? Theme.surface2 : Theme.surface
+                        border.color: Theme.border
+                        Text {
+                            id: linuxRepoLaterText
+                            anchors.centerIn: parent
+                            text: qsTr("Close")
+                            color: Theme.text; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
+                        }
+                        HoverHandler { id: linuxRepoLaterHover }
+                        TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: linuxRepoDialog.close() }
+                    }
+                    Rectangle {
+                        implicitHeight: 30
+                        implicitWidth: linuxRepoOpenText.implicitWidth + 26
+                        radius: Theme.radiusSm
+                        color: linuxRepoOpenHover.hovered ? Theme.accentStrong : Theme.accent
+                        Text {
+                            id: linuxRepoOpenText
+                            anchors.centerIn: parent
+                            text: qsTr("Open Instructions")
+                            color: "#ffffff"; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
+                        }
+                        HoverHandler { id: linuxRepoOpenHover }
+                        TapHandler {
+                            gesturePolicy: TapHandler.ReleaseWithinBounds
+                            onTapped: {
+                                linuxRepoDialog.close()
+                                Qt.openUrlExternally(linuxRepoDialog.instructionsUrl)
+                            }
+                        }
                     }
                 }
             }

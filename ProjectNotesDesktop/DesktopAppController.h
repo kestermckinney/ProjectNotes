@@ -978,6 +978,10 @@ signals:
     void updateAvailable(const QString& version, const QString& releaseNotes);
     void upToDate(const QString& version);
     void updateCheckFailed(const QString& error);
+    // Linux: a newer release is on GitHub; the user should point their Flatpak
+    // remote at the GitHub repository. A silent check emits it once per
+    // version; a manual check every time.
+    void linuxRepositoryChangeNeeded(const QString& version, const QString& instructionsUrl);
     // Download failed (unattended install could not proceed).
     void updateInstallFailed(const QString& error);
     // The download has begun — the shell should show its themed progress dialog.

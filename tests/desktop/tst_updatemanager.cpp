@@ -228,11 +228,13 @@ private slots:
         QSignalSpy available(&updater, &UpdateManager::updateAvailable);
         QSignalSpy current(&updater, &UpdateManager::upToDate);
         QSignalSpy failed(&updater, &UpdateManager::checkFailed);
+        QSignalSpy moveRemote(&updater, &UpdateManager::linuxRepositoryChangeNeeded);
         updater.checkForUpdates(true);
         updater.checkForUpdates(true); // Coalesce concurrent checks.
-        QTRY_COMPARE(available.size() + current.size() + failed.size(), 1);
+        QTRY_COMPARE(available.size() + current.size() + failed.size() + moveRemote.size(), 1);
         QTest::qWait(10);
-        QCOMPARE(available.size() + current.size() + failed.size(), 1); // one answer for both hosts
+        // one answer for both hosts
+        QCOMPARE(available.size() + current.size() + failed.size() + moveRemote.size(), 1);
 
         QCOMPARE(network->requests.size(), 2);
         const QNetworkRequest gitlab = network->request(QStringLiteral("gitlab.com"));
@@ -252,7 +254,16 @@ private slots:
         }
 
 #if defined(Q_OS_LINUX)
-        // Flatpak owns updates on Linux, so a newer release is reported, not offered.
+        // Flatpak owns updates on Linux, so a newer release is reported, not
+        // offered. One found on GitHub asks the user to move the remote there.
+        if (result == "available-github")
+        {
+            QCOMPARE(moveRemote.size(), 1);
+            QVERIFY(moveRemote.at(0).at(0).toString().startsWith(QStringLiteral("999.")));
+            QCOMPARE(moveRemote.at(0).at(1).toUrl(), QUrl(UpdateManager::linuxInstallInstructionsUrl()));
+            QCOMPARE(moveRemote.at(0).at(1).toUrl().host(), QStringLiteral("www.projectnotespro.com"));
+            return;
+        }
         if (result.startsWith("available"))
         {
             QCOMPARE(failed.size(), 1);
@@ -260,6 +271,7 @@ private slots:
             return;
         }
 #endif
+        QCOMPARE(moveRemote.size(), 0); // Linux only
         if (result.startsWith("available"))
         {
             QCOMPARE(available.size(), 1);

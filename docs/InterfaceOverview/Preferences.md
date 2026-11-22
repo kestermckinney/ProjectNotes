@@ -150,6 +150,8 @@ Choosing **About** from the [Application Menu](<ApplicationMenu.md>)'s **Help** 
 
 Project Notes can keep itself up to date by checking GitHub and GitLab for newer releases. It installs the newest release it finds on either one. A quiet, background check runs automatically each time Project Notes starts. If a newer release is found, it offers to download and install it for you; the installer runs automatically and Project Notes relaunches itself when it finishes. When no update is available, the background check stays silent so it never interrupts your work.
 
+On Linux, Flatpak installs updates, so Project Notes tells you about a new release instead of installing it. Releases are moving to GitHub. When the newer release is on GitHub, Project Notes asks you to point your Flatpak installation at the GitHub repository and links to the [Linux installation instructions](https://www.projectnotespro.com/docs/Introduction/InstallLinux). The startup check shows this notice once for each new version. **Check for Updates…** shows it every time.
+
 To stop the startup check, open **Settings**, go to the **Preferences** tab, and clear **Check for updates automatically at startup**. The change takes effect the next time Project Notes starts. Manual checks still work. The option is hidden in the Mac App Store and Microsoft Store versions, since the store handles updates there.
 
 You can also check at any time from the app menu by choosing **Check for Updates…**. A manual check always reports its result — including telling you when you are already running the latest version.

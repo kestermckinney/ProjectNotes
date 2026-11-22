@@ -45,6 +45,10 @@ QString stableVersionFromTag(QString tag)
     return stableVersion.match(tag).hasMatch() ? tag : QString();
 }
 
+// Explains how to move a Flatpak install to the GitHub-hosted repository.
+const char *kLinuxInstallInstructionsUrl =
+    "https://www.projectnotespro.com/docs/Introduction/InstallLinux";
+
 // Identify the application to the release service.
 const char *kUserAgent = "ProjectNotes-Updater";
 }
@@ -54,6 +58,11 @@ UpdateManager::UpdateManager(QWidget *parent)
     , m_parentWidget(parent)
     , m_network(new QNetworkAccessManager(this))
 {
+}
+
+QString UpdateManager::linuxInstallInstructionsUrl()
+{
+    return QString::fromLatin1(kLinuxInstallInstructionsUrl);
 }
 
 QString UpdateManager::currentVersion()
@@ -313,7 +322,17 @@ void UpdateManager::processRelease(const ReleaseCandidate &release)
     }
 
 #if defined(Q_OS_LINUX)
-    // The host's Flatpak software manager owns sandboxed app updates.
+    // The host's Flatpak software manager owns sandboxed app updates. A release
+    // that only GitHub has is invisible to a remote that still points at
+    // GitLab, so tell the user to change the remote rather than just update.
+    if (release.source == ReleaseSource::GitHub)
+    {
+        QLog_Info(CONSOLELOG, QString("Update available: %1 from GitHub (current %2); "
+                                      "the Flatpak remote may need to move to GitHub.")
+                                  .arg(latest, currentVersion()));
+        emit linuxRepositoryChangeNeeded(latest, QUrl(linuxInstallInstructionsUrl()));
+        return;
+    }
     emit checkFailed(tr("Version %1 is available. Update Project Notes through your software "
                         "manager or run flatpak update com.projectnotespro.ProjectNotes.").arg(latest));
     return;

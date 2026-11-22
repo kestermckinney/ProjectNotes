@@ -4738,7 +4738,8 @@ QString DesktopAppController::qtRuntimeVersion() const
 // same battle-tested unattended install/relaunch flow the Widgets app ships:
 // a silent NSIS install (/waitpid + /relaunch) on Windows and a detached
 // swap-and-relaunch helper on macOS. (Linux has no installer asset — it updates
-// via Flatpak — so a check there reports "download manually".)
+// via Flatpak — so a check there points the user at flatpak update, or at the
+// instructions for moving the remote to GitHub.)
 void DesktopAppController::ensureUpdater()
 {
     if (m_updater)
@@ -4759,6 +4760,22 @@ void DesktopAppController::ensureUpdater()
     connect(m_updater, &UpdateManager::checkFailed, this, [this](const QString& err) {
         if (!m_silentCheck) emit updateCheckFailed(err);
     });
+    // Shown even for the silent startup check: without it a Linux user left on
+    // the GitLab remote would never learn that releases moved to GitHub. The
+    // sandbox cannot see which remote Flatpak uses, so a user who already
+    // switched would be told again on every launch until they update. The
+    // startup check therefore tells them once per version; a manual check
+    // always does.
+    connect(m_updater, &UpdateManager::linuxRepositoryChangeNeeded, this,
+            [this](const QString& version, const QUrl& instructionsUrl) {
+                QSettings settings(localSettingsOrganization(), QStringLiteral("AppSettings"));
+                settings.setFallbacksEnabled(false);
+                const QString key = QStringLiteral("Updates/LinuxRepositoryNoticeVersion");
+                if (m_silentCheck && settings.value(key).toString() == version)
+                    return;
+                settings.setValue(key, version);
+                emit linuxRepositoryChangeNeeded(version, instructionsUrl.toString());
+            });
     connect(m_updater, &UpdateManager::downloadProgress, this,
             [this](qint64 received, qint64 total) {
                 emit updateDownloadProgress(total > 0

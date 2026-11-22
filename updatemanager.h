@@ -47,6 +47,10 @@ public:
     // on success, launch it and emit installerLaunched() so the app can shut down.
     void downloadAndInstall(const QUrl &assetUrl);
 
+    // The Linux install instructions on the project site, which explain how to
+    // point an existing Flatpak remote at the GitHub-hosted repository.
+    static QString linuxInstallInstructionsUrl();
+
     // Semantic version (e.g. "6.4.0") assembled from version.h.
     static QString currentVersion();
 
@@ -65,6 +69,11 @@ public:
 signals:
     void updateAvailable(const QString &version, const QString &releaseNotes, const QUrl &assetUrl);
     void upToDate();
+    // Linux only: a newer release was published on GitHub. Flatpak installs
+    // that still follow the GitLab remote will not see it, so the user is
+    // asked to switch the remote (instructionsUrl explains how). Unlike
+    // checkFailed() this is meant to be shown even after a silent check.
+    void linuxRepositoryChangeNeeded(const QString &version, const QUrl &instructionsUrl);
     void checkFailed(const QString &error);
     void installerLaunched();
     // Emitted during a download so a themed host can show progress (total <= 0
