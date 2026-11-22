@@ -8,6 +8,10 @@ This release changes how the macOS version works with Calendar and how the Mac A
 - The Mac App Store version asks you to choose the downloaded version's data folder before copying your data. The Open dialog starts in that folder.
 - The downloaded version keeps a copy of its settings in its data folder, so the Mac App Store version can bring them over along with your data.
 
+### Updates (Windows and macOS)
+
+- **Check for Updates** looks for releases on GitHub as well as GitLab and offers the newest one it finds. If both have the same version, it uses GitHub. This prepares for moving the project to GitHub.
+
 ### Install on Linux
 
 ```bash
@@ -32,4 +36,4 @@ flatpak remote-modify --gpg-import=projectnotes.gpg --url=https://kestermckinney
 flatpak update com.projectnotespro.ProjectNotes
 ```
 
-Desktop builds older than 6.4.0 still check GitHub for updates and need a one-time manual installation of this version to switch to GitLab. Windows and macOS update downloads require their matching installers to be attached to the release.
+Desktop builds from 6.4.0 through 6.5.1 check only GitLab, and builds older than 6.4.0 check only GitHub. Windows and macOS update downloads require their matching installers to be attached to the release.

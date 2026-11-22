@@ -52,6 +52,10 @@ This pipeline currently builds Linux only. Attach a
 `ProjectNotes-6.5.2-Windows-x64-Setup.exe` and a macOS `.zip` asset with `macOS` in
 its link name before publishing if Windows/macOS should receive this version.
 The updater reads GitLab `assets.links` and uses `direct_asset_url` or `url`.
+From 6.5.2 it also reads the latest GitHub release of `kestermckinney/ProjectNotes`
+(its `assets` and `browser_download_url`) and offers whichever release has the
+higher version, GitHub on a tie. Publishing on GitHub before GitLab is safe;
+an older release left on either host is ignored.
 
 ## Local signed build
 

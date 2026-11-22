@@ -56,7 +56,7 @@ Each toggle in this group shows a live check mark reflecting its current state, 
 | **Item** | **What it does** | **Shortcut** |
 | :--- | :--- | :--- |
 | User Guide | Opens this User Guide to the topic for whatever section you're currently viewing. | F1 |
-| Check for Updates… | Checks GitLab for a newer release and always reports the result, even when you're already up to date. | — |
+| Check for Updates… | Checks GitHub and GitLab for a newer release and always reports the result, even when you're already up to date. | — |
 | Send Logs to Support… | Packages your log files and opens an email addressed to support — see [Error Log](<ErrorLog.md>). | — |
 | About | Opens the **About** section of [Settings](<Preferences.md>), with the current version and links to documentation, release notes, and source code. | — |
 
