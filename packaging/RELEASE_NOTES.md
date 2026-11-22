@@ -36,6 +36,7 @@ This release collects everything since 6.5.0. Releases 6.5.1 and 6.5.2 were anno
 - Checkboxes in report forms respond to clicks again. A hidden scrollbar was covering them.
 - Temporary files made by plugins are removed when Project Notes closes.
 - Help links open the user guide on the Project Notes website.
+- On macOS and Linux, a plugin path that uses backslashes, such as `Project Management\Status Reports`, now saves into those subfolders of the project folder instead of creating one folder with a backslash in its name.
 
 ### Install on Linux
 
