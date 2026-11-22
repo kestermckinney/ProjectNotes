@@ -4,7 +4,7 @@ name: Release
 # Linux has its own workflow, flatpak-release.yml, started by the same tag.
 #
 #   windows         NSIS installers (Project Notes, Remote Host) and the MSIX
-#   macos           Notarized direct download: .dmg and the updater's .zip
+#   macos           Notarized direct download: .pkg, .dmg and the updater's .zip
 #   macos-appstore  Mac App Store .pkg
 #   ios             App Store .ipa
 #
@@ -242,6 +242,7 @@ jobs:
         with:
           name: macos-direct
           path: |
+            ProjectNotes/packaging/macos/output/*-macOS.pkg
             ProjectNotes/packaging/macos/output/*.dmg
             ProjectNotes/packaging/macos/output/*-macOS.zip
           if-no-files-found: error
@@ -309,7 +310,9 @@ jobs:
   # ── iOS ────────────────────────────────────────────────────────────────────
   ios:
     needs: prepare
-    runs-on: macos-15
+    # App Store Connect only takes iOS apps built with the iOS 26 SDK or later
+    # (Xcode 26); macos-15 has Xcode 16.
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v5
         with:
@@ -520,7 +523,7 @@ jobs:
           MSSTORE_SELLER_ID: ${{ secrets.MSSTORE_SELLER_ID }}
           MSSTORE_CLIENT_ID: ${{ secrets.MSSTORE_CLIENT_ID }}
           MSSTORE_CLIENT_SECRET: ${{ secrets.MSSTORE_CLIENT_SECRET }}
-          MSSTORE_PRODUCT_ID: ${{ vars.MSSTORE_PRODUCT_ID }}
+          MSSTORE_PRODUCT_ID: ${{ vars.MSSTORE_PRODUCT_ID || secrets.MSSTORE_PRODUCT_ID }}
         run: |
           if (-not $env:MSSTORE_PRODUCT_ID) { throw 'Set the MSSTORE_PRODUCT_ID repository variable (Partner Center Store ID).' }
           $msix = Get-ChildItem "$env:RUNNER_TEMP/msix/*.msix" | Select-Object -First 1

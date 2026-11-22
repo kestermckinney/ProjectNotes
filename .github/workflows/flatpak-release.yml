@@ -100,6 +100,8 @@ jobs:
              && [ -d "$RUNNER_TEMP/published/objects" ]; then
             rm -rf "$RUNNER_TEMP/published/.git"
             cp -a "$RUNNER_TEMP/published" "$dest"
+            # Git drops empty folders, and OSTree needs these even when empty.
+            mkdir -p "$dest/refs/heads" "$dest/refs/remotes" "$dest/refs/mirrors" "$dest/tmp" "$dest/state"
             echo "Seeded from the published repository."
           else
             echo "No published repository; starting a new one."
