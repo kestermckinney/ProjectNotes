@@ -64,6 +64,10 @@ public:
     void setTeamsFileWriteEnabled(bool enabled);
     // Files.ReadWrite.All, or Files.Read.All with saving turned off.
     [[nodiscard]] QString teamsFileScope() const;
+    // What File Finder's Teams search and Teams project folders need:
+    // Team.ReadBasic.All and Channel.ReadBasic.All to list joined teams and
+    // their channels, plus teamsFileScope() for the channel files.
+    [[nodiscard]] QStringList teamsScopes() const;
     // True when saving is on and the grant allows it. A grant that was never
     // recorded counts as allowing it; Graph refuses the upload if not.
     [[nodiscard]] bool teamsFilesWritable() const;
@@ -74,9 +78,10 @@ public:
     static bool isFileWriteScope(const QString &scope);
 
     void requestFileFinderConsent();
-    // includeFileWrite adds the Teams file scope (see teamsFileScope()), for
-    // Microsoft Teams project folders. It is also added when the saved grant
-    // already reaches Teams or SharePoint files.
+    // includeFileWrite adds the Teams scopes (see teamsScopes()), for File
+    // Finder's Teams search and Microsoft Teams project folders. They are
+    // also added when the saved grant already reaches Teams or SharePoint
+    // files.
     void requestCommunicationsConsent(bool includeContacts = false, bool exportContacts = false,
                                       bool includeFileWrite = false);
     void requestContactConsent(bool exportEnabled);
