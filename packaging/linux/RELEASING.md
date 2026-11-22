@@ -14,19 +14,12 @@ builds the GitLab-signed repository at
 public key are `packaging/gitlab/projectnotes.flatpakrepo` and
 `packaging/gitlab/projectnotes.gpg`. Remove that pipeline when GitLab is retired.
 
-## Pushing to both hosts
+## GitLab is not kept in sync
 
-While GitLab is kept, the local `origin` remote fetches from GitHub and pushes
-to GitHub and GitLab:
-
-```bash
-git remote set-url origin https://github.com/kestermckinney/ProjectNotes.git
-git remote set-url --add --push origin https://github.com/kestermckinney/ProjectNotes.git
-git remote set-url --add --push origin https://gitlab.com/kestermckinney/ProjectNotes.git
-```
-
-Do the same in `../SqliteSyncPro`. Both pipelines clone ProjectNotes and
-SqliteSyncPro from GitHub at pinned commits, so push before tagging.
+Pushes go to GitHub only; `origin` in this repository and in `../SqliteSyncPro`
+points there. Both pipelines clone ProjectNotes and SqliteSyncPro from GitHub at
+pinned commits, so push before tagging. For the 6.5.2 GitLab release, push just
+that tag once (`git push gitlab v6.5.2`); its pipeline then builds from GitHub.
 
 ## One-time setup on GitHub
 
@@ -65,7 +58,7 @@ workflow checks that the tag matches the version in `CMakeLists.txt`.
    `ProjectNotes-X.Y.Z-macOS.zip`, then publish the draft. The desktop updater
    ignores drafts, so nobody is offered the release until then.
 
-For 6.5.2, also run the GitLab pipeline: `prepare-release` creates an upcoming
+For 6.5.2, also push the tag to GitLab and run its pipeline: `prepare-release` creates an upcoming
 release, then attach the Windows and macOS installers there and run the manual
 `publish-release` job.
 
