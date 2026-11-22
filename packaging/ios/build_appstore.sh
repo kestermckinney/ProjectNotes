@@ -39,6 +39,12 @@
 #                    App Store Connect API key xcodebuild signs in with to
 #                    fetch certificates and profiles, for a machine with no
 #                    Apple account in Xcode (CI). Setting these does not upload.
+#   PN_IOS_PROVISIONING_PROFILE
+#                    An App Store provisioning profile (.mobileprovision) to
+#                    export with manual signing and the Apple Distribution
+#                    certificate in the keychain. Without it the export signs
+#                    automatically, which on a machine with no Apple account
+#                    needs an Admin API key for cloud signing.
 #
 # Prerequisites:
 #   - Xcode + command line tools (xcodebuild, xcrun)
@@ -144,13 +150,34 @@ xcodebuild \
 # ── Step 3: export signed .ipa ────────────────────────────────────────────────
 echo "==> [3/4] Exporting signed .ipa..."
 rm -rf "${EXPORT_DIR}"
+EXPORT_ARGS=(-allowProvisioningUpdates ${XCODE_AUTH[@]+"${XCODE_AUTH[@]}"})
+if [[ -n "${PN_IOS_PROVISIONING_PROFILE:-}" ]]; then
+    # Manual signing: install the profile where Xcode looks for it and name it
+    # in a copy of the export options.
+    PROFILE_PLIST="$(security cms -D -i "${PN_IOS_PROVISIONING_PROFILE}")"
+    PROFILE_UUID="$(plutil -extract UUID raw -o - - <<<"${PROFILE_PLIST}")"
+    PROFILE_NAME="$(plutil -extract Name raw -o - - <<<"${PROFILE_PLIST}")"
+    for dir in "$HOME/Library/MobileDevice/Provisioning Profiles" \
+               "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"; do
+        mkdir -p "${dir}"
+        cp "${PN_IOS_PROVISIONING_PROFILE}" "${dir}/${PROFILE_UUID}.mobileprovision"
+    done
+    echo "    Profile      : ${PROFILE_NAME} (${PROFILE_UUID})"
+
+    MANUAL_OPTIONS="${BUILD_DIR}/ExportOptions-manual.plist"
+    cp "${EXPORT_OPTIONS}" "${MANUAL_OPTIONS}"
+    plutil -replace signingStyle -string manual "${MANUAL_OPTIONS}"
+    plutil -replace signingCertificate -string "Apple Distribution" "${MANUAL_OPTIONS}"
+    plutil -replace provisioningProfiles -json "{\"${BUNDLE_ID}\":\"${PROFILE_NAME}\"}" "${MANUAL_OPTIONS}"
+    EXPORT_OPTIONS="${MANUAL_OPTIONS}"
+    EXPORT_ARGS=()
+fi
 xcodebuild \
     -exportArchive \
     -archivePath "${ARCHIVE}" \
     -exportPath "${EXPORT_DIR}" \
     -exportOptionsPlist "${EXPORT_OPTIONS}" \
-    -allowProvisioningUpdates \
-    ${XCODE_AUTH[@]+"${XCODE_AUTH[@]}"}
+    ${EXPORT_ARGS[@]+"${EXPORT_ARGS[@]}"}
 
 IPA="$(/usr/bin/find "${EXPORT_DIR}" -maxdepth 1 -name '*.ipa' | head -n 1)"
 if [[ -z "${IPA}" ]]; then

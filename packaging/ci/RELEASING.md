@@ -43,6 +43,7 @@ Settings > Secrets and variables > Actions > Secrets.
 | `APPLE_DISTRIBUTION_P12` | Base64 of one `.p12` holding **Apple Distribution** and **Mac Installer Distribution** (or **3rd Party Mac Developer Installer**), each with its private key. The iOS and Mac App Store jobs share it |
 | `APPLE_DISTRIBUTION_P12_PASSWORD` | Its export password |
 | `MACOS_APPSTORE_PROFILE` | Base64 of the Mac App Store provisioning profile for `com.projectnotespro.projectnotesmobile` |
+| `IOS_APPSTORE_PROFILE` | Base64 of an iOS **App Store Connect** distribution profile for `com.projectnotespro.projectnotesmobile`, made in the developer portal (Profiles > +) for the Apple Distribution certificate in `APPLE_DISTRIBUTION_P12`. The iOS export signs manually with it, because automatic signing on CI needs an Admin API key |
 | `ASC_API_KEY_ID` | App Store Connect API key ID |
 | `ASC_API_ISSUER_ID` | Its issuer ID |
 | `ASC_API_KEY_P8` | The text of `AuthKey_<KEYID>.p8` |
