@@ -130,6 +130,8 @@ jobs:
           ./build-flatpak.sh bundle
           cp projectnotes.flatpakrepo flatpak-repo/projectnotes.flatpakrepo
           cp icons/256x256/com.projectnotespro.ProjectNotes.png flatpak-repo/icon.png
+          # Install instructions for the site and the gh-pages branch.
+          cp site/README.md site/index.html flatpak-repo/
           touch flatpak-repo/.nojekyll
           tar -czf "$RUNNER_TEMP/flatpak-repo.tar.gz" -C flatpak-repo .
 

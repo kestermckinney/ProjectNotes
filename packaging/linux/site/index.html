@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project Notes for Linux</title>
+<link rel="icon" href="icon.png">
+<style>
+  :root { --bg: #ffffff; --fg: #1d1d1f; --muted: #5f6368; --code-bg: #f3f4f6; --border: #d9dce1; --link: #0b62d6; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #16181c; --fg: #e8eaed; --muted: #a0a4ab; --code-bg: #23262c; --border: #353941; --link: #6ea8fe; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+  header { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
+  header img { width: 64px; height: 64px; }
+  h1 { font-size: 1.8rem; margin: 0; }
+  h2 { font-size: 1.25rem; margin-top: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+  h3 { font-size: 1.05rem; margin-top: 1.5rem; }
+  p.lead { color: var(--muted); margin-top: 0; }
+  a { color: var(--link); }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; overflow-x: auto; font-size: 0.875rem; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  p code, li code { background: var(--code-bg); padding: 1px 4px; border-radius: 4px; font-size: 0.9em; overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <img src="icon.png" alt="">
+    <h1>Project Notes for Linux</h1>
+  </header>
+  <p class="lead">The Flatpak repository for <a href="https://www.projectnotespro.com">Project Notes</a>. It serves installs and automatic updates. Source and releases are in <a href="https://github.com/kestermckinney/ProjectNotes">kestermckinney/ProjectNotes</a>.</p>
+
+  <h2>Install</h2>
+  <p>Project Notes uses the KDE runtime from Flathub. Add Flathub, then this repository:</p>
+<pre><code>flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+flatpak remote-add --if-not-exists projectnotes \
+  https://kestermckinney.github.io/projectnotes-flatpak/projectnotes.flatpakrepo
+flatpak install projectnotes com.projectnotespro.ProjectNotes</code></pre>
+  <p>Start it from your application menu, or run <code>flatpak run com.projectnotespro.ProjectNotes</code>.</p>
+  <p>No Flatpak yet? See <a href="https://flatpak.org/setup/">flatpak.org/setup</a>.</p>
+
+  <h3>Single-file install</h3>
+  <p>Download <code>ProjectNotes.flatpak</code> from the <a href="https://github.com/kestermckinney/ProjectNotes/releases/latest">latest release</a> and run:</p>
+<pre><code>flatpak install ProjectNotes.flatpak</code></pre>
+  <p>The bundle adds this repository, so later updates arrive the same way.</p>
+
+  <h2>Update</h2>
+  <p>Turn on automatic updates in your software manager, or run:</p>
+<pre><code>flatpak update com.projectnotespro.ProjectNotes</code></pre>
+
+  <h2>Moving from GitLab</h2>
+  <p>Installs added from <code>kestermckinney.gitlab.io</code> stopped getting updates when the project moved back to GitHub. This repository is signed with a different key, so import it along with the new address:</p>
+<pre><code>curl --fail --location https://kestermckinney.github.io/projectnotes-flatpak/projectnotes.flatpakrepo \
+  | sed -n 's/^GPGKey=//p' | base64 --decode &gt; projectnotes-github.gpg
+gpg --show-keys --with-fingerprint projectnotes-github.gpg</code></pre>
+  <p>Check that the primary fingerprint is <code>FEC8AE6825C826AFD564C424BA3027E5F2617C22</code>, then:</p>
+<pre><code>flatpak remote-modify --gpg-verify --gpg-import=projectnotes-github.gpg \
+  --url=https://kestermckinney.github.io/projectnotes-flatpak/ projectnotes
+flatpak update com.projectnotespro.ProjectNotes</code></pre>
+  <p>Add <code>--user</code> or <code>--system</code> to match how you installed. Your data and settings stay where they are.</p>
+  <p>Full instructions: <a href="https://www.projectnotespro.com/docs/Introduction/InstallLinux">Installing on Linux</a>.</p>
+</main>
+</body>
+</html>
